@@ -99,6 +99,7 @@ export default async function setupServiceWorker(
   const endpoints = options?.subductionEndpoints ?? [
     "wss://subduction.sync.inkandswitch.com",
   ];
+  const moduleSettingsUrls = options?.moduleSettingsUrls ?? [];
   const { port1: ackPort, port2: ackRemote } = new MessageChannel();
   await new Promise<void>((resolve) => {
     ackPort.onmessage = () => {
@@ -106,7 +107,11 @@ export default async function setupServiceWorker(
       resolve();
     };
     navigator.serviceWorker.controller!.postMessage(
-      { type: "set-subduction-endpoints", urls: endpoints },
+      {
+        type: "set-subduction-endpoints",
+        urls: endpoints,
+        moduleSettingsUrls,
+      },
       [ackRemote]
     );
   });

@@ -65,7 +65,13 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const result = await setup();
+// Published tools are registered in this module settings doc by publish-all-tools.
+const defaultToolsUrl =
+  "automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3" as AutomergeUrl;
+
+const result = await setup({
+  moduleSettingsUrls: [defaultToolsUrl],
+});
 if (!result) {
   throw new Error("Failed to set up service worker");
 }
@@ -117,10 +123,6 @@ function onModuleLoaded(name: string, mod: any) {
     registerPlugins(mod.plugins, name);
   }
 }
-
-// Published tools are registered in this module settings doc by publish-all-tools.
-const defaultToolsUrl =
-  "automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3" as AutomergeUrl;
 
 const moduleWatcher = new ModuleWatcher(
   repo,

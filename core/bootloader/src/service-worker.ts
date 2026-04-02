@@ -110,23 +110,27 @@ function getRepo() {
     repoPromise = (async () => {
       const logger = await slog;
 
-      logger.info("initializing wasm");
-      const wasmResponse = await fetch("/automerge.wasm");
-      await initializeWasm(new Uint8Array(await wasmResponse.arrayBuffer()));
+      // Fetch both Wasm binaries in parallel, then compile sequentially
+      // (compilation order matters — subduction depends on automerge).
+      logger.info("fetching wasm modules");
+      const [amWasmBuf, sdnWasmBuf] = await Promise.all([
+        fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
+        fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
+      ]);
+      await initializeWasm(new Uint8Array(amWasmBuf));
+      initSubductionSync(new Uint8Array(sdnWasmBuf));
       logger.info("wasm initialized");
 
-      const sdnWasmResponse = await fetch("/subduction.wasm");
-      initSubductionSync(new Uint8Array(await sdnWasmResponse.arrayBuffer()));
-
-      // Wait for the main thread to tell us the Subduction endpoint(s)
+      // Wait for the main thread to tell us the Subduction endpoint(s).
+      // Overlap the WebCryptoSigner IDB key lookup with this wait.
       logger.info("waiting for subduction endpoints from main thread");
-      await subductionReady;
+      const [signer] = await Promise.all([
+        WebCryptoSigner.setup(),
+        subductionReady,
+      ]);
       logger.info("subduction endpoints received", {
         endpoints: subductionEndpoints,
       });
-
-      // Persistent signer — survives SW restarts via IndexedDB
-      const signer = await WebCryptoSigner.setup();
 
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
@@ -154,6 +158,84 @@ function getRepo() {
     })();
   }
   return repoPromise;
+}
+
+// ── Eager tool prefetch ────────────────────────────────────────────────
+//
+// As soon as the Repo is constructed, start syncing the module-settings
+// docs and every tool folder doc they reference. This warms the
+// Subduction sync pipeline so that by the time the main thread's
+// ModuleWatcher fires fetch requests for package.json / entry-point JS,
+// the folder docs (and ideally their file sub-docs) are already loaded
+// or well on their way.
+
+interface ModuleSettingsDoc {
+  modules?: string[];
+}
+
+async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
+  const repo = await getRepo();
+  const logger = await slog;
+  const seenModules = new Set<string>();
+  const seenFiles = new Set<string>();
+
+  // When a tool folder doc arrives (or updates), start syncing all
+  // file sub-docs (package.json, dist/index.js, etc.) so they're
+  // already loading by the time a fetch request arrives for them.
+  function prefetchFileDocs(folderDoc: FolderDoc | undefined) {
+    const docs = folderDoc?.docs;
+    if (!Array.isArray(docs)) return;
+    for (const entry of docs) {
+      const fileUrl = entry?.url;
+      if (!fileUrl || seenFiles.has(fileUrl)) continue;
+      if (!isValidAutomergeUrl(fileUrl)) continue;
+      seenFiles.add(fileUrl);
+      repo.find(fileUrl).catch(() => {});
+    }
+  }
+
+  for (const url of settingsUrls) {
+    if (!isValidAutomergeUrl(url)) continue;
+    logger.info(`prefetch: warming module-settings doc ${url.slice(0, 30)}…`);
+
+    try {
+      const handle = await repo.find<ModuleSettingsDoc>(url);
+
+      // Read whatever modules are already present (may be empty on first load).
+      const prefetchModules = (doc: ModuleSettingsDoc | undefined) => {
+        const modules = doc?.modules ?? [];
+        for (const modUrl of modules) {
+          if (!modUrl || seenModules.has(modUrl)) continue;
+          if (!isValidAutomergeUrl(modUrl)) continue;
+          seenModules.add(modUrl);
+          // Fire-and-forget: repo.find() starts SubductionSource sync.
+          // When the folder doc arrives, prefetch its file sub-docs too.
+          repo
+            .find<FolderDoc>(modUrl)
+            .then((folderHandle: any) => {
+              prefetchFileDocs(folderHandle.doc());
+              folderHandle.on("change", () => {
+                prefetchFileDocs(folderHandle.doc());
+              });
+            })
+            .catch(() => {});
+        }
+      };
+
+      // Prefetch whatever's available immediately.
+      prefetchModules(handle.doc());
+
+      // Also watch for the settings doc to sync — on first load the
+      // modules[] array arrives incrementally.
+      handle.on("change", () => {
+        prefetchModules(handle.doc());
+      });
+    } catch (err: unknown) {
+      logger.warn(`prefetch: failed for ${url}`, err);
+    }
+  }
+
+  logger.info(`prefetch: warmed ${seenModules.size} tool folder docs`);
 }
 
 // Connect client MessagePorts to the repo for sync
@@ -194,6 +276,15 @@ self.addEventListener("message", async (event) => {
       ackPort.close();
     }
     log(`set subduction endpoints: ${urls.join(", ")}`);
+
+    // Eagerly prefetch tool folder docs so Subduction sync is already
+    // in progress by the time the first fetch request arrives.
+    const settingsUrls: string[] = event.data.moduleSettingsUrls ?? [];
+    if (settingsUrls.length > 0) {
+      prefetchToolDocs(settingsUrls).catch((err: unknown) =>
+        console.warn("[sw] prefetch failed:", err)
+      );
+    }
   }
 });
 
