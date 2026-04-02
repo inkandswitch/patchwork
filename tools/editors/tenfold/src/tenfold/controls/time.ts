@@ -12,6 +12,7 @@ const SNAP_ZONE = 0.04   // normalized t zone around 0 for magnetic snap
 export function createTimeControl(
   cc: ControlCtx,
   onTimeUpdate: (t: number) => void,
+  onPause?: () => void,
 ): { draw(dt: number, t: number): void; region: Region; playing: boolean } {
   let playing = true
   let dragging = false
@@ -106,6 +107,7 @@ export function createTimeControl(
         if (Math.hypot(dx, dy) > DRAG_THRESHOLD) {
           dragging = true
           playing = false
+          onPause?.()
         }
       }
 
@@ -119,6 +121,7 @@ export function createTimeControl(
               // Click center while playing → pause at start
               playing = false
               onTimeUpdate(0)
+              onPause?.()
             } else {
               // Click center while paused → resume
               playing = true
@@ -126,6 +129,7 @@ export function createTimeControl(
           } else {
             // Click elsewhere → toggle play/pause
             playing = !wasPlaying
+            if (!playing) onPause?.()
           }
         }
         dragging = false

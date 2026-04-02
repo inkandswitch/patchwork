@@ -15,7 +15,10 @@ export function createControlSurface(
   const waffles = createWaffles(cc)
   const chaosControl = createChaosControl(cc)
   const soundControl = createSoundControl(cc)
-  const timeControl = createTimeControl(cc, onTimeUpdate)
+  const timeControl = createTimeControl(cc, onTimeUpdate, () => {
+    soundControl.on = false
+    chaosControl.on = false
+  })
 
   // Control regions are checked before waffle so clicks in the controls strip
   // don't fall through to the waffle handler.

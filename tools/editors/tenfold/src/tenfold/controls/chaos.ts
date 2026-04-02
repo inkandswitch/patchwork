@@ -141,5 +141,10 @@ export function createChaosControl(cc: ControlCtx): {
     },
   }
 
-  return { draw, region, get on() { return state.on } }
+  return {
+    draw,
+    region,
+    get on() { return state.on },
+    set on(v: boolean) { state.on = v; target = v ? 1 : 0 },
+  }
 }
