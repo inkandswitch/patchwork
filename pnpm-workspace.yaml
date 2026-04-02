@@ -25,15 +25,3 @@ catalog:
   "@types/react-dom": 18.3.1
   react: 18.3.1
   react-dom: 18.3.1
-
-overrides:
-  "@automerge/automerge": 3.2.5
-  "@automerge/automerge-repo": link:../automerge-repo/packages/automerge-repo
-  "@automerge/automerge-repo-storage-indexeddb": 2.6.0-subduction.8
-  "@automerge/automerge-repo-network-messagechannel": 2.6.0-subduction.8
-  "@automerge/automerge-repo-network-websocket": 2.6.0-subduction.8
-  "@automerge/automerge-repo-react-hooks": 2.6.0-subduction.8
-  "@automerge/react": 2.6.0-subduction.8
-  "@automerge/vanillajs": 2.6.0-subduction.8
-  react: 18.3.1
-  react-dom: 18.3.1
