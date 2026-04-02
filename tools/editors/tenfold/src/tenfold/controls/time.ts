@@ -115,9 +115,14 @@ export function createTimeControl(
         if (!dragging) {
           // It was a click
           if (isNearCenter(h)) {
-            // Click center → pause at start
-            playing = false
-            onTimeUpdate(0)
+            if (wasPlaying) {
+              // Click center while playing → pause at start
+              playing = false
+              onTimeUpdate(0)
+            } else {
+              // Click center while paused → resume
+              playing = true
+            }
           } else {
             // Click elsewhere → toggle play/pause
             playing = !wasPlaying
