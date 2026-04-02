@@ -34,6 +34,7 @@ export interface DrawAPI {
   rect(x: number, y: number, w: number, h: number): void
   circle(x: number, y: number, r: number): void
   arc(x: number, y: number, r: number, start?: number, end?: number, ccw?: boolean): void
+  text(str: string, x: number, y: number, size: number, tracking?: number): void
 }
 
 // Context passed to every control module. Getters for measurements that change on resize.
@@ -57,6 +58,7 @@ export interface ControlCtx {
   opts: {
     states: Array<{ q: number; r: number; i: number; x: number; y: number }>
     set(i: number, field: "q" | "r" | "x" | "y" | "i", val: number): void
+    word: string
   }
   getMouseDragged(): Record<string, number>
 }
