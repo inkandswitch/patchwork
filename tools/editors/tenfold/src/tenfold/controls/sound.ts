@@ -1,7 +1,7 @@
 import type { ControlCtx, Region, HitResult } from "./types.ts"
 import { controlBounds } from "./layout.ts"
 
-const GRID_N = 10    // N×N isometric tiles
+const GRID_N = 9     // N×N isometric tiles
 const GRID_CW = 0.9  // tile width in normalized units (relative to control slot)
 
 // Sound switch: an isometric grid plane that animates wave spikes when on.
@@ -45,12 +45,22 @@ export function createSoundControl(cc: ControlCtx): {
         const sx = slotCx + (col - row) * CW
         const sy_base = BASE_Y + (col + row) * CH
         let h = 0
+        const nc = (col / GRID_N - 0.5) * 2
+        const nr = (row / GRID_N - 0.5) * 2
         if (state.on) {
-          const nc = (col / GRID_N - 0.5) * 2
-          const nr = (row / GRID_N - 0.5) * 2
           const amp = AMP_CENTER * Math.exp(-(nc * nc + nr * nr) * AMP_FALLOFF)
           h =
             amp *
+            Math.abs(
+              Math.sin(col * 1.9 + t * 6.28318 * 1) * Math.sin(row * 2.7 + t * 6.28318 * 1) * 0.65 +
+                Math.sin(col * 0.7 + row * 1.9 + t * 6.28318 * 2) * 0.35,
+            )
+        } else {
+          // Quiet version of the active wave — tiny peaks hint at interactivity
+          const amp = AMP_CENTER * Math.exp(-(nc * nc + nr * nr) * AMP_FALLOFF)
+          h =
+            amp *
+            0.18 *
             Math.abs(
               Math.sin(col * 1.9 + t * 6.28318 * 1) * Math.sin(row * 2.7 + t * 6.28318 * 1) * 0.65 +
                 Math.sin(col * 0.7 + row * 1.9 + t * 6.28318 * 2) * 0.35,
