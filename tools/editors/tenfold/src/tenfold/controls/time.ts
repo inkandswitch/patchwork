@@ -2,23 +2,26 @@ import type { ControlCtx, Region, HitResult } from "./types.ts"
 import { controlBounds } from "./layout.ts"
 
 const N_SPOKES = 24
-const LOOP_DURATION = 6 // seconds per cycle
 const TAU = Math.PI * 2
+const DRAG_THRESHOLD = 4 // css pixels before click becomes drag
+const SNAP_ZONE = 0.04   // normalized t zone around 0 for magnetic snap
 
-// Radial spoke wheel — replaces the horizontal clock wave.
-// Spokes radiate from center; thickness and length taper from the "head" (current phase)
-// around to the tail. Click outer ring to pause/play in place. Click center to reset + toggle.
+// Radial spoke wheel — visualizes the current animation time.
+// Click to pause/play. Drag to scrub. Snap to zero when crossing the start.
+// Click the center indicator to pause at t=0.
 export function createTimeControl(
   cc: ControlCtx,
   onTimeUpdate: (t: number) => void,
-): { draw(dt: number): void; region: Region } {
-  let phase = 0       // accumulates in seconds
+): { draw(dt: number, t: number): void; region: Region; playing: boolean } {
   let playing = true
-  let startPhase = 0  // phase at drag start
-  let startKx = 0     // kx at drag start
+  let dragging = false
+  let currentT = 0        // latest t, saved from draw() for use in pointerdown
+  let dragStartT = 0
+  let dragStartKx = 0
+  let scrubT = 0          // current scrubbed value during drag
 
-  function draw(dt: number) {
-    if (playing) phase += dt
+  function draw(_dt: number, t: number) {
+    currentT = t
 
     const { ctx, color } = cc
     const { timeCx: cx, timeCy: cy, timeR } = controlBounds(cc)
@@ -28,7 +31,6 @@ export function createTimeControl(
     const W_MIN = baseStroke
     const W_MAX = baseStroke * 3.5 - 2 * cc.getDpr()
 
-    const t = (phase % LOOP_DURATION) / LOOP_DURATION // 0..1
     const headAngle = t * TAU - Math.PI / 2
 
     ctx.resetTransform()
@@ -53,17 +55,34 @@ export function createTimeControl(
       ctx.stroke()
     }
 
-    // Center indicator: short line pointing up
-    const R_LINE = R_INNER * 0.9
-    ctx.lineWidth = baseStroke
-    ctx.beginPath()
-    ctx.moveTo(cx, cy)
-    ctx.lineTo(cx, cy - R_LINE)
-    ctx.stroke()
+    // Pause indicator: two vertical bars at center
+    if (!playing) {
+      const barH = R_INNER * 0.5
+      const barGap = R_INNER * 0.08 + baseStroke
+      ctx.lineWidth = baseStroke * 1.5
+      ctx.beginPath()
+      ctx.moveTo(cx - barGap, cy - barH / 2)
+      ctx.lineTo(cx - barGap, cy + barH / 2)
+      ctx.moveTo(cx + barGap, cy - barH / 2)
+      ctx.lineTo(cx + barGap, cy + barH / 2)
+      ctx.stroke()
+    }
+  }
+
+  // Check if a hit is near the center indicator (inner circle area)
+  function isNearCenter(h: HitResult): boolean {
+    const { timeCx, timeCy, timeR } = controlBounds(cc)
+    const pixW = cc.getPixW()
+    const dpr = cc.getDpr()
+    // Convert hit kx/ly to pixel coords
+    const px = (cc.padding + cc.pitch + h.kx * (2 + cc.gap)) * pixW
+    const py = (cc.padding + cc.pitch + h.ly) * pixW
+    const dist = Math.hypot(px - timeCx, py - timeCy)
+    return dist < timeR * 0.35
   }
 
   const region: Region = {
-    cursor: "ew-resize",
+    cursor: (h: HitResult) => isNearCenter(h) ? "pointer" : "ew-resize",
     test: (h: HitResult) =>
       (h.i === 4 || h.i === 5) &&
       h.kx >= controlBounds(cc).timeKxStart &&
@@ -71,16 +90,73 @@ export function createTimeControl(
       h.ly > cc.controlsStart &&
       h.ly <= cc.controlsEnd,
     pointerdown(h: HitResult) {
-      startPhase = phase
-      startKx = h.kx
+      const wasPlaying = playing
+      dragging = false
+      dragStartT = currentT
+      dragStartKx = h.kx
+      scrubT = currentT
+
+      const startX = cc.getMouseDragged()?.x ?? 0
+      const startY = cc.getMouseDragged()?.y ?? 0
+
+      const onMove = (e: PointerEvent) => {
+        if (dragging) return // already promoted to drag
+        const dx = e.clientX - startX
+        const dy = e.clientY - startY
+        if (Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+          dragging = true
+          playing = false
+        }
+      }
+
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove)
+        window.removeEventListener("pointerup", onUp)
+        if (!dragging) {
+          // It was a click
+          if (isNearCenter(h)) {
+            // Click center → pause at start
+            playing = false
+            onTimeUpdate(0)
+          } else {
+            // Click elsewhere → toggle play/pause
+            playing = !wasPlaying
+          }
+        }
+        dragging = false
+      }
+
+      window.addEventListener("pointermove", onMove)
+      window.addEventListener("pointerup", onUp, { once: true })
     },
     frame() {
+      if (!dragging) {
+        // Hold t steady while pointer is down but not yet dragging
+        onTimeUpdate(scrubT)
+        return
+      }
       const kx = cc.getMouseDragged().kx
-      // kx spans 0-1 across the full kaoss pad; map displacement to seconds
-      phase = (((startPhase + (kx - startKx) * LOOP_DURATION) % LOOP_DURATION) + LOOP_DURATION) % LOOP_DURATION
-      onTimeUpdate(phase / LOOP_DURATION)
+      // Map horizontal displacement to time offset (full kx range = one full cycle)
+      let newT = dragStartT + (kx - dragStartKx)
+      newT = ((newT % 1) + 1) % 1
+
+      // Magnetic snap near zero (the "start" / centerline)
+      const distToZero = Math.min(newT, 1 - newT)
+      if (distToZero < SNAP_ZONE) {
+        newT = 0
+      }
+
+      scrubT = newT
+      onTimeUpdate(newT)
     },
   }
 
-  return { draw, region }
+  const control = {
+    draw,
+    region,
+    get playing() { return playing },
+    set playing(v: boolean) { playing = v },
+  }
+
+  return control
 }
