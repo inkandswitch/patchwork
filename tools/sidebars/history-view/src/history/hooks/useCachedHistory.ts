@@ -92,8 +92,8 @@ export function useCachedHistory(
       return;
     } else {
       // update in case there have been changes since the history doc was last loaded
-      // TODO: we should check the history doc staleness & throttle
-      dispatchTask(source.url);
+      // TODO: we should check the history doc staleness & update if needed, but we don't want to dispatch a task every time the doc loads if not.
+      // dispatchTask(source.url);
     }
   });
 
