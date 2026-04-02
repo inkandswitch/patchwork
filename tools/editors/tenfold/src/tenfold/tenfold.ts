@@ -39,6 +39,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
   const timelineStart = 0.36 // ly where controls strip begins
   const timelineEnd = 1.0 // ly where controls strip ends (~3/4 of cell height)
   const states = {} as Record<number, Record<number, any>>
+  const erroredFns = new Map<number, Function>() // track errored letter fns to suppress console flood
   const useAudio = false
 
   // ANIMATION STATE
@@ -515,11 +516,18 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
       willFill = false
       ctx.beginPath()
 
-      try {
-        opts.letters[i]?.(api, { ...s, t: mod(t), s: state })
+      const letterFn = opts.letters[i]
+      if (letterFn && erroredFns.get(i) === letterFn) {
+        // Letter previously errored and hasn't been recompiled — show red, skip execution
+        ctx.strokeStyle = errColor
+        ctx.fillStyle = errColor
+      } else try {
+        letterFn?.(api, { ...s, t: mod(t), s: state })
+        erroredFns.delete(i)
       } catch (error) {
         ctx.strokeStyle = errColor
         ctx.fillStyle = errColor
+        erroredFns.set(i, letterFn!)
         console.error(`error in ${"INKSWiTCH"[i]}${(s.i + "").padStart(2, "0")}\n\n`, error)
       }
 
