@@ -35,7 +35,7 @@ export function createControlSurface(
     waffles.draw()
     chaosControl.draw(dt)
     soundControl.draw(dt)
-    timeControl.draw(dt)
+    timeControl.draw(dt, t)
   }
 
   // Expose control state so other systems (audio, letter rendering) can read it
@@ -44,5 +44,7 @@ export function createControlSurface(
     regions,
     get chaosOn() { return chaosControl.on },
     get soundOn() { return soundControl.on },
+    get playing() { return timeControl.playing },
+    set playing(v: boolean) { timeControl.playing = v },
   }
 }

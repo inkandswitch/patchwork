@@ -241,7 +241,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     waffleEnd,
     controlsStart: timelineStart,
     controlsEnd: timelineEnd,
-    opts,
+    opts: { get states() { return opts.states }, set: (i: number, f: any, v: number) => opts.set(i, f, v), word: opts.word ?? "INKSWITCH" },
     getMouseDragged: () => mouseDragged,
   }
   const controlSurface = createControlSurface(controlCtx, (newT: number) => {
@@ -475,7 +475,7 @@ export default function createTenfold(opts: CreateTenfoldOptions) {
     let newT = ms / 1000 / cycleTime
     lastT ??= newT
     if (dragRegion?.frame) dragRegion.frame()
-    else t += newT - lastT
+    else if (controlSurface.playing) t += newT - lastT
     lastT = newT
 
     api.setCtx(ctx)
