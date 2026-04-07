@@ -115,10 +115,19 @@ function onModuleLoaded(name: string, mod: any) {
   }
 }
 
+// Dev tool overrides: injected at build time from dev-tools.json (if present).
+// Maps production Automerge URLs to dev URLs for local tool development.
+declare const __DEV_TOOLS__: { overrides: Record<string, string> };
+const devOverrides = __DEV_TOOLS__.overrides;
+if (Object.keys(devOverrides).length > 0) {
+  console.log("[dev mode] Active tool overrides:", devOverrides);
+}
+
 const moduleWatcher = new ModuleWatcher(
   repo,
   [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
-  onModuleLoaded
+  onModuleLoaded,
+  devOverrides
 );
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };

@@ -28,17 +28,20 @@ export class ModuleWatcher {
   handles: DocHandle<ModuleSettingsDoc>[] | undefined;
   doneLoading: Promise<void>;
   #watchedModules = new Set<string>();
+  #overrides: Record<string, string>;
 
   onLoad: (name: string, mod: any) => void;
 
   constructor(
     repo: Repo,
     urls: AutomergeUrl | AutomergeUrl[],
-    callback: (name: string, mod: any) => void
+    callback: (name: string, mod: any) => void,
+    overrides: Record<string, string> = {}
   ) {
     this.repo = repo;
     this.urls = Array.isArray(urls) ? urls : [urls];
     this.onLoad = callback;
+    this.#overrides = overrides;
     this.doneLoading = this.init();
   }
 
@@ -139,7 +142,9 @@ export class ModuleWatcher {
     const promises = this.handles.map((handle) => {
       const doc = handle.doc();
       const { modules = [] } = doc;
-      return this.loadModules(modules);
+      // Apply dev overrides: substitute production URLs with dev URLs
+      const resolved = modules.map(m => (this.#overrides[m] ?? m) as string);
+      return this.loadModules(resolved);
     });
     await Promise.all(promises);
   }

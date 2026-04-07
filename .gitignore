@@ -10,4 +10,5 @@ dummy-non-existing-folder/
 **/.pnpm-store/
 .claude/
 .pushwork/
+sites/tiny-patchwork/dev-tools.json
 dist/

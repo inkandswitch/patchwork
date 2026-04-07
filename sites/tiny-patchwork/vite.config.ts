@@ -2,6 +2,15 @@ import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@inkandswitch/patchwork-bootloader/vite";
 import tailwindcss from "@tailwindcss/vite";
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const devToolsPath = resolve(__dirname, "dev-tools.json");
+const devToolsConfig = process.env.DEV_TOOLS && existsSync(devToolsPath)
+  ? readFileSync(devToolsPath, "utf-8")
+  : '{"overrides":{}}';
 
 export default defineConfig({
   plugins: [
@@ -31,6 +40,9 @@ export default defineConfig({
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "credentialless",
     },
+  },
+  define: {
+    __DEV_TOOLS__: devToolsConfig,
   },
   build: {
     target: "firefox137",

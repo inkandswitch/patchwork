@@ -16,6 +16,7 @@
     "preview": "pnpm --filter gaios preview",
     "publish-packages": "pnpm -r publish --access=public",
     "test": "pnpm --filter \"./os\" test",
+    "tiny-dev-overrides": "node scripts/dev-overrides.mjs . > sites/tiny-patchwork/dev-tools.json.tmp && node -e 'JSON.parse(require(\"fs\").readFileSync(\"sites/tiny-patchwork/dev-tools.json.tmp\",\"utf8\"))' && mv sites/tiny-patchwork/dev-tools.json.tmp sites/tiny-patchwork/dev-tools.json || { echo 'tiny-dev-overrides failed:'; cat sites/tiny-patchwork/dev-tools.json.tmp; rm -f sites/tiny-patchwork/dev-tools.json.tmp; exit 1; }",
     "tsc": "pnpm -r exec tsc"
   },
   "pnpm": {
