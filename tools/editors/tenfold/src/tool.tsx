@@ -36,7 +36,7 @@ function makeName(idx: number) {
   return (idx + "").padStart(2, "0") + ".js"
 }
 
-type TextFile = { content: string }
+type TextFile = { content: string; shareId?: string }
 
 declare global {
   interface Window {
@@ -46,9 +46,9 @@ declare global {
   }
 }
 
+// Creates a placeholder letter doc with a shareId field, so the registry doesn't need
+// to be synced yet. resolveSharedLetter() fills in the real code once it arrives.
 async function coshare(tenfolderUrl: AutomergeUrl) {
-  // Handle ?letter=&share= URLs: import shared letter code.
-  // Read params once, store in a signal, then wait for data to be ready.
   const params = new URLSearchParams(window.location.search)
   let share = params.get("letter") && params.get("share") ? { letter: params.get("letter")!, shareId: params.get("share")! } : null
   if (!share) return
@@ -57,21 +57,16 @@ async function coshare(tenfolderUrl: AutomergeUrl) {
   const lettersFolderHandle = await self.repo.find<FolderDoc>(tenfolderHandle.doc().docs.find((doc) => doc.name == "letters")?.url!)
   const letterFolderHandle = await self.repo.find<FolderDoc>(lettersFolderHandle.doc().docs.find((doc) => doc.name == share.letter)?.url!)
   const indexInLetter = letterFolderHandle.doc().docs.filter((doc) => doc.name.endsWith(".js")).length
-  const registryHandle = await self.repo.find<Record<string, ImmutableString>>(sharedLettersUrl)
-  const registry = registryHandle.doc()
-  if (!(share.shareId in registry)) {
-    alert("Shared letter not found. It may have been deleted, or the share ID may be incorrect.")
-    return
-  }
-  const code = registry[share.shareId]
   const name = (indexInLetter + "").padStart(2, "0") + ".js"
 
+  // shareId persists in the doc so resolveSharedLetter works even after a restart.
   const newDoc = self.repo.create({
     "@patchwork": { type: "file" },
     mimeType: "application/javascript",
     extension: "js",
     metadata: { permissions: 420 },
-    content: code.toString(),
+    content: 'text("loading", 0, 0)',
+    shareId: share.shareId,
     name,
   })
 
@@ -89,6 +84,45 @@ async function coshare(tenfolderUrl: AutomergeUrl) {
   window.history.replaceState({}, "", cleanUrl.toString())
 
   return [+share.letter[0], indexInLetter]
+}
+
+// Guards against duplicate listeners when the reactive effect re-fires.
+const resolvingShares = new Set<string>()
+
+// Waits for shareId to appear in the shared-letters registry, then replaces the
+// placeholder content. Uses updateText because direct assignment causes Automerge
+// patch errors on these doc types.
+async function resolveSharedLetter(handle: DocHandle<TextFile>, shareId: string) {
+  if (resolvingShares.has(shareId)) return
+  resolvingShares.add(shareId)
+
+  const registryHandle = await self.repo.find<Record<string, ImmutableString>>(sharedLettersUrl)
+
+  const tryLoad = () => {
+    const registry = registryHandle.doc()
+    if (shareId in registry) {
+      // Don't overwrite if another client already resolved this.
+      if (!handle.doc()?.shareId) {
+        resolvingShares.delete(shareId)
+        return true
+      }
+      const code = registry[shareId].toString()
+      handle.change((d: any) => {
+        self.Automerge.updateText(d, ["content"], code)
+        d.shareId = null
+      })
+      resolvingShares.delete(shareId)
+      return true
+    }
+    return false
+  }
+
+  if (tryLoad()) return
+
+  const onChange = () => {
+    if (tryLoad()) registryHandle.off("change", onChange)
+  }
+  registryHandle.on("change", onChange)
 }
 
 export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; element: PatchworkViewElement }) {
@@ -110,6 +144,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
       props.handle.change((doc) => {
         doc.states[letterNumber].i = letterIndex
       })
+      setEditing(letterNumber)
     }
   })
 
@@ -131,6 +166,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
   const counts = createMutable<number[]>([])
   const letterFolderHandles = createMutable<DocHandle<FolderDoc>[]>([])
   const codeHandles = createMutable<DocHandle<TextFile>[]>([])
+  const loadingLetters = createMutable<boolean[]>([])
 
   createEffect(() => {
     for (const [i, folderName] of Object.entries(folders())) {
@@ -144,6 +180,14 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
         const codeUrl = () => letterFolder()?.docs.find((doc) => doc.name == makeName(tenfold.states[letterIndex].i))?.url
         const [codeDoc, codeDocHandle] = useDocument<TextFile>(codeUrl, props.element)
         codeHandles[letterIndex] = codeDocHandle()!
+        // Kick off shared letter resolution; also tracks loading state for read-only editor.
+        createEffect(() => {
+          const doc = codeDoc()
+          const handle = codeDocHandle()
+          const isLoading = !!doc?.shareId
+          loadingLetters[letterIndex] = isLoading
+          if (isLoading && handle) resolveSharedLetter(handle, doc!.shareId!)
+        })
         createEffect((prev: string | undefined) => {
           const content = codeDoc()?.content
           if (content == undefined) {
@@ -241,6 +285,11 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
     return idx != null ? codeHandles[idx] : undefined
   }
 
+  const editingLoading = () => {
+    const idx = editing()
+    return idx != null && !!loadingLetters[idx]
+  }
+
   const typescriptPath = () => {
     const idx = editing()
     return idx != null ? `/letters/${folders()[idx]}/${tenfold.states[idx].i}.js` : ""
@@ -334,6 +383,7 @@ export default function TenfoldExperience(props: { handle: DocHandle<Tenfold>; e
         <TenfoldEditor
           editing={editing}
           editingHandle={editingHandle}
+          loading={editingLoading}
           typescriptPath={typescriptPath}
           newLetter={newLetter}
           share={share}

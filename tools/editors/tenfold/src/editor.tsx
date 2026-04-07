@@ -19,6 +19,7 @@ type TextFile = { content: string }
 export default function TenfoldEditor(props: {
   editing: Accessor<number | null>
   editingHandle: Accessor<DocHandle<TextFile> | undefined>
+  loading: Accessor<boolean>
   typescriptPath: Accessor<string>
   newLetter: () => void
   share: () => void
@@ -31,6 +32,7 @@ export default function TenfoldEditor(props: {
   let editorView: EditorView | undefined
 
   const historyCompartment = new Compartment()
+  const readOnlyCompartment = new Compartment()
 
   const tsFacetCompartment = new Compartment()
 
@@ -129,6 +131,12 @@ export default function TenfoldEditor(props: {
                     }, 1000)
                   })
                 )
+                // Read-only while a shared letter is loading.
+                createEffect(() => {
+                  view.dispatch({
+                    effects: readOnlyCompartment.reconfigure(props.loading() ? EditorState.readOnly.of(true) : []),
+                  })
+                })
               }}
               extensions={[
                 drawSelection(),
@@ -159,6 +167,7 @@ export default function TenfoldEditor(props: {
                   ...searchKeymap,
                 ]),
                 historyCompartment.of([history()]),
+                readOnlyCompartment.of([]),
                 javascript(),
                 noirTheme,
                 tsFacetCompartment.of(tsFacet.of({ worker: props.worker, path: props.typescriptPath() })),
