@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Publish all Patchwork tools: sync each tool's built artifacts via darn
+# Publish all Patchwork tools: sync each tool's built artifacts via pushwork
 # and register them in the module settings doc.
 #
 # By default, all tools sync in parallel. Use --verbose for sequential
@@ -9,13 +9,13 @@
 # Usage:
 #   pnpm publish-all-tools
 #   pnpm publish-all-tools --verbose
-#   DARN=/path/to/darn pnpm publish-all-tools
+#   PUSHWORK=/path/to/pushwork pnpm publish-all-tools
 #   SKIP_REGISTER=1 pnpm publish-all-tools  # sync only, no registration
 
 set -euo pipefail
 
-DARN="${DARN:-darn}"
-SETTINGS_URL="${SETTINGS_URL:-automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3}"
+PUSHWORK="${PUSHWORK:-pushwork}"
+SETTINGS_URL="${SETTINGS_URL:-automerge:2LZBb891v37vggWYQPJRbYdyBGGE}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOOLS_DIR="$(dirname "$SCRIPT_DIR")/tools"
 
@@ -44,6 +44,7 @@ echo "Found ${#TOOL_DIRS[@]} tools"
 URL_DIR=$(mktemp -d)
 trap 'rm -rf "$URL_DIR"' EXIT
 export URL_DIR
+export PUSHWORK
 
 FAILED=()
 
@@ -79,10 +80,8 @@ else
 
   # Wait for jobs as they finish (bash 5.1+; wait -n -p requires 5.1)
   while [ ${#PIDS[@]} -gt 0 ]; do
-    # wait -n -p sets FINISHED_PID to whichever PID completed
     if wait -n -p FINISHED_PID "${!PIDS[@]}" 2>/dev/null; then
       dir="${PIDS[$FINISHED_PID]}"
-      tool_name="$(basename "$dir")"
       DONE=$((DONE + 1))
       echo "  [$DONE/$TOTAL] ok  $dir"
     else
@@ -121,14 +120,13 @@ for dir in "${TOOL_DIRS[@]}"; do
 done
 
 # ── Register all URLs in one batch ─────────────────────────────────────
-# Intentionally clears and rebuilds the module list from scratch so it
-# matches exactly what was successfully published in this run. Tools that
-# failed to sync above are excluded from the final list.
+# Clears and rebuilds the module list from scratch so it matches exactly
+# what was successfully published in this run. Tools that failed to sync
+# are excluded from the final list.
 if [ "${SKIP_REGISTER:-0}" != "1" ] && [ ${#URLS[@]} -gt 0 ]; then
   echo
   echo "=== Registering ${#URLS[@]} modules in $SETTINGS_URL ==="
-  "$DARN" doc edit "$SETTINGS_URL" clear modules || true
-  "$DARN" doc edit "$SETTINGS_URL" --create append modules "${URLS[@]}"
+  node "$SCRIPT_DIR/register-modules.mjs" "$SETTINGS_URL" "${URLS[@]}"
   echo "  Registered ${#URLS[@]} modules."
 fi
 

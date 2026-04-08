@@ -67,7 +67,7 @@ repo.subscribeToRemotes([
 
 // Published tools are registered in this module settings doc by publish-all-tools.
 const defaultToolsUrl =
-  "automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3" as AutomergeUrl;
+  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
 
 const result = await setup({
   moduleSettingsUrls: [defaultToolsUrl],

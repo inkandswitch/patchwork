@@ -8,7 +8,7 @@
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r --filter '!tenfold.inkandswitch.com' --workspace-concurrency=1 build",
     "clean": "rm -rf **/node_modules **/dist",
-    "darn-clean": "bash scripts/darn-clean.sh",
+    "pushwork-clean": "bash scripts/pushwork-clean.sh",
     "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
@@ -25,10 +25,11 @@
     "overrides": {
       "@automerge/automerge": "catalog:",
       "@automerge/automerge-repo": "catalog:",
-      "@automerge/automerge-repo-storage-indexeddb": "catalog:",
       "@automerge/automerge-repo-network-messagechannel": "catalog:",
       "@automerge/automerge-repo-network-websocket": "catalog:",
       "@automerge/automerge-repo-react-hooks": "catalog:",
+      "@automerge/automerge-repo-storage-indexeddb": "catalog:",
+      "@automerge/automerge-subduction": "catalog:",
       "@automerge/react": "catalog:",
       "@automerge/vanillajs": "catalog:"
     }
@@ -36,6 +37,9 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-storage-nodefs": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
     "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
     "concurrently": "^9.1.2",
