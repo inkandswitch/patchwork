@@ -176,6 +176,12 @@ interface ModuleSettingsDoc {
 async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
   const repo = await getRepo();
   const logger = await slog;
+
+  // Wait for the Subduction WebSocket to be connected before calling
+  // repo.find() on remote-only docs. Without this, DocumentQuery
+  // transitions to "unavailable" immediately because no peers are
+  // connected yet.
+  await repo.networkSubsystem.whenReady();
   const seenModules = new Set<string>();
   const seenFiles = new Set<string>();
 
@@ -201,6 +207,9 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
     try {
       const handle = await repo.find<ModuleSettingsDoc>(url);
 
+      // Collect promises so we can wait for all folder docs to resolve.
+      const folderDocPromises: Promise<void>[] = [];
+
       // Read whatever modules are already present (may be empty on first load).
       const prefetchModules = (doc: ModuleSettingsDoc | undefined) => {
         const modules = doc?.modules ?? [];
@@ -208,9 +217,9 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
           if (!modUrl || seenModules.has(modUrl)) continue;
           if (!isValidAutomergeUrl(modUrl)) continue;
           seenModules.add(modUrl);
-          // Fire-and-forget: repo.find() starts SubductionSource sync.
-          // When the folder doc arrives, prefetch its file sub-docs too.
-          repo
+          // Wait for each folder doc to actually resolve from Subduction.
+          // When it arrives, prefetch its file sub-docs too.
+          const p = repo
             .find<FolderDoc>(modUrl)
             .then((folderHandle: any) => {
               prefetchFileDocs(folderHandle.doc());
@@ -219,6 +228,7 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
               });
             })
             .catch(() => {});
+          folderDocPromises.push(p);
         }
       };
 
@@ -230,12 +240,36 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
       handle.on("change", () => {
         prefetchModules(handle.doc());
       });
+
+      // Wait for folder docs to sync from Subduction, with a timeout.
+      // Without this, the fetch handler receives requests before the SW
+      // has the folder docs, causing hangs. The timeout prevents blocking
+      // forever if some docs never sync.
+      if (folderDocPromises.length > 0) {
+        const PREFETCH_TIMEOUT_MS = 15_000;
+        const timeout = new Promise<void>((resolve) =>
+          setTimeout(resolve, PREFETCH_TIMEOUT_MS)
+        );
+        // Race each promise against the timeout individually so we don't
+        // wait the full timeout if most resolve quickly.
+        const timedPromises = folderDocPromises.map((p) =>
+          Promise.race([
+            p.then(() => "ok" as const),
+            timeout.then(() => "timeout" as const),
+          ])
+        );
+        const results = await Promise.all(timedPromises);
+        const ok = results.filter((r) => r === "ok").length;
+        const timedOut = results.filter((r) => r === "timeout").length;
+        logger.info(
+          `prefetch: ${ok}/${folderDocPromises.length} tool folder docs ready` +
+            (timedOut > 0 ? ` (${timedOut} timed out)` : "")
+        );
+      }
     } catch (err: unknown) {
       logger.warn(`prefetch: failed for ${url}`, err);
     }
   }
-
-  logger.info(`prefetch: warmed ${seenModules.size} tool folder docs`);
 }
 
 // Connect client MessagePorts to the repo for sync

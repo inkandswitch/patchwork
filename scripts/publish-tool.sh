@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
-# Publish a single Patchwork tool: initialize (if needed) and sync via darn.
+# Publish a single Patchwork tool: initialize (if needed) and sync via pushwork.
 #
 # Usage:
 #   pnpm publish-tool tools/toolbar/doc-title
-#   DARN=/path/to/darn pnpm publish-tool tools/toolbar/doc-title
+#   PUSHWORK=/path/to/pushwork pnpm publish-tool tools/toolbar/doc-title
 #
 # Environment:
-#   DARN      Path to darn binary (default: darn)
+#   PUSHWORK  Path to pushwork binary (default: pushwork)
 #   URL_DIR   If set, write the tool's automerge URL to $URL_DIR/<tool-name>
 
 set -euo pipefail
 
-DARN="${DARN:-darn}"
+PUSHWORK="${PUSHWORK:-pushwork}"
 TOOL_PATH="${1:-.}"
 
 cd "$TOOL_PATH"
@@ -20,16 +20,16 @@ TOOL_NAME="$(basename "$PWD")"
 echo "Publishing $TOOL_NAME..."
 
 # Init if needed
-if [ ! -f .darn ]; then
-  echo "  No .darn workspace found, initializing..."
-  "$DARN" init --peer wss://subduction.sync.inkandswitch.com
+if [ ! -d .pushwork ]; then
+  echo "  No .pushwork directory found, initializing..."
+  "$PUSHWORK" init --sub
 fi
 
 # Sync files to server
-"$DARN" sync --force
+"$PUSHWORK" sync --sub
 
 # Read the tool's automerge URL
-TOOL_URL=$("$DARN" info --porcelain | grep '^root_dir_id' | cut -f2)
+TOOL_URL=$("$PUSHWORK" url)
 echo "  Synced: $TOOL_URL"
 
 # Write URL to collection directory if requested

@@ -1,28 +1,29 @@
 #!/usr/bin/env bash
 #
-# Publish all Patchwork tools: sync each tool's built artifacts via darn
+# Publish all Patchwork tools: sync each tool's built artifacts via pushwork
 # and register them in the module settings doc.
 #
-# By default, all tools sync in parallel. Use --verbose for sequential
-# output with full per-tool visibility.
+# By default, tools sync sequentially (reliable). Use --parallel for
+# concurrent sync (faster but may upload incomplete data due to a
+# pushwork head-stability polling issue with concurrent Subduction syncs).
 #
 # Usage:
-#   pnpm publish-all-tools
-#   pnpm publish-all-tools --verbose
-#   DARN=/path/to/darn pnpm publish-all-tools
-#   SKIP_REGISTER=1 pnpm publish-all-tools  # sync only, no registration
+#   pnpm publish-all-tools                 # sequential (default, reliable)
+#   pnpm publish-all-tools --parallel      # concurrent (faster, less reliable)
+#   PUSHWORK=/path/to/pushwork pnpm publish-all-tools
+#   SKIP_REGISTER=1 pnpm publish-all-tools # sync only, no registration
 
 set -euo pipefail
 
-DARN="${DARN:-darn}"
-SETTINGS_URL="${SETTINGS_URL:-automerge:3EpoPqZxz1AfgtUqJBJ65udPF7C3}"
+PUSHWORK="${PUSHWORK:-pushwork}"
+SETTINGS_URL="${SETTINGS_URL:-automerge:415R9K4Jde4ByU94X8fUDUxy2tFW}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOOLS_DIR="$(dirname "$SCRIPT_DIR")/tools"
 
-VERBOSE=0
+MODE="sequential"
 for arg in "$@"; do
   case "$arg" in
-    --verbose) VERBOSE=1 ;;
+    --parallel) MODE="parallel" ;;
   esac
 done
 
@@ -39,27 +40,39 @@ if [ ${#TOOL_DIRS[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Found ${#TOOL_DIRS[@]} tools"
+echo "Found ${#TOOL_DIRS[@]} tools (mode: $MODE)"
 
 URL_DIR=$(mktemp -d)
 trap 'rm -rf "$URL_DIR"' EXIT
 export URL_DIR
+export PUSHWORK
 
 FAILED=()
 
-if [ "$VERBOSE" = 1 ]; then
-  # ── Sequential mode: full per-tool output ──────────────────────────
+if [ "$MODE" = "sequential" ]; then
+  # ── Sequential mode (default): one tool at a time ──────────────────
+  # Reliable — each pushwork sync completes fully before the next starts.
+  # Avoids the head-stability polling issue with concurrent Subduction syncs.
+  TOTAL=${#TOOL_DIRS[@]}
+  DONE=0
+
   for dir in "${TOOL_DIRS[@]}"; do
-    echo "=== $dir ==="
-    if bash "$SCRIPT_DIR/publish-tool.sh" "$TOOLS_DIR/$dir"; then
-      :
+    DONE=$((DONE + 1))
+    if bash "$SCRIPT_DIR/publish-tool.sh" "$TOOLS_DIR/$dir" > /dev/null 2>&1; then
+      tool_name="$(basename "$dir")"
+      url=""
+      if [ -f "$URL_DIR/$tool_name" ]; then
+        url=" -> $(cat "$URL_DIR/$tool_name")"
+      fi
+      echo "  [$DONE/$TOTAL] ok  $dir$url"
     else
       FAILED+=("$dir")
+      echo "  [$DONE/$TOTAL] FAIL  $dir" >&2
     fi
-    echo
   done
 else
-  # ── Parallel mode (default): all tools sync concurrently ───────────
+  # ── Parallel mode: all tools sync concurrently ─────────────────────
+  # Faster but may upload incomplete data for some tools.
   LOG_DIR="$URL_DIR/logs"
   mkdir -p "$LOG_DIR"
 
@@ -77,12 +90,9 @@ else
 
   echo "Syncing $TOTAL tools in parallel..."
 
-  # Wait for jobs as they finish (bash 5.1+; wait -n -p requires 5.1)
   while [ ${#PIDS[@]} -gt 0 ]; do
-    # wait -n -p sets FINISHED_PID to whichever PID completed
     if wait -n -p FINISHED_PID "${!PIDS[@]}" 2>/dev/null; then
       dir="${PIDS[$FINISHED_PID]}"
-      tool_name="$(basename "$dir")"
       DONE=$((DONE + 1))
       echo "  [$DONE/$TOTAL] ok  $dir"
     else
@@ -121,14 +131,10 @@ for dir in "${TOOL_DIRS[@]}"; do
 done
 
 # ── Register all URLs in one batch ─────────────────────────────────────
-# Intentionally clears and rebuilds the module list from scratch so it
-# matches exactly what was successfully published in this run. Tools that
-# failed to sync above are excluded from the final list.
 if [ "${SKIP_REGISTER:-0}" != "1" ] && [ ${#URLS[@]} -gt 0 ]; then
   echo
   echo "=== Registering ${#URLS[@]} modules in $SETTINGS_URL ==="
-  "$DARN" doc edit "$SETTINGS_URL" clear modules || true
-  "$DARN" doc edit "$SETTINGS_URL" --create append modules "${URLS[@]}"
+  node "$SCRIPT_DIR/register-modules.mjs" "$SETTINGS_URL" "${URLS[@]}"
   echo "  Registered ${#URLS[@]} modules."
 fi
 
