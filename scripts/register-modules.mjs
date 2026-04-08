@@ -38,29 +38,33 @@ const SUBDUCTION_SERVER =
 const SYNC_TIMEOUT = 30_000;
 
 async function main() {
-  // Initialize Subduction Wasm. When automerge-repo is linked locally,
-  // the Repo imports subduction/slim from its own pnpm-resolved copy.
-  // We must init that EXACT Wasm binary via its node.js entry point,
-  // using the real filesystem path (not symlink) so the ESM module
-  // cache shares the same instance the Repo will use.
+  // Initialize Subduction Wasm before constructing the Repo.
+  // The Repo constructor imports @automerge/automerge-subduction/slim,
+  // which may resolve to a different pnpm store path than the bare
+  // @automerge/automerge-subduction specifier. We must init the EXACT
+  // copy that the Repo will use.
+  //
+  // Strategy: resolve the slim entry point from the Repo's perspective
+  // (using createRequire from the Repo's dist directory), then import
+  // the corresponding node.js init entry point via its real filesystem path.
   {
+    const { createRequire } = await import("module");
     const { realpathSync } = await import("fs");
-    const linkedSubduction = join(
-      rootDir,
-      "..",
-      "automerge-repo",
-      "node_modules",
-      "@automerge",
-      "automerge-subduction",
-      "dist",
-      "esm",
-      "node.js"
-    );
     try {
-      const realPath = realpathSync(linkedSubduction);
+      // Find where @automerge/automerge-repo lives
+      const repoRequire = createRequire(
+        await import.meta.resolve("@automerge/automerge-repo")
+      );
+      // Resolve the slim entry point from the Repo's perspective
+      const slimPath = repoRequire.resolve(
+        "@automerge/automerge-subduction/slim"
+      );
+      // Navigate to the node.js init entry point in the same package
+      const nodeInitPath = join(dirname(slimPath), "node.js");
+      const realPath = realpathSync(nodeInitPath);
       await import("file://" + realPath);
     } catch {
-      // Not using a linked repo — use the local copy
+      // Fallback: import the bare specifier (works if there's only one copy)
       await import("@automerge/automerge-subduction");
     }
   }
