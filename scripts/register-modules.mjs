@@ -28,8 +28,9 @@ if (args.length < 2) {
   process.exit(1);
 }
 
-const settingsUrl = args[0];
-const toolUrls = args.slice(1);
+const createNew = args[0] === "--create";
+const settingsUrl = createNew ? null : args[0];
+const toolUrls = createNew ? args.slice(1) : args.slice(1);
 
 const SUBDUCTION_SERVER =
   process.env.SUBDUCTION_SERVER || "wss://subduction.sync.inkandswitch.com";
@@ -37,17 +38,31 @@ const SUBDUCTION_SERVER =
 const SYNC_TIMEOUT = 30_000;
 
 async function main() {
-  // Initialize Subduction Wasm (must happen before Repo construction).
-  // Import from both the local copy AND the linked automerge-repo's copy
-  // to ensure the Wasm singleton is initialized regardless of which copy
-  // the Repo constructor resolves.
-  await import("@automerge/automerge-subduction");
-  try {
-    // When automerge-repo is linked locally, it resolves subduction from
-    // its own node_modules. Initialize that copy too.
-    await import("../automerge-repo/node_modules/@automerge/automerge-subduction/dist/esm/node.js");
-  } catch {
-    // Not running with a linked repo — the primary import is sufficient.
+  // Initialize Subduction Wasm. When automerge-repo is linked locally,
+  // the Repo imports subduction/slim from its own pnpm-resolved copy.
+  // We must init that EXACT Wasm binary via its node.js entry point,
+  // using the real filesystem path (not symlink) so the ESM module
+  // cache shares the same instance the Repo will use.
+  {
+    const { realpathSync } = await import("fs");
+    const linkedSubduction = join(
+      rootDir,
+      "..",
+      "automerge-repo",
+      "node_modules",
+      "@automerge",
+      "automerge-subduction",
+      "dist",
+      "esm",
+      "node.js"
+    );
+    try {
+      const realPath = realpathSync(linkedSubduction);
+      await import("file://" + realPath);
+    } catch {
+      // Not using a linked repo — use the local copy
+      await import("@automerge/automerge-subduction");
+    }
   }
 
   const { Repo } = await import("@automerge/automerge-repo");
@@ -72,58 +87,68 @@ async function main() {
   let handle;
   let created = false;
 
-  // Try to find the existing settings document
-  console.log(`Finding settings doc: ${settingsUrl}`);
-  try {
-    handle = await Promise.race([
-      repo.find(settingsUrl),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Timed out loading settings doc")),
-          SYNC_TIMEOUT
-        )
-      ),
-    ]);
-
-    const doc = handle.doc();
+  if (createNew) {
+    // Create a fresh settings doc
     console.log(
-      `Loaded settings doc (current modules: ${(doc.modules || []).length})`
+      `Creating new module settings document with ${toolUrls.length} modules...`
     );
-
-    // Replace the modules array
-    handle.change((d) => {
-      if (d.modules) {
-        while (d.modules.length > 0) {
-          d.modules.deleteAt(0);
-        }
-      } else {
-        d.modules = [];
-      }
-      for (const url of toolUrls) {
-        d.modules.push(url);
-      }
-    });
-
-    console.log(`Set ${toolUrls.length} module(s) in ${settingsUrl}`);
-  } catch (err) {
-    // Document unavailable on the server — create a fresh one
-    const isUnavailable =
-      err.message?.includes("unavailable") ||
-      err.message?.includes("Timed out");
-
-    if (!isUnavailable) throw err;
-
-    console.warn(`Settings doc unavailable, creating fresh document...`);
     handle = repo.create({ modules: toolUrls });
     created = true;
-    console.log(`Created new settings doc: ${handle.url}`);
-    console.warn(
-      `\n  *** ACTION REQUIRED ***\n` +
-        `  Update SETTINGS_URL in scripts/publish-all-tools.sh\n` +
-        `  and defaultToolsUrl in sites/tiny-patchwork/src/main.ts\n` +
-        `  to: ${handle.url}\n`
-    );
-  }
+    console.log(`Created: ${handle.url}`);
+  } else {
+    // Try to find the existing settings document
+    console.log(`Finding settings doc: ${settingsUrl}`);
+    try {
+      handle = await Promise.race([
+        repo.find(settingsUrl),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Timed out loading settings doc")),
+            SYNC_TIMEOUT
+          )
+        ),
+      ]);
+
+      const doc = handle.doc();
+      console.log(
+        `Loaded settings doc (current modules: ${(doc.modules || []).length})`
+      );
+
+      // Replace the modules array
+      handle.change((d) => {
+        if (d.modules) {
+          while (d.modules.length > 0) {
+            d.modules.deleteAt(0);
+          }
+        } else {
+          d.modules = [];
+        }
+        for (const url of toolUrls) {
+          d.modules.push(url);
+        }
+      });
+
+      console.log(`Set ${toolUrls.length} module(s) in ${settingsUrl}`);
+    } catch (err) {
+      // Document unavailable on the server — create a fresh one
+      const isUnavailable =
+        err.message?.includes("unavailable") ||
+        err.message?.includes("Timed out");
+
+      if (!isUnavailable) throw err;
+
+      console.warn(`Settings doc unavailable, creating fresh document...`);
+      handle = repo.create({ modules: toolUrls });
+      created = true;
+      console.log(`Created new settings doc: ${handle.url}`);
+      console.warn(
+        `\n  *** ACTION REQUIRED ***\n` +
+          `  Update SETTINGS_URL in scripts/publish-all-tools.sh\n` +
+          `  and defaultToolsUrl in sites/tiny-patchwork/src/main.ts\n` +
+          `  to: ${handle.url}\n`
+      );
+    }
+  } // end else (not --create)
 
   // Wait for sync to settle via head-stability polling
   console.log("Syncing with server...");

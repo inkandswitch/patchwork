@@ -19,16 +19,6 @@ const subductionDir = dirname(
   fileURLToPath(import.meta.resolve("@automerge/automerge-subduction"))
 );
 
-// Force a single copy of @automerge/automerge-repo. Without this, transitive
-// deps (keyhive, hooks, etc.) resolve the pnpm-store copy instead of our
-// locally-linked version with the DocumentQuery recovery fix.
-const automergeRepoEntry = fileURLToPath(
-  import.meta.resolve("@automerge/automerge-repo")
-);
-const automergeRepoSlimEntry = fileURLToPath(
-  import.meta.resolve("@automerge/automerge-repo/slim")
-);
-
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -65,8 +55,6 @@ export default defineConfig({
       "@automerge/automerge": resolve(automergeEntryDir, "fullfat_bundler.js"),
       "@automerge/automerge-subduction/slim": resolve(subductionDir, "slim.js"),
       "@automerge/automerge-subduction": resolve(subductionDir, "web.js"),
-      "@automerge/automerge-repo/slim": automergeRepoSlimEntry,
-      "@automerge/automerge-repo": automergeRepoEntry,
     },
   },
   optimizeDeps: {
