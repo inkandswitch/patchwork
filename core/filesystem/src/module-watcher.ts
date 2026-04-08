@@ -9,6 +9,37 @@ import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
 
+/**
+ * Wrapper around repo.find() that retries on "unavailable" errors.
+ *
+ * In automerge-repo subduction.9, repo.find() returns a DocumentQuery
+ * that rejects immediately with "unavailable" when no source (local
+ * storage or connected peer) has the document yet. On the tab-side
+ * Repo this is common: the SW needs time to sync docs from the
+ * Subduction server and relay them via MessageChannel.
+ *
+ * Backoff: 1s, 2s, 4s, 8s, 8s, 8s, 8s, 8s (~47s total).
+ */
+async function findWithRetry<T>(
+  repo: Repo,
+  url: AutomergeUrl | DocumentId,
+  maxAttempts = 8,
+  baseDelayMs = 1000
+): Promise<DocHandle<T>> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await repo.find<T>(url);
+    } catch (err: unknown) {
+      const isUnavailable =
+        err instanceof Error && err.message.includes("unavailable");
+      if (!isUnavailable || attempt === maxAttempts - 1) throw err;
+      const delay = baseDelayMs * Math.pow(2, Math.min(attempt, 3));
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error("unreachable");
+}
+
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
 } & HasPatchworkMetadata & {
@@ -47,7 +78,9 @@ export class ModuleWatcher {
   private async init() {
     this.handles = (
       await Promise.allSettled(
-        this.urls.map(async (url) => this.repo.find<ModuleSettingsDoc>(url))
+        this.urls.map(async (url) =>
+          findWithRetry<ModuleSettingsDoc>(this.repo, url)
+        )
       )
     )
       .filter((result) => {
@@ -83,17 +116,24 @@ export class ModuleWatcher {
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
       const valid = isValidAutomergeUrl(importName);
+      console.log(
+        `[module-watcher] importModuleSafe: ${importName.slice(0, 30)}... (valid=${valid})`
+      );
 
-      const mod = valid
+      const mod = await (valid
         ? importModuleFromFolderDocUrl(importName)
-        : import(/* @vite-ignore */ importName);
+        : import(/* @vite-ignore */ importName));
+      console.log(
+        `[module-watcher] importModuleSafe OK: ${importName.slice(0, 30)}...`,
+        mod ? Object.keys(mod) : null
+      );
       return mod;
     } catch (error) {
       console.error(
-        `%c Failed to import ${importName}`,
-        "color: #000, background: #ffbcef",
+        `[module-watcher] importModuleSafe FAILED: ${importName.slice(0, 30)}...`,
         error
       );
+      return null;
     }
   }
 
@@ -107,8 +147,22 @@ export class ModuleWatcher {
 
   private async announceWithRetry(importName: string) {
     // First attempt — may fail if folder doc hasn't synced yet
-    const mod = await this.announce(importName).catch(() => null);
-    if (mod) return;
+    console.log(
+      `[module-watcher] announceWithRetry: ${importName.slice(0, 30)}...`
+    );
+    const mod = await this.announce(importName).catch((err) => {
+      console.warn(
+        `[module-watcher] first announce failed: ${importName.slice(0, 30)}...`,
+        err?.message
+      );
+      return null;
+    });
+    if (mod) {
+      console.log(
+        `[module-watcher] announceWithRetry OK on first try: ${importName.slice(0, 30)}...`
+      );
+      return;
+    }
 
     // Mark as pending — the change listener will retry when the doc syncs
     this.#pendingModules.add(importName);
@@ -116,8 +170,7 @@ export class ModuleWatcher {
     // Event-driven retry: watch the folder doc for changes.
     // When it receives data from sync, retry the import.
     if (isValidAutomergeUrl(importName)) {
-      this.repo
-        .find<FolderDoc>(importName)
+      findWithRetry<FolderDoc>(this.repo, importName)
         .then((handle) => {
           const retryOnChange = async () => {
             if (!this.#pendingModules.has(importName)) {
@@ -140,8 +193,8 @@ export class ModuleWatcher {
     // Fallback: periodic retry for cases where the doc change event
     // doesn't fire (e.g., the folder doc structure arrived but the
     // sub-documents with file content sync later via a different handle).
-    const retryIntervalMs = 10_000;
-    const maxRetries = 30; // ~5 minutes total
+    const retryIntervalMs = 3_000;
+    const maxRetries = 60; // ~3 minutes total
     let retries = 0;
     const timer = setInterval(async () => {
       if (!this.#pendingModules.has(importName) || retries >= maxRetries) {
@@ -176,20 +229,24 @@ export class ModuleWatcher {
 
     if (!docUrl) return;
 
-    this.repo.find<FolderDoc>(docUrl).then((handle) => {
-      let previousSyncAtTime = handle.doc().lastSyncAt || 0;
-      handle.on("change", () => {
-        const lastSyncAt = handle.doc().lastSyncAt || 0;
-        if (lastSyncAt <= previousSyncAtTime) {
-          console.log("handle updated but not lastSyncAt");
-          return;
-        }
-        previousSyncAtTime = lastSyncAt;
-        const versionedImport = handle.view(handle.heads()).url;
-        console.log(`change in ${importName}, reloading at ${versionedImport}`);
-        this.announce(versionedImport);
-      });
-    });
+    findWithRetry<FolderDoc>(this.repo, docUrl)
+      .then((handle) => {
+        let previousSyncAtTime = handle.doc().lastSyncAt || 0;
+        handle.on("change", () => {
+          const lastSyncAt = handle.doc().lastSyncAt || 0;
+          if (lastSyncAt <= previousSyncAtTime) {
+            console.log("handle updated but not lastSyncAt");
+            return;
+          }
+          previousSyncAtTime = lastSyncAt;
+          const versionedImport = handle.view(handle.heads()).url;
+          console.log(
+            `change in ${importName}, reloading at ${versionedImport}`
+          );
+          this.announce(versionedImport);
+        });
+      })
+      .catch(() => {});
   }
 
   private async load() {

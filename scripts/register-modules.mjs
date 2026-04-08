@@ -37,8 +37,18 @@ const SUBDUCTION_SERVER =
 const SYNC_TIMEOUT = 30_000;
 
 async function main() {
-  // Initialize Subduction Wasm (must happen before Repo construction)
+  // Initialize Subduction Wasm (must happen before Repo construction).
+  // Import from both the local copy AND the linked automerge-repo's copy
+  // to ensure the Wasm singleton is initialized regardless of which copy
+  // the Repo constructor resolves.
   await import("@automerge/automerge-subduction");
+  try {
+    // When automerge-repo is linked locally, it resolves subduction from
+    // its own node_modules. Initialize that copy too.
+    await import("../automerge-repo/node_modules/@automerge/automerge-subduction/dist/esm/node.js");
+  } catch {
+    // Not running with a linked repo — the primary import is sufficient.
+  }
 
   const { Repo } = await import("@automerge/automerge-repo");
   const { NodeFSStorageAdapter } =

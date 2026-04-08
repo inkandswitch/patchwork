@@ -24,8 +24,8 @@
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "catalog:",
-      "@automerge/automerge-repo-network-messagechannel": "catalog:",
+      "@automerge/automerge-repo": "link:../automerge-repo/packages/automerge-repo",
+      "@automerge/automerge-repo-network-messagechannel": "link:../automerge-repo/packages/automerge-repo-network-messagechannel",
       "@automerge/automerge-repo-network-websocket": "catalog:",
       "@automerge/automerge-repo-react-hooks": "catalog:",
       "@automerge/automerge-repo-storage-indexeddb": "catalog:",

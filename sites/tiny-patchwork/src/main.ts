@@ -67,7 +67,7 @@ repo.subscribeToRemotes([
 
 // Published tools are registered in this module settings doc by publish-all-tools.
 const defaultToolsUrl =
-  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
+  "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
 
 const result = await setup({
   moduleSettingsUrls: [defaultToolsUrl],
@@ -120,7 +120,16 @@ if (initialParams.has("frame")) {
 
 function onModuleLoaded(name: string, mod: any) {
   if (Array.isArray(mod.plugins)) {
+    console.log(
+      `[main] registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
+      mod.plugins.map((p: any) => `${p.type}:${p.id}`)
+    );
     registerPlugins(mod.plugins, name);
+  } else {
+    console.warn(
+      `[main] module ${name.slice(0, 30)}... has no plugins array`,
+      Object.keys(mod)
+    );
   }
 }
 
@@ -129,6 +138,23 @@ const moduleWatcher = new ModuleWatcher(
   [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
   onModuleLoaded
 );
+
+// Log tool registry state after initial load completes
+moduleWatcher.doneLoading
+  .then(() => {
+    const toolReg = getRegistry("patchwork:tool");
+    const tools = toolReg.all();
+    console.log(
+      `[main] doneLoading: ${tools.length} tools registered:`,
+      tools.map((t: any) => t.id)
+    );
+    if (!tools.find((t: any) => t.id === "patchwork-frame")) {
+      console.error("[main] patchwork-frame NOT found in registry!");
+    }
+  })
+  .catch((err: any) => {
+    console.error("[main] doneLoading rejected:", err);
+  });
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
 
