@@ -1,0 +1,31 @@
+{
+  "name": "@tiny-patchwork/dev-swap",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "pushwork": {
+    "url": "automerge:3rfYU4gVPjCbqKGRS6Z5yGNfcXBJ"
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "sync": "vite build && pushwork sync"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-react": "workspace:^",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "vite": "^7.1.9",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "@vitejs/plugin-react": "^5.0.4"
+  }
+}
