@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
     "@types/react": "catalog:",

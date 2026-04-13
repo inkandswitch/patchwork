@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "link:../../../../automerge-repo-keyhive",
     "@babel/core": "7.28.4",
     "@babel/parser": "7.28.4",

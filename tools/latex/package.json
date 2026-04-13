@@ -15,7 +15,7 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-codemirror": "^0.2.0",
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@codemirror/autocomplete": "^6.18.0",
     "@codemirror/commands": "^6.9.0",

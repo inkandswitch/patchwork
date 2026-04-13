@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-solid-primitives": "^2.4.0",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/autocomplete": "^6.19.0",

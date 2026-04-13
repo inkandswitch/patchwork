@@ -8,7 +8,7 @@
   "keywords": [],
   "license": "MIT",
   "dependencies": {
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "debug": "^4.4.3"

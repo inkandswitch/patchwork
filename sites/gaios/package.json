@@ -29,9 +29,9 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
-    "@automerge/automerge-subduction": "link:../../../subduction/automerge_subduction_wasm",
+    "@automerge/automerge-subduction": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/commands": "^6.9.0",
     "@codemirror/language": "^6.11.3",

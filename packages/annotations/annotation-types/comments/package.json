@@ -19,7 +19,7 @@
     }
   },
   "dependencies": {
-    "@automerge/automerge-repo": "link:../../../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/annotations": "workspace:*",
     "@inkandswitch/annotations-context": "workspace:*",
     "@inkandswitch/subscribables": "workspace:*"

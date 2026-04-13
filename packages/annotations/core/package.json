@@ -22,12 +22,12 @@
   },
   "devDependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "typescript": "^5.9.2",
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/subscribables": "workspace:*",
     "eventemitter3": "^5.0.1"
   }

@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",

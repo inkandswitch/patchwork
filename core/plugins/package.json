@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@types/debug": "^4.1.12",
     "@types/node": "^20.17.57",

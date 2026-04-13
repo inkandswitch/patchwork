@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@types/debug": "^4.1.12",
     "@types/node": "^20.17.57",
     "debug": "^4.4.3",
