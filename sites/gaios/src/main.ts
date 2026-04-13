@@ -20,7 +20,6 @@ import {
 import {
   DocHandle,
   IndexedDBStorageAdapter,
-  isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
   parseAutomergeUrl,
@@ -64,7 +63,12 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const result = await setup();
+const defaultToolsUrl =
+  "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl;
+
+const result = await setup({
+  moduleSettingsUrls: [defaultToolsUrl],
+});
 if (!result) {
   throw new Error("Failed to set up service worker");
 }
@@ -94,6 +98,8 @@ window.accountDocHandle = accountDocHandle;
 registerPatchworkViewElement({ repo });
 
 const rootElement = document.getElementById("root")!;
+rootElement.style.visibility = "hidden";
+document.body.style.background = "#fffefe";
 
 const initialParams = new URLSearchParams(location.hash.slice(1));
 if (initialParams.has("frame")) {
@@ -146,26 +152,61 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   }
 });
 
-rootElement.addEventListener("patchwork:mounted", () => {
+let firstMount = true;
+rootElement.addEventListener("patchwork:mounted", (event) => {
   handleHashChange();
+  if (event.target != rootElement) return;
+  console.info(`root element mounted`);
+  if (firstMount) {
+    firstMount = false;
+    rootElement.style.visibility = "visible";
+    document.body.style.background = "";
+  }
 });
+setTimeout(() => {
+  if (firstMount) {
+    rootElement.style.visibility = "visible";
+    document.body.style.background = "";
+  }
+}, 12000);
+
+function onModuleLoaded(name: string, mod: any) {
+  if (Array.isArray(mod.plugins)) {
+    console.log(
+      `[main] registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
+      mod.plugins.map((p: any) => `${p.type}:${p.id}`)
+    );
+    registerPlugins(mod.plugins, name);
+  } else {
+    console.warn(
+      `[main] module ${name.slice(0, 30)}... has no plugins array`,
+      Object.keys(mod)
+    );
+  }
+}
 
 const moduleWatcher = new ModuleWatcher(
   repo,
-  [
-    accountDocHandle.doc().moduleSettingsUrl,
-    // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
-  ],
-  (name, mod) => {
-    if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
-      if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
-      }
-    }
-  }
+  [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
+  onModuleLoaded
 );
+
+// Log tool registry state after initial load completes
+moduleWatcher.doneLoading
+  .then(() => {
+    const toolReg = getRegistry("patchwork:tool");
+    const tools = toolReg.all();
+    console.log(
+      `[main] doneLoading: ${tools.length} tools registered:`,
+      tools.map((t: any) => t.id)
+    );
+    if (!tools.find((t: any) => t.id === "patchwork-frame")) {
+      console.error("[main] patchwork-frame NOT found in registry!");
+    }
+  })
+  .catch((err: any) => {
+    console.error("[main] doneLoading rejected:", err);
+  });
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
 

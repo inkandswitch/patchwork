@@ -26,7 +26,7 @@ if [ ! -d .pushwork ]; then
 fi
 
 # Sync files to server
-"$PUSHWORK" sync --sub
+"$PUSHWORK" sync
 
 # Read the tool's automerge URL
 TOOL_URL=$("$PUSHWORK" url)
