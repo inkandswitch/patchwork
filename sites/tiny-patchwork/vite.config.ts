@@ -20,6 +20,9 @@ const subductionDir = dirname(
 );
 
 export default defineConfig({
+  define: {
+    __SITE_NAME__: JSON.stringify("tiny-patchwork"),
+  },
   plugins: [
     tailwindcss(),
     wasm(),
@@ -28,6 +31,10 @@ export default defineConfig({
         imports: {
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
         },
+      },
+      extraBuiltins: {
+        "@automerge/automerge-repo-keyhive":
+          "/packages/@automerge/automerge-repo-keyhive/index.js",
       },
     }),
   ],
@@ -63,6 +70,7 @@ export default defineConfig({
     exclude: [
       "@automerge/automerge-subduction",
       "@automerge/automerge-subduction/slim",
+      "@automerge/automerge-repo-keyhive",
     ],
   },
   build: {

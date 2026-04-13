@@ -20,6 +20,9 @@ const subductionDir = dirname(
 );
 
 export default defineConfig({
+  define: {
+    __SITE_NAME__: JSON.stringify("gaios"),
+  },
   plugins: [
     tailwindcss(),
     wasm(),
@@ -29,6 +32,7 @@ export default defineConfig({
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
         },
       },
+      extraBuiltins: ["@automerge/automerge-repo-keyhive"],
     }),
   ],
   worker: {
@@ -63,6 +67,7 @@ export default defineConfig({
     exclude: [
       "@automerge/automerge-subduction",
       "@automerge/automerge-subduction/slim",
+      "@automerge/automerge-repo-keyhive",
     ],
   },
   build: {

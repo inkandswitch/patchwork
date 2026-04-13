@@ -28,9 +28,18 @@ import {
 } from "@automerge/vanillajs/slim";
 import * as Automerge from "@automerge/automerge/slim";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim";
+import {
+  initKeyhiveWasm,
+  initializeAutomergeRepoKeyhive,
+  type AutomergeRepoKeyhive,
+} from "@automerge/automerge-repo-keyhive";
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+
+declare const __SITE_NAME__: string;
+const siteName =
+  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -60,6 +69,8 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
+    hive?: AutomergeRepoKeyhive;
+    getRepoChannel: () => MessagePort;
     patchwork: {
       repo: Repo;
       packages: ModuleWatcher;
@@ -116,6 +127,13 @@ export interface SiteConfig {
    * Ink & Switch's production Subduction storage.
    */
   remoteStorageIds?: StorageId[];
+
+  /**
+   * When true, initialize keyhive for access control.
+   * The Repo will use keyhive's network adapter, peerId, and idFactory
+   * instead of a sharePolicy.
+   */
+  keyhive?: boolean;
 }
 
 export interface BootResult {
@@ -154,35 +172,73 @@ export async function bootPatchworkSite(
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
-  const repo = new Repo({
-    storage: new IndexedDBStorageAdapter(),
-    async sharePolicy(peerId) {
-      return peerId.includes("service-worker");
-    },
-    enableRemoteHeadsGossiping: true,
-    peerId:
-      `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
-  });
+  const sw = await setupServiceWorker();
+  if (!sw) throw new Error("Failed to set up service worker");
 
+  let hive: AutomergeRepoKeyhive | undefined;
+  if (config.keyhive) {
+    initKeyhiveWasm();
+
+    // Get the initial SW port via subscribeToRepoChannel, then pass it
+    // to keyhive init which wraps it in its own network adapter.
+    let resolvePort!: (port: MessagePort) => void;
+    const portPromise = new Promise<MessagePort>((r) => { resolvePort = r; });
+    sw.subscribeToRepoChannel((port) => { resolvePort(port); });
+    const swPort = await portPromise;
+
+    hive = await initializeAutomergeRepoKeyhive({
+      storage: new IndexedDBStorageAdapter(
+        `${siteName}-keyhive`
+      ),
+      peerIdSuffix:
+        siteName +
+        Math.random().toString(36).slice(2),
+      networkAdapter: new MessageChannelNetworkAdapter(swPort),
+      automaticArchiveIngestion: true,
+      cachingMode: "periodic",
+      onlyShareWithHardcodedServerPeerId: false,
+    });
+  }
+
+  const repo = hive
+    ? new Repo({
+        storage: new IndexedDBStorageAdapter(),
+        enableRemoteHeadsGossiping: true,
+        network: [hive.networkAdapter],
+        peerId: hive.peerId,
+        idFactory: hive.idFactory,
+      })
+    : new Repo({
+        storage: new IndexedDBStorageAdapter(),
+        async sharePolicy(peerId) {
+          return peerId.includes("service-worker");
+        },
+        enableRemoteHeadsGossiping: true,
+        peerId:
+          `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+      });
   repo.subscribeToRemotes(
     config.remoteStorageIds ?? [DEFAULT_REMOTE_STORAGE_ID]
   );
 
-  const sw = await setupServiceWorker();
-  if (!sw) throw new Error("Failed to set up service worker");
-  let activeServiceWorkerPort: MessagePort | undefined;
-  const connectServiceWorkerPort = async (port: MessagePort) => {
-    const previousPort = activeServiceWorkerPort;
-    activeServiceWorkerPort = port;
-    const net = new MessageChannelNetworkAdapter(port);
-    repo.networkSubsystem.addNetworkAdapter(net);
-    await net.whenReady();
-    previousPort?.close();
-  };
-  await sw.subscribeToRepoChannel(connectServiceWorkerPort);
+  if (hive) {
+    await repo.networkSubsystem.whenReady();
+    (hive.networkAdapter as any).syncKeyhive?.();
+  } else {
+    let activeServiceWorkerPort: MessagePort | undefined;
+    const connectServiceWorkerPort = async (port: MessagePort) => {
+      const previousPort = activeServiceWorkerPort;
+      activeServiceWorkerPort = port;
+      const net = new MessageChannelNetworkAdapter(port);
+      repo.networkSubsystem.addNetworkAdapter(net);
+      await net.whenReady();
+      previousPort?.close();
+    };
+    await sw.subscribeToRepoChannel(connectServiceWorkerPort);
+  }
 
-  installDevConsoleGlobals(repo);
-  registerPatchworkViewElement({ repo });
+  installDevConsoleGlobals(repo, hive);
+  registerPatchworkViewElement(hive ? { repo, hive } : { repo });
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
@@ -197,6 +253,7 @@ export async function bootPatchworkSite(
 
   const accountDocHandle = await resolveAccountHandle(repo, {
     storageKey: config.accountStorageKey,
+    hive,
   });
 
   window.accountDocHandle = accountDocHandle;
@@ -255,10 +312,21 @@ function resolveDefaultModulesUrl(builtin: AutomergeUrl): AutomergeUrl {
   return builtin;
 }
 
-function installDevConsoleGlobals(repo: Repo): void {
+function installDevConsoleGlobals(
+  repo: Repo,
+  hive: AutomergeRepoKeyhive | undefined
+): void {
   window.repo = repo;
   window.Automerge = Automerge;
   window.AutomergeRepo = AutomergeRepo;
+  if (hive) {
+    window.hive = hive;
+  }
+  window.getRepoChannel = () => {
+    const { port1, port2 } = new MessageChannel();
+    navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+    return port1;
+  };
 }
 
 function onModuleLoaded(name: string, mod: any): void {

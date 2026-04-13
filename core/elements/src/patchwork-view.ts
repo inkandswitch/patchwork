@@ -16,10 +16,12 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import debug from "debug";
 import { MountedEvent, NoToolEvent } from "./events.js";
+import {
+  docIdFromAutomergeUrl,
+  type initializeAutomergeRepoKeyhive,
+} from "@automerge/automerge-repo-keyhive";
 
 const log = debug("patchwork:elements:view");
-
-import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
@@ -49,6 +51,8 @@ export interface PatchworkViewElement extends HTMLElement {
   docUrl?: AutomergeUrl;
   toolId?: string;
 }
+
+const retryingDocs = new Set<string>();
 
 export function registerPatchworkViewElement(
   params: RegisterPatchworkViewElementParams
@@ -80,6 +84,10 @@ export function registerPatchworkViewElement(
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
       #initEpoch = 0;
+      #keyhiveRetrySetup = false;
+      #handlingKeyhiveSync = false;
+      #pendingKeyhiveSync = false;
+      #unableNoAccess = false;
 
       get docUrl() {
         return this.#docUrl;
@@ -161,16 +169,48 @@ export function registerPatchworkViewElement(
 
       #init = async () => {
         const toolRegistry = getRegistry("patchwork:tool");
-        if (this.#state != State.none) {
-          return;
-        }
-
-        if (!this.docUrl) {
-          return;
-        }
+        if (this.#state != State.none) return;
+        if (!this.docUrl) return;
 
         const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
+
+        // Check keyhive access to determine read/write permissions
+        let accessLevel: "None" | "Relay" | "Read" | "Edit" | "Admin"  = "None";
+
+        if (this.hive) {
+          let keyhiveDocId;
+          try {
+            keyhiveDocId = docIdFromAutomergeUrl(this.docUrl);
+          } catch {
+            accessLevel = "Edit";
+          }
+
+          if (keyhiveDocId) {
+            const bestAccess = await this.hive.bestAccessForDoc(this.hive.active.individual.id, this.docUrl);
+            accessLevel = bestAccess ? (bestAccess.toString() as typeof accessLevel) : "None";
+
+          }
+        } else {
+          accessLevel = "Edit";
+        }
+
+        // Set up keyhive sync listener
+        if (this.hive && !this.#keyhiveRetrySetup) {
+          this.#keyhiveRetrySetup = true;
+          const onKeyhiveSync = () => this.#handleKeyhiveSync();
+          (this.hive.networkAdapter as any).on("ingest-remote", onKeyhiveSync);
+          this.#teardowns.add(() => {
+            (this.hive!.networkAdapter as any).off("ingest-remote", onKeyhiveSync);
+          });
+        }
+
+        if (accessLevel === "None") {
+          console.log(`accessLevel=None for ${this.docUrl}`);
+          this.#state = State.unable;
+          this.#unableNoAccess = true;
+          return;
+        }
 
         const removeAddedListener = toolRegistry.on(
           "registered",
@@ -229,6 +269,10 @@ export function registerPatchworkViewElement(
           // If teardown ran while we were awaiting, the listener cleanup
           // already happened — silently abort.
           if (epoch !== this.#initEpoch) return;
+          if (err instanceof Error && err.message.includes("unavailable")) {
+            this.#state = State.unable;
+            return;
+          }
           throw err;
         }
 
@@ -256,11 +300,83 @@ export function registerPatchworkViewElement(
         }
 
         this.#teardowns.clear();
+        this.#keyhiveRetrySetup = false;
+        this.#unableNoAccess = false;
         this.#handle = null;
         this.#tool = null;
         this.#requestedToolImports.clear();
         this.textContent = "";
         this.#state = State.none;
+      }
+
+      async #clearDocCache() {
+        if (!this.docUrl) return;
+
+        const alreadyClearing = retryingDocs.has(this.docUrl);
+        if (alreadyClearing) return;
+
+        retryingDocs.add(this.docUrl);
+        try {
+          const documentId = String(docIdFromAutomergeUrl(this.docUrl));
+          const handle = (repo.handles as any)[documentId];
+          if (handle && handle.state === "unavailable") {
+            repo.delete(this.docUrl);
+          }
+        } catch {
+          // Ignore delete errors
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+        retryingDocs.delete(this.docUrl);
+      }
+
+      async #handleKeyhiveSync() {
+        if (!this.docUrl || !this.hive) return;
+
+        if (this.#handlingKeyhiveSync) {
+          this.#pendingKeyhiveSync = true;
+          return;
+        }
+        this.#handlingKeyhiveSync = true;
+        this.#pendingKeyhiveSync = false;
+
+        try {
+          let hasAccess = false;
+          let accessCheckSucceeded = false;
+          try {
+            const keyhiveDocId = docIdFromAutomergeUrl(this.docUrl);
+            if (keyhiveDocId) {
+              const bestAccess = await this.hive.bestAccessForDoc(
+                this.hive.active.individual.id,
+                this.docUrl
+              );
+              hasAccess = !!bestAccess;
+              accessCheckSucceeded = true;
+            } else {
+              return;
+            }
+          } catch {
+            return;
+          }
+
+          const isDisplayed = this.#state === State.rendered || this.#state === State.fallback;
+          const isUnable = this.#state === State.unable;
+
+          if (hasAccess && isUnable && this.#unableNoAccess) {
+            await this.#clearDocCache();
+            await this.#teardown();
+            await this.#init();
+          } else if (!hasAccess && isDisplayed && accessCheckSucceeded) {
+            await this.#clearDocCache();
+            await this.#teardown();
+            await this.#init();
+          }
+        } finally {
+          this.#handlingKeyhiveSync = false;
+          if (this.#pendingKeyhiveSync) {
+            this.#handleKeyhiveSync();
+          }
+        }
       }
 
       #queueRender() {
@@ -349,6 +465,7 @@ export function registerPatchworkViewElement(
           this.#state = fallingBack ? "fallback" : "rendered";
           this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
+          console.error(error);
           this.append(
             Object.assign(document.createElement("div"), {
               innerHTML: /* html */ `
