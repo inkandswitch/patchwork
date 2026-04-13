@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "catalog:",
+    "@automerge/automerge-repo-keyhive": "link:../../../automerge-repo-keyhive",
     "@eslint/js": "^9.37.0",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@keyhive/keyhive": "catalog:",
@@ -29,8 +29,8 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-subduction": "catalog:",
+    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-subduction": "link:../../../subduction/automerge_subduction_wasm",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/commands": "^6.9.0",

@@ -14,7 +14,7 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-codemirror": "^0.2.0",
-    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",

@@ -1,5 +1,10 @@
 import "./global.css";
 
+// Side-effect import: initializes the Subduction Wasm module (via initSync)
+// before the Repo constructor accesses it (subduction-aware automerge-repo
+// calls into subduction WASM on construction, e.g., set_subduction_logger).
+import "@automerge/automerge-subduction";
+
 import {
   registerPatchworkViewElement,
   openDocument,

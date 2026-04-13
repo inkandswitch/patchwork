@@ -49,7 +49,7 @@ function isValidLayoutDoc(
   );
 }
 
-async function createLayoutDoc(
+function createLayoutDoc(
   repo: Repo,
   options?: {
     contactUrl?: AutomergeUrl;
@@ -62,7 +62,7 @@ async function createLayoutDoc(
   let moduleSettingsUrl = options?.moduleSettingsUrl;
 
   if (!contactUrl) {
-    const contactHandle = await repo.create2<ContactDoc & HasPatchworkMetadata>(
+    const contactHandle = repo.create<ContactDoc & HasPatchworkMetadata>(
       {
         ["@patchwork"]: { type: "patchwork:contact" },
         type: "anonymous",
@@ -72,7 +72,7 @@ async function createLayoutDoc(
   }
 
   if (!rootFolderUrl) {
-    const rootFolderHandle = await repo.create2<
+    const rootFolderHandle = repo.create<
       FolderDoc & HasPatchworkMetadata
     >({
       ["@patchwork"]: { type: "folder" },
@@ -83,7 +83,7 @@ async function createLayoutDoc(
   }
 
   if (!moduleSettingsUrl) {
-    const moduleSettingsHandle = await repo.create2<
+    const moduleSettingsHandle = repo.create<
       ModuleSettingsDoc & HasPatchworkMetadata
     >({
       ["@patchwork"]: { type: "patchwork:module-settings" },
@@ -92,7 +92,7 @@ async function createLayoutDoc(
     moduleSettingsUrl = moduleSettingsHandle.url;
   }
 
-  const account = await repo.create2<
+  const account = repo.create<
     TinyPatchworkLayoutDoc & HasPatchworkMetadata
   >({
     ["@patchwork"]: { type: "account" },
@@ -111,7 +111,6 @@ async function createLayoutDoc(
       "add-doc-to-sidebar-button",
     ],
   });
-
   return account;
 }
 
@@ -165,7 +164,7 @@ export async function getOrCreateLayoutDocHandle(
     console.warn(
       `account document unavailable. moving its id to ${previousKey} and creating a new one. existing account doc url: ${existing}`
     );
-    const account = await createLayoutDoc(repo, {
+    const account = createLayoutDoc(repo, {
       contactUrl: accountDoc?.contactUrl,
       rootFolderUrl: accountDoc?.rootFolderUrl,
       moduleSettingsUrl: accountDoc?.moduleSettingsUrl,
@@ -174,7 +173,8 @@ export async function getOrCreateLayoutDocHandle(
     return account;
   }
 
-  const account = await createLayoutDoc(repo);
+  const account = createLayoutDoc(repo);
+  console.log("[layout-doc] Created account doc:", account.url);
   localStorage.setItem(accountDocKey, account.url);
   return account;
 }

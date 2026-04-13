@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
     "@automerge/automerge-repo-solid-primitives": "^2.5.2",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",

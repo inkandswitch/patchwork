@@ -9,7 +9,7 @@
     "sync": "vite build && pushwork sync"
   },
   "dependencies": {
-    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
     "@inkandswitch/patchwork-plugins": "workspace:^"
   },
   "devDependencies": {

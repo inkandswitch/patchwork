@@ -18,7 +18,7 @@
     }
   },
   "dependencies": {
-    "@automerge/automerge-repo": "catalog:"
+    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo"
   },
   "peerDependencies": {
     "react": "^18.0.0"

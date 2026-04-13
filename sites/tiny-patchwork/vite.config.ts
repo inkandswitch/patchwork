@@ -29,6 +29,10 @@ export default defineConfig({
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
         },
       },
+      extraBuiltins: {
+        "@automerge/automerge-repo-keyhive":
+          "/packages/@automerge/automerge-repo-keyhive/index.js",
+      },
     }),
   ],
   worker: {
@@ -58,9 +62,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // Prevent Vite from pre-bundling automerge-subduction (which ignores the
-    // resolve alias and picks the bundler target whose .wasm import gets dropped).
-    exclude: ["@automerge/automerge-subduction"],
+    exclude: ["@automerge/automerge-subduction", "@automerge/automerge-repo-keyhive"],
   },
   build: {
     target: "firefox137",

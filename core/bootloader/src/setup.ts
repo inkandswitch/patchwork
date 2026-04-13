@@ -130,6 +130,13 @@ export default async function setupServiceWorker(
     location.reload();
   });
 
+  // Keep the service worker alive by sending periodic pings.
+  // Unlike SharedWorkers, service workers can be terminated after ~30s of
+  // idleness. The keyhive sync intervals alone don't prevent this.
+  setInterval(() => {
+    navigator.serviceWorker.controller?.postMessage({ type: "ping" });
+  }, 15_000);
+
   console.log(
     "service worker alive, loading %c patchwork system ",
     "background: #fcf2f0; color: #333; border: 2px solid; border-radius: 4px"

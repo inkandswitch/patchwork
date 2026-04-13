@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^"
   },

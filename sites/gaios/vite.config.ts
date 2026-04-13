@@ -23,6 +23,7 @@ export default defineConfig({
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
         },
       },
+      extraBuiltins: ["@automerge/automerge-repo-keyhive"],
     }),
   ],
   worker: {
@@ -51,7 +52,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["@automerge/automerge-subduction"],
+    exclude: ["@automerge/automerge-subduction", "@automerge/automerge-repo-keyhive"],
   },
   build: {
     target: "firefox137",

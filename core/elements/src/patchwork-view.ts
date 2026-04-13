@@ -16,10 +16,12 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import debug from "debug";
 import { MountedEvent, NoToolEvent } from "./events.js";
+import {
+  docIdFromAutomergeUrl,
+  type initializeAutomergeRepoKeyhive,
+} from "@automerge/automerge-repo-keyhive";
 
 const log = debug("patchwork:elements:view");
-
-import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
@@ -50,6 +52,10 @@ export interface PatchworkViewElement extends HTMLElement {
   toolId?: string;
 }
 
+// Keep track of docs being retried to prevent multiple patchwork-view instances
+// from retrying the same document
+const retryingDocs = new Set<string>();
+
 export function registerPatchworkViewElement(
   params: RegisterPatchworkViewElementParams
 ) {
@@ -79,6 +85,10 @@ export function registerPatchworkViewElement(
       #tool: LoadedTool | null = null;
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
+      #keyhiveRetrySetup = false;
+      #handlingKeyhiveSync = false;
+      #pendingKeyhiveSync = false;
+      #unableNoAccess = false;
 
       get docUrl() {
         return this.#docUrl;
@@ -156,17 +166,70 @@ export function registerPatchworkViewElement(
 
       #init = async () => {
         const toolRegistry = getRegistry("patchwork:tool");
-        if (this.#state != State.none) {
-          return;
-        }
-
-        if (!this.docUrl) {
-          return;
-        }
+        if (this.#state != State.none) return;
+        if (!this.docUrl) return;
 
         this.#state = State.initializing;
 
-        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
+        // Check keyhive access to determine read/write permissions
+        // Access can be revoked, so we may have an outdated local copy
+        let accessLevel: "None" | "Pull" | "Read" | "Write" | "Admin"  = "None";
+
+        if (this.hive) {
+          let keyhiveDocId;
+          try {
+            keyhiveDocId = docIdFromAutomergeUrl(this.docUrl);
+          } catch {
+            // Not a keyhive-protected document
+            accessLevel = "Write";
+          }
+
+          if (keyhiveDocId) {
+            const bestAccess = await this.hive.bestAccessForDoc(this.hive.active.individual.id, this.docUrl);
+            accessLevel = bestAccess ? (bestAccess.toString() as typeof accessLevel) : "None";
+
+            // After a page refresh, the keyhive archive may not yet reflect
+            // the latest state (e.g., SharedWorker hasn't synced events back).
+            // Retry once after a short delay before giving up.
+            if (accessLevel === "None") {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              const retryAccess = await this.hive.bestAccessForDoc(this.hive.active.individual.id, this.docUrl);
+              accessLevel = retryAccess ? (retryAccess.toString() as typeof accessLevel) : "None";
+            }
+          }
+        } else {
+          // No keyhive protection
+          accessLevel = "Write";
+        }
+
+        // TODO: Pass accessLevel to tool (e.g., so it can treat the doc as read-only)
+
+        // Set up keyhive sync listener
+        if (this.hive && !this.#keyhiveRetrySetup) {
+          this.#keyhiveRetrySetup = true;
+          const onKeyhiveSync = () => this.#handleKeyhiveSync();
+          (this.hive.networkAdapter as any).on("ingest-remote", onKeyhiveSync);
+          this.#teardowns.add(() => {
+            (this.hive!.networkAdapter as any).off("ingest-remote", onKeyhiveSync);
+          });
+        }
+
+        if (accessLevel === "None") {
+          console.log(`accessLevel=None for ${this.docUrl}`);
+          this.#state = State.unable;
+          this.#unableNoAccess = true;
+          return;
+        }
+
+        try {
+          this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
+        } catch (e) {
+          if (e instanceof Error && e.message.includes("unavailable")) {
+            this.#state = State.unable;
+            return;
+          }
+          throw e;
+        }
 
         // TODO: these are inlined and not separate functions
         // because we need to do some work getting types working well here.
@@ -183,7 +246,6 @@ export function registerPatchworkViewElement(
 
             if (isChosenTool || isFallbackTool) {
               if (isLoadablePlugin(addedTool)) {
-                // if it's not loaded, load it now
                 toolRegistry.load(addedTool.id);
               }
             }
@@ -222,6 +284,20 @@ export function registerPatchworkViewElement(
         });
 
         this.#handle.on("change", this.#onDocChange);
+
+        // Diagnostic: log all change events to detect missing remote updates
+        const diagChangeHandler = (payload: DocHandleChangePayload<HasPatchworkMetadata>) => {
+          const source = payload.patchInfo?.source ?? "unknown";
+          const patchCount = payload.patches?.length ?? 0;
+          console.log(
+            `[patchwork-view] change event: doc=${this.docUrl} source=${source} patches=${patchCount}`
+          );
+        };
+        this.#handle.on("change", diagChangeHandler);
+        this.#teardowns.add(() =>
+          this.#handle!.off("change", diagChangeHandler)
+        );
+
         this.#teardowns.add(() =>
           this.#handle!.off("change", this.#onDocChange)
         );
@@ -239,11 +315,100 @@ export function registerPatchworkViewElement(
         }
 
         this.#teardowns.clear();
+        this.#keyhiveRetrySetup = false;
+        this.#unableNoAccess = false;
         this.#handle = null;
         this.#tool = null;
         this.#requestedToolImports.clear();
         this.textContent = "";
         this.#state = State.none;
+      }
+
+      // TODO: We call repo.delete because the doc handle can get stuck
+      // in unavailable state. This is an automerge-repo bug.
+      async #clearDocCache() {
+        if (!this.docUrl) return;
+
+        // Prevent multiple instances from deleting simultaneously
+        const alreadyClearing = retryingDocs.has(this.docUrl);
+        if (!alreadyClearing) {
+          retryingDocs.add(this.docUrl);
+          try {
+            const documentId = this.docUrl.replace("automerge:", "");
+            const handle = (repo.handles as any)[documentId];
+            if (handle && handle.state === "unavailable") {
+              repo.delete(this.docUrl);
+            }
+          } catch {
+            // Ignore delete errors
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        if (!alreadyClearing) {
+          retryingDocs.delete(this.docUrl);
+        }
+      }
+
+      // Handle keyhive sync events
+      async #handleKeyhiveSync() {
+        if (!this.docUrl || !this.hive) return;
+
+        // If already handling, mark as pending so we check again after current completes
+        if (this.#handlingKeyhiveSync) {
+          this.#pendingKeyhiveSync = true;
+          return;
+        }
+        this.#handlingKeyhiveSync = true;
+        this.#pendingKeyhiveSync = false;
+
+        try {
+          // Check current access level
+          let hasAccess = false;
+          let accessCheckSucceeded = false;
+          try {
+            const keyhiveDocId = docIdFromAutomergeUrl(this.docUrl);
+            if (keyhiveDocId) {
+              const bestAccess = await this.hive.bestAccessForDoc(
+                this.hive.active.individual.id,
+                this.docUrl
+              );
+              // TODO: Check for more fine-grained access once we support more
+              // fine-grained delegation (instead of just "Private" vs. "Public Write").
+              // The doc should not be rendered if access is Pull and should be
+              // read-only if it's Read.
+              hasAccess = !!bestAccess;
+              accessCheckSucceeded = true;
+            } else {
+              // Not keyhive-protected
+              return;
+            }
+          } catch {
+            // Not keyhive-protected or error
+            return;
+          }
+
+          const isDisplayed = this.#state === State.rendered || this.#state === State.fallback;
+          const isUnable = this.#state === State.unable;
+
+          if (hasAccess && isUnable && this.#unableNoAccess) {
+            // Access was granted (was previously None). Re-initialize.
+            await this.#clearDocCache();
+            await this.#teardown();
+            await this.#init();
+          } else if (!hasAccess && isDisplayed && accessCheckSucceeded) {
+            // Access was revoked.
+            await this.#clearDocCache();
+            await this.#teardown();
+            await this.#init();
+          }
+        } finally {
+          this.#handlingKeyhiveSync = false;
+          if (this.#pendingKeyhiveSync) {
+            this.#handleKeyhiveSync();
+          }
+        }
       }
 
       #queueRender() {
@@ -332,6 +497,7 @@ export function registerPatchworkViewElement(
           this.#state = fallingBack ? "fallback" : "rendered";
           this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
+          console.error(error);
           this.append(
             Object.assign(document.createElement("div"), {
               innerHTML: /* html */ `

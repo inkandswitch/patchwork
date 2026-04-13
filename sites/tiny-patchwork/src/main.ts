@@ -31,6 +31,32 @@ import {
 } from "@automerge/vanillajs";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
+import { initializeAutomergeRepoKeyhive, initKeyhiveWasm, setPanicHook } from "@automerge/automerge-repo-keyhive";
+
+initKeyhiveWasm();
+// setPanicHook();
+
+// Published tools are registered in this module settings doc by publish-all-tools.
+const defaultToolsUrl =
+  "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
+
+const result = await setup({
+  subductionEndpoints: ["ws://localhost:3035"],
+  moduleSettingsUrls: [defaultToolsUrl],
+});
+if (!result) {
+  throw new Error("Failed to set up service worker");
+}
+
+const keyhiveStorage = new IndexedDBStorageAdapter("tiny-patchwork-keyhive");
+const hive = await initializeAutomergeRepoKeyhive({
+  storage: keyhiveStorage,
+  peerIdSuffix: "tiny-patchwork" + Math.random().toString(36).slice(2),
+  networkAdapter: new MessageChannelNetworkAdapter(result.port),
+  automaticArchiveIngestion: true,
+  cachingMode: "periodic",
+  onlyShareWithHardcodedServerPeerId: false,
+});
 
 // Side-effect import: initializes the Subduction Wasm module (via initSync)
 // before the Repo constructor accesses it. The Vite alias ensures this resolves
@@ -43,6 +69,7 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
+    hive: typeof hive;
     getRepoChannel: () => MessagePort;
     patchwork: {
       repo: Repo;
@@ -55,31 +82,20 @@ declare global {
 
 const repo = new Repo({
   storage: new IndexedDBStorageAdapter(),
-  async sharePolicy(peerId) {
-    return peerId.includes("service-worker");
-  },
   enableRemoteHeadsGossiping: true,
+  network: [hive.networkAdapter],
+  peerId: hive.peerId,
+  idFactory: hive.idFactory,
 });
 
 repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-// Published tools are registered in this module settings doc by publish-all-tools.
-const defaultToolsUrl =
-  "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
-
-const result = await setup({
-  moduleSettingsUrls: [defaultToolsUrl],
-});
-if (!result) {
-  throw new Error("Failed to set up service worker");
-}
-
-repo.networkSubsystem.addNetworkAdapter(
-  new MessageChannelNetworkAdapter(result.port)
-);
-await repo.networkSubsystem.whenReady();
+window.repo = repo;
+window.hive = hive;
+window.Automerge = Automerge;
+window.AutomergeRepo = AutomergeRepo;
 
 window.getRepoChannel = () => {
   const { port1, port2 } = new MessageChannel();
@@ -87,18 +103,27 @@ window.getRepoChannel = () => {
   return port1;
 };
 
+await repo.networkSubsystem.whenReady();
+
+// Trigger keyhive sync immediately so local state (e.g., doc creations from
+// a previous session) is exchanged with the service worker before we check access.
+(hive.networkAdapter as any).syncKeyhive?.();
+await new Promise((resolve) => setTimeout(resolve, 4000));
+
 document.body.style.background = "#fffffe";
 
-window.repo = repo;
-window.Automerge = Automerge;
-window.AutomergeRepo = AutomergeRepo;
-
-const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
-await repo.flush();
+const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
 
 window.accountDocHandle = accountDocHandle;
 
-registerPatchworkViewElement({ repo });
+// When keyhive events arrive from the service worker, the server connection
+// is working. Reset the ModuleWatcher retry budget so it can recover from
+// failures that occurred while the connection was down.
+(hive.networkAdapter as any).on("ingest-remote", () => {
+  moduleWatcher.resetRetries();
+});
+
+registerPatchworkViewElement({ repo, hive });
 
 const rootElement = document.getElementById("root")!;
 rootElement.style.visibility = "hidden";
@@ -233,6 +258,7 @@ rootElement.addEventListener("patchwork:mounted", (event) => {
 });
 setTimeout(() => {
   if (firstMount) {
+    console.warn("[main.ts] 5s visibility timeout — making root visible without mount event");
     rootElement.style.visibility = "visible";
     document.body.style.background = "";
   }

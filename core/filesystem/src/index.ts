@@ -1,4 +1,4 @@
-import { type DocHandle, type Repo } from "@automerge/automerge-repo";
+import { type DocHandle, type DocumentProgress, type Repo } from "@automerge/automerge-repo";
 import type { FolderDoc } from "./types.js";
 
 export * from "./metadata.js";
@@ -28,7 +28,7 @@ export async function findHandleInFolderHandle<T>(
   const docLink = folder.docs.find((doc) => doc.name === part);
   if (!docLink) return;
 
-  const docHandle = await repo.find(docLink.url);
+  const docHandle = await waitForProgress(repo.findWithProgress(docLink.url), 60_000);
 
   if (parts.length > 1) {
     const doc = docHandle.doc();
@@ -43,4 +43,32 @@ export async function findHandleInFolderHandle<T>(
   }
   // todo kind of a lie
   return docHandle as DocHandle<T>;
+}
+
+function waitForProgress<T>(
+  progress: DocumentProgress<T>,
+  timeoutMs: number,
+): Promise<DocHandle<T>> {
+  const state = progress.peek();
+  if (state.state === "ready") return Promise.resolve(state.handle);
+
+  return new Promise<DocHandle<T>>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      unsubscribe();
+      const current = progress.peek();
+      if (current.state === "ready") {
+        resolve(current.handle);
+      } else {
+        reject(new Error(`Document timed out (state=${current.state})`));
+      }
+    }, timeoutMs);
+
+    const unsubscribe = progress.subscribe((state) => {
+      if (state.state === "ready") {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve(state.handle);
+      }
+    });
+  });
 }

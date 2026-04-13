@@ -795,3 +795,10 @@
     color: #fca5a5;
   }
 }
+
+
+.debug-toggle__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  user-select: none;
+}

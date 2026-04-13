@@ -9,7 +9,8 @@ export const defaultImportConditions = ["patchwork", "browser", "import"];
 export async function importModuleFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
   subpath: string = ".",
-  conditions: string[] = defaultImportConditions
+  conditions: string[] = defaultImportConditions,
+  cacheBust?: string
 ) {
   console.log(
     `[packages] importModule ${folderDocUrl.slice(0, 25)}... (subpath: ${subpath})`
@@ -28,9 +29,8 @@ export async function importModuleFromFolderDocUrl(
   console.log(`[packages] importing ${entryPointUrl.slice(-60)}`);
 
   try {
-    // Try importing with a stable URL so successful loads are cached
-    // and module side effects don't re-execute on subsequent calls.
-    const mod = await import(/* @vite-ignore */ entryPointUrl);
+    const url = cacheBust ? `${entryPointUrl}?${cacheBust}` : entryPointUrl;
+    const mod = await import(/* @vite-ignore */ url);
     console.log(`[packages] import OK ${entryPointUrl.slice(-60)}`);
     return mod;
   } catch (err) {

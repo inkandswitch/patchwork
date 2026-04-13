@@ -498,6 +498,23 @@ export default function Item(props: {
           >
             Rename
           </ContextMenu.Item>
+          <Show when={props.share}>
+            <ContextMenu.Item
+              class="popmenu__item"
+              onSelect={() => props.share?.()}
+              disabled={props.shareDisabled}
+            >
+              Share
+            </ContextMenu.Item>
+          </Show>
+          <Show when={props.makeSecureCopy}>
+            <ContextMenu.Item
+              class="popmenu__item"
+              onSelect={() => props.makeSecureCopy?.()}
+            >
+              Make secure copy
+            </ContextMenu.Item>
+          </Show>
           <ContextMenu.Item
             class="popmenu__item"
             onSelect={() => props.remove()}

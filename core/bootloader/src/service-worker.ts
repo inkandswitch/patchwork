@@ -12,14 +12,17 @@ import { initializeWasm } from "@automerge/automerge/slim";
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
-import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
+import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
 import {
   Repo,
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
+  type AutomergeUrl,
   type PeerId,
+  type DocumentProgress,
+  type DocHandle,
 } from "@automerge/automerge-repo/slim";
 import {
   findHandleInFolderHandle,
@@ -29,7 +32,13 @@ import {
 
 // Small adapters — bundled directly into the SW
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
+import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+import {
+  initializeAutomergeRepoKeyhive,
+  initKeyhiveWasm,
+  verifyingKeyPeerIdWithoutSuffix,
+} from "@automerge/automerge-repo-keyhive";
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
 let cachename = "default";
@@ -85,6 +94,22 @@ function log(...args: any[]) {
   );
 }
 
+self.onerror = (event: any, source: any, lineno: any, colno: any, error: any) => {
+  console.error("[service worker: ERROR]", {
+    event,
+    source,
+    lineno,
+    colno,
+    error: error?.message,
+    stack: error?.stack,
+  });
+};
+
+self.addEventListener("unhandledrejection", (event) => {
+  console.error("[service worker: UNHANDLED REJECTION]", String(event.reason));
+  event.preventDefault();
+});
+
 self.addEventListener("install", () => self.skipWaiting());
 
 async function clearOldCaches() {
@@ -103,11 +128,16 @@ self.addEventListener("activate", async () => {
   clients.claim();
 });
 
-let repoPromise: Promise<Repo> | null = null;
+let repoHivePromise: Promise<{
+  repo: Repo;
+  hive: any;
+  unavailableDocs: Map<string, string>;
+  schedulePeriodicRetry: () => void;
+}> | null = null;
 
-function getRepo() {
-  if (!repoPromise) {
-    repoPromise = (async () => {
+function getRepoHive() {
+  if (!repoHivePromise) {
+    repoHivePromise = (async () => {
       const logger = await slog;
 
       // Fetch both Wasm binaries in parallel, then compile sequentially
@@ -121,43 +151,175 @@ function getRepo() {
       initSubductionSync(new Uint8Array(sdnWasmBuf));
       logger.info("wasm initialized");
 
+      initKeyhiveWasm();
+
       // Wait for the main thread to tell us the Subduction endpoint(s).
-      // Overlap the WebCryptoSigner IDB key lookup with this wait.
       logger.info("waiting for subduction endpoints from main thread");
-      const [signer] = await Promise.all([
-        WebCryptoSigner.setup(),
-        subductionReady,
-      ]);
+      await subductionReady;
       logger.info("subduction endpoints received", {
         endpoints: subductionEndpoints,
       });
 
+      const serverUrl = subductionEndpoints[0];
+      const keyhiveStorage = new IndexedDBStorageAdapter("tiny-patchwork-keyhive");
+      const keyhiveNetwork = new WebSocketClientAdapter(serverUrl);
+
+      const hive = await initializeAutomergeRepoKeyhive({
+        storage: keyhiveStorage,
+        peerIdSuffix: "tiny-patchwork-worker" + Math.random().toString(36).slice(2),
+        networkAdapter: keyhiveNetwork,
+        automaticArchiveIngestion: true,
+        cachingMode: "periodic",
+        onlyShareWithHardcodedServerPeerId: true,
+      });
+
+      // Construct subduction signer from keyhive's Ed25519 key pair
+      // so both keyhive and subduction use the same identity
+      const keyPair = hive.active.keyPair;
+      const privateJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+      const secretKeyBytes = new Uint8Array(
+        atob(privateJwk.d!.replace(/-/g, '+').replace(/_/g, '/'))
+          .split('').map(c => c.charCodeAt(0))
+      );
+      const signer = MemorySigner.fromBytes(secretKeyBytes);
+
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
         signer,
-        peerId: ("service-worker-" +
-          (Math.random() * 10000).toString(36).slice(2)) as PeerId,
-        async sharePolicy(peerId) {
-          return peerId.includes("storage-server");
-        },
+        network: [],
+        subductionAdapters: [{
+          adapter: hive.networkAdapter,
+          serviceName: serverUrl,
+          role: "connect",
+        }],
+        peerId: hive.peerId,
         enableRemoteHeadsGossiping: true,
-        subductionWebsocketEndpoints: subductionEndpoints,
+        idFactory: hive.idFactory,
       });
 
+      hive.linkRepo(repo);
+
       (self as any).repo = repo;
+      (self as any).hive = hive;
       logger.info("repo constructed, waiting for network subsystem");
 
-      // Don't block getRepo() on whenReady() — the network subsystem starts
+      // Don't block on whenReady() — the network subsystem starts
       // with no adapters (MessageChannel is added later via connectPort),
       // and blocking here prevents the fetch handler from serving requests.
       repo.networkSubsystem.whenReady().then(() => {
         logger.info("repo network subsystem ready");
       });
 
-      return repo;
+      // Track unavailable documents for retry
+      const unavailableDocs = new Map<string, string>();
+
+      function retryUnavailableDocs() {
+        for (const [documentId, url] of unavailableDocs) {
+          unavailableDocs.delete(documentId);
+          repo.findWithProgress(url as AutomergeUrl);
+        }
+        // Always call shareConfigChanged so subduction retries
+        // heal-exhausted syncs after keyhive access propagates
+        repo.shareConfigChanged();
+      }
+
+      function trackUnavailable(handle: any) {
+        unavailableDocs.set(handle.documentId, handle.url);
+        schedulePeriodicRetry();
+      }
+
+      repo.on("document", ({ handle }: { handle: any }) => {
+        if (handle.state === "unavailable") {
+          trackUnavailable(handle);
+        } else {
+          handle.whenReady(["ready", "unavailable"]).then(() => {
+            if (handle.state === "unavailable") {
+              trackUnavailable(handle);
+            }
+          }).catch(() => {});
+        }
+      });
+
+      // When keyhive events are ingested, retry unavailable documents
+      let ingestRetryTimer: ReturnType<typeof setTimeout> | null = null;
+      let lastIngestRetryRun = 0;
+      const INGEST_RETRY_DEBOUNCE_MS = 500;
+      const INGEST_RETRY_MAX_DELAY_MS = 1000;
+
+      function debouncedRetryUnavailableDocs() {
+        const now = Date.now();
+        const elapsed = now - lastIngestRetryRun;
+
+        if (elapsed >= INGEST_RETRY_MAX_DELAY_MS) {
+          if (ingestRetryTimer !== null) {
+            clearTimeout(ingestRetryTimer);
+            ingestRetryTimer = null;
+          }
+          lastIngestRetryRun = now;
+          retryUnavailableDocs();
+          return;
+        }
+
+        if (ingestRetryTimer !== null) {
+          clearTimeout(ingestRetryTimer);
+        }
+        const delay = Math.min(INGEST_RETRY_DEBOUNCE_MS, INGEST_RETRY_MAX_DELAY_MS - elapsed);
+        ingestRetryTimer = setTimeout(() => {
+          ingestRetryTimer = null;
+          lastIngestRetryRun = Date.now();
+          retryUnavailableDocs();
+        }, delay);
+      }
+
+      (hive.networkAdapter as any).on("ingest-remote", debouncedRetryUnavailableDocs);
+
+      // Reset retry budget when a peer connects
+      hive.networkAdapter.on("peer-candidate", () => {
+        if (unavailableDocs.size > 0) {
+          periodicRetryCount = 0;
+          retryUnavailableDocs();
+          schedulePeriodicRetry();
+        }
+      });
+
+      // Periodic retry for non-keyhive docs
+      const PERIODIC_RETRY_INTERVAL_MS = 1000;
+      const MAX_PERIODIC_RETRIES = 60;
+      let periodicRetryCount = 0;
+      let periodicRetryScheduled = false;
+
+      function schedulePeriodicRetry() {
+        if (periodicRetryScheduled) return;
+        if (periodicRetryCount >= MAX_PERIODIC_RETRIES) {
+          if (unavailableDocs.size > 0) {
+            console.warn(`[service worker] max retries reached, ${unavailableDocs.size} docs still unavailable`);
+          }
+          return;
+        }
+        if (unavailableDocs.size === 0) return;
+        periodicRetryScheduled = true;
+        setTimeout(() => {
+          periodicRetryScheduled = false;
+          periodicRetryCount++;
+          retryUnavailableDocs();
+          schedulePeriodicRetry();
+        }, PERIODIC_RETRY_INTERVAL_MS);
+      }
+
+      // Trigger immediate keyhive sync on startup
+      hive.networkAdapter.whenReady().then(() => {
+        (hive.networkAdapter as any).syncKeyhive();
+      });
+
+      return { hive, repo, unavailableDocs, schedulePeriodicRetry };
     })();
   }
-  return repoPromise;
+  return repoHivePromise;
+}
+
+async function getRepo() {
+  const { repo } = await getRepoHive();
+  return repo;
 }
 
 // ── Eager tool prefetch ────────────────────────────────────────────────
@@ -272,12 +434,36 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
   }
 }
 
-// Connect client MessagePorts to the repo for sync
+// Connect client MessagePorts to the repo via keyhive
 async function connectPort(port: MessagePort) {
-  const repo = await getRepo();
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(port, { useWeakRef: true })
-  );
+  const { hive, repo, unavailableDocs, schedulePeriodicRetry } = await getRepoHive();
+  const networkAdapter = new MessageChannelNetworkAdapter(port, { useWeakRef: true });
+  // Tab connections don't use the hardcoded server peer ID filter
+  const onlyShareWithHardcodedServerPeerId = false;
+  // Tabs will request keyhive sync periodically
+  const periodicallyRequestKeyhiveSync = false;
+  const keyhiveNetworkAdapter = hive.createKeyhiveNetworkAdapter(networkAdapter, onlyShareWithHardcodedServerPeerId, periodicallyRequestKeyhiveSync, 2000);
+
+  // When a tab asks for a doc we don't have, request it from the sync server
+  keyhiveNetworkAdapter.on("message", async (msg: any) => {
+    if ((msg.type === "sync" || msg.type === "request") && msg.documentId) {
+      const handle = repo.handles[msg.documentId];
+      if (!handle || handle.state === "unavailable") {
+        const url = `automerge:${msg.documentId}` as AutomergeUrl;
+        repo.findWithProgress(url);
+        repo.shareConfigChanged();
+      }
+    }
+  });
+
+  // When keyhive events arrive from the tab (e.g. new doc access records
+  // from create2()), sync them to the server and retry failed subduction syncs.
+  keyhiveNetworkAdapter.on("ingest-remote", () => {
+    (hive.networkAdapter as any).syncKeyhive?.();
+    repo.shareConfigChanged();
+  });
+
+  repo.networkSubsystem.addNetworkAdapter(keyhiveNetworkAdapter);
 }
 
 self.addEventListener("message", async (event) => {
@@ -330,6 +516,41 @@ interface FileDoc {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 const ENTRY_WAIT_TIMEOUT_MS = 60_000;
+
+/**
+ * Wait for a DocumentProgress to reach the "ready" state, returning the
+ * DocHandle. Unlike `whenReady()`, this tolerates the doc being temporarily
+ * "unavailable" — it subscribes and waits for a transition to "ready" until
+ * the timeout expires.
+ */
+function waitForHandle<T>(
+  progress: DocumentProgress<T>,
+  documentId: string,
+  timeoutMs: number,
+): Promise<DocHandle<T>> {
+  const state = progress.peek();
+  if (state.state === "ready") return Promise.resolve(state.handle);
+
+  return new Promise<DocHandle<T>>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      unsubscribe();
+      const current = progress.peek();
+      if (current.state === "ready") {
+        resolve(current.handle);
+      } else {
+        reject(new Error(`Document ${documentId} timed out (state=${current.state})`));
+      }
+    }, timeoutMs);
+
+    const unsubscribe = progress.subscribe((state) => {
+      if (state.state === "ready") {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve(state.handle);
+      }
+    });
+  });
+}
 
 /**
  * Wait until a folder doc's `docs` array contains an entry with the given
@@ -490,12 +711,17 @@ async function resolveAutomergeUrlInner(
   // The heads parameter is now treated as optional; we always serve the
   // latest state.
 
-  // Wait for the folder doc to have the entry we need before resolving.
-  // On first load, folder docs sync incrementally — the `docs` array
-  // starts empty and fills in as Automerge changes arrive.
-  const folderHandle = await repo.find<FolderDoc>(
+  // Wait for the folder doc to become ready. Use findWithProgress instead
+  // of repo.find because find() calls whenReady() which permanently rejects
+  // if the doc is initially unavailable. In the multi-hop relay architecture
+  // (tab → SW → server → upstream), the SW's SubductionSource may initially
+  // get 0 data from the server, marking the doc unavailable. Periodic sync
+  // (30s) will eventually pick up the data once the server fetches from
+  // upstream. We need to wait for that rather than fail immediately.
+  const progress = repo.findWithProgress<FolderDoc>(
     maybeAutomergeUrl as import("@automerge/automerge-repo/slim").AutomergeUrl
   );
+  const folderHandle = await waitForHandle(progress, documentId, ENTRY_WAIT_TIMEOUT_MS);
   const needed = neededEntry(path);
   const entry = await waitForDocEntry(folderHandle, needed);
 
@@ -521,7 +747,7 @@ async function resolveAutomergeUrlInner(
   let fileHandle: any;
   if (path.length) {
     // Try direct file navigation first
-    fileHandle = await findHandleInFolderHandle<FileDoc>(
+    fileHandle = await findHandleInFolderHandle(
       repo,
       folderHandle,
       path.map(decodeURIComponent)
@@ -558,7 +784,7 @@ async function resolveAutomergeUrlInner(
     }
   } else {
     // No path — resolve the root export (like "." in package.json)
-    const pkgFileHandle = await findHandleInFolderHandle<FileDoc>(
+    const pkgFileHandle = await findHandleInFolderHandle(
       repo,
       folderHandle,
       ["package.json"]
@@ -581,7 +807,7 @@ async function resolveAutomergeUrlInner(
           }
           if (resolved) {
             const resolvedPath = resolved.replace(/^\.\//, "").split("/");
-            fileHandle = await findHandleInFolderHandle<FileDoc>(
+            fileHandle = await findHandleInFolderHandle(
               repo,
               folderHandle,
               resolvedPath

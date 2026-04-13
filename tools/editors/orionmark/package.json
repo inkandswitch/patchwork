@@ -29,7 +29,7 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-codemirror": "^0.2.0",
-    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo": "link:../../../../automerge-repo/packages/automerge-repo",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/react": "catalog:",
     "@codemirror/autocomplete": "^6.19.0",

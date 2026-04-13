@@ -24,12 +24,12 @@
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "catalog:",
       "@automerge/automerge-repo-network-messagechannel": "catalog:",
       "@automerge/automerge-repo-network-websocket": "catalog:",
       "@automerge/automerge-repo-react-hooks": "catalog:",
       "@automerge/automerge-repo-storage-indexeddb": "catalog:",
       "@automerge/automerge-subduction": "catalog:",
+      "@automerge/subduction": "0.11.0",
       "@automerge/react": "catalog:",
       "@automerge/vanillajs": "catalog:"
     }
@@ -37,9 +37,10 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
-    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo": "link:../automerge-repo/packages/automerge-repo",
     "@automerge/automerge-repo-storage-nodefs": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
+    "@automerge/subduction": "0.11.0",
     "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
     "concurrently": "^9.1.2",
