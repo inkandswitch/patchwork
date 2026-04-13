@@ -31,6 +31,11 @@ import {
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
+// Side-effect import: initializes the Subduction Wasm module (via initSync)
+// before the Repo constructor accesses it. The Vite alias ensures this resolves
+// to the same underlying module as @automerge/automerge-subduction/slim.
+import "@automerge/automerge-subduction";
+
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
@@ -95,7 +100,9 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("tool-id", initialParams.get("frame")!);
   const docId = initialParams.get("doc");
   const docUrl = docId
-    ? stringifyAutomergeUrl({ documentId: docId as import("@automerge/automerge-repo").DocumentId })
+    ? stringifyAutomergeUrl({
+        documentId: docId as import("@automerge/automerge-repo").DocumentId,
+      })
     : accountDocHandle.url;
   rootElement.setAttribute("doc-url", docUrl);
 } else {
