@@ -75,6 +75,7 @@ const slog = SwLogger.open().then((logger) => {
 // Resolves when the main thread tells us the Subduction endpoint(s)
 let resolveSubductionReady: () => void;
 let subductionEndpoints: string[] = [];
+let siteName = "tiny-patchwork";
 const subductionReady = new Promise<void>((resolve) => {
   resolveSubductionReady = resolve;
 });
@@ -161,12 +162,12 @@ function getRepoHive() {
       });
 
       const serverUrl = subductionEndpoints[0];
-      const keyhiveStorage = new IndexedDBStorageAdapter("tiny-patchwork-keyhive");
+      const keyhiveStorage = new IndexedDBStorageAdapter(`${siteName}-keyhive`);
       const keyhiveNetwork = new WebSocketClientAdapter(serverUrl);
 
       const hive = await initializeAutomergeRepoKeyhive({
         storage: keyhiveStorage,
-        peerIdSuffix: "tiny-patchwork-worker" + Math.random().toString(36).slice(2),
+        peerIdSuffix: `${siteName}-worker` + Math.random().toString(36).slice(2),
         networkAdapter: keyhiveNetwork,
         automaticArchiveIngestion: true,
         cachingMode: "periodic",
@@ -486,7 +487,9 @@ self.addEventListener("message", async (event) => {
     log("serviceworker debugging enabled");
   } else if (event.data.type == "set-subduction-endpoints") {
     const urls: string[] = event.data.urls;
+    const site: string = event.data.siteName ?? "tiny-patchwork";
     subductionEndpoints = urls;
+    siteName = site;
     resolveSubductionReady();
     // Wait for the repo to be fully ready, then ack
     await getRepo();

@@ -20,7 +20,7 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import { useSubscribe } from "@inkandswitch/subscribables-solid";
 import { $selectedDocUrls } from "@inkandswitch/annotations-selection";
-import { createSignal, Show } from "solid-js";
+import { createSignal, Show, Switch, Match } from "solid-js";
 import { handleFilesDrop } from "./document-list/file-drop.ts";
 
 export function Sideboard(
@@ -36,7 +36,18 @@ export function Sideboard(
     "moduleSettingsUrl" in doc ? doc.moduleSettingsUrl : undefined;
   const accountDocUrl = () => props.handle.url;
   const contactUrl = () => ("contactUrl" in doc ? doc.contactUrl : undefined);
+  const hive = () => props.element.hive;
   const selectedDocUrls = useSubscribe($selectedDocUrls);
+
+  const [contactCardCopied, setContactCardCopied] = createSignal(false);
+  function copyContactCard() {
+    const h = hive();
+    if (!h?.active?.contactCard) return;
+    const contactCardJson = h.active.contactCard.toJson();
+    navigator.clipboard.writeText(contactCardJson);
+    setContactCardCopied(true);
+    setTimeout(() => setContactCardCopied(false), 1000);
+  }
 
   function open(detail: OpenDocumentEventDetail) {
     props.element.dispatchEvent(createOpenEvent(detail));
@@ -150,19 +161,31 @@ export function Sideboard(
           rootFolderHandle={folderHandle.latest!}
         />
       </nav>
-      <Show when={moduleSettingsUrl() && contactUrl()}>
+      <Show when={moduleSettingsUrl()}>
         <footer class="sideboard-footer">
-          <button
-            onClick={() =>
-              open({
-                url: accountDocUrl(),
-                toolId: "account-picker",
-              })
-            }
-            class="sideboard-footer__button"
-          >
-            <patchwork-view doc-url={contactUrl()!} tool-id="contact-avatar" />
-          </button>
+          <Switch>
+            <Match when={contactUrl()}>
+              <button
+                onClick={() =>
+                  open({
+                    url: accountDocUrl(),
+                    toolId: "account-picker",
+                  })
+                }
+                class="sideboard-footer__button"
+              >
+                <patchwork-view doc-url={contactUrl()!} tool-id="contact-avatar" />
+              </button>
+            </Match>
+            <Match when={hive()}>
+              <button
+                onClick={copyContactCard}
+                class="sideboard-footer__button"
+              >
+                {contactCardCopied() ? "Copied!" : "Copy Contact Card"}
+              </button>
+            </Match>
+          </Switch>
 
           <button
             onClick={() => open({ url: moduleSettingsUrl()! })}

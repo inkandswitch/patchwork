@@ -111,6 +111,7 @@ export default async function setupServiceWorker(
         type: "set-subduction-endpoints",
         urls: endpoints,
         moduleSettingsUrls,
+        siteName: options?.siteName,
       },
       [ackRemote]
     );

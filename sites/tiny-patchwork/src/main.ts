@@ -43,6 +43,7 @@ const defaultToolsUrl =
 const result = await setup({
   subductionEndpoints: ["ws://localhost:3035"],
   moduleSettingsUrls: [defaultToolsUrl],
+  siteName: "tiny-patchwork",
 });
 if (!result) {
   throw new Error("Failed to set up service worker");

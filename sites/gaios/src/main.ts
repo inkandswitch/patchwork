@@ -35,6 +35,32 @@ import {
 } from "@automerge/vanillajs";
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
+import { initializeAutomergeRepoKeyhive, initKeyhiveWasm } from "@automerge/automerge-repo-keyhive";
+
+initKeyhiveWasm();
+
+// Side-effect import: initializes the Subduction Wasm module (via initSync)
+// before the Repo constructor accesses it. The Vite alias ensures this resolves
+// to the same underlying module as @automerge/automerge-subduction/slim.
+import "@automerge/automerge-subduction";
+
+const result = await setup({
+  subductionEndpoints: ["ws://localhost:3035"],
+  siteName: "gaios",
+});
+if (!result) {
+  throw new Error("Failed to set up service worker");
+}
+
+const keyhiveStorage = new IndexedDBStorageAdapter("gaios-keyhive");
+const hive = await initializeAutomergeRepoKeyhive({
+  storage: keyhiveStorage,
+  peerIdSuffix: "gaios" + Math.random().toString(36).slice(2),
+  networkAdapter: new MessageChannelNetworkAdapter(result.port),
+  automaticArchiveIngestion: true,
+  cachingMode: "periodic",
+  onlyShareWithHardcodedServerPeerId: false,
+});
 
 declare global {
   interface Window {
@@ -42,6 +68,7 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
+    hive: typeof hive;
     getRepoChannel: () => MessagePort;
     patchwork: {
       repo: Repo;
@@ -54,27 +81,20 @@ declare global {
 
 const repo = new Repo({
   storage: new IndexedDBStorageAdapter(),
-  async sharePolicy(peerId) {
-    return peerId.includes("service-worker");
-  },
   enableRemoteHeadsGossiping: true,
+  network: [hive.networkAdapter],
+  peerId: hive.peerId,
+  idFactory: hive.idFactory,
 });
 
 repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const result = await setup();
-if (!result) {
-  throw new Error("Failed to set up service worker");
-}
-
-if (result.port) {
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(result.port)
-  );
-  await repo.networkSubsystem.whenReady();
-}
+window.repo = repo;
+window.hive = hive;
+window.Automerge = Automerge;
+window.AutomergeRepo = AutomergeRepo;
 
 window.getRepoChannel = () => {
   const { port1, port2 } = new MessageChannel();
@@ -82,16 +102,27 @@ window.getRepoChannel = () => {
   return port1;
 };
 
-window.repo = repo;
-window.Automerge = Automerge;
-window.AutomergeRepo = AutomergeRepo;
+// Wait for the network adapter to connect to the SW, but don't block forever.
+// On a fresh profile, docs need the network (nothing in local storage).
+await Promise.race([
+  repo.networkSubsystem.whenReady(),
+  new Promise((resolve) => setTimeout(resolve, 10_000)),
+]);
+(hive.networkAdapter as any).syncKeyhive?.();
 
-const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
+const accountDocHandle = await getOrCreateLayoutDocHandle(repo, hive);
 await repo.flush();
 
 window.accountDocHandle = accountDocHandle;
 
-registerPatchworkViewElement({ repo });
+// When keyhive events arrive from the service worker, the server connection
+// is working. Reset the ModuleWatcher retry budget so it can recover from
+// failures that occurred while the connection was down.
+(hive.networkAdapter as any).on("ingest-remote", () => {
+  moduleWatcher.resetRetries();
+});
+
+registerPatchworkViewElement({ repo, hive });
 
 const rootElement = document.getElementById("root")!;
 
@@ -153,7 +184,7 @@ const moduleWatcher = new ModuleWatcher(
   [
     accountDocHandle.doc().moduleSettingsUrl,
     // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
+    "automerge:4KfgQruv1vSsGdWEzemXh4CoewX4" as AutomergeRepo.AutomergeUrl,
   ],
   (name, mod) => {
     if (Array.isArray(mod.plugins)) {

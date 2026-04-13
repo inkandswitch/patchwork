@@ -17,4 +17,9 @@ export type SetupServiceWorkerOptions = {
    * arrives.
    */
   moduleSettingsUrls?: string[];
+  /**
+   * Site name used to namespace keyhive IndexedDB storage and peer ID suffix
+   * in the service worker. Defaults to `"tiny-patchwork"`.
+   */
+  siteName?: string;
 };

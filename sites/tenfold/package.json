@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "link:../../../automerge-repo-keyhive",
+    "@automerge/automerge-repo-keyhive": "link:/Users/jtfmumm/dev/automerge-repo-keyhive",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@keyhive/keyhive": "catalog:",
     "@tailwindcss/vite": "^4.1.14",
@@ -25,8 +25,7 @@
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "link:../../../automerge-repo/packages/automerge-repo",
-    "@automerge/automerge-subduction": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/commands": "^6.9.0",
