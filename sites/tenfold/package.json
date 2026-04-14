@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "link:/Users/jtfmumm/dev/automerge-repo-keyhive",
+    "@automerge/automerge-repo-keyhive": "catalog:",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@keyhive/keyhive": "catalog:",
     "@tailwindcss/vite": "^4.1.14",

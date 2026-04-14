@@ -5,16 +5,15 @@ import tailwindcss from "@tailwindcss/vite";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Force a single copy of @automerge/automerge across linked packages.
-// Without this, the linked automerge-repo resolves its own node_modules copy,
-// causing `Automerge.use()` to be called on a different module instance.
+// Force main-thread and service-worker imports of subduction/automerge to
+// pick the same wasm-bindgen entrypoint. Without these aliases Vite resolves
+// "@automerge/automerge-subduction" via the package's browser exports
+// (bundler.js) while the service worker imports "/slim" directly; each entry
+// initializes its own WASM instance, giving "expected instance of CommitId2"
+// class-identity mismatches.
 const automergeEntryDir = dirname(
   fileURLToPath(import.meta.resolve("@automerge/automerge"))
 );
-
-// Force a single copy of @automerge/automerge-subduction. Without this,
-// automerge-repo's internal imports resolve a separate Wasm module instance,
-// causing `_assertClass` failures ("expected instance of SedimentreeId2").
 const subductionDir = dirname(
   fileURLToPath(import.meta.resolve("@automerge/automerge-subduction"))
 );
@@ -54,7 +53,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Subpath aliases must come before the bare specifier (longest-prefix wins).
       "@automerge/automerge/slim": resolve(automergeEntryDir, "slim.js"),
       "@automerge/automerge": resolve(automergeEntryDir, "fullfat_bundler.js"),
       "@automerge/automerge-subduction/slim": resolve(subductionDir, "slim.js"),

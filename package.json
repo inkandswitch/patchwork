@@ -38,7 +38,7 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
-    "@automerge/automerge-repo": "link:../automerge-repo/packages/automerge-repo",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-storage-nodefs": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
     "@automerge/subduction": "0.11.0",

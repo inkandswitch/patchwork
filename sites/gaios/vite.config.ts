@@ -5,7 +5,12 @@ import tailwindcss from "@tailwindcss/vite";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Force single copies to avoid duplicate Wasm module instances.
+// Force main-thread and service-worker imports of subduction/automerge to
+// pick the same wasm-bindgen entrypoint. Without these aliases Vite resolves
+// "@automerge/automerge-subduction" via the package's browser exports
+// (bundler.js) while the service worker imports "/slim" directly; each entry
+// initializes its own WASM instance, giving "expected instance of CommitId2"
+// class-identity mismatches.
 const automergeEntryDir = dirname(
   fileURLToPath(import.meta.resolve("@automerge/automerge"))
 );

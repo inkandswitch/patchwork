@@ -23,7 +23,7 @@
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "link:/Users/jtfmumm/dev/automerge-repo-keyhive",
+    "@automerge/automerge-repo-keyhive": "catalog:",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@types/react": "catalog:"
   }

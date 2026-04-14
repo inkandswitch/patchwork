@@ -60,8 +60,7 @@ const hive = await initializeAutomergeRepoKeyhive({
 });
 
 // Side-effect import: initializes the Subduction Wasm module (via initSync)
-// before the Repo constructor accesses it. The Vite alias ensures this resolves
-// to the same underlying module as @automerge/automerge-subduction/slim.
+// before the Repo constructor accesses it.
 import "@automerge/automerge-subduction";
 
 declare global {

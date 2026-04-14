@@ -39,11 +39,6 @@ import { initializeAutomergeRepoKeyhive, initKeyhiveWasm } from "@automerge/auto
 
 initKeyhiveWasm();
 
-// Side-effect import: initializes the Subduction Wasm module (via initSync)
-// before the Repo constructor accesses it. The Vite alias ensures this resolves
-// to the same underlying module as @automerge/automerge-subduction/slim.
-import "@automerge/automerge-subduction";
-
 const result = await setup({
   subductionEndpoints: ["ws://localhost:3035"],
   siteName: "gaios",
