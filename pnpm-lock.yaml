@@ -120,6 +120,9 @@ importers:
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
+      '@keyhive/keyhive':
+        specifier: 'catalog:'
+        version: 0.0.0-alpha.56
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12

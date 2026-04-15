@@ -43,6 +43,7 @@
     "@automerge/automerge-repo-network-websocket": "catalog:",
     "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@automerge/vanillajs": "catalog:",
+    "@keyhive/keyhive": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@types/debug": "^4.1.12",
     "debug": "^4.4.3",
