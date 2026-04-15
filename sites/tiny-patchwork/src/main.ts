@@ -41,7 +41,8 @@ const defaultToolsUrl =
   "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
 
 const result = await setup({
-  subductionEndpoints: ["ws://localhost:3035"],
+  // subductionEndpoints: ["ws://localhost:3035"],
+  subductionEndpoints: ["ws://104.248.114.115:3030"],
   moduleSettingsUrls: [defaultToolsUrl],
   siteName: "tiny-patchwork",
 });

@@ -40,7 +40,8 @@ import { initializeAutomergeRepoKeyhive, initKeyhiveWasm } from "@automerge/auto
 initKeyhiveWasm();
 
 const result = await setup({
-  subductionEndpoints: ["ws://localhost:3035"],
+  // subductionEndpoints: ["ws://localhost:3035"],
+  subductionEndpoints: ["ws://104.248.114.115:3030"],
   siteName: "gaios",
 });
 if (!result) {
