@@ -116,15 +116,21 @@ export class ModuleWatcher {
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
       const valid = isValidAutomergeUrl(importName);
+      console.log(
+        `[module-watcher] importModuleSafe: ${importName.slice(0, 30)}... (valid=${valid})`
+      );
 
       const mod = await (valid
         ? importModuleFromFolderDocUrl(importName)
         : import(/* @vite-ignore */ importName));
+      console.log(
+        `[module-watcher] importModuleSafe OK: ${importName.slice(0, 30)}...`,
+        mod ? Object.keys(mod) : null
+      );
       return mod;
     } catch (error) {
       console.error(
-        `%c Failed to import ${importName}`,
-        "color: #000, background: #ffbcef",
+        `[module-watcher] importModuleSafe FAILED: ${importName.slice(0, 30)}...`,
         error
       );
       return null;
@@ -141,8 +147,22 @@ export class ModuleWatcher {
 
   private async announceWithRetry(importName: string) {
     // First attempt — may fail if folder doc hasn't synced yet
-    const mod = await this.announce(importName).catch(() => null);
-    if (mod) return;
+    console.log(
+      `[module-watcher] announceWithRetry: ${importName.slice(0, 30)}...`
+    );
+    const mod = await this.announce(importName).catch((err) => {
+      console.warn(
+        `[module-watcher] first announce failed: ${importName.slice(0, 30)}...`,
+        err?.message
+      );
+      return null;
+    });
+    if (mod) {
+      console.log(
+        `[module-watcher] announceWithRetry OK on first try: ${importName.slice(0, 30)}...`
+      );
+      return;
+    }
 
     // Mark as pending — the change listener will retry when the doc syncs
     this.#pendingModules.add(importName);

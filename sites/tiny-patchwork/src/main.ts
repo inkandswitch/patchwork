@@ -6,6 +6,7 @@ import {
 } from "@inkandswitch/patchwork-elements";
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
+import { SwLogReader } from "@inkandswitch/patchwork-bootloader/sw-logger";
 import {
   registerPlugins,
   DatatypeDescription,
@@ -119,7 +120,16 @@ if (initialParams.has("frame")) {
 
 function onModuleLoaded(name: string, mod: any) {
   if (Array.isArray(mod.plugins)) {
+    console.log(
+      `[main] registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
+      mod.plugins.map((p: any) => `${p.type}:${p.id}`)
+    );
     registerPlugins(mod.plugins, name);
+  } else {
+    console.warn(
+      `[main] module ${name.slice(0, 30)}... has no plugins array`,
+      Object.keys(mod)
+    );
   }
 }
 
@@ -129,7 +139,40 @@ const moduleWatcher = new ModuleWatcher(
   onModuleLoaded
 );
 
+// Log tool registry state after initial load completes
+moduleWatcher.doneLoading
+  .then(() => {
+    const toolReg = getRegistry("patchwork:tool");
+    const tools = toolReg.all();
+    console.log(
+      `[main] doneLoading: ${tools.length} tools registered:`,
+      tools.map((t: any) => t.id)
+    );
+    if (!tools.find((t: any) => t.id === "patchwork-frame")) {
+      console.error("[main] patchwork-frame NOT found in registry!");
+    }
+  })
+  .catch((err: any) => {
+    console.error("[main] doneLoading rejected:", err);
+  });
+
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
+
+// ── SW log access (mirrors the SW inspector console API) ────────────────
+(window.patchwork as any).sw = {
+  printLogs: async (n = 200) => {
+    const entries = await SwLogReader.tail(n);
+    for (const e of entries) {
+      const prefix = `[${e.ts}] [${e.level}]`;
+      if (e.data !== undefined) console.log(prefix, e.msg, e.data);
+      else console.log(prefix, e.msg);
+    }
+    console.log(`--- ${entries.length} entries ---`);
+  },
+  tailLogs: (n = 200) => SwLogReader.tail(n),
+  exportLogs: () => SwLogReader.exportAll(),
+  clearLogs: () => SwLogReader.clear(),
+};
 
 rootElement.addEventListener("patchwork:no-tool", (event) => {
   moduleWatcher.loadSuggestedImportUrl(event.detail.url);

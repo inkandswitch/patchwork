@@ -1,5 +1,7 @@
 /// <reference types="service-worker-types" />
 
+import { SwLogger, type SwLoggerInterface } from "./sw-logger.js";
+
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
 // type:"module" so the browser fetches these as regular network requests.
@@ -29,8 +31,37 @@ import {
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
+// TEMPORARY: enable debug npm module in SW context (no localStorage available)
 let cachename = "default";
 let debugging = false;
+
+// ── Persistent logger ───────────────────────────────────────────────────
+// Initialized eagerly so it's available for the entire SW lifetime.
+// Access from the SW inspector console via self.printLogs(), self.tailLogs(),
+// self.exportLogs(), self.clearLogs().
+const slog = SwLogger.open().then((logger) => {
+  (self as any).slog = logger;
+
+  (self as any).printLogs = async (n = 200) => {
+    const entries = await logger.tail(n);
+    for (const e of entries) {
+      const prefix = `[${e.ts}] [${e.level}]`;
+      if (e.data !== undefined) {
+        console.log(prefix, e.msg, e.data);
+      } else {
+        console.log(prefix, e.msg);
+      }
+    }
+    console.log(`--- ${entries.length} entries ---`);
+  };
+
+  (self as any).tailLogs = (n = 200) => logger.tail(n);
+  (self as any).exportLogs = () => logger.exportAll();
+  (self as any).clearLogs = () => logger.clear();
+
+  logger.info("sw-logger initialized");
+  return logger;
+});
 
 // Resolves when the main thread tells us the Subduction endpoint(s)
 let resolveSubductionReady: () => void;
@@ -77,21 +108,29 @@ let repoPromise: Promise<Repo> | null = null;
 function getRepo() {
   if (!repoPromise) {
     repoPromise = (async () => {
+      const logger = await slog;
+
       // Fetch both Wasm binaries in parallel, then compile sequentially
       // (compilation order matters — subduction depends on automerge).
+      logger.info("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
         fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
         fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
       ]);
       await initializeWasm(new Uint8Array(amWasmBuf));
       initSubductionSync(new Uint8Array(sdnWasmBuf));
+      logger.info("wasm initialized");
 
       // Wait for the main thread to tell us the Subduction endpoint(s).
       // Overlap the WebCryptoSigner IDB key lookup with this wait.
+      logger.info("waiting for subduction endpoints from main thread");
       const [signer] = await Promise.all([
         WebCryptoSigner.setup(),
         subductionReady,
       ]);
+      logger.info("subduction endpoints received", {
+        endpoints: subductionEndpoints,
+      });
 
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
@@ -106,15 +145,13 @@ function getRepo() {
       });
 
       (self as any).repo = repo;
-      console.log(
-        "[service worker] repo initialized, waiting for network subsystem to be ready"
-      );
+      logger.info("repo constructed, waiting for network subsystem");
 
       // Don't block getRepo() on whenReady() — the network subsystem starts
       // with no adapters (MessageChannel is added later via connectPort),
       // and blocking here prevents the fetch handler from serving requests.
       repo.networkSubsystem.whenReady().then(() => {
-        console.log("[service worker] repo network subsystem ready");
+        logger.info("repo network subsystem ready");
       });
 
       return repo;
@@ -138,6 +175,7 @@ interface ModuleSettingsDoc {
 
 async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
   const repo = await getRepo();
+  const logger = await slog;
 
   // Wait for the Subduction WebSocket to be connected before calling
   // repo.find() on remote-only docs. Without this, DocumentQuery
@@ -164,6 +202,7 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
 
   for (const url of settingsUrls) {
     if (!isValidAutomergeUrl(url)) continue;
+    logger.info(`prefetch: warming module-settings doc ${url.slice(0, 30)}…`);
 
     try {
       const handle = await repo.find<ModuleSettingsDoc>(url);
@@ -219,10 +258,16 @@ async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
             timeout.then(() => "timeout" as const),
           ])
         );
-        await Promise.all(timedPromises);
+        const results = await Promise.all(timedPromises);
+        const ok = results.filter((r) => r === "ok").length;
+        const timedOut = results.filter((r) => r === "timeout").length;
+        logger.info(
+          `prefetch: ${ok}/${folderDocPromises.length} tool folder docs ready` +
+            (timedOut > 0 ? ` (${timedOut} timed out)` : "")
+        );
       }
     } catch (err: unknown) {
-      console.warn(`[sw] prefetch failed for ${url}`, err);
+      logger.warn(`prefetch: failed for ${url}`, err);
     }
   }
 }
@@ -382,6 +427,7 @@ function watchFolderForInvalidation(folderHandle: any, folderDocId: string) {
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const repo = await getRepo();
+  const logger = await slog;
   const [maybeAutomergeUrl, ...path] = automergeURL.href.split("/");
 
   if (!isValidAutomergeUrl(maybeAutomergeUrl)) {
@@ -426,6 +472,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
   const resolvePromise = resolveAutomergeUrlInner(
     repo,
+    logger,
     maybeAutomergeUrl,
     path,
     documentId,
@@ -441,6 +488,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
 async function resolveAutomergeUrlInner(
   repo: Repo,
+  logger: any,
   maybeAutomergeUrl: string,
   path: string[],
   documentId: string,
@@ -455,7 +503,20 @@ async function resolveAutomergeUrlInner(
   const needed = neededEntry(path);
   const entry = await waitForDocEntry(folderHandle, needed);
 
+  if (debugging) {
+    const folderDoc = folderHandle.doc();
+    const docNames = folderDoc?.docs?.map((d: any) => d.name) ?? [];
+    logger.debug(
+      `resolve ${documentId.slice(0, 8)} path=[${path.join("/")}] heads=${folderHandle.heads()?.length ?? 0} docs=[${docNames.join(",")}]`
+    );
+  }
+
   if (!entry) {
+    const names = folderHandle.doc()?.docs?.map((d: any) => d.name) ?? [];
+    logger.warn(
+      `timed out waiting for "${needed}" in folder ${documentId.slice(0, 8)}`,
+      { docs: names }
+    );
     throw new Error(
       `timed out waiting for "${needed}" in folder at ${maybeAutomergeUrl}`
     );
@@ -506,12 +567,22 @@ async function resolveAutomergeUrlInner(
       folderHandle,
       ["package.json"]
     );
+    if (debugging) {
+      logger.debug(
+        `resolve ${documentId.slice(0, 8)} pkgFileHandle=${pkgFileHandle ? "found" : "null"}`
+      );
+    }
     if (pkgFileHandle) {
       const pkgDoc = pkgFileHandle.doc() as unknown as FileDoc | undefined;
       if (pkgDoc?.content) {
         const pkgJson = JSON.parse(String(pkgDoc.content));
         try {
           const resolved = resolvePackageExport(pkgJson);
+          if (debugging) {
+            logger.debug(
+              `resolve ${documentId.slice(0, 8)} resolved=${resolved}`
+            );
+          }
           if (resolved) {
             const resolvedPath = resolved.replace(/^\.\//, "").split("/");
             fileHandle = await findHandleInFolderHandle<FileDoc>(
@@ -520,15 +591,21 @@ async function resolveAutomergeUrlInner(
               resolvedPath
             );
           }
-        } catch {}
+        } catch (e) {
+          logger.warn(
+            `resolve ${documentId.slice(0, 8)} resolvePackageExport threw`,
+            e
+          );
+        }
       }
     }
   }
 
   if (!fileHandle) {
-    throw new Error(
-      `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`
-    );
+    const msg = `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`;
+    const names = folderHandle.doc()?.docs?.map((d: any) => d.name) ?? [];
+    logger.warn(msg, { docs: names });
+    throw new Error(msg);
   }
 
   // Wait for the file doc to have content. On first load, the file handle
@@ -557,7 +634,9 @@ async function resolveAutomergeUrlInner(
 
   const content = fileDoc?.content;
   if (!content) {
-    throw new Error(`file at ${cacheKey} has no content (timed out)`);
+    const msg = `file at ${cacheKey} has no content (timed out)`;
+    logger.warn(msg);
+    throw new Error(msg);
   }
 
   let body: BodyInit =
