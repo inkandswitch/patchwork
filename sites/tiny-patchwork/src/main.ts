@@ -31,6 +31,11 @@ import {
 import * as Automerge from "@automerge/automerge";
 import * as AutomergeRepo from "@automerge/automerge-repo";
 
+// Side-effect import: initializes the Subduction Wasm module (via initSync)
+// before the Repo constructor accesses it. The Vite alias ensures this resolves
+// to the same underlying module as @automerge/automerge-subduction/slim.
+import "@automerge/automerge-subduction";
+
 declare global {
   interface Window {
     accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
@@ -59,7 +64,13 @@ repo.subscribeToRemotes([
   "3760df37-a4c6-4f66-9ecd-732039a9385d" as import("@automerge/automerge-repo").StorageId,
 ]);
 
-const result = await setup();
+// Published tools are registered in this module settings doc by publish-all-tools.
+const defaultToolsUrl =
+  "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
+
+const result = await setup({
+  moduleSettingsUrls: [defaultToolsUrl],
+});
 if (!result) {
   throw new Error("Failed to set up service worker");
 }
@@ -105,9 +116,6 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
   rootElement.setAttribute("doc-url", accountDocHandle.url);
 }
-
-const defaultToolsUrl =
-  "automerge:2LZBb891v37vggWYQPJRbYdyBGGE" as AutomergeUrl;
 
 function onModuleLoaded(name: string, mod: any) {
   if (Array.isArray(mod.plugins)) {

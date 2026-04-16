@@ -29,14 +29,19 @@
     "./types": {
       "import": "./dist/types.js",
       "types": "./dist/types.d.ts"
+    },
+    "./sw-logger": {
+      "import": "./dist/sw-logger.js",
+      "types": "./dist/sw-logger.d.ts"
     }
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-repo-network-messagechannel": "^2.5.3",
-    "@automerge/automerge-repo-network-websocket": "^2.5.3",
-    "@automerge/automerge-repo-storage-indexeddb": "^2.5.3",
+    "@automerge/automerge-subduction": "catalog:",
+    "@automerge/automerge-repo-network-messagechannel": "catalog:",
+    "@automerge/automerge-repo-network-websocket": "catalog:",
+    "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@types/debug": "^4.1.12",

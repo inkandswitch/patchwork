@@ -9,21 +9,20 @@ packages:
   - tools/*/*
 
 catalog:
-  "@automerge/automerge": 3.2.4
-  "@automerge/automerge-repo": 2.5.3
-  "@automerge/automerge-repo-keyhive": 0.1.0-alpha.14
-  "@automerge/automerge-repo-react-hooks": 2.5.3
-  "@automerge/automerge-repo-solid-primitives": 2.4.0
-  "@automerge/react": 2.5.3
-  "@automerge/vanillajs": 2.5.3
-  "@keyhive/keyhive": 0.0.0-alpha.54
+  "@automerge/automerge": 3.2.5
+  "@automerge/automerge-repo": 2.6.0-subduction.9
+  "@automerge/automerge-repo-keyhive": 0.2.0-alpha.1d
+  "@automerge/automerge-repo-network-messagechannel": 2.6.0-subduction.9
+  "@automerge/automerge-repo-storage-nodefs": 2.6.0-subduction.9
+  "@automerge/automerge-repo-network-websocket": 2.6.0-subduction.9
+  "@automerge/automerge-repo-react-hooks": 2.6.0-subduction.9
+  "@automerge/automerge-repo-solid-primitives": 2.6.0-subduction.9
+  "@automerge/automerge-repo-storage-indexeddb": 2.6.0-subduction.9
+  "@automerge/automerge-subduction": 0.7.0
+  "@automerge/react": 2.6.0-subduction.9
+  "@automerge/vanillajs": 2.6.0-subduction.9
+  "@keyhive/keyhive": 0.0.0-alpha.56
   "@types/react": 18.3.1
   "@types/react-dom": 18.3.1
-  react: 18.3.1
-  react-dom: 18.3.1
-
-overrides:
-  "@automerge/automerge": 3.2.4
-  "@automerge/automerge-repo": 2.5.3
   react: 18.3.1
   react-dom: 18.3.1

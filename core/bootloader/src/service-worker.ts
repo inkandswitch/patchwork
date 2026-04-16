@@ -7,6 +7,11 @@
 // Wasm is fetched from /automerge.wasm (emitted by the vite plugin) instead
 // of bundling the ~3MB base64 string.
 import { initializeWasm } from "@automerge/automerge/slim";
+// eslint-disable-next-line
+// @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
+import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
+
 import {
   Repo,
   isValidAutomergeUrl,
@@ -22,19 +27,16 @@ import {
 
 // Small adapters — bundled directly into the SW
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
-import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
 let cachename = "default";
 let debugging = false;
 
-// Track WebSocket adapters by URL so we can remove them
-const syncAdapters = new Map<string, WebSocketClientAdapter>();
-
-// Resolves when the main thread tells us which sync server to use
-let resolveSyncServer: (url: string) => void;
-const syncServerReady = new Promise<string>((resolve) => {
-  resolveSyncServer = resolve;
+// Resolves when the main thread tells us the Subduction endpoint(s)
+let resolveSubductionReady: () => void;
+let subductionEndpoints: string[] = [];
+const subductionReady = new Promise<void>((resolve) => {
+  resolveSubductionReady = resolve;
 });
 
 const cacheableStatuses = [
@@ -75,31 +77,45 @@ let repoPromise: Promise<Repo> | null = null;
 function getRepo() {
   if (!repoPromise) {
     repoPromise = (async () => {
-      const wasmResponse = await fetch("/automerge.wasm");
-      await initializeWasm(new Uint8Array(await wasmResponse.arrayBuffer()));
+      // Fetch both Wasm binaries in parallel, then compile sequentially
+      // (compilation order matters — subduction depends on automerge).
+      const [amWasmBuf, sdnWasmBuf] = await Promise.all([
+        fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
+        fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
+      ]);
+      await initializeWasm(new Uint8Array(amWasmBuf));
+      initSubductionSync(new Uint8Array(sdnWasmBuf));
 
-      // Wait for the main thread to tell us which sync server to use
-      const syncServerUrl = await syncServerReady;
-      const syncAdapter = new WebSocketClientAdapter(syncServerUrl);
-      syncAdapters.set(syncServerUrl, syncAdapter);
+      // Wait for the main thread to tell us the Subduction endpoint(s).
+      // Overlap the WebCryptoSigner IDB key lookup with this wait.
+      const [signer] = await Promise.all([
+        WebCryptoSigner.setup(),
+        subductionReady,
+      ]);
 
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
-        network: [syncAdapter],
+        signer,
         peerId: ("service-worker-" +
           (Math.random() * 10000).toString(36).slice(2)) as PeerId,
         async sharePolicy(peerId) {
           return peerId.includes("storage-server");
         },
         enableRemoteHeadsGossiping: true,
+        subductionWebsocketEndpoints: subductionEndpoints,
       });
 
       (self as any).repo = repo;
       console.log(
         "[service worker] repo initialized, waiting for network subsystem to be ready"
       );
-      await repo.networkSubsystem.whenReady();
-      console.log("[service worker] repo network subsystem ready");
+
+      // Don't block getRepo() on whenReady() — the network subsystem starts
+      // with no adapters (MessageChannel is added later via connectPort),
+      // and blocking here prevents the fetch handler from serving requests.
+      repo.networkSubsystem.whenReady().then(() => {
+        console.log("[service worker] repo network subsystem ready");
+      });
 
       return repo;
     })();
@@ -133,35 +149,18 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
-  } else if (event.data.type == "set-sync-server") {
-    const url: string = event.data.url;
-    // Unblock getRepo() — it waits for this before creating the WebSocket
-    resolveSyncServer(url);
-    // Wait for the repo (and its WebSocket) to be fully ready, then ack
+  } else if (event.data.type == "set-subduction-endpoints") {
+    const urls: string[] = event.data.urls;
+    subductionEndpoints = urls;
+    resolveSubductionReady();
+    // Wait for the repo to be fully ready, then ack
     await getRepo();
     const [ackPort] = event.ports;
     if (ackPort) {
       ackPort.postMessage("ready");
       ackPort.close();
     }
-    log(`set sync server: ${url}`);
-  } else if (event.data.type == "add-sync-server") {
-    const url: string = event.data.url;
-    if (!syncAdapters.has(url)) {
-      const repo = await getRepo();
-      const adapter = new WebSocketClientAdapter(url);
-      syncAdapters.set(url, adapter);
-      repo.networkSubsystem.addNetworkAdapter(adapter);
-      log(`added sync server: ${url}`);
-    }
-  } else if (event.data.type == "remove-sync-server") {
-    const url: string = event.data.url;
-    const adapter = syncAdapters.get(url);
-    if (adapter) {
-      adapter.disconnect();
-      syncAdapters.delete(url);
-      log(`removed sync server: ${url}`);
-    }
+    log(`set subduction endpoints: ${urls.join(", ")}`);
   }
 });
 
