@@ -27,7 +27,16 @@ export async function importModuleFromFolderDocUrl(
 
   log(`Importing module from entry point url ${entryPointUrl}`);
 
-  return import(/* @vite-ignore */ entryPointUrl);
+  try {
+    // Try importing with a stable URL so successful loads are cached
+    // and module side effects don't re-execute on subsequent calls.
+    return await import(/* @vite-ignore */ entryPointUrl);
+  } catch (err) {
+    // Cache-bust on retry: browsers cache failed dynamic import() results
+    // by URL. A unique query parameter forces a fresh request.
+    const bustUrl = `${entryPointUrl}${entryPointUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
+    return import(/* @vite-ignore */ bustUrl);
+  }
 }
 
 async function packageJsonContentsFromFolderDocUrl(
@@ -41,12 +50,22 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
+  // First attempt: use a stable URL so the SW's in-memory cache can hit.
   const response = await fetch(packageJSONPath);
-  if (!response.ok) {
+  if (response.ok) {
+    return response.json();
+  }
+
+  // Retry with cache-bust: the browser may have cached a failed response
+  // (e.g. 500 from a folder doc that hadn't synced yet). A unique query
+  // parameter forces a fresh request through the SW.
+  const bustUrl = `${packageJSONPath}${packageJSONPath.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  const retryResponse = await fetch(bustUrl);
+  if (!retryResponse.ok) {
     return undefined;
   }
 
-  return response.json();
+  return retryResponse.json();
 }
 
 export function resolvePackageExport(
