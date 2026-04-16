@@ -18,7 +18,6 @@ import {
   Repo,
   isValidAutomergeUrl,
   parseAutomergeUrl,
-  stringifyAutomergeUrl,
   type PeerId,
 } from "@automerge/automerge-repo/slim";
 import {
@@ -437,17 +436,13 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // Trim trailing empty path segment
   if (path.length && !path[path.length - 1]) path.pop();
 
-  const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
+  const { documentId } = parseAutomergeUrl(maybeAutomergeUrl);
 
-  if (!heads) {
-    // Redirect to pinned-heads URL
-    const folder = await repo.find(maybeAutomergeUrl);
-    const latestHeads = folder.heads();
-    const url = stringifyAutomergeUrl({ documentId, heads: latestHeads });
-    let location = `/${encodeURIComponent(url)}`;
-    if (path.length) location += `/${path.join("/")}`;
-    return Response.redirect(location, 307);
-  }
+  // NOTE: previously this redirected headless URLs to pinned-heads URLs
+  // (307 redirect). Removed because during initial sync, folder docs are
+  // partially loaded — pinning captures incomplete state and defeats retries.
+  // The heads parameter is now treated as optional; we always serve the
+  // latest state.
 
   // ── In-memory cache lookup ──────────────────────────────────────────
   // Key is the canonical automerge URL + path, ignoring query params
