@@ -9,6 +9,37 @@ import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
 import { FolderDoc } from "./types.js";
 
+/**
+ * Wrapper around repo.find() that retries on "unavailable" errors.
+ *
+ * In automerge-repo subduction.9, repo.find() returns a DocumentQuery
+ * that rejects immediately with "unavailable" when no source (local
+ * storage or connected peer) has the document yet. On the tab-side
+ * Repo this is common: the SW needs time to sync docs from the
+ * Subduction server and relay them via MessageChannel.
+ *
+ * Backoff: 1s, 2s, 4s, 8s, 8s, 8s, 8s, 8s (~47s total).
+ */
+async function findWithRetry<T>(
+  repo: Repo,
+  url: AutomergeUrl | DocumentId,
+  maxAttempts = 8,
+  baseDelayMs = 1000
+): Promise<DocHandle<T>> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await repo.find<T>(url);
+    } catch (err: unknown) {
+      const isUnavailable =
+        err instanceof Error && err.message.includes("unavailable");
+      if (!isUnavailable || attempt === maxAttempts - 1) throw err;
+      const delay = baseDelayMs * Math.pow(2, Math.min(attempt, 3));
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error("unreachable");
+}
+
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
 } & HasPatchworkMetadata & {
@@ -47,7 +78,9 @@ export class ModuleWatcher {
   private async init() {
     this.handles = (
       await Promise.allSettled(
-        this.urls.map(async (url) => this.repo.find<ModuleSettingsDoc>(url))
+        this.urls.map(async (url) =>
+          findWithRetry<ModuleSettingsDoc>(this.repo, url)
+        )
       )
     )
       .filter((result) => {
@@ -63,16 +96,13 @@ export class ModuleWatcher {
 
   async loadModules(modules: string[]) {
     await Promise.all(
-      modules.map(async (importName) => {
-        this.setDocWatcher(importName);
-        await this.announce(importName).catch((error) => {
-          console.log(
-            new Error(`Failed to load module ${importName}: ${error}`, {
-              cause: error,
-            })
-          );
-        });
-      })
+      modules
+        .map((m) => String(m))
+        .filter((m) => m.length > 0)
+        .map(async (importName) => {
+          this.setDocWatcher(importName);
+          await this.announceWithRetry(importName);
+        })
     );
   }
 
@@ -87,9 +117,9 @@ export class ModuleWatcher {
     try {
       const valid = isValidAutomergeUrl(importName);
 
-      const mod = valid
+      const mod = await (valid
         ? importModuleFromFolderDocUrl(importName)
-        : import(/* @vite-ignore */ importName);
+        : import(/* @vite-ignore */ importName));
       return mod;
     } catch (error) {
       console.error(
@@ -97,12 +127,73 @@ export class ModuleWatcher {
         "color: #000, background: #ffbcef",
         error
       );
+      return null;
     }
   }
 
   private async announce(importName: string) {
     const mod = await this.importModuleSafe(importName);
     mod && this.onLoad(importName, mod);
+    return mod;
+  }
+
+  #pendingModules = new Set<string>();
+
+  private async announceWithRetry(importName: string) {
+    // First attempt — may fail if folder doc hasn't synced yet
+    const mod = await this.announce(importName).catch(() => null);
+    if (mod) return;
+
+    // Mark as pending — the change listener will retry when the doc syncs
+    this.#pendingModules.add(importName);
+
+    // Event-driven retry: watch the folder doc for changes.
+    // When it receives data from sync, retry the import.
+    if (isValidAutomergeUrl(importName)) {
+      findWithRetry<FolderDoc>(this.repo, importName)
+        .then((handle) => {
+          const retryOnChange = async () => {
+            if (!this.#pendingModules.has(importName)) {
+              handle.removeListener("change", retryOnChange);
+              return;
+            }
+            const retried = await this.announce(importName).catch(() => null);
+            if (retried) {
+              this.#pendingModules.delete(importName);
+              handle.removeListener("change", retryOnChange);
+            }
+          };
+          handle.on("change", retryOnChange);
+        })
+        .catch(() => {
+          // find() failed — the fallback timer will handle retries.
+        });
+    }
+
+    // Fallback: periodic retry for cases where the doc change event
+    // doesn't fire (e.g., the folder doc structure arrived but the
+    // sub-documents with file content sync later via a different handle).
+    const retryIntervalMs = 3_000;
+    const maxRetries = 60; // ~3 minutes total
+    let retries = 0;
+    const timer = setInterval(async () => {
+      if (!this.#pendingModules.has(importName) || retries >= maxRetries) {
+        clearInterval(timer);
+        if (retries >= maxRetries) {
+          this.#pendingModules.delete(importName);
+          console.warn(
+            `[module-watcher] gave up loading ${importName} after ${maxRetries} retries`
+          );
+        }
+        return;
+      }
+      retries++;
+      const retried = await this.announce(importName).catch(() => null);
+      if (retried) {
+        this.#pendingModules.delete(importName);
+        clearInterval(timer);
+      }
+    }, retryIntervalMs);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.
@@ -118,20 +209,24 @@ export class ModuleWatcher {
 
     if (!docUrl) return;
 
-    this.repo.find<FolderDoc>(docUrl).then((handle) => {
-      let previousSyncAtTime = handle.doc().lastSyncAt || 0;
-      handle.on("change", () => {
-        const lastSyncAt = handle.doc().lastSyncAt || 0;
-        if (lastSyncAt <= previousSyncAtTime) {
-          console.log("handle updated but not lastSyncAt");
-          return;
-        }
-        previousSyncAtTime = lastSyncAt;
-        const versionedImport = handle.view(handle.heads()).url;
-        console.log(`change in ${importName}, reloading at ${versionedImport}`);
-        this.announce(versionedImport);
-      });
-    });
+    findWithRetry<FolderDoc>(this.repo, docUrl)
+      .then((handle) => {
+        let previousSyncAtTime = handle.doc().lastSyncAt || 0;
+        handle.on("change", () => {
+          const lastSyncAt = handle.doc().lastSyncAt || 0;
+          if (lastSyncAt <= previousSyncAtTime) {
+            console.log("handle updated but not lastSyncAt");
+            return;
+          }
+          previousSyncAtTime = lastSyncAt;
+          const versionedImport = handle.view(handle.heads()).url;
+          console.log(
+            `change in ${importName}, reloading at ${versionedImport}`
+          );
+          this.announce(versionedImport);
+        });
+      })
+      .catch(() => {});
   }
 
   private async load() {
