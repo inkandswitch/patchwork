@@ -438,12 +438,6 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
   const { documentId } = parseAutomergeUrl(maybeAutomergeUrl);
 
-  // NOTE: previously this redirected headless URLs to pinned-heads URLs
-  // (307 redirect). Removed because during initial sync, folder docs are
-  // partially loaded — pinning captures incomplete state and defeats retries.
-  // The heads parameter is now treated as optional; we always serve the
-  // latest state.
-
   // ── In-memory cache lookup ──────────────────────────────────────────
   // Key is the canonical automerge URL + path, ignoring query params
   // (e.g. ?t=<timestamp> cache busters from packages.ts).
@@ -489,6 +483,12 @@ async function resolveAutomergeUrlInner(
   documentId: string,
   cacheKey: string
 ): Promise<Response> {
+  // NOTE: previously this redirected headless URLs to pinned-heads URLs
+  // (307 redirect). Removed because during initial sync, folder docs are
+  // partially loaded — pinning captures incomplete state and defeats retries.
+  // The heads parameter is now treated as optional; we always serve the
+  // latest state.
+
   // Wait for the folder doc to have the entry we need before resolving.
   // On first load, folder docs sync incrementally — the `docs` array
   // starts empty and fills in as Automerge changes arrive.
