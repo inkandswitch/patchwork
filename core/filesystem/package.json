@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w --preserveWatchOutput",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "license": "MIT",
@@ -19,5 +20,10 @@
     "@types/node": "^20.17.57",
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3"
+  },
+  "devDependencies": {
+    "@automerge/automerge-repo-network-messagechannel": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
+    "vitest": "^3.2.4"
   }
 }
