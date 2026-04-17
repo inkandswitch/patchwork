@@ -1,5 +1,5 @@
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { createMemo, Show } from "solid-js";
+import { type Accessor, createMemo, Show } from "solid-js";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -18,6 +18,13 @@ import { HistoryComputingIndicator } from "./HistoryComputingIndicator";
 export interface DocHistoryViewProps {
   url: AutomergeUrl;
   repo: Repo;
+  /**
+   * Whether to render the document's title in the header. Defaults to true;
+   * pass an accessor returning `false` (e.g. when the sidebar is showing a
+   * single doc whose title is already visible elsewhere) to suppress it
+   * while keeping the reset button.
+   */
+  showTitle?: Accessor<boolean>;
 }
 
 // Only one grouping strategy is wired up today. When the selector UI is
@@ -67,7 +74,7 @@ export function DocHistoryView(props: DocHistoryViewProps) {
   return (
     <div class="flex flex-col flex-1 min-h-0">
       <DocHistoryHeader
-        title={title()}
+        title={(props.showTitle?.() ?? true) ? title() : undefined}
         hasSelection={viewHeads() !== null}
         onReset={clearSelection}
       />
