@@ -29,16 +29,15 @@ export function useHistorySelection() {
       });
     } else if (isHistoryGroup(item)) {
       // Group selection - show cumulative diff for entire group
-      if (item.changes.length === 0) {
+      if (item.count === 0) {
         console.warn("Empty group encountered");
         return;
       }
 
-      // Newest change in group
-      const firstChange = item.changes[0];
-      // Find the change immediately before this group (if any)
+      // afterHeads is the newest hash in the group (the group's representative);
+      // beforeHead points to the change immediately before the group (if any).
       const beforeHeads = item.beforeHead ? [item.beforeHead] : [];
-      const afterHeads = [firstChange.hash];
+      const afterHeads = [item.latestHash];
 
       setViewHeads({
         beforeHeads,

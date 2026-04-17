@@ -15,9 +15,43 @@ import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import { getStrategyKey } from "../utils";
 import * as tasklib from "@awarth/tasklib";
 
-const taskQueue = tasklib.queue(
-  "automerge:3AXXV4FHVom6sWu1rD8kBRWq9Bmd" as AutomergeUrl
-);
+/**
+ * Same account field and default queue URL as `@patchwork/tasks` titlebar
+ * (`patchwork-tools/tasks/src/helpers.ts`), so history grouping jobs use the
+ * user's configured task queue when present.
+ */
+const TASK_QUEUE_URLS_FIELD_NAME = "__taskQueues__";
+
+function resolveTaskQueueDocUrl(account: unknown): AutomergeUrl {
+  const map = (account as Record<string, unknown>)[
+    TASK_QUEUE_URLS_FIELD_NAME
+  ] as Record<string, boolean> | undefined;
+  if (map && typeof map === "object") {
+    const keys = Object.keys(map);
+    if (keys.length > 0) return keys[0] as AutomergeUrl;
+  }
+  throw new Error("No task queue doc URL found");
+}
+
+function getAccountDocSnapshot(): unknown {
+  if (typeof window === "undefined") return undefined;
+  const w = window as { accountDocHandle?: { doc?: () => unknown } };
+  return w.accountDocHandle?.doc?.();
+}
+
+const taskQueueClients = new Map<
+  AutomergeUrl,
+  ReturnType<typeof tasklib.queue>
+>();
+
+function queueForDocUrl(url: AutomergeUrl) {
+  let q = taskQueueClients.get(url);
+  if (!q) {
+    q = tasklib.queue(url);
+    taskQueueClients.set(url, q);
+  }
+  return q;
+}
 
 const DEBOUNCE_TIME = 5000; // 5 seconds
 const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
@@ -72,7 +106,8 @@ export function useCachedHistory(
   let taskDispatchDelayTimer: ReturnType<typeof setTimeout> | undefined;
 
   const dispatchTask = (sourceUrl: AutomergeUrl) => {
-    taskQueue.addTask<AutomergeUrl, void>({
+    const queueDocUrl = resolveTaskQueueDocUrl(getAccountDocSnapshot());
+    queueForDocUrl(queueDocUrl).addTask<AutomergeUrl, void>({
       input: sourceUrl,
       importUrl: new URL(/* @vite-ignore */ "../task.js", import.meta.url),
     });

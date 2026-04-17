@@ -15,6 +15,10 @@ import { ChangeMetadata } from "@automerge/automerge";
 
 const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
 
+// TODO: relative imports aren't working correctly when the task runs in the shared worker
+// Keep this in sync with `HISTORY_DOC_VERSION` in ../types.ts
+const HISTORY_DOC_VERSION = 2;
+
 /**
  * Background task that computes full history groupings for a source document.
  * Handles get-or-create of the history groupings document, then computes
@@ -44,7 +48,7 @@ export default async function (source: AutomergeUrl) {
       sourceDocumentUrl: sourceDocHandle.url,
       throttleMs: THROTTLE_MS,
       updatedAt: now,
-      version: 1,
+      version: HISTORY_DOC_VERSION,
       heads: [],
       groupings: {},
     });
@@ -59,20 +63,32 @@ export default async function (source: AutomergeUrl) {
       doc["@patchwork"].history = historyDocHandle!.url;
     });
   } else {
-    // Check throttle before computing to avoid duplicate tasks
     const histDoc = historyDocHandle.doc();
     if (!histDoc) {
       console.warn("History task: history document not available");
       return;
     }
-    const lastUpdate = histDoc.updatedAt ?? 0;
-    const throttleMs = histDoc.throttleMs ?? THROTTLE_MS;
-    if (now - lastUpdate < throttleMs) return;
 
-    // Mark that a task is running — write timestamp before computation to avoid duplicate tasks
-    historyDocHandle.change((doc: HistoryGroupingsDoc) => {
-      doc.updatedAt = now;
-    });
+    const storedVersion = histDoc.version ?? 0;
+    if (storedVersion < HISTORY_DOC_VERSION) {
+      // Stale cache from an older schema — reset it so we recompute below.
+      historyDocHandle.change((doc: HistoryGroupingsDoc) => {
+        doc.version = HISTORY_DOC_VERSION;
+        doc.heads = [];
+        doc.groupings = {};
+        doc.updatedAt = now;
+      });
+    } else {
+      // Check throttle before computing to avoid duplicate tasks
+      const lastUpdate = histDoc.updatedAt ?? 0;
+      const throttleMs = histDoc.throttleMs ?? THROTTLE_MS;
+      if (now - lastUpdate < throttleMs) return;
+
+      // Mark that a task is running — write timestamp before computation to avoid duplicate tasks
+      historyDocHandle.change((doc: HistoryGroupingsDoc) => {
+        doc.updatedAt = now;
+      });
+    }
   }
 
   // Get all metadata for all changes since the beginning
@@ -109,17 +125,28 @@ export default async function (source: AutomergeUrl) {
 }
 
 /**
- * Convert Automerge change metadata (ordered newest-first) to HistoryChange[]
- * with beforeHead linking each item to the next item's hash.
+ * Convert Automerge change metadata (ordered newest-first) to a compact
+ * `HistoryChange[]` that only carries the fields the UI actually uses.
+ *
+ * We deliberately drop `seq`, `startOp`, `maxOp`, `message`, and `deps` — the
+ * last of which is an array of dependency hashes per change and is the single
+ * largest contributor to history-doc bloat.
+ *
+ * `beforeHead` links each item to the hash of the next (older) change, which
+ * selection logic uses as `beforeHeads` when diffing a single change. It's
+ * still attached here for convenience; for changes that later get folded into
+ * a group, the field is discarded when building the group.
  */
 function changeMetadataToHistoryChanges(
   metadata: ChangeMetadata[]
 ): HistoryChange[] {
   return metadata.map((meta, index) => {
-    const beforeHead = metadata[index + 1]?.hash;
     const change: HistoryChange = {
-      ...meta,
+      hash: meta.hash,
+      actor: meta.actor,
+      time: meta.time,
     };
+    const beforeHead = metadata[index + 1]?.hash;
     if (beforeHead) {
       change.beforeHead = beforeHead;
     }
@@ -242,23 +269,33 @@ function groupByAuthor(changes: HistoryChange[]): HistoryItem[] {
 }
 
 /**
- * Helper function to create a HistoryGroup from an array of changes
+ * Build a compact `HistoryGroup` from an array of changes.
+ *
+ * Intermediate per-change data is aggregated and dropped; only the fields the
+ * UI reads (count, latestHash, authors, start/end time, beforeHead) are kept.
+ * This is the main reason a grouped history doc stays small even for source
+ * documents with very long histories.
  */
 function createGroup(changes: HistoryChange[]): HistoryGroup {
-  const group: HistoryGroup = {
-    id: `group-${changes[0].hash}-${changes.length}`,
-    changes,
-  };
-
+  const authors: string[] = [];
   let minTime = Infinity;
   let maxTime = -Infinity;
   for (const c of changes) {
+    if (c.actor && !authors.includes(c.actor)) authors.push(c.actor);
     const t = c.time;
     if (t !== undefined) {
       if (t < minTime) minTime = t;
       if (t > maxTime) maxTime = t;
     }
   }
+
+  const group: HistoryGroup = {
+    id: `group-${changes[0].hash}-${changes.length}`,
+    count: changes.length,
+    latestHash: changes[0].hash,
+    authors,
+  };
+
   if (minTime !== Infinity) {
     group.startTime = minTime;
     group.endTime = maxTime;
