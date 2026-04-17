@@ -6,7 +6,6 @@ import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import type {
   HistoryGroupingsDoc,
   HistoryItem,
-  StrategyName,
   GroupingStrategyConfig,
 } from "../types";
 import { ChangeMetadata } from "@automerge/automerge";
@@ -30,9 +29,9 @@ interface WorkingChange {
 }
 
 /**
- * Background task that computes full history groupings for a source document.
- * Handles get-or-create of the history groupings document, then computes
- * author and time-window groupings and writes results.
+ * Background task that computes history groupings for a source document.
+ * Gets-or-creates the history groupings document, applies the time-window
+ * strategy, and writes the aggregated items back into the history doc.
  */
 export default async function (source: AutomergeUrl) {
   const now = Date.now();
@@ -111,24 +110,17 @@ export default async function (source: AutomergeUrl) {
   // Project into a minimal working form (hash/actor/time + beforeHead).
   const historyChanges = changeMetadataToWorkingChanges(allMeta);
 
-  // Apply all grouping strategies to get grouped items for each strategy
-  // TODO: it would be good to have some way to manage the set of strategies to apply
-
-  const timeConfig = {
-    name: "timeWindow" as StrategyName,
+  // Currently only one strategy is implemented. The discriminated config is
+  // kept so additional strategies can slot in without reshuffling consumers.
+  const timeConfig: GroupingStrategyConfig = {
+    name: "timeWindow",
     params: { timeWindow: DEFAULT_TIME_WINDOW },
   };
   const timeGrouping = applyGroupingStrategy(timeConfig, historyChanges);
-  // TODO: this was an experimental stand-in for author grouping, but we can't really implement it until we have proper author data (e.g. via Keyhive)
-  // const authorGrouping = groupByAuthor(historyChanges);
 
-  // Write to history doc
   historyDocHandle.change((doc: HistoryGroupingsDoc) => {
     doc.heads = currentHeads;
-    // doc.groupings["author"] = { items: authorGrouping };
-    doc.groupings[getStrategyKey(timeConfig)] = {
-      items: timeGrouping,
-    };
+    doc.groupings[getStrategyKey(timeConfig)] = { items: timeGrouping };
   });
 }
 
@@ -160,26 +152,15 @@ function changeMetadataToWorkingChanges(
 // Strategies
 // ============================================================================
 
-/**
- * TODO: this is redefined because relative imports aren't working correctly when the task runs
- * Standard time window options for grouping
- */
-export const TIME_WINDOW_OPTIONS = {
-  "30m": 30 * 60 * 1000, // 30 minutes (default)
-} as const;
-
-export const DEFAULT_TIME_WINDOW = TIME_WINDOW_OPTIONS["30m"];
+// The constants and `getStrategyKey` below are duplicated from `./utils.ts`
+// because relative imports don't resolve correctly when this module is
+// dynamically loaded inside the shared-worker task runner. Keep in sync.
+export const DEFAULT_TIME_WINDOW = 30 * 60 * 1000; // 30 minutes
 
 /**
- * TODO: this is redefined because relative imports aren't working correctly when the task runs
- * Generate a unique cache key for a grouping strategy configuration
- *
- * Format:
- * - "author" - Group by author
- * - "timeWindow:300000" - Time window grouping with specific window in ms
- *
- * The key is used to store and retrieve cached groupings from the groupings document.
- * Each unique combination of strategy name and parameters gets its own cache entry.
+ * Generate a unique cache key for a grouping strategy configuration.
+ * Each unique combination of strategy name and parameters gets its own cache
+ * entry in the history doc's `groupings` map.
  */
 export function getStrategyKey(config: GroupingStrategyConfig): string {
   switch (config.name) {
@@ -240,37 +221,6 @@ function groupByTimeWindow(
 }
 
 /**
- * Group consecutive changes by the same author
- */
-function groupByAuthor(changes: WorkingChange[]): HistoryItem[] {
-  if (changes.length === 0) return [];
-
-  const groups: HistoryItem[] = [];
-  let currentGroup: WorkingChange[] = [];
-  let currentAuthor: string | undefined;
-
-  for (const change of changes) {
-    const author = change.actor;
-
-    if (currentGroup.length === 0 || author === currentAuthor) {
-      // Same author or starting a new group
-      currentGroup.push(change);
-      currentAuthor = author;
-    } else {
-      // Different author, save current group and start new one
-      finalizeGroup(groups, currentGroup);
-      currentGroup = [change];
-      currentAuthor = author;
-    }
-  }
-
-  // Add the last group
-  finalizeGroup(groups, currentGroup);
-
-  return groups;
-}
-
-/**
  * Build a `HistoryItem` from one-or-more changes.
  *
  * A lone change (`changes.length === 1`) produces a `count: 1` item; multi-
@@ -324,20 +274,23 @@ function finalizeGroup(
 }
 
 /**
- * Apply a grouping strategy configuration to a list of changes
+ * Apply a grouping strategy configuration to a list of changes.
+ *
+ * Only `timeWindow` is implemented; `author` is declared in the config type
+ * but not wired up yet (needs proper author data, e.g. via Keyhive).
  */
 function applyGroupingStrategy(
   config: GroupingStrategyConfig,
   changes: WorkingChange[]
 ): HistoryItem[] {
   switch (config.name) {
-    case "author":
-      return groupByAuthor(changes);
     case "timeWindow": {
       const windowMs = config.params?.timeWindow ?? DEFAULT_TIME_WINDOW;
       return groupByTimeWindow(windowMs)(changes);
     }
+    case "author":
+      throw new Error("Author grouping is not implemented yet");
     default:
-      throw new Error(`Unknown strategy: ${config.name}`);
+      throw new Error(`Unknown strategy: ${(config as { name: string }).name}`);
   }
 }

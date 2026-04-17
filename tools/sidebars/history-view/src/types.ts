@@ -35,9 +35,12 @@ export interface ViewHeadsType {
 }
 
 /**
- * Configuration for a grouping strategy including parameters
+ * Configuration for a grouping strategy including parameters.
+ *
+ * Only `timeWindow` is implemented today; the discriminated shape is kept so
+ * future strategies can be added without reshuffling consumers.
  */
-export type StrategyName = "none" | "timeWindow" | "author";
+export type StrategyName = "timeWindow" | "author";
 export interface GroupingStrategyConfig {
   name: StrategyName;
   params?: {

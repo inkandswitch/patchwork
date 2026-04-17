@@ -1,5 +1,5 @@
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { createSignal, createMemo } from "solid-js";
+import { createMemo } from "solid-js";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -19,6 +19,11 @@ export interface DocHistoryViewProps {
   repo: Repo;
 }
 
+// Only one grouping strategy is wired up today. When the selector UI is
+// restored, turn this back into a signal and pass the setter to it.
+const STRATEGY_CONFIG: GroupingStrategyConfig = { name: "timeWindow" };
+const strategyConfig = () => STRATEGY_CONFIG;
+
 /**
  * Orchestrator component that composes hooks and components
  * Minimal logic, mostly composition
@@ -31,12 +36,6 @@ export function DocHistoryView(props: DocHistoryViewProps) {
 
   // Use hooks for different concerns
   const { title, docRef } = useDocumentMetadata(doc, handle);
-
-  // Grouping strategy configuration
-  const [strategyConfig, setStrategyConfig] =
-    createSignal<GroupingStrategyConfig>({
-      name: "timeWindow",
-    });
 
   // Unified hook that manages history grouping with optimized updates
   const groupedItems = useCachedHistory(handle, strategyConfig, props.repo);
@@ -71,7 +70,7 @@ export function DocHistoryView(props: DocHistoryViewProps) {
       {/* <div class="px-2 pb-2">
         <GroupingSelector
           selectedConfig={strategyConfig()}
-          onConfigChange={setStrategyConfig}
+          onConfigChange={(cfg) => { STRATEGY_CONFIG = cfg; }}
         />
       </div> */}
       <HistoryList

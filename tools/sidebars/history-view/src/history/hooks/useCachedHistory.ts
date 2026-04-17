@@ -68,22 +68,15 @@ const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the sam
  * of truth for stored groupings, plus a synthesized "virtual" trailing item
  * for any changes that have landed since the last task run.
  *
- * A single effect watches the source document and dispatches a background
- * task to create or update the history document:
- * - If no history doc exists, dispatches immediately (task creates it)
- * - If history doc exists and heads match, does nothing
- * - If history doc exists but heads differ, dispatches with throttle
+ * A single change-listener on the source handle:
+ * - publishes the current source heads into a reactive signal, and
+ * - (re)dispatches the background grouping task when appropriate
+ *   (bootstrap / heads-differ, subject to debounce and task-side throttle).
  *
- * The returned accessor reflects both the stored groupings and the current
- * tail: if the source doc has advanced past the history doc's cached heads,
- * a single `HistoryItem` is synthesized at runtime to cover the delta. It is
- * never written to the cache and disappears once the task folds the tail in.
- *
- * REACTIVE FLOW:
- * - Source doc changes → effect checks history doc → dispatches task if needed
- * - Source doc changes → `sourceHeads` signal updates → virtual tail re-renders
- * - Task creates/updates history doc → source doc gets history URL → hook subscribes
- * - History doc updates → UI updates reactively
+ * The returned accessor combines the stored groupings with a runtime-only
+ * `HistoryItem` covering the delta between the source doc's current heads
+ * and the history doc's cached heads. That virtual item disappears once the
+ * task folds the tail into the stored groupings.
  *
  * @param sourceHandle - Handle to the source document
  * @param strategyConfig - Grouping strategy configuration (reactive)
@@ -129,37 +122,41 @@ export function useCachedHistory(
     lastDispatchTime = Date.now();
   };
 
-  // PART 3: Handle initial load and missing history document
+  // PART 3: Watch the source document. On every change (and once at setup)
+  // we update `sourceHeads` so the items memo below can re-render the virtual
+  // trailing tail, and decide whether to (re)dispatch the grouping task.
+  //
+  // Dispatch logic:
+  // - If no history doc exists yet, always dispatch (bootstrap path).
+  // - If heads match the history doc's cached heads, do nothing.
+  // - If heads differ, dispatch — subject to a client-side debounce (ignore
+  //   rapid refires after we just dispatched) and to the task's own throttle
+  //   (avoid enqueuing work the task would skip anyway).
+  const [sourceHeads, setSourceHeads] = createSignal<string[] | undefined>(
+    undefined
+  );
+
   createEffect(() => {
     const source = sourceHandle();
-    if (!source) return;
-    const sourceRawDoc = source.doc();
-
-    if (!(sourceRawDoc as HasPatchworkMetadata)?.["@patchwork"]?.history) {
-      // No history doc exists — dispatch task to create it
-      dispatchTask(source.url);
+    if (!source) {
+      setSourceHeads(undefined);
       return;
-    } else {
-      // update in case there have been changes since the history doc was last loaded
-      // TODO: we should check the history doc staleness & throttle
-      dispatchTask(source.url);
     }
-  });
-
-  // PART 4: Subscribe to source document changes and update history as needed
-  // Re-runs reactively when source doc, history URL, or history doc changes.
-  // Reading sourceDoc() (the reactive projection) establishes a Solid dependency
-  // so this effect re-runs when the document content changes.
-  createEffect(() => {
-    const source = sourceHandle();
-    if (!source) return;
 
     const onChange = () => {
+      const sourceRawDoc = source.doc();
+      if (!sourceRawDoc) return;
+
+      // Publish current source heads so the items memo picks up new tails.
+      const currentHeads = Automerge.getHeads(sourceRawDoc);
+      setSourceHeads(currentHeads);
+
       const now = Date.now();
-      // Debounce: ignore changes for 5s after a task dispatch
+
+      // Debounce: ignore changes for a short window after our last dispatch
+      // to avoid re-enqueuing before the first task has even started.
       const elapsed = now - lastDispatchTime;
       if (elapsed < DEBOUNCE_TIME) {
-        // Ensure we re-check after the debounce window expires
         if (!taskDispatchDelayTimer) {
           taskDispatchDelayTimer = setTimeout(() => {
             taskDispatchDelayTimer = undefined;
@@ -169,24 +166,19 @@ export function useCachedHistory(
         return;
       }
 
-      // Use the raw doc from the handle for getHeads (needs the Automerge doc, not the projection)
-      const sourceRawDoc = source.doc();
-      if (!sourceRawDoc) return;
-
       const hHandle = historyDocHandle();
-      if (!hHandle) return;
+      const histDoc = hHandle?.doc();
 
-      const histDoc = hHandle.doc();
-      if (!histDoc) return;
+      // Bootstrap: no history doc yet — dispatch to create one.
+      if (!histDoc) {
+        dispatchTask(source.url);
+        return;
+      }
 
-      // Check staleness by comparing heads of source doc and cached heads in history doc
-      const currentHeads = Automerge.getHeads(sourceRawDoc);
-      const cachedHeads = histDoc.heads;
+      // Heads match — cache is current, nothing to do.
+      if (headsEqual(currentHeads, histDoc.heads ?? [])) return;
 
-      // Heads match — cache is current, nothing to do
-      if (cachedHeads && headsEqual(currentHeads, cachedHeads)) return;
-
-      // Heads differ — check throttle before dispatching task to update cache
+      // Heads differ — throttle per the task's last-run time.
       const lastUpdate = histDoc.updatedAt ?? 0;
       const throttleMs = histDoc.throttleMs ?? THROTTLE_MS;
       const elapsedSinceUpdate = now - lastUpdate;
@@ -200,11 +192,12 @@ export function useCachedHistory(
         return;
       }
 
-      // Dispatch task to recompute
       dispatchTask(source.url);
     };
 
     source.on("change", onChange);
+    onChange();
+
     onCleanup(() => {
       source.off("change", onChange);
       clearTimeout(taskDispatchDelayTimer);
@@ -212,30 +205,7 @@ export function useCachedHistory(
     });
   });
 
-  // PART 5: Track the source document's current heads as a reactive signal so
-  // the items memo below can re-run whenever the source doc advances (without
-  // waiting for the task to re-run).
-  const [sourceHeads, setSourceHeads] = createSignal<string[] | undefined>(
-    undefined
-  );
-
-  createEffect(() => {
-    const source = sourceHandle();
-    if (!source) {
-      setSourceHeads(undefined);
-      return;
-    }
-
-    const updateHeads = () => {
-      const d = source.doc();
-      if (d) setSourceHeads(Automerge.getHeads(d));
-    };
-    updateHeads();
-    source.on("change", updateHeads);
-    onCleanup(() => source.off("change", updateHeads));
-  });
-
-  // PART 6: Return reactive items. If the source doc has advanced past the
+  // PART 4: Return reactive items. If the source doc has advanced past the
   // cached heads, synthesize a single "virtual" item at the top of the list
   // covering the ungrouped tail. The virtual item is never stored; it
   // disappears once the background task runs and folds the tail into the
