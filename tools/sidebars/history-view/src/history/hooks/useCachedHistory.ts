@@ -1,11 +1,18 @@
 import * as Automerge from "@automerge/automerge";
+import type { ChangeMetadata } from "@automerge/automerge";
 import type { DocHandle, Repo } from "@automerge/automerge-repo";
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 import {
   makeDocumentProjection,
   useDocument,
 } from "@automerge/automerge-repo-solid-primitives";
-import { createMemo, createEffect, Accessor, onCleanup } from "solid-js";
+import {
+  createMemo,
+  createEffect,
+  createSignal,
+  Accessor,
+  onCleanup,
+} from "solid-js";
 import type {
   HistoryItem,
   GroupingStrategyConfig,
@@ -57,16 +64,24 @@ const DEBOUNCE_TIME = 5000; // 5 seconds
 const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
 
 /**
- * Hook that manages history grouping with history document as source of truth.
+ * Hook that manages history grouping with the history document as the source
+ * of truth for stored groupings, plus a synthesized "virtual" trailing item
+ * for any changes that have landed since the last task run.
  *
- * A single effect actively watches the source document and dispatches a
- * background task to create or update the history document:
+ * A single effect watches the source document and dispatches a background
+ * task to create or update the history document:
  * - If no history doc exists, dispatches immediately (task creates it)
  * - If history doc exists and heads match, does nothing
  * - If history doc exists but heads differ, dispatches with throttle
  *
+ * The returned accessor reflects both the stored groupings and the current
+ * tail: if the source doc has advanced past the history doc's cached heads,
+ * a single `HistoryItem` is synthesized at runtime to cover the delta. It is
+ * never written to the cache and disappears once the task folds the tail in.
+ *
  * REACTIVE FLOW:
  * - Source doc changes → effect checks history doc → dispatches task if needed
+ * - Source doc changes → `sourceHeads` signal updates → virtual tail re-renders
  * - Task creates/updates history doc → source doc gets history URL → hook subscribes
  * - History doc updates → UI updates reactively
  *
@@ -197,15 +212,104 @@ export function useCachedHistory(
     });
   });
 
-  // PART 5: Return reactive items that update when history doc or strategy changes
-  return createMemo<HistoryItem[]>(() => {
-    const doc = historyDoc(); // reactive read - subscribes to history doc
-    if (!doc) return [];
+  // PART 5: Track the source document's current heads as a reactive signal so
+  // the items memo below can re-run whenever the source doc advances (without
+  // waiting for the task to re-run).
+  const [sourceHeads, setSourceHeads] = createSignal<string[] | undefined>(
+    undefined
+  );
 
-    const strategyKey = getStrategyKey(strategyConfig());
-    const cached = doc.groupings?.[strategyKey];
-    return cached?.items || [];
+  createEffect(() => {
+    const source = sourceHandle();
+    if (!source) {
+      setSourceHeads(undefined);
+      return;
+    }
+
+    const updateHeads = () => {
+      const d = source.doc();
+      if (d) setSourceHeads(Automerge.getHeads(d));
+    };
+    updateHeads();
+    source.on("change", updateHeads);
+    onCleanup(() => source.off("change", updateHeads));
   });
+
+  // PART 6: Return reactive items. If the source doc has advanced past the
+  // cached heads, synthesize a single "virtual" item at the top of the list
+  // covering the ungrouped tail. The virtual item is never stored; it
+  // disappears once the background task runs and folds the tail into the
+  // cached groupings.
+  return createMemo<HistoryItem[]>(() => {
+    const doc = historyDoc();
+    const strategyKey = getStrategyKey(strategyConfig());
+    const storedItems: HistoryItem[] = doc?.groupings?.[strategyKey]?.items ?? [];
+
+    const cachedHeads = doc?.heads ?? [];
+    const currentSourceHeads = sourceHeads();
+    if (!currentSourceHeads || headsEqual(currentSourceHeads, cachedHeads)) {
+      return storedItems;
+    }
+
+    const handle = sourceHandle();
+    const sourceRawDoc = handle?.doc();
+    if (!sourceRawDoc) return storedItems;
+
+    const deltaMeta = Automerge.getChangesMetaSince(sourceRawDoc, cachedHeads);
+    if (deltaMeta.length === 0) return storedItems;
+
+    // Newest-first to match the cached items ordering.
+    deltaMeta.reverse();
+
+    const virtualItem = buildVirtualItem(
+      deltaMeta,
+      storedItems[0]?.latestHash
+    );
+    return [virtualItem, ...storedItems];
+  });
+}
+
+/**
+ * Build a single `HistoryItem` covering every change between the history
+ * doc's cached heads and the source doc's current heads. This item exists
+ * only at runtime — it is never written to the cache.
+ */
+function buildVirtualItem(
+  deltaMeta: ChangeMetadata[],
+  firstStoredLatestHash: string | undefined
+): HistoryItem {
+  const authors: string[] = [];
+  let minTime = Infinity;
+  let maxTime = -Infinity;
+  for (const m of deltaMeta) {
+    if (m.actor && !authors.includes(m.actor)) authors.push(m.actor);
+    const t = m.time;
+    if (t !== undefined) {
+      if (t < minTime) minTime = t;
+      if (t > maxTime) maxTime = t;
+    }
+  }
+
+  const item: HistoryItem = {
+    id: `virtual-${deltaMeta[0].hash}-${deltaMeta.length}`,
+    count: deltaMeta.length,
+    latestHash: deltaMeta[0].hash,
+    authors,
+  };
+
+  if (minTime !== Infinity) {
+    item.startTime = minTime;
+    item.endTime = maxTime;
+  }
+
+  // The change immediately before the virtual tail is the newest stored item's
+  // representative hash. Leave `beforeHead` unset on a fresh doc (no stored
+  // items yet) so the selection yields a from-genesis diff.
+  if (firstStoredLatestHash) {
+    item.beforeHead = firstStoredLatestHash;
+  }
+
+  return item;
 }
 
 /**

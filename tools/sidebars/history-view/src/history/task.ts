@@ -4,11 +4,9 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { Automerge } from "@automerge/automerge-repo/slim";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import type {
-  HistoryChange,
   HistoryGroupingsDoc,
   HistoryItem,
   StrategyName,
-  HistoryGroup,
   GroupingStrategyConfig,
 } from "../types";
 import { ChangeMetadata } from "@automerge/automerge";
@@ -17,7 +15,19 @@ const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the sam
 
 // TODO: relative imports aren't working correctly when the task runs in the shared worker
 // Keep this in sync with `HISTORY_DOC_VERSION` in ../types.ts
-const HISTORY_DOC_VERSION = 2;
+const HISTORY_DOC_VERSION = 3;
+
+/**
+ * Internal working shape used while walking the source doc's change stream.
+ * Never stored in the cache; the final cached form is `HistoryItem` with
+ * aggregated fields only.
+ */
+interface WorkingChange {
+  hash: string;
+  actor: string;
+  time: number;
+  beforeHead?: string;
+}
 
 /**
  * Background task that computes full history groupings for a source document.
@@ -98,8 +108,8 @@ export default async function (source: AutomergeUrl) {
   // Reverse to get newest first (UI display order)
   allMeta.reverse();
 
-  // Convert to history changes
-  const historyChanges = changeMetadataToHistoryChanges(allMeta);
+  // Project into a minimal working form (hash/actor/time + beforeHead).
+  const historyChanges = changeMetadataToWorkingChanges(allMeta);
 
   // Apply all grouping strategies to get grouped items for each strategy
   // TODO: it would be good to have some way to manage the set of strategies to apply
@@ -115,33 +125,25 @@ export default async function (source: AutomergeUrl) {
   // Write to history doc
   historyDocHandle.change((doc: HistoryGroupingsDoc) => {
     doc.heads = currentHeads;
-    // doc.groupings["author"] = {
-    //   items: authorGrouping as HistoryItem[],
-    // };
+    // doc.groupings["author"] = { items: authorGrouping };
     doc.groupings[getStrategyKey(timeConfig)] = {
-      items: timeGrouping as HistoryItem[],
+      items: timeGrouping,
     };
   });
 }
 
 /**
- * Convert Automerge change metadata (ordered newest-first) to a compact
- * `HistoryChange[]` that only carries the fields the UI actually uses.
- *
- * We deliberately drop `seq`, `startOp`, `maxOp`, `message`, and `deps` — the
- * last of which is an array of dependency hashes per change and is the single
- * largest contributor to history-doc bloat.
- *
- * `beforeHead` links each item to the hash of the next (older) change, which
- * selection logic uses as `beforeHeads` when diffing a single change. It's
- * still attached here for convenience; for changes that later get folded into
- * a group, the field is discarded when building the group.
+ * Project Automerge change metadata (ordered newest-first) into the minimal
+ * working shape used during grouping. Only `hash`, `actor`, `time`, and the
+ * link to the previous change's hash are retained — everything else (`seq`,
+ * `startOp`, `maxOp`, `message`, `deps`) is discarded here and never makes it
+ * into the cached document.
  */
-function changeMetadataToHistoryChanges(
+function changeMetadataToWorkingChanges(
   metadata: ChangeMetadata[]
-): HistoryChange[] {
+): WorkingChange[] {
   return metadata.map((meta, index) => {
-    const change: HistoryChange = {
+    const change: WorkingChange = {
       hash: meta.hash,
       actor: meta.actor,
       time: meta.time,
@@ -198,12 +200,12 @@ export function getStrategyKey(config: GroupingStrategyConfig): string {
  */
 function groupByTimeWindow(
   windowMs: number
-): (changes: HistoryChange[]) => HistoryItem[] {
-  return (changes: HistoryChange[]): HistoryItem[] => {
+): (changes: WorkingChange[]) => HistoryItem[] {
+  return (changes: WorkingChange[]): HistoryItem[] => {
     if (changes.length === 0) return [];
 
     const groups: HistoryItem[] = [];
-    let currentGroup: HistoryChange[] = [];
+    let currentGroup: WorkingChange[] = [];
 
     for (let i = 0; i < changes.length; i++) {
       const change = changes[i];
@@ -240,11 +242,11 @@ function groupByTimeWindow(
 /**
  * Group consecutive changes by the same author
  */
-function groupByAuthor(changes: HistoryChange[]): HistoryItem[] {
+function groupByAuthor(changes: WorkingChange[]): HistoryItem[] {
   if (changes.length === 0) return [];
 
   const groups: HistoryItem[] = [];
-  let currentGroup: HistoryChange[] = [];
+  let currentGroup: WorkingChange[] = [];
   let currentAuthor: string | undefined;
 
   for (const change of changes) {
@@ -269,14 +271,14 @@ function groupByAuthor(changes: HistoryChange[]): HistoryItem[] {
 }
 
 /**
- * Build a compact `HistoryGroup` from an array of changes.
+ * Build a `HistoryItem` from one-or-more changes.
  *
- * Intermediate per-change data is aggregated and dropped; only the fields the
- * UI reads (count, latestHash, authors, start/end time, beforeHead) are kept.
- * This is the main reason a grouped history doc stays small even for source
- * documents with very long histories.
+ * A lone change (`changes.length === 1`) produces a `count: 1` item; multi-
+ * change runs produce the same shape with `count > 1`. Intermediate per-change
+ * data is aggregated into the item and then dropped — only fields the UI
+ * reads are retained.
  */
-function createGroup(changes: HistoryChange[]): HistoryGroup {
+function createItem(changes: WorkingChange[]): HistoryItem {
   const authors: string[] = [];
   let minTime = Infinity;
   let maxTime = -Infinity;
@@ -289,39 +291,36 @@ function createGroup(changes: HistoryChange[]): HistoryGroup {
     }
   }
 
-  const group: HistoryGroup = {
-    id: `group-${changes[0].hash}-${changes.length}`,
+  const item: HistoryItem = {
+    id: `item-${changes[0].hash}-${changes.length}`,
     count: changes.length,
     latestHash: changes[0].hash,
     authors,
   };
 
   if (minTime !== Infinity) {
-    group.startTime = minTime;
-    group.endTime = maxTime;
+    item.startTime = minTime;
+    item.endTime = maxTime;
   }
 
   const lastBeforeHead = changes[changes.length - 1].beforeHead;
   if (lastBeforeHead) {
-    group.beforeHead = lastBeforeHead;
+    item.beforeHead = lastBeforeHead;
   }
 
-  return group;
+  return item;
 }
 
 /**
- * Push a completed group to the output array.
- * Single changes are kept as-is; multiple changes are wrapped in a HistoryGroup.
+ * Push a completed run of changes to the output array as a single
+ * `HistoryItem`, regardless of whether the run contains one change or many.
  */
 function finalizeGroup(
-  groups: HistoryItem[],
-  currentGroup: HistoryChange[]
+  items: HistoryItem[],
+  currentGroup: WorkingChange[]
 ): void {
-  if (currentGroup.length === 1) {
-    groups.push(currentGroup[0]);
-  } else if (currentGroup.length > 1) {
-    groups.push(createGroup(currentGroup));
-  }
+  if (currentGroup.length === 0) return;
+  items.push(createItem(currentGroup));
 }
 
 /**
@@ -329,7 +328,7 @@ function finalizeGroup(
  */
 function applyGroupingStrategy(
   config: GroupingStrategyConfig,
-  changes: HistoryChange[]
+  changes: WorkingChange[]
 ): HistoryItem[] {
   switch (config.name) {
     case "author":
