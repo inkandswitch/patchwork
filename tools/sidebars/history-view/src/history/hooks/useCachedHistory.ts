@@ -19,31 +19,30 @@ import type {
   HistoryGroupingsDoc,
 } from "../../types";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
-import { getStrategyKey } from "../utils";
+import { DEFAULT_TIME_WINDOW, getStrategyKey } from "../utils";
 import * as tasklib from "@awarth/tasklib";
 
 /**
- * Same account field and default queue URL as `@patchwork/tasks` titlebar
- * (`patchwork-tools/tasks/src/helpers.ts`), so history grouping jobs use the
- * user's configured task queue when present.
+ * Same account field as `@patchwork/tasks` (`patchwork-tools/tasks/src/
+ * helpers.ts`), so history grouping jobs target the user's configured task
+ * queue when one is present.
  */
 const TASK_QUEUE_URLS_FIELD_NAME = "__taskQueues__";
 
-function resolveTaskQueueDocUrl(account: unknown): AutomergeUrl {
-  const map = (account as Record<string, unknown>)[
-    TASK_QUEUE_URLS_FIELD_NAME
-  ] as Record<string, boolean> | undefined;
-  if (map && typeof map === "object") {
-    const keys = Object.keys(map);
-    if (keys.length > 0) return keys[0] as AutomergeUrl;
-  }
-  throw new Error("No task queue doc URL found");
+interface AccountDocShape {
+  [TASK_QUEUE_URLS_FIELD_NAME]?: Record<AutomergeUrl, boolean>;
 }
 
-function getAccountDocSnapshot(): unknown {
+/**
+ * The global account doc handle is placed on `window` during app bootstrap.
+ * We read it once at hook setup so `useDocument` can subscribe to it; if it
+ * hasn't been installed yet, dispatches will no-op until the hook re-runs
+ * with it available.
+ */
+function getGlobalAccountDocUrl(): AutomergeUrl | undefined {
   if (typeof window === "undefined") return undefined;
-  const w = window as { accountDocHandle?: { doc?: () => unknown } };
-  return w.accountDocHandle?.doc?.();
+  const w = window as { accountDocHandle?: { url?: AutomergeUrl } };
+  return w.accountDocHandle?.url;
 }
 
 const taskQueueClients = new Map<
@@ -60,8 +59,22 @@ function queueForDocUrl(url: AutomergeUrl) {
   return q;
 }
 
-const DEBOUNCE_TIME = 5000; // 5 seconds
-const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
+// Short cooldown between consecutive dispatches to suppress duplicate enqueues
+// while a task is still in-flight / has yet to update `cachedHeads`. The
+// primary dispatch gate is the precise group-boundary condition below; this is
+// just a safety net.
+const DISPATCH_COOLDOWN_MS = 5 * 1000;
+
+export interface CachedHistory {
+  items: Accessor<HistoryItem[]>;
+  /**
+   * True while no history document exists yet for this source doc — the
+   * bootstrap task has been dispatched but hasn't finished creating and
+   * linking the history doc. Consumers can use this to show a dedicated
+   * "computing history…" UI instead of the (empty) item list.
+   */
+  isInitializing: Accessor<boolean>;
+}
 
 /**
  * Hook that manages history grouping with the history document as the source
@@ -69,25 +82,25 @@ const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the sam
  * for any changes that have landed since the last task run.
  *
  * A single change-listener on the source handle:
- * - publishes the current source heads into a reactive signal, and
- * - (re)dispatches the background grouping task when appropriate
- *   (bootstrap / heads-differ, subject to debounce and task-side throttle).
- *
- * The returned accessor combines the stored groupings with a runtime-only
- * `HistoryItem` covering the delta between the source doc's current heads
- * and the history doc's cached heads. That virtual item disappears once the
- * task folds the tail into the stored groupings.
+ * - publishes the current source heads into a reactive signal so the virtual
+ *   tail can re-render, and
+ * - (re)dispatches the background grouping task precisely when doing so would
+ *   actually change what the UI shows — namely, when the delta since
+ *   `cachedHeads` would no longer fit inside one grouping window. Until that
+ *   point the virtual trailing item is an exact stand-in for the single group
+ *   the task would produce, so dispatching would be pure churn.
  *
  * @param sourceHandle - Handle to the source document
  * @param strategyConfig - Grouping strategy configuration (reactive)
  * @param repo - Automerge repository
- * @returns Reactive accessor to grouped history items
+ * @returns Reactive items accessor + an `isInitializing` flag for the
+ *          pre-history-doc state.
  */
 export function useCachedHistory(
   sourceHandle: Accessor<DocHandle<unknown> | undefined>,
   strategyConfig: Accessor<GroupingStrategyConfig>,
   repo: Repo
-): Accessor<HistoryItem[]> {
+): CachedHistory {
   const sourceDoc = createMemo(() => {
     const handle = sourceHandle();
     if (!handle) return undefined;
@@ -110,11 +123,34 @@ export function useCachedHistory(
     { repo }
   );
 
+  // Reactively resolve the task-queue doc URL from the account doc. Picks
+  // the first entry whose value is `true` (i.e. an enabled queue), matching
+  // `@patchwork/tasks`'s semantics. Returns `undefined` if no queue is set;
+  // `dispatchTask` then no-ops until one is configured.
+  const [accountDoc] = useDocument<AccountDocShape>(getGlobalAccountDocUrl(), {
+    repo,
+  });
+  const taskQueueUrl = createMemo<AutomergeUrl | undefined>(() => {
+    const doc = accountDoc();
+    if (!doc) return undefined;
+    const queues = doc[TASK_QUEUE_URLS_FIELD_NAME];
+    if (!queues) return undefined;
+    return (Object.keys(queues) as AutomergeUrl[]).find(
+      (url) => queues[url] === true
+    );
+  });
+
   let lastDispatchTime = 0;
-  let taskDispatchDelayTimer: ReturnType<typeof setTimeout> | undefined;
 
   const dispatchTask = (sourceUrl: AutomergeUrl) => {
-    const queueDocUrl = resolveTaskQueueDocUrl(getAccountDocSnapshot());
+    const queueDocUrl = taskQueueUrl();
+    if (!queueDocUrl) {
+      console.warn(
+        "History: no task queue configured on the account doc; " +
+          "skipping dispatch — will retry on next source change."
+      );
+      return;
+    }
     queueForDocUrl(queueDocUrl).addTask<AutomergeUrl, void>({
       input: sourceUrl,
       importUrl: new URL(/* @vite-ignore */ "../task.js", import.meta.url),
@@ -122,16 +158,18 @@ export function useCachedHistory(
     lastDispatchTime = Date.now();
   };
 
-  // PART 3: Watch the source document. On every change (and once at setup)
-  // we update `sourceHeads` so the items memo below can re-render the virtual
-  // trailing tail, and decide whether to (re)dispatch the grouping task.
+  // PART 3: Watch the source document. On every change we update
+  // `sourceHeads` (so the items memo re-renders the virtual tail) and decide
+  // whether to dispatch the grouping task.
   //
-  // Dispatch logic:
-  // - If no history doc exists yet, always dispatch (bootstrap path).
-  // - If heads match the history doc's cached heads, do nothing.
-  // - If heads differ, dispatch — subject to a client-side debounce (ignore
-  //   rapid refires after we just dispatched) and to the task's own throttle
-  //   (avoid enqueuing work the task would skip anyway).
+  // Dispatch condition:
+  // - Bootstrap: no history doc exists yet → dispatch.
+  // - Heads match the history doc's cached heads → nothing to do.
+  // - Otherwise, dispatch iff the delta's time span exceeds the grouping
+  //   window. This is the *exact* point at which the task would produce a
+  //   materially different result than the virtual trailing item the UI is
+  //   already showing. A small `DISPATCH_COOLDOWN_MS` suppresses duplicate
+  //   enqueues while a task is still in-flight.
   const [sourceHeads, setSourceHeads] = createSignal<string[] | undefined>(
     undefined
   );
@@ -147,24 +185,8 @@ export function useCachedHistory(
       const sourceRawDoc = source.doc();
       if (!sourceRawDoc) return;
 
-      // Publish current source heads so the items memo picks up new tails.
       const currentHeads = Automerge.getHeads(sourceRawDoc);
       setSourceHeads(currentHeads);
-
-      const now = Date.now();
-
-      // Debounce: ignore changes for a short window after our last dispatch
-      // to avoid re-enqueuing before the first task has even started.
-      const elapsed = now - lastDispatchTime;
-      if (elapsed < DEBOUNCE_TIME) {
-        if (!taskDispatchDelayTimer) {
-          taskDispatchDelayTimer = setTimeout(() => {
-            taskDispatchDelayTimer = undefined;
-            onChange();
-          }, DEBOUNCE_TIME - elapsed);
-        }
-        return;
-      }
 
       const hHandle = historyDocHandle();
       const histDoc = hHandle?.doc();
@@ -175,23 +197,26 @@ export function useCachedHistory(
         return;
       }
 
-      // Heads match — cache is current, nothing to do.
-      if (headsEqual(currentHeads, histDoc.heads ?? [])) return;
+      const cachedHeads = histDoc.heads ?? [];
+      if (headsEqual(currentHeads, cachedHeads)) return;
 
-      // Heads differ — throttle per the task's last-run time.
-      const lastUpdate = histDoc.updatedAt ?? 0;
-      const throttleMs = histDoc.throttleMs ?? THROTTLE_MS;
-      const elapsedSinceUpdate = now - lastUpdate;
-      if (elapsedSinceUpdate < throttleMs) {
-        if (!taskDispatchDelayTimer) {
-          taskDispatchDelayTimer = setTimeout(() => {
-            taskDispatchDelayTimer = undefined;
-            onChange();
-          }, throttleMs - elapsedSinceUpdate);
-        }
+      // Precise trigger: only dispatch when the accumulated delta would
+      // actually split into more than one group — i.e. when its time span
+      // exceeds the strategy's grouping window. Concurrent changes that
+      // arrive via sync are included here naturally: they show up in the
+      // delta and extend its min/max just like local edits would.
+      const deltaMeta = Automerge.getChangesMetaSince(
+        sourceRawDoc,
+        cachedHeads
+      );
+      if (deltaMeta.length === 0) return;
+
+      const windowMs = strategyWindowMs(strategyConfig());
+      if (windowMs !== undefined && deltaTimeSpan(deltaMeta) <= windowMs) {
         return;
       }
 
+      if (Date.now() - lastDispatchTime < DISPATCH_COOLDOWN_MS) return;
       dispatchTask(source.url);
     };
 
@@ -200,8 +225,6 @@ export function useCachedHistory(
 
     onCleanup(() => {
       source.off("change", onChange);
-      clearTimeout(taskDispatchDelayTimer);
-      taskDispatchDelayTimer = undefined;
     });
   });
 
@@ -210,10 +233,11 @@ export function useCachedHistory(
   // covering the ungrouped tail. The virtual item is never stored; it
   // disappears once the background task runs and folds the tail into the
   // cached groupings.
-  return createMemo<HistoryItem[]>(() => {
+  const items = createMemo<HistoryItem[]>(() => {
     const doc = historyDoc();
     const strategyKey = getStrategyKey(strategyConfig());
-    const storedItems: HistoryItem[] = doc?.groupings?.[strategyKey]?.items ?? [];
+    const storedItems: HistoryItem[] =
+      doc?.groupings?.[strategyKey]?.items ?? [];
 
     const cachedHeads = doc?.heads ?? [];
     const currentSourceHeads = sourceHeads();
@@ -231,12 +255,20 @@ export function useCachedHistory(
     // Newest-first to match the cached items ordering.
     deltaMeta.reverse();
 
-    const virtualItem = buildVirtualItem(
-      deltaMeta,
-      storedItems[0]?.latestHash
-    );
+    const virtualItem = buildVirtualItem(deltaMeta, storedItems[0]?.latestHash);
     return [virtualItem, ...storedItems];
   });
+
+  // True until the source doc carries a link to a history doc AND that doc
+  // has actually loaded. Covers both the bootstrap window (task hasn't yet
+  // created and linked the history doc) and the brief load window for a doc
+  // that already had one.
+  const isInitializing = createMemo(() => {
+    if (!historyUrl()) return true;
+    return historyDoc() === undefined;
+  });
+
+  return { items, isInitializing };
 }
 
 /**
@@ -291,4 +323,35 @@ function headsEqual(heads1: string[], heads2: string[]): boolean {
   }
 
   return heads1.every((h) => heads2.includes(h));
+}
+
+/**
+ * Wall-clock span covered by a set of change metadata entries, in
+ * milliseconds. Returns 0 if no entries carry a timestamp. Change `time` is
+ * stored by Automerge in seconds.
+ */
+function deltaTimeSpan(deltaMeta: ChangeMetadata[]): number {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const m of deltaMeta) {
+    const t = m.time;
+    if (t === undefined) continue;
+    if (t < min) min = t;
+    if (t > max) max = t;
+  }
+  if (min === Infinity || max === -Infinity) return 0;
+  return (max - min) * 1000;
+}
+
+/**
+ * Width (in ms) of a grouping strategy's natural boundary, or `undefined` if
+ * the strategy doesn't have a time-based boundary. For such strategies we
+ * don't yet have a precise group-boundary dispatch condition, so callers
+ * should dispatch on any delta rather than waiting.
+ */
+function strategyWindowMs(config: GroupingStrategyConfig): number | undefined {
+  if (config.name === "timeWindow") {
+    return config.params?.timeWindow ?? DEFAULT_TIME_WINDOW;
+  }
+  return undefined;
 }

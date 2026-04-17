@@ -10,7 +10,11 @@ import type {
 } from "../types";
 import { ChangeMetadata } from "@automerge/automerge";
 
-const THROTTLE_MS = 30 * 1000; // 30 second throttle for task re-runs on the same document
+// Safety-net throttle: prevents thrashing the history doc if something keeps
+// re-enqueuing this task faster than it can complete. The primary dispatch
+// gate lives in the `useCachedHistory` hook, which only dispatches at natural
+// group boundaries, so this value can stay short.
+const THROTTLE_MS = 2 * 1000;
 
 // TODO: relative imports aren't working correctly when the task runs in the shared worker
 // Keep this in sync with `HISTORY_DOC_VERSION` in ../types.ts
@@ -100,27 +104,71 @@ export default async function (source: AutomergeUrl) {
     }
   }
 
-  // Get all metadata for all changes since the beginning
-  const allMeta = Automerge.getChangesMetaSince(sourceDoc, []);
-  const currentHeads = Automerge.getHeads(sourceDoc);
-
-  // Reverse to get newest first (UI display order)
-  allMeta.reverse();
-
-  // Project into a minimal working form (hash/actor/time + beforeHead).
-  const historyChanges = changeMetadataToWorkingChanges(allMeta);
-
   // Currently only one strategy is implemented. The discriminated config is
   // kept so additional strategies can slot in without reshuffling consumers.
   const timeConfig: GroupingStrategyConfig = {
     name: "timeWindow",
     params: { timeWindow: DEFAULT_TIME_WINDOW },
   };
-  const timeGrouping = applyGroupingStrategy(timeConfig, historyChanges);
+  const strategyKey = getStrategyKey(timeConfig);
+
+  // Re-read the history doc now that any version-reset above has landed.
+  const histDoc = historyDocHandle.doc();
+  if (!histDoc) {
+    console.warn("History task: history document not available after setup");
+    return;
+  }
+
+  const cachedHeads = histDoc.heads ?? [];
+  const existingItems: HistoryItem[] =
+    histDoc.groupings?.[strategyKey]?.items ?? [];
+
+  // Incremental update: if we already have a populated cache, only fetch the
+  // delta since our cached heads. This is safe because any changes Automerge
+  // returns here are either descendants of `cachedHeads` (normal forward
+  // progress) or concurrent with them (e.g. synced from a peer that was
+  // offline). In either case they appear in the delta and cannot retroactively
+  // alter a change that's already inside an existing group — concurrent
+  // changes always produce new heads, so they simply tack on new groups at
+  // the (chronologically newest) top of the list.
+  const canIncrement = cachedHeads.length > 0 && existingItems.length > 0;
+  const sinceHeads = canIncrement ? cachedHeads : [];
+
+  const deltaMeta = Automerge.getChangesMetaSince(sourceDoc, sinceHeads);
+  const currentHeads = Automerge.getHeads(sourceDoc);
+
+  if (deltaMeta.length === 0) {
+    // Nothing new (e.g. cache already matches, or doc is empty). Leave the
+    // stored heads alone so future runs still see the cached boundary.
+    return;
+  }
+
+  // Reverse to get newest first (UI display order)
+  deltaMeta.reverse();
+
+  // Project into the minimal working form (hash/actor/time + beforeHead).
+  const deltaChanges = changeMetadataToWorkingChanges(deltaMeta);
+
+  // Stitch the boundary: the oldest delta change's `beforeHead` should link
+  // back to the newest cached group's latest hash so clicking the new group
+  // shows the right "before" state. For single-head histories this is exact;
+  // with concurrent heads it's a best-effort display hint.
+  if (canIncrement && deltaChanges.length > 0) {
+    deltaChanges[deltaChanges.length - 1].beforeHead =
+      existingItems[0].latestHash;
+  }
+
+  const deltaGrouping = applyGroupingStrategy(timeConfig, deltaChanges);
 
   historyDocHandle.change((doc: HistoryGroupingsDoc) => {
     doc.heads = currentHeads;
-    doc.groupings[getStrategyKey(timeConfig)] = { items: timeGrouping };
+    if (canIncrement && doc.groupings[strategyKey]?.items) {
+      // Prepend the newly-computed groups to the existing array so Automerge
+      // sees a small insert rather than a full array replacement.
+      doc.groupings[strategyKey].items.splice(0, 0, ...deltaGrouping);
+    } else {
+      doc.groupings[strategyKey] = { items: deltaGrouping };
+    }
   });
 }
 
