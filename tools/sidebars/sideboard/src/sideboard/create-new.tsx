@@ -18,7 +18,7 @@ import type {
   FolderDoc,
   HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
-import { useFilteredDatatypes } from "@patchwork/solid";
+import { useFilteredDatatypes } from "./lib/solid-plugins";
 import { DropdownMenu } from "@kobalte/core/dropdown-menu";
 import type { OpenDocumentEventDetail } from "@inkandswitch/patchwork-elements";
 import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";

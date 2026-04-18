@@ -47,7 +47,6 @@
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/subscribables-solid": "workspace:^",
     "@node-types/node": "npm:@types/node@^24.9.1",
-    "@patchwork/solid": "workspace:^",
     "@solid-primitives/map": "^0.7.2",
     "@types/babel__core": "^7.20.5",
     "babel-preset-solid": "^1.9.9",

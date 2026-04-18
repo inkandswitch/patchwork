@@ -25,8 +25,6 @@
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/annotations-context": "workspace:^",
     "@inkandswitch/annotations-diff": "workspace:^",
-    "@patchwork/util": "workspace:^",
-    "@patchwork/solid": "workspace:^",
     "solid-js": "^1.9.10",
     "tailwindcss": "^4.1.14"
   },

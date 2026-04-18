@@ -27,7 +27,6 @@
     "@inkandswitch/annotations-selection": "workspace:^",
     "@inkandswitch/subscribables": "workspace:^",
     "@inkandswitch/patchwork-refs-react": "workspace:^",
-    "@patchwork/util": "workspace:^",
     "boring-avatars": "^1.10.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
