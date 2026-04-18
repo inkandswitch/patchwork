@@ -81,6 +81,35 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
   }
 
   /**
+   * Load a plugin by id, waiting for registration if the plugin has not been
+   * registered yet. Useful when a consumer depends on a plugin that will be
+   * registered by a later-loaded module bundle (e.g. the `account` datatype
+   * which ships with the `patchwork-frame` bundle).
+   */
+  async loadWhenReady(id: string): Promise<LoadedPlugin<D, I>> {
+    const immediate = await this.load(id);
+    if (immediate) return immediate;
+    return new Promise<LoadedPlugin<D, I>>((resolve, reject) => {
+      const off = this.on("registered", async (plugin) => {
+        if (plugin.id !== id) return;
+        off();
+        try {
+          const loaded = await this.load(id);
+          if (!loaded) {
+            reject(
+              new Error(`Plugin "${id}" registered but failed to load`)
+            );
+            return;
+          }
+          resolve(loaded);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  }
+
+  /**
    * Load an plugin by ID, loading it on demand if necessary (asynchronous)
    * If shouldWait is true, will wait for the plugin to be registered if it isn't already
    */
