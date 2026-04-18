@@ -1,7 +1,7 @@
 import "./styles.css";
 import { useState, useEffect, useMemo } from "react";
 
-import { relativeTime } from "@patchwork/util/src/relative-time";
+import { relativeTime } from "./relative-time";
 import { toolify } from "@inkandswitch/patchwork-react";
 import { useRepo, useDocument } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl } from "@automerge/automerge-repo";

@@ -1296,9 +1296,6 @@ importers:
       '@lezer/javascript':
         specifier: ^1.5.4
         version: 1.5.4
-      '@patchwork/solid':
-        specifier: workspace:^
-        version: link:../../../packages/solid
       '@replit/codemirror-vim':
         specifier: ^6.3.0
         version: 6.3.0(@codemirror/commands@6.9.0)(@codemirror/language@6.11.3)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.8)
@@ -1572,9 +1569,6 @@ importers:
       '@inkandswitch/subscribables-react':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/react
-      '@patchwork/util':
-        specifier: workspace:^
-        version: link:../../../packages/util
       boring-avatars:
         specifier: ^1.10.2
         version: 1.11.2
@@ -1845,12 +1839,6 @@ importers:
       '@inkandswitch/subscribables-solid':
         specifier: workspace:^
         version: link:../../../packages/subscribables/frameworks/solid
-      '@patchwork/solid':
-        specifier: workspace:^
-        version: link:../../../packages/solid
-      '@patchwork/util':
-        specifier: workspace:^
-        version: link:../../../packages/util
       solid-js:
         specifier: ^1.9.10
         version: 1.9.10
@@ -1949,9 +1937,6 @@ importers:
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
-      '@patchwork/solid':
-        specifier: workspace:^
-        version: link:../../../packages/solid
       '@solid-primitives/map':
         specifier: ^0.7.2
         version: 0.7.2(solid-js@1.9.9)
@@ -2236,9 +2221,6 @@ importers:
       '@node-types/node':
         specifier: npm:@types/node@^24.9.1
         version: '@types/node@24.9.1'
-      '@patchwork/solid':
-        specifier: workspace:^
-        version: link:../../../packages/solid
       solid-js:
         specifier: ^1.9.10
         version: 1.9.10

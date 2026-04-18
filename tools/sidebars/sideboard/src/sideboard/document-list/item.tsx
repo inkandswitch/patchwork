@@ -7,7 +7,7 @@ import {
   untrack,
   type JSX,
 } from "solid-js";
-import { useSupportedToolsForType } from "@patchwork/solid";
+import { useSupportedToolsForType } from "../lib/solid-plugins";
 import type { PatchworkViewElement } from "@inkandswitch/patchwork-elements";
 import {
   type SideboardDragAndDropItem,

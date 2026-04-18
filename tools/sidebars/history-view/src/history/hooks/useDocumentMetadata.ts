@@ -4,7 +4,7 @@ import {
   getType,
   HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
-import { useDatatypes } from "@patchwork/solid";
+import { useDatatypes } from "../lib/solid-plugins";
 import { isLoadedPlugin } from "@inkandswitch/patchwork-plugins/dist/registry/guards";
 
 /**
