@@ -1,5 +1,5 @@
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { createSignal, createMemo } from "solid-js";
+import { type Accessor, createMemo, Show } from "solid-js";
 import { useDocument } from "@automerge/automerge-repo-solid-primitives";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -11,13 +11,26 @@ import {
 import { type GroupingStrategyConfig, findItemByHash } from "../../types";
 import { DocHistoryHeader } from "./DocHistoryHeader";
 import { HistoryList } from "./HistoryList";
+import { HistoryComputingIndicator } from "./HistoryComputingIndicator";
 // TODO: re-enable when we have more grouping strategies to choose from
 // import { GroupingSelector } from "./GroupingSelector";
 
 export interface DocHistoryViewProps {
   url: AutomergeUrl;
   repo: Repo;
+  /**
+   * Whether to render the document's title in the header. Defaults to true;
+   * pass an accessor returning `false` (e.g. when the sidebar is showing a
+   * single doc whose title is already visible elsewhere) to suppress it
+   * while keeping the reset button.
+   */
+  showTitle?: Accessor<boolean>;
 }
+
+// Only one grouping strategy is wired up today. When the selector UI is
+// restored, turn this back into a signal and pass the setter to it.
+const STRATEGY_CONFIG: GroupingStrategyConfig = { name: "timeWindow" };
+const strategyConfig = () => STRATEGY_CONFIG;
 
 /**
  * Orchestrator component that composes hooks and components
@@ -32,14 +45,12 @@ export function DocHistoryView(props: DocHistoryViewProps) {
   // Use hooks for different concerns
   const { title, docRef } = useDocumentMetadata(doc, handle);
 
-  // Grouping strategy configuration
-  const [strategyConfig, setStrategyConfig] =
-    createSignal<GroupingStrategyConfig>({
-      name: "timeWindow",
-    });
-
   // Unified hook that manages history grouping with optimized updates
-  const groupedItems = useCachedHistory(handle, strategyConfig, props.repo);
+  const { items: groupedItems, isInitializing } = useCachedHistory(
+    handle,
+    strategyConfig,
+    props.repo
+  );
 
   // Selection hook
   const { viewHeads, selectItem, clearSelection } = useHistorySelection();
@@ -63,7 +74,7 @@ export function DocHistoryView(props: DocHistoryViewProps) {
   return (
     <div class="flex flex-col flex-1 min-h-0">
       <DocHistoryHeader
-        title={title()}
+        title={(props.showTitle?.() ?? true) ? title() : undefined}
         hasSelection={viewHeads() !== null}
         onReset={clearSelection}
       />
@@ -71,14 +82,19 @@ export function DocHistoryView(props: DocHistoryViewProps) {
       {/* <div class="px-2 pb-2">
         <GroupingSelector
           selectedConfig={strategyConfig()}
-          onConfigChange={setStrategyConfig}
+          onConfigChange={(cfg) => { STRATEGY_CONFIG = cfg; }}
         />
       </div> */}
-      <HistoryList
-        items={groupedItems()}
-        selectedItem={selectedItem()}
-        onSelectItem={selectItem}
-      />
+      <Show
+        when={!isInitializing()}
+        fallback={<HistoryComputingIndicator />}
+      >
+        <HistoryList
+          items={groupedItems()}
+          selectedItem={selectedItem()}
+          onSelectItem={selectItem}
+        />
+      </Show>
     </div>
   );
 }

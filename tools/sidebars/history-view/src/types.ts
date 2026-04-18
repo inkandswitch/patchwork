@@ -1,51 +1,30 @@
-import type { ChangeMetadata } from "@automerge/automerge";
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 
 /**
- * Represents a single change in the document history
+ * Represents a run of one-or-more changes in the document history.
+ *
+ * A "singleton" change is simply a `HistoryItem` with `count === 1`; the
+ * storage and render paths do not distinguish it from a multi-change group.
+ *
+ * Intermediate per-change metadata is not kept here — only the aggregate
+ * information the UI reads. Per-change `actor` / `time` fields live on the
+ * source document itself and are not duplicated into this cache.
  */
-export interface HistoryChange extends ChangeMetadata {
-  beforeHead?: string;
-}
-
-/**
- * Represents a group of related changes
- */
-export interface HistoryGroup {
+export interface HistoryItem {
   id: string;
-  changes: HistoryChange[];
-  /** Start time of the group in Unix seconds (from Automerge ChangeMetadata.time) */
+  /** Number of changes covered by this item (1 for a lone change) */
+  count: number;
+  /** Hash of the newest change in the item (used for selection and copy) */
+  latestHash: string;
+  /** Deduplicated list of authors across all changes in the item */
+  authors: string[];
+  /** Start time in Unix seconds (from Automerge ChangeMetadata.time) */
   startTime?: number;
-  /** End time of the group in Unix seconds (from Automerge ChangeMetadata.time) */
+  /** End time in Unix seconds (from Automerge ChangeMetadata.time) */
   endTime?: number;
+  /** Hash of the change immediately preceding this item in linear history */
   beforeHead?: string;
 }
-
-/**
- * Union type for items in the history list
- * Can be either a single change or a group of changes
- */
-export type HistoryItem = HistoryChange | HistoryGroup;
-
-/**
- * Type guard to check if an item is a HistoryGroup
- */
-export function isHistoryGroup(item: HistoryItem): item is HistoryGroup {
-  return "changes" in item;
-}
-
-/**
- * Type guard to check if an item is a HistoryChange
- */
-export function isHistoryChange(item: HistoryItem): item is HistoryChange {
-  return "hash" in item && !("changes" in item);
-}
-
-/**
- * Function type for grouping strategies
- * Takes a flat list of changes and returns grouped items
- */
-export type GroupingStrategy = (changes: HistoryChange[]) => HistoryItem[];
 
 /**
  * ViewHeads structure for annotations
@@ -56,9 +35,12 @@ export interface ViewHeadsType {
 }
 
 /**
- * Configuration for a grouping strategy including parameters
+ * Configuration for a grouping strategy including parameters.
+ *
+ * Only `timeWindow` is implemented today; the discriminated shape is kept so
+ * future strategies can be added without reshuffling consumers.
  */
-export type StrategyName = "none" | "timeWindow" | "author";
+export type StrategyName = "timeWindow" | "author";
 export interface GroupingStrategyConfig {
   name: StrategyName;
   params?: {
@@ -72,6 +54,13 @@ export interface GroupingStrategyConfig {
 export interface CachedGrouping {
   items: HistoryItem[];
 }
+
+/**
+ * Schema version for the cached history document.
+ * Bump when the shape of `HistoryItem` changes so the task can discard a
+ * stale cache instead of reading a now-incompatible structure.
+ */
+export const HISTORY_DOC_VERSION = 3;
 
 /**
  * Document structure for storing persistent history groupings.
@@ -93,20 +82,18 @@ export interface HistoryGroupingsDoc {
 }
 
 /**
- * Find an item (change or group) that contains a specific hash
+ * Find an item matching a specific hash.
+ *
+ * Only the item's latest/representative hash is matched, since the selection
+ * UI only ever produces that hash — intermediate change hashes inside a
+ * multi-change item are never looked up here.
  */
 export function findItemByHash(
   items: HistoryItem[],
   hash: string
 ): HistoryItem | null {
   for (const item of items) {
-    if (isHistoryChange(item) && item.hash === hash) {
-      return item;
-    } else if (isHistoryGroup(item)) {
-      if (item.changes.some((c) => c.hash === hash)) {
-        return item;
-      }
-    }
+    if (item.latestHash === hash) return item;
   }
   return null;
 }
@@ -119,14 +106,5 @@ export function isItemSelected(
   selectedItem: HistoryItem | null
 ): boolean {
   if (!selectedItem) return false;
-
-  if (isHistoryChange(item) && isHistoryChange(selectedItem)) {
-    return item.hash === selectedItem.hash;
-  } else if (isHistoryGroup(item) && isHistoryGroup(selectedItem)) {
-    return item.id === selectedItem.id;
-  } else if (isHistoryGroup(item) && isHistoryChange(selectedItem)) {
-    // Highlight group if selected change is within it
-    return item.changes.some((c) => c.hash === selectedItem.hash);
-  }
-  return false;
+  return item.id === selectedItem.id;
 }
