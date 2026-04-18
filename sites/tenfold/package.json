@@ -39,8 +39,6 @@
     "@inkandswitch/patchwork-react": "workspace:^",
     "@inkandswitch/tenfold": "workspace:^",
     "@keyhive/keyhive": "catalog:",
-    "@patchwork/account-picker": "workspace:^",
-    "@patchwork/contact": "workspace:^",
     "add": "^2.0.6",
     "cmdk": "^1.1.1",
     "lucide-react": "^0.545.0",
