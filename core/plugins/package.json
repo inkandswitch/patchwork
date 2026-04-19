@@ -1,7 +1,7 @@
 {
   "name": "@inkandswitch/patchwork-plugins",
   "type": "module",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": "Ink & Switch",
   "description": "",
   "main": "dist/index.js",
@@ -12,10 +12,12 @@
   },
   "keywords": [],
   "license": "ISC",
+  "peerDependencies": {
+    "@automerge/automerge": "*",
+    "@automerge/automerge-repo": "*",
+    "@inkandswitch/patchwork-filesystem": "workspace:^"
+  },
   "dependencies": {
-    "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "catalog:",
-    "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@types/debug": "^4.1.12",
     "@types/node": "^20.17.57",
     "debug": "^4.4.3",
@@ -23,8 +25,11 @@
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@types/react": "catalog:"
   }
 }

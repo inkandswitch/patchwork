@@ -1,6 +1,6 @@
 {
   "name": "@inkandswitch/annotations-selection",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "files": [
     "dist"
@@ -18,13 +18,16 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "peerDependencies": {
+    "@automerge/automerge-repo": "*"
+  },
   "dependencies": {
-    "@automerge/automerge-repo": "catalog:",
     "@inkandswitch/annotations": "workspace:*",
     "@inkandswitch/annotations-context": "workspace:*",
     "@inkandswitch/subscribables": "workspace:*"
   },
   "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
     "typescript": "^5.9.2"
   }
 }
