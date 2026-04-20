@@ -12,7 +12,7 @@ export async function importModuleFromFolderDocUrl(
   conditions: string[] = defaultImportConditions
 ) {
   console.log(
-    `[packages] importModule ${folderDocUrl.slice(0, 25)}... (subpath: ${subpath})`
+    `[packages] importModule ${folderDocUrl}... (subpath: ${subpath})`
   );
   const entryPointUrl = await packageEntryPointUrl(
     folderDocUrl,
