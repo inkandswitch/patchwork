@@ -5,8 +5,6 @@ packages:
   - packages/subscribables/**/*
   - meta/*
   - sites/*
-  - tools/*
-  - tools/*/*
 
 catalog:
   "@automerge/automerge": 3.2.4
