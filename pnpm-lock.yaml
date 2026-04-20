@@ -496,7 +496,7 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5
       solid-js:
-        specifier: ^1.9.10
+        specifier: ^1.9.9
         version: 1.9.10
       tailwindcss:
         specifier: ^4.1.14

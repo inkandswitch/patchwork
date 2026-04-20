@@ -30,8 +30,8 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/vanillajs": "catalog:",
     "@codemirror/commands": "^6.9.0",
     "@codemirror/language": "^6.11.3",
@@ -50,7 +50,7 @@
     "react-dom": "catalog:",
     "scheduler": "^0.27.0",
     "signia": "^0.1.5",
-    "solid-js": "^1.9.10",
+    "solid-js": "^1.9.9",
     "tailwindcss": "^4.1.14"
   }
 }
