@@ -1,16 +1,18 @@
 {
   "name": "@inkandswitch/patchwork-elements",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": "Ink & Switch",
   "type": "module",
   "description": "",
   "main": "dist/index.js",
   "keywords": [],
   "license": "MIT",
-  "dependencies": {
-    "@automerge/automerge-repo": "catalog:",
+  "peerDependencies": {
+    "@automerge/automerge-repo": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^"
+  },
+  "dependencies": {
     "debug": "^4.4.3"
   },
   "scripts": {
@@ -19,7 +21,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
     "@types/debug": "^4.1.12",
     "@types/node": "^20.19.9"
   }
