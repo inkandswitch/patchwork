@@ -8,15 +8,13 @@ import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import setup from "@inkandswitch/patchwork-bootloader";
 import {
   registerPlugins,
+  resolveAccountHandle,
   DatatypeDescription,
   DatatypeImplementation,
   getRegistry,
+  type AccountDoc,
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
-import {
-  getOrCreateLayoutDocHandle,
-  TinyPatchworkLayoutDoc,
-} from "./layout-doc";
 import {
   DocHandle,
   IndexedDBStorageAdapter,
@@ -33,7 +31,7 @@ import * as AutomergeRepo from "@automerge/automerge-repo";
 
 declare global {
   interface Window {
-    accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+    accountDocHandle: DocHandle<AccountDoc>;
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
@@ -42,7 +40,7 @@ declare global {
       repo: Repo;
       modules: ModuleWatcher;
       plugins: typeof plugins;
-      accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+      accountDocHandle: DocHandle<AccountDoc>;
     };
   }
 }
@@ -81,12 +79,57 @@ window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
 
-const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
+registerPatchworkViewElement({ repo });
+
+// Default tools bundle. Can be overridden for development or forked tool sets
+// by setting `localStorage.defaultToolsUrl` to an automerge: URL.
+const DEFAULT_TOOLS_URL =
+  "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl;
+const defaultToolsOverride = localStorage.getItem("defaultToolsUrl");
+const defaultToolsUrl =
+  defaultToolsOverride && isValidAutomergeUrl(defaultToolsOverride)
+    ? defaultToolsOverride
+    : DEFAULT_TOOLS_URL;
+if (defaultToolsOverride && defaultToolsUrl !== DEFAULT_TOOLS_URL) {
+  console.info(
+    `using defaultToolsUrl override from localStorage: ${defaultToolsOverride}`
+  );
+} else if (defaultToolsOverride) {
+  console.warn(
+    `ignoring invalid defaultToolsUrl in localStorage: ${defaultToolsOverride}; using built-in default`
+  );
+}
+
+const moduleWatcher = new ModuleWatcher(
+  repo,
+  [defaultToolsUrl],
+  (name, mod) => {
+    if (Array.isArray(mod.plugins)) {
+      // TODO: maybe get rid of this check?
+      if (isValidAutomergeUrl(name)) {
+        registerPlugins(mod.plugins, name);
+      }
+    }
+  }
+);
+
+const accountDocHandle = await resolveAccountHandle(repo, {
+  storageKey: "gaiosAccountUrl",
+});
 await repo.flush();
 
 window.accountDocHandle = accountDocHandle;
 
-registerPatchworkViewElement({ repo });
+const wireModuleSettings = () => {
+  const url = accountDocHandle.doc()?.moduleSettingsUrl;
+  if (!url) return;
+  void moduleWatcher.addUrl(url);
+  accountDocHandle.off("change", wireModuleSettings);
+};
+wireModuleSettings();
+if (!accountDocHandle.doc()?.moduleSettingsUrl) {
+  accountDocHandle.on("change", wireModuleSettings);
+}
 
 const rootElement = document.getElementById("root")!;
 
@@ -95,7 +138,9 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("tool-id", initialParams.get("frame")!);
   const docId = initialParams.get("doc");
   const docUrl = docId
-    ? stringifyAutomergeUrl({ documentId: docId as import("@automerge/automerge-repo").DocumentId })
+    ? stringifyAutomergeUrl({
+        documentId: docId as import("@automerge/automerge-repo").DocumentId,
+      })
     : accountDocHandle.url;
   rootElement.setAttribute("doc-url", docUrl);
 } else {
@@ -117,7 +162,7 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   window.location.hash = params.toString();
 
   try {
-    const docHandle = await repo.find(
+    const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
       stringifyAutomergeUrl({ documentId, heads })
     );
     const doc = docHandle.doc();
@@ -142,23 +187,6 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
 rootElement.addEventListener("patchwork:mounted", () => {
   handleHashChange();
 });
-
-const moduleWatcher = new ModuleWatcher(
-  repo,
-  [
-    accountDocHandle.doc().moduleSettingsUrl,
-    // default tools for gaios
-    "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeRepo.AutomergeUrl,
-  ],
-  (name, mod) => {
-    if (Array.isArray(mod.plugins)) {
-      // TODO: maybe get rid of this check?
-      if (isValidAutomergeUrl(name)) {
-        registerPlugins(mod.plugins, name);
-      }
-    }
-  }
-);
 
 window.patchwork = { repo, modules: moduleWatcher, plugins, accountDocHandle };
 
@@ -211,7 +239,6 @@ const handleHashChange = async () => {
   }
 };
 
-// Listen for hash changes and interpret them as Automerge URLs
 window.addEventListener("hashchange", () => {
   handleHashChange();
 });

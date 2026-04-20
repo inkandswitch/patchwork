@@ -75,6 +75,21 @@ export class ModuleWatcher {
 
   onChange = () => this.load().catch(console.error);
 
+  /**
+   * Add another module-settings URL to watch after construction. Useful when
+   * a site wants to bootstrap with a hard-coded default-tools URL while the
+   * user-owned module-settings URL is resolved (or lazily created) later.
+   */
+  async addUrl(url: AutomergeUrl): Promise<void> {
+    if (this.urls.includes(url)) return;
+    this.urls.push(url);
+    await this.doneLoading;
+    const handle = await this.repo.find<ModuleSettingsDoc>(url);
+    this.handles?.push(handle);
+    handle.addListener("change", this.onChange);
+    await this.loadModules(handle.doc()?.modules ?? []);
+  }
+
   private async init() {
     this.handles = (
       await Promise.allSettled(

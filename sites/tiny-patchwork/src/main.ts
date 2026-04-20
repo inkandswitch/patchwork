@@ -9,18 +9,17 @@ import setup from "@inkandswitch/patchwork-bootloader";
 import { SwLogReader } from "@inkandswitch/patchwork-bootloader/sw-logger";
 import {
   registerPlugins,
+  resolveAccountHandle,
   DatatypeDescription,
   DatatypeImplementation,
   getRegistry,
+  type AccountDoc,
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 import {
-  getOrCreateLayoutDocHandle,
-  TinyPatchworkLayoutDoc,
-} from "./layout-doc";
-import {
   DocHandle,
   IndexedDBStorageAdapter,
+  isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
   parseAutomergeUrl,
@@ -39,7 +38,7 @@ import "@automerge/automerge-subduction";
 
 declare global {
   interface Window {
-    accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+    accountDocHandle: DocHandle<AccountDoc>;
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
@@ -48,7 +47,7 @@ declare global {
       repo: Repo;
       modules: ModuleWatcher;
       plugins: typeof plugins;
-      accountDocHandle: DocHandle<TinyPatchworkLayoutDoc>;
+      accountDocHandle: DocHandle<AccountDoc>;
     };
   }
 }
@@ -66,8 +65,20 @@ repo.subscribeToRemotes([
 ]);
 
 // Published tools are registered in this module settings doc by publish-all-tools.
-const defaultToolsUrl =
+// Can be overridden for development or forked tool sets by setting
+// `localStorage.defaultToolsUrl` to an automerge: URL.
+const DEFAULT_TOOLS_URL =
   "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
+const override = localStorage.getItem("defaultToolsUrl");
+const defaultToolsUrl =
+  override && isValidAutomergeUrl(override) ? override : DEFAULT_TOOLS_URL;
+if (override && defaultToolsUrl !== DEFAULT_TOOLS_URL) {
+  console.info(`using defaultToolsUrl override from localStorage: ${override}`);
+} else if (override) {
+  console.warn(
+    `ignoring invalid defaultToolsUrl in localStorage: ${override}; using built-in default`
+  );
+}
 
 const result = await setup({
   moduleSettingsUrls: [defaultToolsUrl],
@@ -93,12 +104,50 @@ window.repo = repo;
 window.Automerge = Automerge;
 window.AutomergeRepo = AutomergeRepo;
 
-const accountDocHandle = await getOrCreateLayoutDocHandle(repo);
+registerPatchworkViewElement({ repo });
+
+function onModuleLoaded(name: string, mod: any) {
+  if (Array.isArray(mod.plugins)) {
+    console.log(
+      `[main] registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
+      mod.plugins.map((p: any) => `${p.type}:${p.id}`)
+    );
+    registerPlugins(mod.plugins, name);
+  } else {
+    console.warn(
+      `[main] module ${name.slice(0, 30)}... has no plugins array`,
+      Object.keys(mod)
+    );
+  }
+}
+
+// Kick off default-tools loading first; this is what registers the `account`
+// datatype that resolveAccountHandle waits on, plus the frame tool itself.
+const moduleWatcher = new ModuleWatcher(
+  repo,
+  [defaultToolsUrl],
+  onModuleLoaded
+);
+
+const accountDocHandle = await resolveAccountHandle(repo, {
+  storageKey: "tinyPatchworkAccountUrl",
+});
 await repo.flush();
 
 window.accountDocHandle = accountDocHandle;
 
-registerPatchworkViewElement({ repo });
+// The frame lazy-creates moduleSettingsUrl on first mount. Wire it into the
+// watcher as soon as it appears.
+const wireModuleSettings = () => {
+  const url = accountDocHandle.doc()?.moduleSettingsUrl;
+  if (!url) return;
+  void moduleWatcher.addUrl(url);
+  accountDocHandle.off("change", wireModuleSettings);
+};
+wireModuleSettings();
+if (!accountDocHandle.doc()?.moduleSettingsUrl) {
+  accountDocHandle.on("change", wireModuleSettings);
+}
 
 const rootElement = document.getElementById("root")!;
 rootElement.style.visibility = "hidden";
@@ -117,27 +166,6 @@ if (initialParams.has("frame")) {
   rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
   rootElement.setAttribute("doc-url", accountDocHandle.url);
 }
-
-function onModuleLoaded(name: string, mod: any) {
-  if (Array.isArray(mod.plugins)) {
-    console.log(
-      `[main] registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
-      mod.plugins.map((p: any) => `${p.type}:${p.id}`)
-    );
-    registerPlugins(mod.plugins, name);
-  } else {
-    console.warn(
-      `[main] module ${name.slice(0, 30)}... has no plugins array`,
-      Object.keys(mod)
-    );
-  }
-}
-
-const moduleWatcher = new ModuleWatcher(
-  repo,
-  [defaultToolsUrl, accountDocHandle.doc().moduleSettingsUrl],
-  onModuleLoaded
-);
 
 // Log tool registry state after initial load completes
 moduleWatcher.doneLoading
@@ -194,7 +222,7 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
   window.location.hash = params.toString();
 
   try {
-    const docHandle = await repo.find(
+    const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
       stringifyAutomergeUrl({ documentId, heads })
     );
     const doc = docHandle.doc();
@@ -219,7 +247,6 @@ rootElement.addEventListener("patchwork:open-document", async (event) => {
 let firstMount = true;
 rootElement.addEventListener("patchwork:mounted", (event) => {
   handleHashChange();
-  //console.info(`tool mounted`, event.detail.toolId);
   if (event.target != rootElement) return;
   console.info(`root element mounted`);
   if (firstMount) {
@@ -284,7 +311,6 @@ const handleHashChange = async () => {
   }
 };
 
-// Listen for hash changes and interpret them as Automerge URLs
 window.addEventListener("hashchange", () => {
   handleHashChange();
 });
