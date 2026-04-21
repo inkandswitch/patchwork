@@ -11,3 +11,4 @@ dummy-non-existing-folder/
 .claude/
 .pushwork/
 dist/
+scripts/module-settings/automerge-repo-data/
