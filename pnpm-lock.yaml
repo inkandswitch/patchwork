@@ -113,9 +113,15 @@ importers:
       '@automerge/vanillajs':
         specifier: 2.6.0-subduction.13
         version: 2.6.0-subduction.13
+      '@inkandswitch/patchwork-elements':
+        specifier: workspace:^
+        version: link:../elements
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
+      '@inkandswitch/patchwork-plugins':
+        specifier: workspace:^
+        version: link:../plugins
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -225,9 +231,6 @@ importers:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
         version: 0.2.0-alpha.1d
-      '@inkandswitch/patchwork-bootloader':
-        specifier: workspace:^
-        version: link:../bootloader
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
