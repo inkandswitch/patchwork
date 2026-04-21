@@ -68,7 +68,7 @@ repo.subscribeToRemotes([
 // Can be overridden for development or forked tool sets by setting
 // `localStorage.defaultToolsUrl` to an automerge: URL.
 const DEFAULT_TOOLS_URL =
-  "automerge:415R9K4Jde4ByU94X8fUDUxy2tFW" as AutomergeUrl;
+  "automerge:axLMmZNW8uogPudjwcab7svmJWr" as AutomergeUrl;
 const override = localStorage.getItem("defaultToolsUrl");
 const defaultToolsUrl =
   override && isValidAutomergeUrl(override) ? override : DEFAULT_TOOLS_URL;
