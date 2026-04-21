@@ -38,7 +38,6 @@
           "dev:hive" = cmd "Start dev server for Hive" "SITE=hive ${pnpm'} dev";
           "format" = cmd "Format code" "${pnpm'} format";
           "format:check" = cmd "Check code formatting" "${pnpm'} format:check";
-          "make:tool" = cmd "Create a new tool" "${pnpm'} make-tool";
           "preview" = cmd "Preview production build" "${pnpm'} preview";
           "publish:packages" = cmd "Publish packages" "${pnpm'} publish-packages";
           "tsc" = cmd "Run TypeScript compiler" "${pnpm'} tsc";
