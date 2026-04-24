@@ -1,6 +1,6 @@
 /// <reference types="service-worker-types" />
 
-import { SwLogger, type SwLoggerInterface } from "./sw-logger.js";
+import { SwLogger } from "./sw-logger.js";
 
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
@@ -18,6 +18,7 @@ import {
   Repo,
   isValidAutomergeUrl,
   parseAutomergeUrl,
+  stringifyAutomergeUrl,
   type PeerId,
 } from "@automerge/automerge-repo/slim";
 import {
@@ -159,118 +160,6 @@ function getRepo() {
   return repoPromise;
 }
 
-// ── Eager tool prefetch ────────────────────────────────────────────────
-//
-// As soon as the Repo is constructed, start syncing the module-settings
-// docs and every tool folder doc they reference. This warms the
-// Subduction sync pipeline so that by the time the main thread's
-// ModuleWatcher fires fetch requests for package.json / entry-point JS,
-// the folder docs (and ideally their file sub-docs) are already loaded
-// or well on their way.
-
-interface ModuleSettingsDoc {
-  modules?: string[];
-}
-
-async function prefetchToolDocs(settingsUrls: string[]): Promise<void> {
-  const repo = await getRepo();
-  const logger = await slog;
-
-  // Wait for the Subduction WebSocket to be connected before calling
-  // repo.find() on remote-only docs. Without this, DocumentQuery
-  // transitions to "unavailable" immediately because no peers are
-  // connected yet.
-  await repo.networkSubsystem.whenReady();
-  const seenModules = new Set<string>();
-  const seenFiles = new Set<string>();
-
-  // When a tool folder doc arrives (or updates), start syncing all
-  // file sub-docs (package.json, dist/index.js, etc.) so they're
-  // already loading by the time a fetch request arrives for them.
-  function prefetchFileDocs(folderDoc: FolderDoc | undefined) {
-    const docs = folderDoc?.docs;
-    if (!Array.isArray(docs)) return;
-    for (const entry of docs) {
-      const fileUrl = entry?.url;
-      if (!fileUrl || seenFiles.has(fileUrl)) continue;
-      if (!isValidAutomergeUrl(fileUrl)) continue;
-      seenFiles.add(fileUrl);
-      repo.find(fileUrl).catch(() => {});
-    }
-  }
-
-  for (const url of settingsUrls) {
-    if (!isValidAutomergeUrl(url)) continue;
-    logger.info(`prefetch: warming module-settings doc ${url.slice(0, 30)}…`);
-
-    try {
-      const handle = await repo.find<ModuleSettingsDoc>(url);
-
-      // Collect promises so we can wait for all folder docs to resolve.
-      const folderDocPromises: Promise<void>[] = [];
-
-      // Read whatever modules are already present (may be empty on first load).
-      const prefetchModules = (doc: ModuleSettingsDoc | undefined) => {
-        const modules = doc?.modules ?? [];
-        for (const modUrl of modules) {
-          if (!modUrl || seenModules.has(modUrl)) continue;
-          if (!isValidAutomergeUrl(modUrl)) continue;
-          seenModules.add(modUrl);
-          // Wait for each folder doc to actually resolve from Subduction.
-          // When it arrives, prefetch its file sub-docs too.
-          const p = repo
-            .find<FolderDoc>(modUrl)
-            .then((folderHandle: any) => {
-              prefetchFileDocs(folderHandle.doc());
-              folderHandle.on("change", () => {
-                prefetchFileDocs(folderHandle.doc());
-              });
-            })
-            .catch(() => {});
-          folderDocPromises.push(p);
-        }
-      };
-
-      // Prefetch whatever's available immediately.
-      prefetchModules(handle.doc());
-
-      // Also watch for the settings doc to sync — on first load the
-      // modules[] array arrives incrementally.
-      handle.on("change", () => {
-        prefetchModules(handle.doc());
-      });
-
-      // Wait for folder docs to sync from Subduction, with a timeout.
-      // Without this, the fetch handler receives requests before the SW
-      // has the folder docs, causing hangs. The timeout prevents blocking
-      // forever if some docs never sync.
-      if (folderDocPromises.length > 0) {
-        const PREFETCH_TIMEOUT_MS = 15_000;
-        const timeout = new Promise<void>((resolve) =>
-          setTimeout(resolve, PREFETCH_TIMEOUT_MS)
-        );
-        // Race each promise against the timeout individually so we don't
-        // wait the full timeout if most resolve quickly.
-        const timedPromises = folderDocPromises.map((p) =>
-          Promise.race([
-            p.then(() => "ok" as const),
-            timeout.then(() => "timeout" as const),
-          ])
-        );
-        const results = await Promise.all(timedPromises);
-        const ok = results.filter((r) => r === "ok").length;
-        const timedOut = results.filter((r) => r === "timeout").length;
-        logger.info(
-          `prefetch: ${ok}/${folderDocPromises.length} tool folder docs ready` +
-            (timedOut > 0 ? ` (${timedOut} timed out)` : "")
-        );
-      }
-    } catch (err: unknown) {
-      logger.warn(`prefetch: failed for ${url}`, err);
-    }
-  }
-}
-
 // Connect client MessagePorts to the repo for sync
 async function connectPort(port: MessagePort) {
   const repo = await getRepo();
@@ -309,15 +198,6 @@ self.addEventListener("message", async (event) => {
       ackPort.close();
     }
     log(`set subduction endpoints: ${urls.join(", ")}`);
-
-    // Eagerly prefetch tool folder docs so Subduction sync is already
-    // in progress by the time the first fetch request arrives.
-    const settingsUrls: string[] = event.data.moduleSettingsUrls ?? [];
-    if (settingsUrls.length > 0) {
-      prefetchToolDocs(settingsUrls).catch((err: unknown) =>
-        console.warn("[sw] prefetch failed:", err)
-      );
-    }
   }
 });
 
@@ -326,108 +206,12 @@ interface FileDoc {
   mimeType?: string;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
-
-const ENTRY_WAIT_TIMEOUT_MS = 60_000;
-
-/**
- * Wait until a folder doc's `docs` array contains an entry with the given
- * name. Returns the entry if found, or `undefined` if the timeout expires.
- *
- * On first load, folder docs sync incrementally — the `docs` array starts
- * empty and entries appear one by one as Automerge changes arrive from the
- * Subduction sync server. This function blocks the fetch handler until the
- * needed entry is available, rather than immediately serving a 500 for data
- * that hasn't arrived yet.
- */
-function waitForDocEntry(
-  handle: any, // DocHandle<FolderDoc>
-  entryName: string,
-  timeoutMs = ENTRY_WAIT_TIMEOUT_MS
-): Promise<any | undefined> {
-  // Fast path: already present
-  const doc = handle.doc();
-  const found = doc?.docs?.find((d: any) => d.name === entryName);
-  if (found) return Promise.resolve(found);
-
-  return new Promise<any | undefined>((resolve) => {
-    const timer = setTimeout(() => {
-      handle.removeListener("change", onChange);
-      resolve(undefined);
-    }, timeoutMs);
-
-    function onChange() {
-      const doc = handle.doc();
-      const entry = doc?.docs?.find((d: any) => d.name === entryName);
-      if (entry) {
-        clearTimeout(timer);
-        handle.removeListener("change", onChange);
-        resolve(entry);
-      }
-    }
-
-    handle.on("change", onChange);
-  });
-}
-
-/**
- * Determine the first path component we need to resolve in the folder.
- * For direct paths like `["dist", "index.js"]`, it's `"dist"`.
- * For root resolution (no path), we need `"package.json"`.
- */
-function neededEntry(path: string[]): string {
-  if (path.length > 0) {
-    return decodeURIComponent(path[0]);
-  }
-  return "package.json";
-}
-
-// ── In-memory response cache ───────────────────────────────────────────
-//
-// Keyed by canonical Automerge path (e.g. "automerge:3abc.../dist/index.js").
-// Entries are evicted when the folder doc's `docs` array changes, which
-// covers both initial sync arrival and HMR updates via `lastSyncAt`.
-//
-// This bypasses the HTTP Cache API entirely, avoiding the `?t=Date.now()`
-// cache-buster that packages.ts appends. On first load this eliminates
-// redundant Automerge doc walks for the ~200 fetch requests that all go
-// through resolveAutomergeUrl.
-
-interface CacheEntry {
-  response: Response;
-  folderDocId: string;
-}
-
-const responseCache = new Map<string, CacheEntry>();
-
-// Coalesce concurrent requests for the same canonical path.
-// If a resolve is already in flight, subsequent callers await the same promise
-// instead of starting a parallel Automerge doc walk.
-const inflightResolves = new Map<string, Promise<Response>>();
-
-// Track which folder docs we've already subscribed to for invalidation.
-const watchedFolders = new Set<string>();
-
-function watchFolderForInvalidation(folderHandle: any, folderDocId: string) {
-  if (watchedFolders.has(folderDocId)) return;
-  watchedFolders.add(folderDocId);
-
-  folderHandle.on("change", () => {
-    // Evict all cached responses for this folder.
-    for (const [key, entry] of responseCache) {
-      if (entry.folderDocId === folderDocId) {
-        responseCache.delete(key);
-      }
-    }
-  });
-}
-
 // ── Automerge URL resolution ───────────────────────────────────────────
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const repo = await getRepo();
-  const logger = await slog;
-  const [maybeAutomergeUrl, ...path] = automergeURL.href.split("/");
+  const href = automergeURL.href;
+  const [maybeAutomergeUrl, ...path] = href.split("/");
 
   if (!isValidAutomergeUrl(maybeAutomergeUrl)) {
     return new Response("invalid automerge url", { status: 400 });
@@ -436,88 +220,23 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // Trim trailing empty path segment
   if (path.length && !path[path.length - 1]) path.pop();
 
-  const { documentId } = parseAutomergeUrl(maybeAutomergeUrl);
+  const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
 
-  // ── In-memory cache lookup ──────────────────────────────────────────
-  // Key is the canonical automerge URL + path, ignoring query params
-  // (e.g. ?t=<timestamp> cache busters from packages.ts).
-  const cacheKey =
-    maybeAutomergeUrl + (path.length ? "/" + path.join("/") : "");
-  const cached = responseCache.get(cacheKey);
-  if (cached) {
-    log(`in-memory cache hit: ${cacheKey}`);
-    return cached.response.clone();
+  if (!heads) {
+    // Redirect to pinned-heads URL
+    const folder = await repo.find(maybeAutomergeUrl);
+    const latestHeads = folder.heads();
+    const url = stringifyAutomergeUrl({ documentId, heads: latestHeads });
+    let location = `/${encodeURIComponent(url)}`;
+    if (path.length) location += `/${path.join("/")}`;
+    return Response.redirect(location, 307);
   }
 
-  // ── Request coalescing ────────────────────────────────────────────
-  // If another caller is already resolving this exact path, piggyback
-  // on that promise instead of doing a parallel Automerge doc walk.
-  const inflight = inflightResolves.get(cacheKey);
-  if (inflight) {
-    log(`coalescing request: ${cacheKey}`);
-    const coalesced = await inflight;
-    return coalesced.clone();
-  }
+  // If no path, check if this is a package with exports to resolve
+  // e.g. /automerge%3Adocid/abc → resolve "abc" via package.json exports
+  const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl);
 
-  const resolvePromise = resolveAutomergeUrlInner(
-    repo,
-    logger,
-    maybeAutomergeUrl,
-    path,
-    documentId,
-    cacheKey
-  );
-  inflightResolves.set(cacheKey, resolvePromise);
-  try {
-    return await resolvePromise;
-  } finally {
-    inflightResolves.delete(cacheKey);
-  }
-}
-
-async function resolveAutomergeUrlInner(
-  repo: Repo,
-  logger: any,
-  maybeAutomergeUrl: string,
-  path: string[],
-  documentId: string,
-  cacheKey: string
-): Promise<Response> {
-  // NOTE: previously this redirected headless URLs to pinned-heads URLs
-  // (307 redirect). Removed because during initial sync, folder docs are
-  // partially loaded — pinning captures incomplete state and defeats retries.
-  // The heads parameter is now treated as optional; we always serve the
-  // latest state.
-
-  // Wait for the folder doc to have the entry we need before resolving.
-  // On first load, folder docs sync incrementally — the `docs` array
-  // starts empty and fills in as Automerge changes arrive.
-  const folderHandle = await repo.find<FolderDoc>(
-    maybeAutomergeUrl as import("@automerge/automerge-repo/slim").AutomergeUrl
-  );
-  const needed = neededEntry(path);
-  const entry = await waitForDocEntry(folderHandle, needed);
-
-  if (debugging) {
-    const folderDoc = folderHandle.doc();
-    const docNames = folderDoc?.docs?.map((d: any) => d.name) ?? [];
-    logger.debug(
-      `resolve ${documentId.slice(0, 8)} path=[${path.join("/")}] heads=${folderHandle.heads()?.length ?? 0} docs=[${docNames.join(",")}]`
-    );
-  }
-
-  if (!entry) {
-    const names = folderHandle.doc()?.docs?.map((d: any) => d.name) ?? [];
-    logger.warn(
-      `timed out waiting for "${needed}" in folder ${documentId.slice(0, 8)}`,
-      { docs: names }
-    );
-    throw new Error(
-      `timed out waiting for "${needed}" in folder at ${maybeAutomergeUrl}`
-    );
-  }
-
-  let fileHandle: any;
+  let fileHandle;
   if (path.length) {
     // Try direct file navigation first
     fileHandle = await findHandleInFolderHandle<FileDoc>(
@@ -536,7 +255,7 @@ async function resolveAutomergeUrlInner(
         ["package.json"]
       );
       if (pkgFileHandle) {
-        const pkgDoc = pkgFileHandle.doc() as unknown as FileDoc | undefined;
+        const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
         if (pkgDoc?.content) {
           const pkgJson = JSON.parse(String(pkgDoc.content));
           try {
@@ -562,22 +281,12 @@ async function resolveAutomergeUrlInner(
       folderHandle,
       ["package.json"]
     );
-    if (debugging) {
-      logger.debug(
-        `resolve ${documentId.slice(0, 8)} pkgFileHandle=${pkgFileHandle ? "found" : "null"}`
-      );
-    }
     if (pkgFileHandle) {
-      const pkgDoc = pkgFileHandle.doc() as unknown as FileDoc | undefined;
+      const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
       if (pkgDoc?.content) {
         const pkgJson = JSON.parse(String(pkgDoc.content));
         try {
           const resolved = resolvePackageExport(pkgJson);
-          if (debugging) {
-            logger.debug(
-              `resolve ${documentId.slice(0, 8)} resolved=${resolved}`
-            );
-          }
           if (resolved) {
             const resolvedPath = resolved.replace(/^\.\//, "").split("/");
             fileHandle = await findHandleInFolderHandle<FileDoc>(
@@ -586,52 +295,21 @@ async function resolveAutomergeUrlInner(
               resolvedPath
             );
           }
-        } catch (e) {
-          logger.warn(
-            `resolve ${documentId.slice(0, 8)} resolvePackageExport threw`,
-            e
-          );
-        }
+        } catch {}
       }
     }
   }
 
   if (!fileHandle) {
-    const msg = `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`;
-    const names = folderHandle.doc()?.docs?.map((d: any) => d.name) ?? [];
-    logger.warn(msg, { docs: names });
-    throw new Error(msg);
+    throw new Error(
+      `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`
+    );
   }
 
-  // Wait for the file doc to have content. On first load, the file handle
-  // may exist (heads > 0) but its blob data hasn't been loaded yet.
-  let fileDoc = fileHandle.doc() as unknown as FileDoc;
-  if (!fileDoc?.content) {
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(() => {
-        fileHandle.removeListener("change", onChange);
-        resolve();
-      }, ENTRY_WAIT_TIMEOUT_MS);
-
-      function onChange() {
-        const doc = fileHandle.doc() as unknown as FileDoc;
-        if (doc?.content) {
-          clearTimeout(timer);
-          fileHandle.removeListener("change", onChange);
-          resolve();
-        }
-      }
-
-      fileHandle.on("change", onChange);
-    });
-    fileDoc = fileHandle.doc() as unknown as FileDoc;
-  }
-
+  const fileDoc = fileHandle.doc() as unknown as FileDoc;
   const content = fileDoc?.content;
   if (!content) {
-    const msg = `file at ${cacheKey} has no content (timed out)`;
-    logger.warn(msg);
-    throw new Error(msg);
+    throw new Error(`file at ${href} has no content`);
   }
 
   let body: BodyInit =
@@ -644,17 +322,7 @@ async function resolveAutomergeUrlInner(
   headers.set("cross-origin-embedder-policy", "credentialless");
   headers.set("cross-origin-resource-policy", "cross-origin");
 
-  const response = new Response(body, { status: 200, headers });
-
-  // ── Store in in-memory cache ──────────────────────────────────────
-  // Watch the folder doc so we evict when it changes (HMR / sync updates).
-  watchFolderForInvalidation(folderHandle, documentId);
-  responseCache.set(cacheKey, {
-    response: response.clone(),
-    folderDocId: documentId,
-  });
-
-  return response;
+  return new Response(body, { status: 200, headers });
 }
 
 // ── Fetch handler ──────────────────────────────────────────────────────
@@ -673,12 +341,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
     url.protocol == self.location.protocol
   ) {
     try {
-      // Strip query parameters (e.g. ?t=<timestamp> cache busters from
-      // packages.ts) so the in-memory response cache can match on the
-      // canonical Automerge path regardless of cache-bust suffixes.
-      const decoded = decodeURIComponent(url.pathname.slice(1));
-      const sansQuery = decoded.replace(/\?.*$/, "");
-      specialURL = new URL(sansQuery);
+      specialURL = new URL(decodeURIComponent(url.pathname.slice(1)));
       log(`received special request ${specialURL}`);
     } catch {}
   }
@@ -714,7 +377,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
 
           return response;
         } else {
-          const response = await fetch(request);
+          const response = await fetch(request).catch(() => null);
           if (response) {
             if (
               cacheableStatuses.includes(response.status) &&
