@@ -4,6 +4,7 @@ import {
   type DocumentId,
   isValidAutomergeUrl,
   type Repo,
+  stringifyAutomergeUrl,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
@@ -132,11 +133,23 @@ export class ModuleWatcher {
     try {
       const valid = isValidAutomergeUrl(importName);
       console.log(
-        `[module-watcher] importModuleSafe: ${importName.slice(0, 30)}... (valid=${valid})`
+        `[module-watcher] importModuleSafe: ${importName.slice(
+          0,
+          30
+        )}... (valid=${valid})`
       );
 
+      if (valid) {
+        const handle = await this.repo.find(importName as AutomergeUrl);
+        importName = stringifyAutomergeUrl({
+          documentId: handle.documentId,
+          heads: handle.heads(),
+        });
+        importName = handle.view(handle.heads()).url;
+      }
+
       const mod = await (valid
-        ? importModuleFromFolderDocUrl(importName)
+        ? importModuleFromFolderDocUrl(importName as AutomergeUrl)
         : import(/* @vite-ignore */ importName));
       console.log(
         `[module-watcher] importModuleSafe OK: ${importName.slice(0, 30)}...`,
@@ -145,7 +158,10 @@ export class ModuleWatcher {
       return mod;
     } catch (error) {
       console.error(
-        `[module-watcher] importModuleSafe FAILED: ${importName.slice(0, 30)}...`,
+        `[module-watcher] importModuleSafe FAILED: ${importName.slice(
+          0,
+          30
+        )}...`,
         error
       );
       return null;
@@ -174,7 +190,10 @@ export class ModuleWatcher {
     });
     if (mod) {
       console.log(
-        `[module-watcher] announceWithRetry OK on first try: ${importName.slice(0, 30)}...`
+        `[module-watcher] announceWithRetry OK on first try: ${importName.slice(
+          0,
+          30
+        )}...`
       );
       return;
     }
