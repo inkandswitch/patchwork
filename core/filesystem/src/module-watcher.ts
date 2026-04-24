@@ -110,6 +110,16 @@ export class ModuleWatcher {
     }
   }
 
+  async addUrl(url: AutomergeUrl): Promise<void> {
+    if (this.urls.includes(url)) return;
+    this.urls.push(url);
+    await this.doneLoading;
+    const handle = await this.repo.find<ModuleSettingsDoc>(url);
+    this.handles?.push(handle);
+    handle.addListener("change", this.onChange);
+    await this.loadModules(handle.doc()?.modules ?? []);
+  }
+
   private async announce(importName: string) {
     const mod = await this.importModuleSafe(importName);
     mod && this.onLoad(importName, mod);
