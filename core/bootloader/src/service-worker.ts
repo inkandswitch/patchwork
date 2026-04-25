@@ -169,7 +169,21 @@ async function connectPort(port: MessagePort) {
 }
 
 self.addEventListener("message", async (event) => {
-  if (event.data.type == "port") {
+  if (event.data.type == "ping") {
+    // Keepalive — Chromium idles out service workers after ~30s of inactivity.
+    // Reply via the provided port if any; the message event itself also resets
+    // the idle timer.
+    const [pongPort] = event.ports;
+    log("ping");
+    if (pongPort) {
+      pongPort.postMessage({ type: "pong" });
+      log("pong");
+      pongPort.close();
+    } else if (event.source) {
+      (event.source as unknown as Client).postMessage({ type: "pong" });
+      log("pong");
+    }
+  } else if (event.data.type == "port") {
     log("received messagechannel");
     const [port] = event.ports;
     connectPort(port);

@@ -120,6 +120,13 @@ export default async function setupServiceWorker(
   const { port1, port2 } = new MessageChannel();
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
 
+  // Keepalive — Chromium idles out service workers after ~30s of inactivity,
+  // which tears down the in-memory Repo and forces a cold restart on the next
+  // fetch. Send a ping every 20s while the page is visible to keep it warm.
+  setInterval(() => {
+    navigator.serviceWorker.controller?.postMessage({ type: "ping" });
+  }, 20_000);
+
   // Reload on future SW updates (added after setup so the initial
   // activation doesn't trigger a reload loop).
   navigator.serviceWorker.addEventListener("controllerchange", function () {
