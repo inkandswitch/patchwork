@@ -130,7 +130,11 @@ export function registerPatchworkViewElement(
       // each time the element is moved to a different place in the DOM via Element.moveBefore()
       connectedMoveCallback() {}
 
-      attributeChangedCallback(name: string, old: string | null, val: string | null) {
+      attributeChangedCallback(
+        name: string,
+        old: string | null,
+        val: string | null
+      ) {
         if (old === val) return;
 
         if (name === attrs.toolId) {
@@ -168,9 +172,6 @@ export function registerPatchworkViewElement(
 
         this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
-        // TODO: these are inlined and not separate functions
-        // because we need to do some work getting types working well here.
-        // @chee would be good to chat about this at some point.
         const removeAddedListener = toolRegistry.on(
           "registered",
           async (addedTool) => {
@@ -298,7 +299,7 @@ export function registerPatchworkViewElement(
         this.#tool =
           getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
-        if (fallingBack || !this.#tool) {
+        if (!this.#tool) {
           this.#notool();
         }
 
@@ -403,8 +404,10 @@ export function registerPatchworkViewElement(
         )
           return;
         this.#requestedToolImports.add(suggestedImportUrl);
+        let url = this.docUrl;
+
         log("dispatching patchwork:no-tool for", this.docUrl);
-        this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
+        this.dispatchEvent(new NoToolEvent({ url }));
       }
 
       #resetDisplay = () => {
