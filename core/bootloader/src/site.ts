@@ -166,7 +166,7 @@ export async function bootPatchworkSite(
   repo.networkSubsystem.addNetworkAdapter(
     new MessageChannelNetworkAdapter(sw.port)
   );
-  await repo.networkSubsystem.whenReady();
+  //await repo.networkSubsystem.whenReady();
 
   installDevConsoleGlobals(repo);
   registerPatchworkViewElement({ repo });
@@ -184,14 +184,12 @@ export async function bootPatchworkSite(
   const accountDocHandle = await resolveAccountHandle(repo, {
     storageKey: config.accountStorageKey,
   });
-  await repo.flush();
+  //await repo.flush();
   window.accountDocHandle = accountDocHandle;
 
   wireModuleSettingsWhenReady(accountDocHandle, moduleWatcher);
 
-  const rootElement = document.getElementById(
-    config.rootElementId ?? "root"
-  );
+  const rootElement = document.getElementById(config.rootElementId ?? "root");
   if (!rootElement) {
     throw new Error(
       `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
