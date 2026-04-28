@@ -79,6 +79,7 @@ export function registerPatchworkViewElement(
       #tool: LoadedTool | null = null;
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
+      #initEpoch = 0;
 
       get docUrl() {
         return this.#docUrl;
@@ -168,9 +169,8 @@ export function registerPatchworkViewElement(
           return;
         }
 
+        const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
-
-        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
 
         const removeAddedListener = toolRegistry.on(
           "registered",
@@ -199,7 +199,7 @@ export function registerPatchworkViewElement(
             const isFallbackTool = toolId == this.#fallbackId;
 
             if (isChosenTool || isFallbackTool) {
-              if (this.#state == "unable") {
+              if (this.#state == "unable" || this.#state == "initializing") {
                 this.#queueRender();
               }
 
@@ -222,6 +222,20 @@ export function registerPatchworkViewElement(
           removeLoadedListener();
         });
 
+        let handle: DocHandle<HasPatchworkMetadata>;
+        try {
+          handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
+        } catch (err) {
+          // If teardown ran while we were awaiting, the listener cleanup
+          // already happened — silently abort.
+          if (epoch !== this.#initEpoch) return;
+          throw err;
+        }
+
+        // Teardown ran during the await — abort before clobbering state.
+        if (epoch !== this.#initEpoch) return;
+
+        this.#handle = handle;
         this.#handle.on("change", this.#onDocChange);
         this.#teardowns.add(() =>
           this.#handle!.off("change", this.#onDocChange)
@@ -234,6 +248,10 @@ export function registerPatchworkViewElement(
 
       async #teardown() {
         if (this.#state == State.none) return;
+
+        // Invalidate any in-flight #init so it bails after its await
+        // instead of clobbering this.#handle / re-attaching listeners.
+        this.#initEpoch++;
 
         for (const fn of this.#teardowns) {
           await fn?.();
