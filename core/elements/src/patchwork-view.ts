@@ -249,8 +249,6 @@ export function registerPatchworkViewElement(
       async #teardown() {
         if (this.#state == State.none) return;
 
-        // Invalidate any in-flight #init so it bails after its await
-        // instead of clobbering this.#handle / re-attaching listeners.
         this.#initEpoch++;
 
         for (const fn of this.#teardowns) {

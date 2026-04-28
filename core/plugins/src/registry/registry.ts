@@ -58,6 +58,9 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
 
     this.#plugins.set(plugin.id, plugin);
 
+    this.#loadPromises.delete(plugin.id);
+    this.#loading.delete(plugin.id);
+
     this.#events.emit("registered", plugin);
     this.#events.emit("changed");
   }
@@ -96,9 +99,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         try {
           const loaded = await this.load(id);
           if (!loaded) {
-            reject(
-              new Error(`Plugin "${id}" registered but failed to load`)
-            );
+            reject(new Error(`Plugin "${id}" registered but failed to load`));
             return;
           }
           resolve(loaded);
@@ -140,14 +141,20 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     log(`Loading plugin implementation: ${id}`);
     this.#loading.add(id);
 
-    const loadPromise = description
+    const loadPromise: Promise<LoadedPlugin<D, I> | undefined> = description
       .load()
       .then((implementation) => {
+        const clearIfOurs = () => {
+          if (this.#loadPromises.get(id) === loadPromise) {
+            this.#loadPromises.delete(id);
+            this.#loading.delete(id);
+          }
+        };
+
         // If the plugin was removed or re-registered while loading, discard
         if (this.#plugins.get(id) !== description) {
           log(`Plugin ${id} was replaced or removed during load, discarding`);
-          this.#loadPromises.delete(id);
-          this.#loading.delete(id);
+          clearIfOurs();
           return undefined;
         }
 
@@ -182,8 +189,7 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
         };
 
         this.#plugins.set(id, plugin);
-        this.#loadPromises.delete(id);
-        this.#loading.delete(id);
+        clearIfOurs();
 
         this.#events.emit("loaded", plugin);
         this.#events.emit("changed");
@@ -192,8 +198,10 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
       })
       .catch((error) => {
         console.error(`Failed to load plugin implementation: ${id}`, error);
-        this.#loadPromises.delete(id);
-        this.#loading.delete(id);
+        if (this.#loadPromises.get(id) === loadPromise) {
+          this.#loadPromises.delete(id);
+          this.#loading.delete(id);
+        }
         throw error;
       });
 
