@@ -291,7 +291,7 @@ function primeRootElement(
   accountDocHandle: DocHandle<AccountDoc>
 ): void {
   rootElement.style.visibility = "hidden";
-  document.body.style.background = "#fffefe";
+  showLoadingAnimation();
 
   const initialParams = new URLSearchParams(location.hash.slice(1));
   if (initialParams.has("frame")) {
@@ -337,6 +337,60 @@ function buildSwLogApi(): Window["patchwork"]["sw"] {
     exportLogs: () => SwLogReader.exportAll(),
     clearLogs: () => SwLogReader.clear(),
   };
+}
+
+const LOADING_STYLE_ID = "pw-bootloader-loading-styles";
+const LOADING_ELEMENT_ID = "pw-bootloader-loading";
+
+function showLoadingAnimation(): void {
+  if (!document.getElementById(LOADING_STYLE_ID)) {
+    const style = document.createElement("style");
+    style.id = LOADING_STYLE_ID;
+    style.textContent = `
+      @keyframes pw-bootloader-pulse {
+        0%, 100% { opacity: 0.25; }
+        50% { opacity: 0.95; }
+      }
+      #${LOADING_ELEMENT_ID} {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-color: #fff;
+        background-image:
+          radial-gradient(ellipse 55% 45% at 28% 35%, #fde4ec, transparent 70%),
+          radial-gradient(ellipse 50% 55% at 72% 65%, #e0f0fb, transparent 70%),
+          radial-gradient(ellipse 65% 55% at 50% 50%, #f1e6f6, transparent 80%);
+        animation: pw-bootloader-pulse 3.5s ease-in-out infinite;
+        transition: opacity 0.6s ease-out;
+      }
+      @media (prefers-color-scheme: dark) {
+        #${LOADING_ELEMENT_ID} {
+          background-color: #000;
+          background-image:
+            radial-gradient(ellipse 55% 45% at 28% 35%, #2a1d33, transparent 70%),
+            radial-gradient(ellipse 50% 55% at 72% 65%, #1a2738, transparent 70%),
+            radial-gradient(ellipse 65% 55% at 50% 50%, #221a2e, transparent 80%);
+        }
+      }
+      #${LOADING_ELEMENT_ID}.pw-bootloader-fading {
+        opacity: 0;
+        animation: none;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  if (document.getElementById(LOADING_ELEMENT_ID)) return;
+  const el = document.createElement("div");
+  el.id = LOADING_ELEMENT_ID;
+  document.body.appendChild(el);
+}
+
+function hideLoadingAnimation(): void {
+  const el = document.getElementById(LOADING_ELEMENT_ID);
+  if (!el) return;
+  el.classList.add("pw-bootloader-fading");
+  setTimeout(() => el.remove(), 700);
 }
 
 async function uncache(match: string): Promise<void> {
@@ -412,7 +466,7 @@ function installHashRouting(params: HashRoutingParams): void {
     if (!firstMount) return;
     firstMount = false;
     rootElement.style.visibility = "visible";
-    document.body.style.background = "";
+    hideLoadingAnimation();
   };
 
   rootElement.addEventListener("patchwork:mounted", (event) => {
