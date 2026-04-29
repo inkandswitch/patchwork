@@ -30,6 +30,7 @@ import {
 // Small adapters — bundled directly into the SW
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
 let cachename = "default";
@@ -126,6 +127,7 @@ function getRepo() {
         },
         enableRemoteHeadsGossiping: true,
         subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+        network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
       (self as any).repo = repo;

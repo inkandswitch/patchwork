@@ -1,3 +1,4 @@
 /*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: credentialless
+  Link: </automerge.wasm>; rel=preload; as=fetch; crossorigin, </subduction.wasm>; rel=preload; as=fetch; crossorigin
