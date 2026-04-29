@@ -131,9 +131,13 @@ function getRepo() {
       (self as any).repo = repo;
       logger.info("repo constructed, waiting for network subsystem");
 
-      await repo.networkSubsystem.whenReady();
-
-      logger.info("repo network subsystem ready");
+      // Don't block getRepo() on whenReady() — the network subsystem starts
+      // with only the subduction adapter, and the MessageChannel adapter is
+      // added later via connectPort (which awaits getRepo). Blocking here
+      // would deadlock that path and starve the fetch handler.
+      repo.networkSubsystem.whenReady().then(() => {
+        logger.info("repo network subsystem ready");
+      });
 
       return repo;
     })();
