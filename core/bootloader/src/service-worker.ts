@@ -35,6 +35,8 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 let cachename = "default";
 let debugging = false;
 
+const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
+
 // ── Persistent logger ───────────────────────────────────────────────────
 // Initialized eagerly so it's available for the entire SW lifetime.
 // Access from the SW inspector console via self.printLogs(), self.tailLogs(),
@@ -61,13 +63,6 @@ const slog = SwLogger.open().then((logger) => {
 
   logger.info("sw-logger initialized");
   return logger;
-});
-
-// Resolves when the main thread tells us the Subduction endpoint(s)
-let resolveSubductionReady: () => void;
-let subductionEndpoints: string[] = [];
-const subductionReady = new Promise<void>((resolve) => {
-  resolveSubductionReady = resolve;
 });
 
 const cacheableStatuses = [
@@ -121,16 +116,7 @@ function getRepo() {
       initSubductionSync(new Uint8Array(sdnWasmBuf));
       logger.info("wasm initialized");
 
-      // Wait for the main thread to tell us the Subduction endpoint(s).
-      // Overlap the WebCryptoSigner IDB key lookup with this wait.
-      logger.info("waiting for subduction endpoints from main thread");
-      const [signer] = await Promise.all([
-        WebCryptoSigner.setup(),
-        subductionReady,
-      ]);
-      logger.info("subduction endpoints received", {
-        endpoints: subductionEndpoints,
-      });
+      const signer = await WebCryptoSigner.setup();
 
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
@@ -141,7 +127,7 @@ function getRepo() {
           return peerId.includes("storage-server");
         },
         enableRemoteHeadsGossiping: true,
-        subductionWebsocketEndpoints: subductionEndpoints,
+        subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
       });
 
       (self as any).repo = repo;
@@ -200,18 +186,6 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
-  } else if (event.data.type == "set-subduction-endpoints") {
-    const urls: string[] = event.data.urls;
-    subductionEndpoints = urls;
-    resolveSubductionReady();
-    // Wait for the repo to be fully ready, then ack
-    await getRepo();
-    const [ackPort] = event.ports;
-    if (ackPort) {
-      ackPort.postMessage("ready");
-      ackPort.close();
-    }
-    log(`set subduction endpoints: ${urls.join(", ")}`);
   }
 });
 

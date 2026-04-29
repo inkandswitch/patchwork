@@ -94,28 +94,6 @@ export default async function setupServiceWorker(
     });
   }
 
-  // Tell the SW which Subduction endpoints to use and wait for it to be ready.
-  // getRepo() in the SW blocks until it receives this message.
-  const endpoints = options?.subductionEndpoints ?? [
-    "wss://subduction.sync.inkandswitch.com",
-  ];
-  const moduleSettingsUrls = options?.moduleSettingsUrls ?? [];
-  const { port1: ackPort, port2: ackRemote } = new MessageChannel();
-  await new Promise<void>((resolve) => {
-    ackPort.onmessage = () => {
-      ackPort.close();
-      resolve();
-    };
-    navigator.serviceWorker.controller!.postMessage(
-      {
-        type: "set-subduction-endpoints",
-        urls: endpoints,
-        moduleSettingsUrls,
-      },
-      [ackRemote]
-    );
-  });
-
   // Send a MessagePort so the SW's repo can sync with clients
   const { port1, port2 } = new MessageChannel();
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);

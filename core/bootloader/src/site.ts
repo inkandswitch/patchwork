@@ -112,12 +112,6 @@ export interface SiteConfig {
    * Ink & Switch's production Subduction storage.
    */
   remoteStorageIds?: StorageId[];
-
-  /**
-   * Subduction WebSocket endpoints, forwarded to the service worker. Defaults
-   * to Ink & Switch's production endpoint (see {@link setupServiceWorker}).
-   */
-  subductionEndpoints?: string[];
 }
 
 export interface BootResult {
@@ -158,15 +152,11 @@ export async function bootPatchworkSite(
     config.remoteStorageIds ?? [DEFAULT_REMOTE_STORAGE_ID]
   );
 
-  const sw = await setupServiceWorker({
-    moduleSettingsUrls: [defaultModulesUrl],
-    subductionEndpoints: config.subductionEndpoints,
-  });
+  const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
   repo.networkSubsystem.addNetworkAdapter(
     new MessageChannelNetworkAdapter(sw.port)
   );
-  //await repo.networkSubsystem.whenReady();
 
   installDevConsoleGlobals(repo);
   registerPatchworkViewElement({ repo });
@@ -184,7 +174,7 @@ export async function bootPatchworkSite(
   const accountDocHandle = await resolveAccountHandle(repo, {
     storageKey: config.accountStorageKey,
   });
-  //await repo.flush();
+
   window.accountDocHandle = accountDocHandle;
 
   wireModuleSettingsWhenReady(accountDocHandle, moduleWatcher);
