@@ -14,6 +14,7 @@
 import {
   type DocHandle,
   IndexedDBStorageAdapter,
+  initializeWasm,
   isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
@@ -24,15 +25,12 @@ import {
   type DocumentId,
   type StorageId,
   type UrlHeads,
-} from "@automerge/vanillajs";
-import * as Automerge from "@automerge/automerge";
-import * as AutomergeRepo from "@automerge/automerge-repo";
-
-// Side-effect import: initializes the Subduction Wasm module (via initSync)
-// before the Repo constructor accesses it. Sites alias this specifier in their
-// Vite config so it resolves to the same underlying module as
-// @automerge/automerge-subduction/slim.
-import "@automerge/automerge-subduction";
+} from "@automerge/vanillajs/slim";
+import * as Automerge from "@automerge/automerge/slim";
+import * as AutomergeRepo from "@automerge/automerge-repo/slim";
+// eslint-disable-next-line
+// @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
+import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -140,6 +138,14 @@ export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
   const defaultModulesUrl = resolveDefaultModulesUrl(config.defaultModulesUrl);
+
+  // Fetch both Wasm binaries in parallel, then compile
+  const [automergeWasm, subductionWasm] = await Promise.all([
+    fetch("/automerge.wasm").then((r) => r.bytes()),
+    fetch("/subduction.wasm").then((r) => r.bytes()),
+  ]);
+  await initializeWasm(automergeWasm);
+  initSubductionSync(subductionWasm);
 
   const repo = new Repo({
     storage: new IndexedDBStorageAdapter(),

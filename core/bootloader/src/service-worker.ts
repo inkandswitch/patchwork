@@ -105,15 +105,13 @@ function getRepo() {
     repoPromise = (async () => {
       const logger = await slog;
 
-      // Fetch both Wasm binaries in parallel, then compile sequentially
-      // (compilation order matters — subduction depends on automerge).
       logger.info("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
         fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
         fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
       ]);
-      await initializeWasm(new Uint8Array(amWasmBuf));
       initSubductionSync(new Uint8Array(sdnWasmBuf));
+      await initializeWasm(new Uint8Array(amWasmBuf));
       logger.info("wasm initialized");
 
       const signer = await WebCryptoSigner.setup();
