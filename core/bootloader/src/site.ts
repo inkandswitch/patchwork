@@ -160,9 +160,9 @@ export async function bootPatchworkSite(
 
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(sw.port)
-  );
+  const net = new MessageChannelNetworkAdapter(sw.port);
+  repo.networkSubsystem.addNetworkAdapter(net);
+  await net.whenReady();
 
   installDevConsoleGlobals(repo);
   registerPatchworkViewElement({ repo });
