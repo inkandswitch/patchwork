@@ -1,7 +1,7 @@
 {
   "name": "@inkandswitch/patchwork-react",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -12,11 +12,20 @@
   "keywords": [],
   "author": "Ink & Switch",
   "license": "ISC",
-  "dependencies": {
-    "@automerge/automerge-repo-react-hooks": "catalog:",
-    "@automerge/vanillajs": "catalog:",
+  "peerDependencies": {
+    "@automerge/automerge-repo-react-hooks": "*",
+    "@automerge/vanillajs": "*",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@automerge/vanillajs": "catalog:",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

@@ -11,11 +11,17 @@ export function getImportableUrlFromAutomergeUrl(
   return `${base}${clean}`;
 }
 
+/**
+ * Build a service-worker-resolvable URL from a DocHandle, pinning to the
+ * handle's latest heads by default. This ensures the caching system can
+ * key on an exact version of the folder document.
+ */
 export function getImportableUrlFromDocHandle(
   handle: DocHandle<any>,
   subpath?: string
 ): string {
-  return getImportableUrlFromAutomergeUrl(handle.url, subpath);
+  const url = handle.view(handle.heads()).url;
+  return getImportableUrlFromAutomergeUrl(url, subpath);
 }
 
 /** @deprecated Use {@link getImportableUrlFromAutomergeUrl} instead */
@@ -31,5 +37,5 @@ export function docHandleToServiceWorkerUrl(
   handle: DocHandle<any>,
   subpath?: string
 ): string {
-  return getImportableUrlFromAutomergeUrl(handle.url, subpath);
+  return getImportableUrlFromDocHandle(handle, subpath);
 }

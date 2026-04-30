@@ -79,6 +79,7 @@ export function registerPatchworkViewElement(
       #tool: LoadedTool | null = null;
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
+      #initEpoch = 0;
 
       get docUrl() {
         return this.#docUrl;
@@ -130,7 +131,11 @@ export function registerPatchworkViewElement(
       // each time the element is moved to a different place in the DOM via Element.moveBefore()
       connectedMoveCallback() {}
 
-      attributeChangedCallback(name: string, old: string | null, val: string | null) {
+      attributeChangedCallback(
+        name: string,
+        old: string | null,
+        val: string | null
+      ) {
         if (old === val) return;
 
         if (name === attrs.toolId) {
@@ -164,13 +169,9 @@ export function registerPatchworkViewElement(
           return;
         }
 
+        const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
 
-        this.#handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
-
-        // TODO: these are inlined and not separate functions
-        // because we need to do some work getting types working well here.
-        // @chee would be good to chat about this at some point.
         const removeAddedListener = toolRegistry.on(
           "registered",
           async (addedTool) => {
@@ -198,7 +199,7 @@ export function registerPatchworkViewElement(
             const isFallbackTool = toolId == this.#fallbackId;
 
             if (isChosenTool || isFallbackTool) {
-              if (this.#state == "unable") {
+              if (this.#state == "unable" || this.#state == "initializing") {
                 this.#queueRender();
               }
 
@@ -221,6 +222,20 @@ export function registerPatchworkViewElement(
           removeLoadedListener();
         });
 
+        let handle: DocHandle<HasPatchworkMetadata>;
+        try {
+          handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
+        } catch (err) {
+          // If teardown ran while we were awaiting, the listener cleanup
+          // already happened — silently abort.
+          if (epoch !== this.#initEpoch) return;
+          throw err;
+        }
+
+        // Teardown ran during the await — abort before clobbering state.
+        if (epoch !== this.#initEpoch) return;
+
+        this.#handle = handle;
         this.#handle.on("change", this.#onDocChange);
         this.#teardowns.add(() =>
           this.#handle!.off("change", this.#onDocChange)
@@ -233,6 +248,8 @@ export function registerPatchworkViewElement(
 
       async #teardown() {
         if (this.#state == State.none) return;
+
+        this.#initEpoch++;
 
         for (const fn of this.#teardowns) {
           await fn?.();
@@ -298,7 +315,7 @@ export function registerPatchworkViewElement(
         this.#tool =
           getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
-        if (fallingBack || !this.#tool) {
+        if (!this.#tool) {
           this.#notool();
         }
 
@@ -403,8 +420,10 @@ export function registerPatchworkViewElement(
         )
           return;
         this.#requestedToolImports.add(suggestedImportUrl);
+        let url = this.docUrl;
+
         log("dispatching patchwork:no-tool for", this.docUrl);
-        this.dispatchEvent(new NoToolEvent({ url: this.docUrl }));
+        this.dispatchEvent(new NoToolEvent({ url }));
       }
 
       #resetDisplay = () => {

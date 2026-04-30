@@ -7,6 +7,8 @@ const externals = [
   "@automerge/automerge-repo",
   "@automerge/automerge-repo/slim",
   "@automerge/automerge-repo-keyhive",
+  "@automerge/automerge-subduction",
+  "@automerge/automerge-subduction/slim",
   "@keyhive/keyhive",
   "@keyhive/keyhive/slim",
   "@inkandswitch/patchwork-bootloader",

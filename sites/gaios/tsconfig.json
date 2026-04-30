@@ -6,15 +6,8 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "jsx": "react-jsx"
   },
-  "include": [
-    "src",
-    "../rootstock-identity/active.ts",
-    "../rootstock-identity/db.ts",
-    "../rootstock-identity/identities.ts",
-    "../rootstock-identity/identity.ts",
-    "../rootstock-identity/index.ts",
-    "../rootstock-identity/keyhive.ts"
-  ]
+  "include": ["src"]
 }

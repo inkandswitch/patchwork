@@ -4,14 +4,18 @@
   "version": "1.0.0",
   "description": "A malleable software environment for collaborative work",
   "main": "index.js",
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "packageManager": "pnpm@10.33.0",
+  "bin": {
+    "pw-modules": "./scripts/module-settings/register-module",
+    "patchwork-modules": "./scripts/module-settings/register-module"
+  },
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r --workspace-concurrency=1 build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 pnpm -r --filter '!tenfold.inkandswitch.com' --workspace-concurrency=1 build",
     "clean": "rm -rf **/node_modules **/dist",
     "dev": "pnpm -r --filter ...{sites/${SITE:-tiny-patchwork}}... --parallel dev",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md,html,yaml,yml}\"",
-    "make-tool": "node scripts/make-tool.mjs",
+    "link-cli": "pnpm --ignore-workspace --dir scripts/module-settings install && pnpm link --global",
     "preinstall": "npx only-allow pnpm",
     "preview": "pnpm --filter gaios preview",
     "publish-packages": "pnpm -r publish --access=public",
@@ -21,12 +25,21 @@
   "pnpm": {
     "overrides": {
       "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "catalog:"
+      "@automerge/automerge-repo": "catalog:",
+      "@automerge/automerge-repo-network-messagechannel": "catalog:",
+      "@automerge/automerge-repo-network-websocket": "catalog:",
+      "@automerge/automerge-repo-react-hooks": "catalog:",
+      "@automerge/automerge-repo-storage-indexeddb": "catalog:",
+      "@automerge/automerge-subduction": "catalog:",
+      "@automerge/react": "catalog:",
+      "@automerge/vanillajs": "catalog:"
     }
   },
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
     "@changesets/cli": "^2.29.8",
     "@vitest/ui": "^3.2.4",
     "concurrently": "^9.1.2",

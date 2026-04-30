@@ -94,24 +94,16 @@ export default async function setupServiceWorker(
     });
   }
 
-  // Tell the SW which sync server to use and wait for it to be ready.
-  // getRepo() in the SW blocks until it receives this message.
-  const syncServer = options?.syncServer ?? "wss://sync3.automerge.org";
-  const { port1: ackPort, port2: ackRemote } = new MessageChannel();
-  await new Promise<void>((resolve) => {
-    ackPort.onmessage = () => {
-      ackPort.close();
-      resolve();
-    };
-    navigator.serviceWorker.controller!.postMessage(
-      { type: "set-sync-server", url: syncServer },
-      [ackRemote]
-    );
-  });
-
   // Send a MessagePort so the SW's repo can sync with clients
   const { port1, port2 } = new MessageChannel();
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+
+  // Keepalive — Chromium idles out service workers after ~30s of inactivity,
+  // which tears down the in-memory Repo and forces a cold restart on the next
+  // fetch. Send a ping every 20s while the page is visible to keep it warm.
+  setInterval(() => {
+    navigator.serviceWorker.controller?.postMessage({ type: "ping" });
+  }, 20_000);
 
   // Reload on future SW updates (added after setup so the initial
   // activation doesn't trigger a reload loop).

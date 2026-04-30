@@ -11,9 +11,7 @@ export async function importModuleFromFolderDocUrl(
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
-  log(
-    `Importing module from folder doc url ${folderDocUrl} (subpath: ${subpath})`
-  );
+  log(`importModule ${folderDocUrl}... (subpath: ${subpath})`);
   const entryPointUrl = await packageEntryPointUrl(
     folderDocUrl,
     subpath,
@@ -25,9 +23,9 @@ export async function importModuleFromFolderDocUrl(
     );
   }
 
-  log(`Importing module from entry point url ${entryPointUrl}`);
+  log(`importing ${entryPointUrl.slice(-60)}`);
 
-  return import(/* @vite-ignore */ entryPointUrl);
+  return await import(/* @vite-ignore */ entryPointUrl);
 }
 
 async function packageJsonContentsFromFolderDocUrl(
@@ -41,12 +39,14 @@ async function packageJsonContentsFromFolderDocUrl(
     )
   ).href;
 
-  const response = await fetch(packageJSONPath);
-  if (!response.ok) {
-    return undefined;
-  }
+  log(`fetching ${packageJSONPath.slice(-60)}`);
 
-  return response.json();
+  // First attempt: use a stable URL so the SW's in-memory cache can hit.
+  const response = await fetch(packageJSONPath);
+  if (response.ok) {
+    log(`package.json OK for ${folderDocUrl.slice(0, 25)}...`);
+    return response.json();
+  }
 }
 
 export function resolvePackageExport(

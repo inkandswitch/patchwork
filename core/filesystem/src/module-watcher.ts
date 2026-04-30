@@ -4,6 +4,7 @@ import {
   type DocumentId,
   isValidAutomergeUrl,
   type Repo,
+  stringifyAutomergeUrl,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
 import type { HasPatchworkMetadata } from "./metadata.js";
@@ -87,8 +88,17 @@ export class ModuleWatcher {
     try {
       const valid = isValidAutomergeUrl(importName);
 
+      if (valid) {
+        const handle = await this.repo.find(importName as AutomergeUrl);
+        importName = stringifyAutomergeUrl({
+          documentId: handle.documentId,
+          heads: handle.heads(),
+        });
+        importName = handle.view(handle.heads()).url;
+      }
+
       const mod = valid
-        ? importModuleFromFolderDocUrl(importName)
+        ? importModuleFromFolderDocUrl(importName as AutomergeUrl)
         : import(/* @vite-ignore */ importName);
       return mod;
     } catch (error) {
@@ -98,6 +108,16 @@ export class ModuleWatcher {
         error
       );
     }
+  }
+
+  async addUrl(url: AutomergeUrl): Promise<void> {
+    if (this.urls.includes(url)) return;
+    this.urls.push(url);
+    await this.doneLoading;
+    const handle = await this.repo.find<ModuleSettingsDoc>(url);
+    this.handles?.push(handle);
+    handle.addListener("change", this.onChange);
+    await this.loadModules(handle.doc()?.modules ?? []);
   }
 
   private async announce(importName: string) {

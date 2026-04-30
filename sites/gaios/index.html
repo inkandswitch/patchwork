@@ -10,6 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="GAIOS" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="preconnect" href="https://subduction.sync.inkandswitch.com" />
+  <link rel="dns-prefetch" href="https://subduction.sync.inkandswitch.com" />
+  <link rel="dns-prefetch" href="https://sync3.automerge.org" />
+  <link rel="preload" href="/automerge.wasm" as="fetch" crossorigin />
+  <link rel="preload" href="/subduction.wasm" as="fetch" crossorigin />
   <patchwork-view id="root"></patchwork-view>
   <script type="module" src="src/main.ts"></script>
 </html>
