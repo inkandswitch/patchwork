@@ -1,0 +1,26 @@
+diff --git a/dist/subduction/SyncScheduler.js b/dist/subduction/SyncScheduler.js
+index e424bc413b4f968233acbe6112ac315789612c2e..2ba7d77bf910727ad4d911f06c8da85deaef32f9 100644
+--- a/dist/subduction/SyncScheduler.js
++++ b/dist/subduction/SyncScheduler.js
+@@ -71,7 +71,7 @@ export class SyncScheduler {
+         this.#log(`executing heal sync for ${key.slice(0, 8)}...`);
+         try {
+             const subduction = await this.#subduction;
+-            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true);
++            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true, 120000n);
+             const results = peerResultMap.entries();
+             const anyFailed = results.some(r => !r.success || (r.transportErrors?.length ?? 0) > 0);
+             // If new data was received during the heal, load it into the handle
+diff --git a/dist/subduction/source.js b/dist/subduction/source.js
+index bb60ed598bc912f0dc680d95ff1997db6e82079d..e0fcc14f353402be6c21e6de74e864ef0c1c4bdf 100644
+--- a/dist/subduction/source.js
++++ b/dist/subduction/source.js
+@@ -258,7 +258,7 @@ export class SubductionSource {
+             entry.flushSave.flush();
+             await entry.saveSettled;
+             this.#log(`doSync ${sid} (state=${entry.syncState})`);
+-            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true);
++            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true, 120000n);
+             const results = peerResultMap.entries();
+             const anySuccess = results.some(r => r.success);
+             this.#log(`doSync ${sid}: ${results.length} peer(s), success=${anySuccess}`);

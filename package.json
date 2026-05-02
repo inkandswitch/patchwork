@@ -33,6 +33,9 @@
       "@automerge/automerge-subduction": "catalog:",
       "@automerge/react": "catalog:",
       "@automerge/vanillajs": "catalog:"
+    },
+    "patchedDependencies": {
+      "@automerge/automerge-repo@2.6.0-subduction.15": "patches/@automerge__automerge-repo@2.6.0-subduction.15.patch"
     }
   },
   "keywords": [],
