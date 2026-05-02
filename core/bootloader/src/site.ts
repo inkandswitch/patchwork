@@ -154,7 +154,6 @@ export async function bootPatchworkSite(
       return peerId.includes("service-worker");
     },
     enableRemoteHeadsGossiping: true,
-    subductionWebsocketEndpoints: ["wss://subduction.sync.inkandswitch.com"],
   });
 
   repo.subscribeToRemotes(
