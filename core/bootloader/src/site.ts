@@ -141,7 +141,7 @@ export async function bootPatchworkSite(
 
   // Fetch both Wasm binaries in parallel, then compile
   const [automergeWasm, subductionWasm] = await Promise.all([
-    fetch("/automerge.wasm").then((r) => r.bytes()),
+    fetch("/automerge.wasm?main").then((r) => r.bytes()),
     fetch("/subduction.wasm").then((r) => r.bytes()),
   ]);
   await initializeWasm(automergeWasm);

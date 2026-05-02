@@ -108,7 +108,7 @@ function getRepo() {
 
       logger.info("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
-        fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
+        fetch("/automerge.wasm?sw").then((r) => r.arrayBuffer()),
         fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
       ]);
       initSubductionSync(new Uint8Array(sdnWasmBuf));
