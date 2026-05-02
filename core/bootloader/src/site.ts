@@ -125,6 +125,11 @@ const DEFAULT_REMOTE_STORAGE_ID =
 const BIG_PATCHWORK_HASH_REGEX =
   /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
 
+const [automergeWasm, subductionWasm] = await Promise.all([
+  fetch("/automerge.wasm?main").then((r) => r.bytes()),
+  fetch("/subduction.wasm").then((r) => r.bytes()),
+]);
+
 /**
  * Boot a Patchwork browser site.
  *
@@ -139,11 +144,7 @@ export async function bootPatchworkSite(
 ): Promise<BootResult> {
   const defaultModulesUrl = resolveDefaultModulesUrl(config.defaultModulesUrl);
 
-  // Fetch both Wasm binaries in parallel, then compile
-  const [automergeWasm, subductionWasm] = await Promise.all([
-    fetch("/automerge.wasm?main").then((r) => r.bytes()),
-    fetch("/subduction.wasm").then((r) => r.bytes()),
-  ]);
+  console.log(`[site] booting`, config);
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
