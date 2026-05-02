@@ -7,7 +7,7 @@ index e424bc413b4f968233acbe6112ac315789612c2e..2ba7d77bf910727ad4d911f06c8da85d
          try {
              const subduction = await this.#subduction;
 -            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true);
-+            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true, 5000n);
++            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true, 30000n);
              const results = peerResultMap.entries();
              const anyFailed = results.some(r => !r.success || (r.transportErrors?.length ?? 0) > 0);
              // If new data was received during the heal, load it into the handle
@@ -20,7 +20,7 @@ index bb60ed598bc912f0dc680d95ff1997db6e82079d..e0fcc14f353402be6c21e6de74e864ef
              await entry.saveSettled;
              this.#log(`doSync ${sid} (state=${entry.syncState})`);
 -            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true);
-+            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true, 5000n);
++            const peerResultMap = await subduction.syncWithAllPeers(sedimentreeId, true, 30000n);
              const results = peerResultMap.entries();
              const anySuccess = results.some(r => r.success);
              this.#log(`doSync ${sid}: ${results.length} peer(s), success=${anySuccess}`);
