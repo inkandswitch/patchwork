@@ -7,14 +7,17 @@ import {
   stringifyAutomergeUrl,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
-import type { HasPatchworkMetadata } from "./metadata.js";
-import { FolderDoc } from "./types.js";
+import { getType, type HasPatchworkMetadata } from "./metadata.js";
+import { BranchesDoc, FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
+  branches?: Record<AutomergeUrl, string>;
 } & HasPatchworkMetadata & {
     "@patchwork": { type: "patchwork:module-settings" };
   };
+
+const DEFAULT_BRANCH = "default";
 
 // todo this can be a function that takes a plugin system and returns a change
 // handler
@@ -29,6 +32,8 @@ export class ModuleWatcher {
   handles: DocHandle<ModuleSettingsDoc>[] | undefined;
   doneLoading: Promise<void>;
   #watchedModules = new Set<string>();
+  #watchedBranchesDocs = new Set<AutomergeUrl>();
+  #branchTargetByBranchesUrl = new Map<AutomergeUrl, AutomergeUrl | undefined>();
 
   onLoad: (name: string, mod: any) => void;
 
@@ -62,19 +67,96 @@ export class ModuleWatcher {
     await this.load();
   }
 
-  async loadModules(modules: string[]) {
+  async loadModules(modules: string[], settingsDoc?: ModuleSettingsDoc) {
     await Promise.all(
       modules.map(async (importName) => {
-        this.setDocWatcher(importName);
-        await this.announce(importName).catch((error) => {
+        try {
+          await this.processModuleEntry(importName, settingsDoc);
+        } catch (error) {
           console.log(
             new Error(`Failed to load module ${importName}: ${error}`, {
               cause: error,
             })
           );
-        });
+        }
       })
     );
+  }
+
+  private async processModuleEntry(
+    importName: string,
+    settingsDoc?: ModuleSettingsDoc
+  ) {
+    if (isValidAutomergeUrl(importName)) {
+      const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(
+        importName
+      );
+      if (getType(handle.doc()) === "branches") {
+        await this.processBranchesEntry(importName, settingsDoc);
+        return;
+      }
+    }
+    this.setDocWatcher(importName);
+    await this.announce(importName);
+  }
+
+  private async processBranchesEntry(
+    branchesDocUrl: AutomergeUrl,
+    settingsDoc?: ModuleSettingsDoc
+  ) {
+    this.setBranchesWatcher(branchesDocUrl);
+    const folderUrl = await this.resolveBranchToFolderUrl(
+      branchesDocUrl,
+      settingsDoc
+    );
+    const previous = this.#branchTargetByBranchesUrl.get(branchesDocUrl);
+    if (folderUrl === previous) return;
+    this.#branchTargetByBranchesUrl.set(branchesDocUrl, folderUrl);
+    if (!folderUrl) return;
+    this.setDocWatcher(folderUrl);
+    await this.announce(folderUrl);
+  }
+
+  private async resolveBranchToFolderUrl(
+    branchesDocUrl: AutomergeUrl,
+    settingsDoc?: ModuleSettingsDoc
+  ): Promise<AutomergeUrl | undefined> {
+    const handle = await this.repo.find<BranchesDoc>(branchesDocUrl);
+    const doc = handle.doc();
+    const branchName =
+      settingsDoc?.branches?.[branchesDocUrl] ?? DEFAULT_BRANCH;
+    const url = doc?.branches?.[branchName];
+    if (!url) {
+      console.warn(
+        `branch "${branchName}" not found in branches doc ${branchesDocUrl}`
+      );
+      return undefined;
+    }
+    return url;
+  }
+
+  private settingsDocForBranchesUrl(
+    branchesDocUrl: AutomergeUrl
+  ): ModuleSettingsDoc | undefined {
+    if (!this.handles) return undefined;
+    for (const handle of this.handles) {
+      const doc = handle.doc();
+      if (doc?.modules?.includes(branchesDocUrl)) return doc;
+    }
+    return undefined;
+  }
+
+  private setBranchesWatcher(branchesDocUrl: AutomergeUrl) {
+    if (this.#watchedBranchesDocs.has(branchesDocUrl)) return;
+    this.#watchedBranchesDocs.add(branchesDocUrl);
+    this.repo.find<BranchesDoc>(branchesDocUrl).then((handle) => {
+      handle.on("change", () => {
+        const settingsDoc = this.settingsDocForBranchesUrl(branchesDocUrl);
+        this.processBranchesEntry(branchesDocUrl, settingsDoc).catch(
+          console.error
+        );
+      });
+    });
   }
 
   async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
@@ -117,7 +199,8 @@ export class ModuleWatcher {
     const handle = await this.repo.find<ModuleSettingsDoc>(url);
     this.handles?.push(handle);
     handle.addListener("change", this.onChange);
-    await this.loadModules(handle.doc()?.modules ?? []);
+    const doc = handle.doc();
+    await this.loadModules(doc?.modules ?? [], doc);
   }
 
   private async announce(importName: string) {
@@ -159,7 +242,7 @@ export class ModuleWatcher {
     const promises = this.handles.map((handle) => {
       const doc = handle.doc();
       const { modules = [] } = doc;
-      return this.loadModules(modules);
+      return this.loadModules(modules, doc);
     });
     await Promise.all(promises);
   }
