@@ -61,7 +61,7 @@ declare global {
     getRepoChannel: () => MessagePort;
     patchwork: {
       repo: Repo;
-      modules: ModuleWatcher;
+      packages: ModuleWatcher;
       plugins: typeof plugins;
       accountDocHandle: DocHandle<AccountDoc>;
       sw: {
@@ -203,7 +203,7 @@ export async function bootPatchworkSite(
 
   window.patchwork = {
     repo,
-    modules: moduleWatcher,
+    packages: moduleWatcher,
     plugins,
     accountDocHandle,
     sw: buildSwLogApi(),
