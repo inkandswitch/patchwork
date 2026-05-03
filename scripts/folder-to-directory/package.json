@@ -1,0 +1,20 @@
+{
+  "name": "@patchwork/folder-to-directory-cli",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "CLI: flatten a folder doc into a directory doc with prefixed-key file paths",
+  "scripts": {
+    "flatten": "tsx folder-to-directory.ts"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo": "2.6.0-subduction.14",
+    "@automerge/automerge-repo-storage-nodefs": "2.6.0-subduction.14",
+    "@automerge/automerge-subduction": "0.7.0",
+    "tsx": "^4.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  }
+}
