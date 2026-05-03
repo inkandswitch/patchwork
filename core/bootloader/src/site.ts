@@ -156,6 +156,8 @@ export async function bootPatchworkSite(
       return peerId.includes("service-worker");
     },
     enableRemoteHeadsGossiping: true,
+    peerId:
+      `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
   });
 
   repo.subscribeToRemotes(
