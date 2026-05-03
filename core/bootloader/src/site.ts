@@ -49,6 +49,8 @@ import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
 import { SwLogReader } from "./sw-logger.js";
+import debug from "debug";
+const log = debug("patchwork:bootloader:site");
 
 declare global {
   interface Window {
@@ -144,7 +146,7 @@ export async function bootPatchworkSite(
 ): Promise<BootResult> {
   const defaultModulesUrl = resolveDefaultModulesUrl(config.defaultModulesUrl);
 
-  console.log(`[site] booting`, config);
+  log(`booting`, config);
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
@@ -249,14 +251,14 @@ function installDevConsoleGlobals(repo: Repo): void {
 
 function onModuleLoaded(name: string, mod: any): void {
   if (Array.isArray(mod.plugins)) {
-    console.log(
-      `[site] registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
+    log(
+      `registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
       mod.plugins.map((p: any) => `${p.type}:${p.id}`)
     );
     registerPlugins(mod.plugins, name);
   } else {
     console.warn(
-      `[site] module ${name.slice(0, 30)}... has no plugins array`,
+      `module ${name.slice(0, 30)}... has no plugins array`,
       Object.keys(mod)
     );
   }
@@ -314,13 +316,13 @@ function logToolRegistryWhenLoaded(moduleWatcher: ModuleWatcher): void {
     .then(() => {
       const toolReg = getRegistry("patchwork:tool");
       const tools = toolReg.all();
-      console.log(
-        `[site] doneLoading: ${tools.length} tools registered:`,
+      log(
+        `doneLoading: ${tools.length} tools registered:`,
         tools.map((t: any) => t.id)
       );
     })
     .catch((err: unknown) => {
-      console.error("[site] doneLoading rejected:", err);
+      console.error("doneLoading rejected:", err);
     });
 }
 
@@ -330,10 +332,10 @@ function buildSwLogApi(): Window["patchwork"]["sw"] {
       const entries = await SwLogReader.tail(n);
       for (const e of entries) {
         const prefix = `[${e.ts}] [${e.level}]`;
-        if (e.data !== undefined) console.log(prefix, e.msg, e.data);
-        else console.log(prefix, e.msg);
+        if (e.data !== undefined) log(prefix, e.msg, e.data);
+        else log(prefix, e.msg);
       }
-      console.log(`--- ${entries.length} entries ---`);
+      log(`--- ${entries.length} entries ---`);
     },
     tailLogs: (n = 200) => SwLogReader.tail(n),
     exportLogs: () => SwLogReader.exportAll(),
