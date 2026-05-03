@@ -3,7 +3,7 @@ import {
   type Repo,
   isImmutableString,
   isValidAutomergeUrl,
-} from "@automerge/automerge-repo";
+} from "@automerge/automerge-repo/slim";
 import type { FolderDoc } from "./types.js";
 import { getType } from "./metadata.js";
 
