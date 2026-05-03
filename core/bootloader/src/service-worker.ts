@@ -21,11 +21,7 @@ import {
   stringifyAutomergeUrl,
   type PeerId,
 } from "@automerge/automerge-repo/slim";
-import {
-  findHandleInFolderHandle,
-  resolvePackageExport,
-  type FolderDoc,
-} from "@inkandswitch/patchwork-filesystem";
+import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 
 // Small adapters — bundled directly into the SW
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
@@ -37,7 +33,7 @@ let cachename = "default";
 let debugging = false;
 
 const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
-const RESOLVE_TIMEOUT_MS = 10_000;
+const RESOLVE_TIMEOUT_MS = 5_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
 // Initialized eagerly so it's available for the entire SW lifetime.
@@ -191,11 +187,6 @@ self.addEventListener("message", async (event) => {
   }
 });
 
-interface FileDoc {
-  content: string | Uint8Array;
-  mimeType?: string;
-}
-
 // ── Automerge URL resolution ───────────────────────────────────────────
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
@@ -222,91 +213,26 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
     return Response.redirect(location, 307);
   }
 
-  const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl, { signal });
+  const rootHandle = await repo.find(maybeAutomergeUrl, { signal });
 
-  let fileHandle;
-  if (path.length) {
-    // Try direct file navigation first
-    fileHandle = await findHandleInFolderHandle<FileDoc>(
-      repo,
-      folderHandle,
-      path.map(decodeURIComponent)
-    );
+  const resolved = await resolvePath(
+    repo,
+    rootHandle,
+    path.map(decodeURIComponent)
+  );
 
-    // If not found as a direct path, try resolving as a package subpath export
-    // e.g. /automerge%3Adocid/abc → exports["./abc"] → "./dist/abc.js"
-    if (!fileHandle) {
-      const subpath = "./" + path.map(decodeURIComponent).join("/");
-      const pkgFileHandle = await findHandleInFolderHandle<FileDoc>(
-        repo,
-        folderHandle,
-        ["package.json"]
-      );
-      if (pkgFileHandle) {
-        const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
-        if (pkgDoc?.content) {
-          const pkgJson = JSON.parse(String(pkgDoc.content));
-          try {
-            const resolved = resolvePackageExport(pkgJson, subpath);
-            if (resolved) {
-              const resolvedPath = resolved.replace(/^\.\//, "").split("/");
-              fileHandle = await findHandleInFolderHandle<FileDoc>(
-                repo,
-                folderHandle,
-                resolvedPath
-              );
-            }
-          } catch {
-            // not a valid export subpath, fall through to error
-          }
-        }
-      }
-    }
-  } else {
-    // No path — resolve the root export (like "." in package.json)
-    const pkgFileHandle = await findHandleInFolderHandle<FileDoc>(
-      repo,
-      folderHandle,
-      ["package.json"]
-    );
-    if (pkgFileHandle) {
-      const pkgDoc = pkgFileHandle.doc() as FileDoc | undefined;
-      if (pkgDoc?.content) {
-        const pkgJson = JSON.parse(String(pkgDoc.content));
-        try {
-          const resolved = resolvePackageExport(pkgJson);
-          if (resolved) {
-            const resolvedPath = resolved.replace(/^\.\//, "").split("/");
-            fileHandle = await findHandleInFolderHandle<FileDoc>(
-              repo,
-              folderHandle,
-              resolvedPath
-            );
-          }
-        } catch {}
-      }
-    }
-  }
-
-  if (!fileHandle) {
+  if (!resolved) {
     throw new Error(
       `couldn't resolve ${path.join("/")} in folder at ${maybeAutomergeUrl}`
     );
   }
 
-  const fileDoc = fileHandle.doc() as unknown as FileDoc;
-  const content = fileDoc?.content;
-  if (!content) {
-    throw new Error(`file at ${href} has no content`);
-  }
+  const body: BodyInit =
+    resolved.content instanceof Uint8Array
+      ? (new Uint8Array(resolved.content) as BlobPart)
+      : resolved.content;
 
-  let body: BodyInit =
-    content instanceof Uint8Array
-      ? (new Uint8Array(content) as BlobPart)
-      : String(content);
-  const mimeType = fileDoc.mimeType ?? "text/plain";
-
-  const headers = new Headers({ "content-type": mimeType });
+  const headers = new Headers({ "content-type": resolved.type });
   headers.set("cross-origin-embedder-policy", "credentialless");
   headers.set("cross-origin-resource-policy", "cross-origin");
 
@@ -356,7 +282,10 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             resolveAutomergeUrl(specialURL),
             new Promise<never>((_, reject) =>
               setTimeout(
-                () => reject(new Error(`resolve timeout after ${RESOLVE_TIMEOUT_MS}ms`)),
+                () =>
+                  reject(
+                    new Error(`resolve timeout after ${RESOLVE_TIMEOUT_MS}ms`)
+                  ),
                 RESOLVE_TIMEOUT_MS
               )
             ),
