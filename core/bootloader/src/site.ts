@@ -145,7 +145,7 @@ export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
   const defaultModulesUrl = resolveDefaultModulesUrl(config.defaultModulesUrl);
-
+  showLoadingAnimation();
   log(`booting`, config);
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
@@ -297,7 +297,6 @@ function primeRootElement(
   accountDocHandle: DocHandle<AccountDoc>
 ): void {
   rootElement.style.visibility = "hidden";
-  showLoadingAnimation();
 
   const initialParams = new URLSearchParams(location.hash.slice(1));
   if (initialParams.has("frame")) {
