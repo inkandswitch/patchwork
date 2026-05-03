@@ -100,8 +100,9 @@ let repoPromise: Promise<Repo> | null = null;
 
 function getRepo() {
   if (!repoPromise) {
-    repoPromise = (async () => {
+    const p: Promise<Repo> = (async () => {
       const logger = await slog;
+      logger.info("getRepo: starting");
 
       logger.info("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
@@ -140,6 +141,13 @@ function getRepo() {
 
       return repo;
     })();
+    // If construction fails (e.g. wasm fetch errors out because the SW was
+    // terminated mid-flight), don't permanently cache the rejection — clear
+    // the slot so the next caller can retry from scratch.
+    p.catch(() => {
+      if (repoPromise === p) repoPromise = null;
+    });
+    repoPromise = p;
   }
   return repoPromise;
 }
@@ -171,9 +179,18 @@ self.addEventListener("message", async (event) => {
     log("received messagechannel");
     const [port] = event.ports;
     const source = event.source as Client | null;
-    connectPort(port).then(
-      () => source?.postMessage({ type: "port-ready" }),
-      (err) => console.error("connectPort failed", err)
+    // event.waitUntil keeps the SW alive until the work completes. Without
+    // it, the browser can terminate the SW the moment this synchronous block
+    // returns, killing the in-flight wasm fetch.
+    event.waitUntil(
+      connectPort(port).then(
+        () => source?.postMessage({ type: "port-ready" }),
+        (err) => {
+          console.error("connectPort failed", err);
+          // Tell the client we failed so it doesn't hang forever.
+          source?.postMessage({ type: "port-failed", error: String(err) });
+        }
+      )
     );
   } else if (event.data.type == "cachename") {
     const nextCachename = event.data.cachename;

@@ -105,17 +105,39 @@ export default async function setupServiceWorker(
   // of the other end's state, so it can't be used as a real readiness signal
   // on first install (when the SW still has to fetch wasm and build its repo).
   const { port1, port2 } = new MessageChannel();
-  const swReady = new Promise<void>((resolve) => {
+  const swReady = new Promise<void>((resolve, reject) => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const cleanup = () => {
+      clearTimeout(timeout);
+      navigator.serviceWorker.removeEventListener("message", listener);
+    };
     const listener = (event: MessageEvent) => {
       if (event.data?.type === "port-ready") {
-        navigator.serviceWorker.removeEventListener("message", listener);
+        cleanup();
         resolve();
+      } else if (event.data?.type === "port-failed") {
+        cleanup();
+        reject(new Error(`service worker init failed: ${event.data.error}`));
       }
     };
     navigator.serviceWorker.addEventListener("message", listener);
+    // Failsafe: don't block boot forever if the SW never replies. Surface the
+    // issue and let the rest of the site come up rather than hanging on a
+    // blank page.
+    timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("service worker port-ready timeout"));
+    }, 30_000);
   });
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
-  await swReady;
+  try {
+    await swReady;
+  } catch (err) {
+    console.warn(
+      "proceeding without SW ready ack:",
+      err instanceof Error ? err.message : err
+    );
+  }
 
   // Keepalive — Chromium idles out service workers after ~30s of inactivity,
   // which tears down the in-memory Repo and forces a cold restart on the next
