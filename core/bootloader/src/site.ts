@@ -369,6 +369,10 @@ function showLoadingAnimation(): void {
           radial-gradient(ellipse 65% 55% at 50% 50%, #f1e6f6, transparent 80%);
         animation: pw-bootloader-pulse 3.5s ease-in-out infinite;
         transition: opacity 0.6s ease-out;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
       }
       @media (prefers-color-scheme: dark) {
         #${LOADING_ELEMENT_ID} {
