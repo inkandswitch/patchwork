@@ -37,6 +37,7 @@ let cachename = "default";
 let debugging = false;
 
 const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
+const RESOLVE_TIMEOUT_MS = 10_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
 // Initialized eagerly so it's available for the entire SW lifetime.
@@ -210,10 +211,10 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   if (path.length && !path[path.length - 1]) path.pop();
 
   const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
+  const signal = AbortSignal.timeout(RESOLVE_TIMEOUT_MS);
 
   if (!heads) {
-    // Redirect to pinned-heads URL
-    const folder = await repo.find(maybeAutomergeUrl);
+    const folder = await repo.find(maybeAutomergeUrl, { signal });
     const latestHeads = folder.heads();
     const url = stringifyAutomergeUrl({ documentId, heads: latestHeads });
     let location = `/${encodeURIComponent(url)}`;
@@ -221,9 +222,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
     return Response.redirect(location, 307);
   }
 
-  // If no path, check if this is a package with exports to resolve
-  // e.g. /automerge%3Adocid/abc → resolve "abc" via package.json exports
-  const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl);
+  const folderHandle = await repo.find<FolderDoc>(maybeAutomergeUrl, { signal });
 
   let fileHandle;
   if (path.length) {
@@ -353,7 +352,15 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             });
           }
 
-          const response = await resolveAutomergeUrl(specialURL);
+          const response = await Promise.race([
+            resolveAutomergeUrl(specialURL),
+            new Promise<never>((_, reject) =>
+              setTimeout(
+                () => reject(new Error(`resolve timeout after ${RESOLVE_TIMEOUT_MS}ms`)),
+                RESOLVE_TIMEOUT_MS
+              )
+            ),
+          ]);
 
           if (response.status === 307) {
             return response;
