@@ -77,7 +77,7 @@ export default async function setupServiceWorker(
   // worker — i.e. this is a first-time install (or a hard reload). We'll
   // reload after activation so the page boots with the SW in control of its
   // initial fetches.
-  const isFirstInstall = !navigator.serviceWorker.controller;
+  //const isFirstInstall = !navigator.serviceWorker.controller;
   const reg = await navigator.serviceWorker.register(path, { type: "module" });
 
   // If there's an update waiting or installing, wait for it to activate
@@ -97,16 +97,6 @@ export default async function setupServiceWorker(
         { once: true }
       );
     });
-  }
-
-  if (isFirstInstall) {
-    console.info(
-      "%cservice worker installed for the first time, reloading...",
-      "color: pink; font-weight: bold"
-    );
-    location.reload();
-    // Block the rest of boot — the page is about to be replaced.
-    await new Promise(() => {});
   }
 
   // Send a MessagePort so the SW's repo can sync with clients, and wait for
