@@ -109,9 +109,23 @@ export default async function setupServiceWorker(
     await new Promise(() => {});
   }
 
-  // Send a MessagePort so the SW's repo can sync with clients
+  // Send a MessagePort so the SW's repo can sync with clients, and wait for
+  // the SW to confirm its repo is constructed before returning. The
+  // MessageChannel adapter's whenReady() force-resolves after 100ms regardless
+  // of the other end's state, so it can't be used as a real readiness signal
+  // on first install (when the SW still has to fetch wasm and build its repo).
   const { port1, port2 } = new MessageChannel();
+  const swReady = new Promise<void>((resolve) => {
+    const listener = (event: MessageEvent) => {
+      if (event.data?.type === "port-ready") {
+        navigator.serviceWorker.removeEventListener("message", listener);
+        resolve();
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", listener);
+  });
   navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
+  await swReady;
 
   // Keepalive — Chromium idles out service workers after ~30s of inactivity,
   // which tears down the in-memory Repo and forces a cold restart on the next

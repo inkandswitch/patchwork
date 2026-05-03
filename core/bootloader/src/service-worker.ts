@@ -170,7 +170,11 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "port") {
     log("received messagechannel");
     const [port] = event.ports;
-    connectPort(port);
+    const source = event.source as Client | null;
+    connectPort(port).then(
+      () => source?.postMessage({ type: "port-ready" }),
+      (err) => console.error("connectPort failed", err)
+    );
   } else if (event.data.type == "cachename") {
     const nextCachename = event.data.cachename;
     if (cachename == nextCachename) {
