@@ -1,0 +1,55 @@
+{
+  "name": "@inkandswitch/patchwork-bundles",
+  "version": "0.0.1",
+  "type": "module",
+  "author": "Ink & Switch",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./vite": {
+      "import": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
+    },
+    "./esbuild": {
+      "import": "./dist/esbuild.js",
+      "types": "./dist/esbuild.d.ts"
+    },
+    "./webpack": {
+      "import": "./dist/webpack.js",
+      "types": "./dist/webpack.d.ts"
+    },
+    "./rollup": {
+      "import": "./dist/rollup.js",
+      "types": "./dist/rollup.d.ts"
+    },
+    "./rspack": {
+      "import": "./dist/rspack.js",
+      "types": "./dist/rspack.d.ts"
+    },
+    "./farm": {
+      "import": "./dist/farm.js",
+      "types": "./dist/farm.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "resolve.exports": "^2.0.3",
+    "unplugin": "^2.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.1",
+    "vite": "^7.1.9",
+    "vitest": "^2.1.8"
+  }
+}

@@ -333,6 +333,34 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.9.1)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@20.8.9)(jsdom@26.1.0)(lightningcss@1.32.0)(terser@5.44.0)
 
+  packages/bundles:
+    dependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.15
+        version: 2.6.0-subduction.15
+      '@inkandswitch/patchwork-bootloader':
+        specifier: workspace:^
+        version: link:../../core/bootloader
+      '@inkandswitch/patchwork-filesystem':
+        specifier: workspace:^
+        version: link:../../core/filesystem
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
+      unplugin:
+        specifier: ^2.3.0
+        version: 2.3.11
+    devDependencies:
+      esbuild:
+        specifier: ^0.23.1
+        version: 0.23.1
+      vite:
+        specifier: ^7.1.9
+        version: 7.3.1(@types/node@24.9.1)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.44.0)
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@24.9.1)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@20.8.9)(jsdom@26.1.0)(lightningcss@1.32.0)(terser@5.44.0)
+
   packages/react:
     devDependencies:
       '@automerge/automerge-repo-react-hooks':
@@ -3004,11 +3032,16 @@ packages:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
     engines: {node: '>= 4.0.0'}
 
+  unplugin@2.3.11:
+    resolution: {integrity: sha512-5uKD0nqiYVzlmCRs01Fhs2BdkEgBS3SAVP6ndrBsuK42iC2+JHyxM05Rm9G8+5mkmRtzMZGY8Ct5+mliZxU/Ww==}
+    engines: {node: '>=18.12.0'}
+
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vite-node@2.1.9:
@@ -3248,6 +3281,9 @@ packages:
   webidl-conversions@7.0.0:
     resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
     engines: {node: '>=12'}
+
+  webpack-virtual-modules@0.6.2:
+    resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
 
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
@@ -5595,6 +5631,13 @@ snapshots:
 
   universalify@0.1.2: {}
 
+  unplugin@2.3.11:
+    dependencies:
+      '@jridgewell/remapping': 2.3.5
+      acorn: 8.15.0
+      picomatch: 4.0.3
+      webpack-virtual-modules: 0.6.2
+
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
@@ -5882,6 +5925,8 @@ snapshots:
       xml-name-validator: 5.0.0
 
   webidl-conversions@7.0.0: {}
+
+  webpack-virtual-modules@0.6.2: {}
 
   whatwg-encoding@3.1.1:
     dependencies:
