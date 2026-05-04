@@ -63,9 +63,7 @@ const slog = SwLogger.open().then((logger) => {
   return logger;
 });
 
-const cacheableStatuses = [
-  200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501,
-];
+const cacheableStatuses = [200, 203, 204, 206];
 
 function log(...args: any[]) {
   if (!debugging) return;
@@ -182,7 +180,7 @@ self.addEventListener("message", async (event) => {
     // event.waitUntil keeps the SW alive until the work completes. Without
     // it, the browser can terminate the SW the moment this synchronous block
     // returns, killing the in-flight wasm fetch.
-    event.waitUntil(
+    (event as unknown as FetchEvent).waitUntil(
       connectPort(port).then(
         () => source?.postMessage({ type: "port-ready" }),
         (err) => {
