@@ -8,7 +8,7 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
 // patchwork-core). Can be overridden for development or forked tool sets
 // by setting `localStorage.defaultToolsUrl` to another automerge: URL.
 const DEFAULT_MODULES_URL =
-  "automerge:axLMmZNW8uogPudjwcab7svmJWr" as AutomergeUrl;
+  "automerge:2uZrhZ7G2NJxryZSMWSdDNFCke8C" as AutomergeUrl;
 
 await bootPatchworkSite({
   defaultModulesUrl: DEFAULT_MODULES_URL,
