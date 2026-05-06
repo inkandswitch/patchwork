@@ -44,6 +44,7 @@ import {
   getRegistry,
   registerPlugins,
   resolveAccountHandle,
+  unregisterPlugins,
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
@@ -180,7 +181,8 @@ export async function bootPatchworkSite(
   const moduleWatcher = new ModuleWatcher(
     repo,
     { system: defaultModulesUrl },
-    onModuleLoaded
+    onModuleLoaded,
+    unregisterPlugins
   );
 
   const accountDocHandle = await resolveAccountHandle(repo, {

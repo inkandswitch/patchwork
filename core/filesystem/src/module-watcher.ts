@@ -43,15 +43,18 @@ export class ModuleWatcher {
   >();
 
   onLoad: (name: string, mod: any) => void;
+  onUnload?: (name: string) => void;
 
   constructor(
     repo: Repo,
     urls: Record<string, AutomergeUrl>,
-    callback: (name: string, mod: any) => void
+    callback: (name: string, mod: any) => void,
+    onUnload?: (name: string) => void
   ) {
     this.repo = repo;
     this.urls = { ...urls };
     this.onLoad = callback;
+    this.onUnload = onUnload;
     this.doneLoading = this.init();
   }
 
@@ -111,6 +114,7 @@ export class ModuleWatcher {
     const previous = this.#branchTargetByBranchesUrl.get(branchesDocUrl);
     if (folderUrl === previous) return;
     this.#branchTargetByBranchesUrl.set(branchesDocUrl, folderUrl);
+    if (previous) this.onUnload?.(previous);
     if (!folderUrl) return;
     this.setDocWatcher(folderUrl);
     await this.announce(folderUrl);
@@ -198,8 +202,9 @@ export class ModuleWatcher {
     const handle = await this.repo.find<ModuleSettingsDoc>(url);
     if (this.handles) this.handles[name] = handle;
     handle.addListener("change", this.onChange);
-    const doc = handle.doc();
-    await this.loadModules(doc?.modules ?? []);
+    // Reload everything: this handle may carry branch overrides for branches
+    // docs that live in a different settings doc's modules.
+    await this.load();
   }
 
   private async announce(importName: string) {
@@ -238,9 +243,15 @@ export class ModuleWatcher {
 
   private async load() {
     if (!this.handles) throw new Error("No handles");
-    const promises = Object.values(this.handles).map((handle) =>
-      this.loadModules(handle.doc()?.modules ?? [])
-    );
-    await Promise.all(promises);
+    // Process every URL referenced by any settings doc, whether through
+    // `modules` (drives loading) or `branches` (a user-local override may
+    // target a branches doc that lives in a different settings doc's modules).
+    const urls = new Set<string>();
+    for (const handle of Object.values(this.handles)) {
+      const doc = handle.doc();
+      for (const m of doc?.modules ?? []) urls.add(m);
+      for (const b of Object.keys(doc?.branches ?? {})) urls.add(b);
+    }
+    await this.loadModules([...urls]);
   }
 }
