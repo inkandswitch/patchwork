@@ -179,7 +179,7 @@ export async function bootPatchworkSite(
   // is added lazily once it appears on the account doc — see below.
   const moduleWatcher = new ModuleWatcher(
     repo,
-    [defaultModulesUrl],
+    { system: defaultModulesUrl },
     onModuleLoaded
   );
 
@@ -278,7 +278,7 @@ function wireModuleSettingsWhenReady(
   const wire = () => {
     const url = accountDocHandle.doc()?.moduleSettingsUrl;
     if (!url) return;
-    void moduleWatcher.addUrl(url);
+    void moduleWatcher.addUrl("user", url);
     accountDocHandle.off("change", wire);
   };
   wire();

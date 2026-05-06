@@ -25,25 +25,32 @@ const DEFAULT_BRANCH = "default";
 /**
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
  * It also watches the modules themselves for changes and reloads them when they change.
+ *
+ * Settings docs are passed in keyed by name (e.g. `{ system, user }`). When
+ * resolving the active branch for a branches doc, the entry named "user" is
+ * consulted first, so a user-local override beats the system default.
  */
 export class ModuleWatcher {
   repo: Repo;
-  urls: AutomergeUrl[];
-  handles: DocHandle<ModuleSettingsDoc>[] | undefined;
+  urls: Record<string, AutomergeUrl>;
+  handles: Record<string, DocHandle<ModuleSettingsDoc>> | undefined;
   doneLoading: Promise<void>;
   #watchedModules = new Set<string>();
   #watchedBranchesDocs = new Set<AutomergeUrl>();
-  #branchTargetByBranchesUrl = new Map<AutomergeUrl, AutomergeUrl | undefined>();
+  #branchTargetByBranchesUrl = new Map<
+    AutomergeUrl,
+    AutomergeUrl | undefined
+  >();
 
   onLoad: (name: string, mod: any) => void;
 
   constructor(
     repo: Repo,
-    urls: AutomergeUrl | AutomergeUrl[],
+    urls: Record<string, AutomergeUrl>,
     callback: (name: string, mod: any) => void
   ) {
     this.repo = repo;
-    this.urls = Array.isArray(urls) ? urls : [urls];
+    this.urls = { ...urls };
     this.onLoad = callback;
     this.doneLoading = this.init();
   }
@@ -51,27 +58,29 @@ export class ModuleWatcher {
   onChange = () => this.load().catch(console.error);
 
   private async init() {
-    this.handles = (
-      await Promise.allSettled(
-        this.urls.map(async (url) => this.repo.find<ModuleSettingsDoc>(url))
-      )
-    )
-      .filter((result) => {
-        return result.status == "fulfilled";
+    const entries = Object.entries(this.urls);
+    const settled = await Promise.allSettled(
+      entries.map(async ([name, url]) => {
+        const handle = await this.repo.find<ModuleSettingsDoc>(url);
+        return [name, handle] as const;
       })
-      .map((result) => result.value);
+    );
 
-    for (const handle of this.handles) {
+    this.handles = {};
+    for (const result of settled) {
+      if (result.status !== "fulfilled") continue;
+      const [name, handle] = result.value;
+      this.handles[name] = handle;
       handle.addListener("change", this.onChange);
     }
     await this.load();
   }
 
-  async loadModules(modules: string[], settingsDoc?: ModuleSettingsDoc) {
+  async loadModules(modules: string[]) {
     await Promise.all(
       modules.map(async (importName) => {
         try {
-          await this.processModuleEntry(importName, settingsDoc);
+          await this.processModuleEntry(importName);
         } catch (error) {
           console.log(
             new Error(`Failed to load module ${importName}: ${error}`, {
@@ -83,16 +92,12 @@ export class ModuleWatcher {
     );
   }
 
-  private async processModuleEntry(
-    importName: string,
-    settingsDoc?: ModuleSettingsDoc
-  ) {
+  private async processModuleEntry(importName: string) {
     if (isValidAutomergeUrl(importName)) {
-      const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(
-        importName
-      );
+      const handle =
+        await this.repo.find<Partial<HasPatchworkMetadata>>(importName);
       if (getType(handle.doc()) === "branches") {
-        await this.processBranchesEntry(importName, settingsDoc);
+        await this.processBranchesEntry(importName);
         return;
       }
     }
@@ -100,15 +105,9 @@ export class ModuleWatcher {
     await this.announce(importName);
   }
 
-  private async processBranchesEntry(
-    branchesDocUrl: AutomergeUrl,
-    settingsDoc?: ModuleSettingsDoc
-  ) {
+  private async processBranchesEntry(branchesDocUrl: AutomergeUrl) {
     this.setBranchesWatcher(branchesDocUrl);
-    const folderUrl = await this.resolveBranchToFolderUrl(
-      branchesDocUrl,
-      settingsDoc
-    );
+    const folderUrl = await this.resolveBranchToFolderUrl(branchesDocUrl);
     const previous = this.#branchTargetByBranchesUrl.get(branchesDocUrl);
     if (folderUrl === previous) return;
     this.#branchTargetByBranchesUrl.set(branchesDocUrl, folderUrl);
@@ -118,13 +117,11 @@ export class ModuleWatcher {
   }
 
   private async resolveBranchToFolderUrl(
-    branchesDocUrl: AutomergeUrl,
-    settingsDoc?: ModuleSettingsDoc
+    branchesDocUrl: AutomergeUrl
   ): Promise<AutomergeUrl | undefined> {
     const handle = await this.repo.find<BranchesDoc>(branchesDocUrl);
     const doc = handle.doc();
-    const branchName =
-      settingsDoc?.branches?.[branchesDocUrl] ?? DEFAULT_BRANCH;
+    const branchName = this.chosenBranchFor(branchesDocUrl) ?? DEFAULT_BRANCH;
     const url = doc?.branches?.[branchName];
     if (!url) {
       console.warn(
@@ -135,13 +132,18 @@ export class ModuleWatcher {
     return url;
   }
 
-  private settingsDocForBranchesUrl(
-    branchesDocUrl: AutomergeUrl
-  ): ModuleSettingsDoc | undefined {
-    if (!this.handles) return undefined;
-    for (const handle of this.handles) {
-      const doc = handle.doc();
-      if (doc?.modules?.includes(branchesDocUrl)) return doc;
+  /**
+   * Pick the active branch for a branches doc. Checks each registered settings
+   * doc, with the user's own ("user") first so user-local overrides beat the
+   * system bundle.
+   */
+  private chosenBranchFor(branchesDocUrl: AutomergeUrl): string | undefined {
+    const handles = this.handles;
+    if (!handles) return undefined;
+    const names = ["user", ...Object.keys(handles).filter((n) => n !== "user")];
+    for (const name of names) {
+      const branch = handles[name]?.doc()?.branches?.[branchesDocUrl];
+      if (branch) return branch;
     }
     return undefined;
   }
@@ -151,10 +153,7 @@ export class ModuleWatcher {
     this.#watchedBranchesDocs.add(branchesDocUrl);
     this.repo.find<BranchesDoc>(branchesDocUrl).then((handle) => {
       handle.on("change", () => {
-        const settingsDoc = this.settingsDocForBranchesUrl(branchesDocUrl);
-        this.processBranchesEntry(branchesDocUrl, settingsDoc).catch(
-          console.error
-        );
+        this.processBranchesEntry(branchesDocUrl).catch(console.error);
       });
     });
   }
@@ -192,15 +191,15 @@ export class ModuleWatcher {
     }
   }
 
-  async addUrl(url: AutomergeUrl): Promise<void> {
-    if (this.urls.includes(url)) return;
-    this.urls.push(url);
+  async addUrl(name: string, url: AutomergeUrl): Promise<void> {
+    if (this.urls[name] === url) return;
+    this.urls[name] = url;
     await this.doneLoading;
     const handle = await this.repo.find<ModuleSettingsDoc>(url);
-    this.handles?.push(handle);
+    if (this.handles) this.handles[name] = handle;
     handle.addListener("change", this.onChange);
     const doc = handle.doc();
-    await this.loadModules(doc?.modules ?? [], doc);
+    await this.loadModules(doc?.modules ?? []);
   }
 
   private async announce(importName: string) {
@@ -239,11 +238,9 @@ export class ModuleWatcher {
 
   private async load() {
     if (!this.handles) throw new Error("No handles");
-    const promises = this.handles.map((handle) => {
-      const doc = handle.doc();
-      const { modules = [] } = doc;
-      return this.loadModules(modules, doc);
-    });
+    const promises = Object.values(this.handles).map((handle) =>
+      this.loadModules(handle.doc()?.modules ?? [])
+    );
     await Promise.all(promises);
   }
 }
