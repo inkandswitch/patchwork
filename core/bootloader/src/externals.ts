@@ -6,6 +6,8 @@ const externals = [
   "@automerge/automerge/slim",
   "@automerge/automerge-repo",
   "@automerge/automerge-repo/slim",
+  "@automerge/automerge-repo-network-messagechannel",
+  "@automerge/automerge-repo-storage-indexeddb",
   "@automerge/automerge-repo-keyhive",
   "@automerge/automerge-subduction",
   "@automerge/automerge-subduction/slim",
