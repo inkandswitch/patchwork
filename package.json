@@ -29,6 +29,7 @@
       "@automerge/automerge-repo-network-messagechannel": "catalog:",
       "@automerge/automerge-repo-network-websocket": "catalog:",
       "@automerge/automerge-repo-react-hooks": "catalog:",
+      "@automerge/automerge-repo-solid-primitives": "catalog:",
       "@automerge/automerge-repo-storage-indexeddb": "catalog:",
       "@automerge/automerge-subduction": "catalog:",
       "@automerge/react": "catalog:",
