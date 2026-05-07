@@ -8,7 +8,7 @@ import { SwLogger } from "./sw-logger.js";
 // Uses /slim to avoid top-level await (disallowed in service workers).
 // Wasm is fetched from /automerge.wasm (emitted by the vite plugin) instead
 // of bundling the ~3MB base64 string.
-import { initializeWasm } from "@automerge/automerge/slim";
+import { initializeWasm, hasHeads } from "@automerge/automerge/slim";
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
@@ -220,7 +220,7 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // Trim trailing empty path segment
   if (path.length && !path[path.length - 1]) path.pop();
 
-  const { heads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
+  const { heads, hexHeads, documentId } = parseAutomergeUrl(maybeAutomergeUrl);
   const signal = AbortSignal.timeout(RESOLVE_TIMEOUT_MS);
 
   if (!heads) {
@@ -232,7 +232,16 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
     return Response.redirect(location, 307);
   }
 
-  const rootHandle = await repo.find(maybeAutomergeUrl, { signal });
+  // Load by documentId only so we can verify the requested heads are actually
+  // in our local history. repo.find with a heads-bearing URL returns a view
+  // at those heads, which silently materializes garbage if we never synced them.
+  const baseHandle = await repo.find(stringifyAutomergeUrl({ documentId }), {
+    signal,
+  });
+  if (!hasHeads(baseHandle.doc(), hexHeads ?? [])) {
+    return new Response("heads not found", { status: 404 });
+  }
+  const rootHandle = baseHandle.view(heads);
 
   const resolved = await resolvePath(
     repo,
