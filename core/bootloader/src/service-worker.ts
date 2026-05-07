@@ -33,7 +33,7 @@ let cachename = "default";
 let debugging = false;
 
 const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
-const RESOLVE_TIMEOUT_MS = 15_000;
+const RESOLVE_TIMEOUT_MS = 30_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
 // Initialized eagerly so it's available for the entire SW lifetime.
