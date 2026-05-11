@@ -1,7 +1,7 @@
 {
   "name": "@inkandswitch/patchwork-refs-react",
   "type": "module",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "files": [
     "dist"
   ],

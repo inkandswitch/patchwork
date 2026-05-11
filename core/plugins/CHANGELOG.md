@@ -1,5 +1,23 @@
 # @inkandswitch/patchwork-plugins
 
+## 0.0.8
+
+### Patch Changes
+
+- e6afa48: Add `@inkandswitch/patchwork-bootloader/site` entry point exporting
+  `bootPatchworkSite(config)`, a full browser-app boot sequence that constructs
+  the Repo, wires the service-worker port, loads plugins via the ModuleWatcher,
+  resolves the user's account, and installs URL-hash routing + dev globals. This
+  lets per-site `main.ts` collapse to a ~10-line config object and keeps two
+  sibling sites from drifting apart.
+
+  Also removes the unused `@inkandswitch/patchwork-bootloader` devDependency from
+  `@inkandswitch/patchwork-plugins`, which eliminated a cyclic workspace edge.
+
+- a847c4f: release
+- Updated dependencies [a847c4f]
+  - @inkandswitch/patchwork-filesystem@0.0.6
+
 ## 0.0.5
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @inkandswitch/patchwork-elements
 
+## 0.0.8
+
+### Patch Changes
+
+- a847c4f: release
+- Updated dependencies [e6afa48]
+- Updated dependencies [a847c4f]
+  - @inkandswitch/patchwork-plugins@0.0.8
+  - @inkandswitch/patchwork-filesystem@0.0.6
+
 ## 0.0.5
 
 ### Patch Changes

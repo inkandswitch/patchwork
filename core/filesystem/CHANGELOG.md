@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-filesystem
 
+## 0.0.6
+
+### Patch Changes
+
+- a847c4f: release
+
 ## 0.0.3
 
 ### Patch Changes
