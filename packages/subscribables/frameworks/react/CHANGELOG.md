@@ -1,5 +1,13 @@
 # @inkandswitch/subscribables-react
 
+## 0.1.3
+
+### Patch Changes
+
+- a847c4f: release
+- Updated dependencies [a847c4f]
+  - @inkandswitch/subscribables@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
