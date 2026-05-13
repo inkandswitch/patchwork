@@ -5,3 +5,13 @@ export type SetupServiceWorkerOptions = {
    */
   path?: string;
 };
+
+export type ServiceWorkerRepoChannelListener = (
+  port: MessagePort
+) => void | Promise<void>;
+
+export type SetupServiceWorkerResult = {
+  subscribeToRepoChannel: (
+    listener: ServiceWorkerRepoChannelListener
+  ) => Promise<() => void>;
+};

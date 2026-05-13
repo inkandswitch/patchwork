@@ -31,6 +31,7 @@ import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websoc
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
 let cachename = "default";
 let debugging = false;
+const workerInstanceId = crypto.randomUUID();
 
 const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
 const RESOLVE_TIMEOUT_MS = 30_000;
@@ -166,27 +167,36 @@ self.addEventListener("message", async (event) => {
     const [pongPort] = event.ports;
     log("ping");
     if (pongPort) {
-      pongPort.postMessage({ type: "pong" });
+      pongPort.postMessage({ type: "pong", workerInstanceId });
       log("pong");
       pongPort.close();
     } else if (event.source) {
-      (event.source as unknown as Client).postMessage({ type: "pong" });
+      (event.source as unknown as Client).postMessage({
+        type: "pong",
+        workerInstanceId,
+      });
       log("pong");
     }
   } else if (event.data.type == "port") {
     log("received messagechannel");
     const [port] = event.ports;
     const source = event.source as Client | null;
+    const id = event.data.id;
     // event.waitUntil keeps the SW alive until the work completes. Without
     // it, the browser can terminate the SW the moment this synchronous block
     // returns, killing the in-flight wasm fetch.
     (event as unknown as FetchEvent).waitUntil(
       connectPort(port).then(
-        () => source?.postMessage({ type: "port-ready" }),
+        () => source?.postMessage({ type: "port-ready", id, workerInstanceId }),
         (err) => {
           console.error("connectPort failed", err);
           // Tell the client we failed so it doesn't hang forever.
-          source?.postMessage({ type: "port-failed", error: String(err) });
+          source?.postMessage({
+            type: "port-failed",
+            id,
+            error: String(err),
+            workerInstanceId,
+          });
         }
       )
     );

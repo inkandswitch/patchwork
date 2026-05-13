@@ -27,6 +27,7 @@
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-network-messagechannel": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
     "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
     "@automerge/vanillajs": "catalog:",

@@ -49,6 +49,7 @@ import {
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
+import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import { SwLogReader } from "./sw-logger.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
@@ -59,7 +60,6 @@ declare global {
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
     repo: Repo;
-    getRepoChannel: () => MessagePort;
     patchwork: {
       repo: Repo;
       packages: ModuleWatcher;
@@ -70,6 +70,9 @@ declare global {
         tailLogs: (n?: number) => ReturnType<typeof SwLogReader.tail>;
         exportLogs: () => Promise<string>;
         clearLogs: () => Promise<void>;
+        subscribeToRepoChannel: (
+          listener: ServiceWorkerRepoChannelListener
+        ) => Promise<() => void>;
       };
     };
     uncache: (match: string) => Promise<void>;
@@ -167,9 +170,16 @@ export async function bootPatchworkSite(
 
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
-  const net = new MessageChannelNetworkAdapter(sw.port);
-  repo.networkSubsystem.addNetworkAdapter(net);
-  await net.whenReady();
+  let activeServiceWorkerPort: MessagePort | undefined;
+  const connectServiceWorkerPort = async (port: MessagePort) => {
+    const previousPort = activeServiceWorkerPort;
+    activeServiceWorkerPort = port;
+    const net = new MessageChannelNetworkAdapter(port);
+    repo.networkSubsystem.addNetworkAdapter(net);
+    await net.whenReady();
+    previousPort?.close();
+  };
+  await sw.subscribeToRepoChannel(connectServiceWorkerPort);
 
   installDevConsoleGlobals(repo);
   registerPatchworkViewElement({ repo });
@@ -208,7 +218,10 @@ export async function bootPatchworkSite(
     packages: moduleWatcher,
     plugins,
     accountDocHandle,
-    sw: buildSwLogApi(),
+    sw: {
+      ...buildSwLogApi(),
+      subscribeToRepoChannel: sw.subscribeToRepoChannel,
+    },
   };
   window.uncache = uncache;
 
@@ -246,11 +259,6 @@ function installDevConsoleGlobals(repo: Repo): void {
   window.repo = repo;
   window.Automerge = Automerge;
   window.AutomergeRepo = AutomergeRepo;
-  window.getRepoChannel = () => {
-    const { port1, port2 } = new MessageChannel();
-    navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
-    return port1;
-  };
 }
 
 function onModuleLoaded(name: string, mod: any): void {
@@ -329,7 +337,10 @@ function logToolRegistryWhenLoaded(moduleWatcher: ModuleWatcher): void {
     });
 }
 
-function buildSwLogApi(): Window["patchwork"]["sw"] {
+function buildSwLogApi(): Omit<
+  Window["patchwork"]["sw"],
+  "subscribeToRepoChannel"
+> {
   return {
     printLogs: async (n = 200) => {
       const entries = await SwLogReader.tail(n);
