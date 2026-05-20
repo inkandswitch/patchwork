@@ -9,8 +9,10 @@
   "license": "MIT",
   "peerDependencies": {
     "@automerge/automerge-repo": "*",
+    "@automerge/automerge-repo-network-messagechannel": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^"
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "capnweb": "^0.8.0"
   },
   "dependencies": {
     "debug": "^4.4.3"

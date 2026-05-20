@@ -36,6 +36,7 @@ import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
   openDocument,
   registerPatchworkViewElement,
+  registerIsolatedPatchworkViewElement,
 } from "@inkandswitch/patchwork-elements";
 import {
   type AccountDoc,
@@ -183,6 +184,7 @@ export async function bootPatchworkSite(
 
   installDevConsoleGlobals(repo);
   registerPatchworkViewElement({ repo });
+  registerIsolatedPatchworkViewElement({ repo });
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
