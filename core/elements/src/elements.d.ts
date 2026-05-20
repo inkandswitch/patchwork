@@ -12,6 +12,13 @@ declare module "react" {
         "tool-id"?: string | null;
         class?: string;
       };
+      "patchwork-view-2": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        "component-id"?: string | null;
+        class?: string;
+      };
     }
   }
 }
@@ -22,6 +29,9 @@ declare module "solid-js" {
       "patchwork-view": {
         "doc-url": string;
         "tool-id": string;
+      };
+      "patchwork-view-2": {
+        "component-id": string;
       };
     }
   }
@@ -36,6 +46,13 @@ declare namespace JSX {
     > & {
       "doc-url": string;
       "tool-id"?: string | null;
+      class?: string;
+    };
+    "patchwork-view-2": React.DetailedHTMLProps<
+      React.HTMLAttributes<HTMLElement>,
+      HTMLElement
+    > & {
+      "component-id"?: string | null;
       class?: string;
     };
   }

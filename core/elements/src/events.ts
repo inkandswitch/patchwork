@@ -17,10 +17,9 @@ export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
   }
 }
 
-export interface MountedEventDetail {
-  url: AutomergeUrl;
-  toolId: string;
-}
+export type MountedEventDetail =
+  | { url: AutomergeUrl; toolId: string }
+  | { componentId: string };
 
 export class MountedEvent extends CustomEvent<MountedEventDetail> {
   constructor(detail: MountedEventDetail) {
