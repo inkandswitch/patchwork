@@ -1,6 +1,6 @@
 {
   "name": "@inkandswitch/patchwork-bootloader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "chee",
   "type": "module",
   "license": "MIT",
