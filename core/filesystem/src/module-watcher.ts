@@ -243,14 +243,13 @@ export class ModuleWatcher {
 
   private async load() {
     if (!this.handles) throw new Error("No handles");
-    // Process every URL referenced by any settings doc, whether through
-    // `modules` (drives loading) or `branches` (a user-local override may
-    // target a branches doc that lives in a different settings doc's modules).
+    // Only `modules` drives loading. `branches` is an override map keyed by
+    // branches doc URL — it only takes effect for branches docs that are
+    // already listed in some settings doc's `modules`.
     const urls = new Set<string>();
     for (const handle of Object.values(this.handles)) {
       const doc = handle.doc();
       for (const m of doc?.modules ?? []) urls.add(m);
-      for (const b of Object.keys(doc?.branches ?? {})) urls.add(b);
     }
     await this.loadModules([...urls]);
   }
