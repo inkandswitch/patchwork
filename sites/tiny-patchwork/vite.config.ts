@@ -39,6 +39,7 @@ export default defineConfig({
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "credentialless",
+      "Access-Control-Allow-Origin": "*",
     },
   },
   preview: {
@@ -46,6 +47,7 @@ export default defineConfig({
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "credentialless",
+      "Access-Control-Allow-Origin": "*",
     },
   },
   resolve: {

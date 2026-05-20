@@ -65,8 +65,12 @@ function resolveImportMap(importMap: any, baseURI: string): any {
 }
 
 /**
- * Resolve a tool's automerge folder URL to an absolute entry point URL.
- * This runs on the host side where window.location.origin is valid.
+ * Resolve a tool's automerge folder URL to a blob URL with rewritten imports.
+ *
+ * The host fetches the tool's entry point JS through its service worker,
+ * rewrites all relative imports to absolute automerge URLs, and returns a
+ * blob URL. This allows the sandboxed iframe to load the module without
+ * needing to resolve relative paths (which fail with blob/srcdoc base URLs).
  */
 async function resolveToolEntryUrl(
   toolImportUrl: string
@@ -84,7 +88,28 @@ async function resolveToolEntryUrl(
   const entryPoint = resolvePackageExport(pkgJson);
   if (!entryPoint) return undefined;
 
-  return new URL(entryPoint, base).href;
+  const entryUrl = new URL(entryPoint, base).href;
+  const entryBase = entryUrl.substring(0, entryUrl.lastIndexOf("/") + 1);
+
+  // Fetch the entry point source through the host's SW
+  const sourceResponse = await fetch(entryUrl);
+  if (!sourceResponse.ok) return undefined;
+  let source = await sourceResponse.text();
+
+  // Rewrite relative imports to absolute automerge URLs so the sandboxed
+  // iframe's fetch proxy can handle them. Covers:
+  //   import("./path")  import('./path')  from "./path"  from './path'
+  source = source.replace(
+    /(from\s+|import\s*\()(['"])(\.\.?\/[^'"]+)\2/g,
+    (_match, prefix, quote, relativePath) => {
+      const absoluteUrl = new URL(relativePath, entryBase).href;
+      return prefix + quote + absoluteUrl + quote;
+    }
+  );
+
+  // Return the rewritten source as a string — the iframe will create its own
+  // blob URL (blob URLs are origin-scoped and can't cross the sandbox boundary)
+  return source;
 }
 
 export interface RegisterIsolatedPatchworkViewElementParams {
@@ -228,8 +253,9 @@ export function registerIsolatedPatchworkViewElement(
           if (epoch !== this.#initEpoch) return;
         }
 
-        // Create srcdoc iframe
+        // Create srcdoc iframe with sandbox for security isolation
         const iframe = document.createElement("iframe");
+        iframe.sandbox.add("allow-scripts");
         iframe.srcdoc = getSrcdocHtml();
         iframe.style.cssText =
           "position:absolute;inset:0;border:none;width:100%;height:100%;";
@@ -297,6 +323,34 @@ export function registerIsolatedPatchworkViewElement(
           },
         });
 
+        // Create fetch proxy channel — the iframe proxies automerge URL
+        // fetches through the host, which has a service worker that can
+        // resolve them.
+        const fetchChannel = new MessageChannel();
+        fetchChannel.port1.onmessage = async (event) => {
+          const { id, url } = event.data;
+          try {
+            const response = await fetch(url);
+            const body = await response.arrayBuffer();
+            const headers: Record<string, string> = {};
+            response.headers.forEach((value, key) => {
+              headers[key] = value;
+            });
+            fetchChannel.port1.postMessage(
+              { id, status: response.status, headers, body },
+              [body]
+            );
+          } catch {
+            fetchChannel.port1.postMessage({
+              id,
+              status: 500,
+              headers: {},
+              body: new ArrayBuffer(0),
+            });
+          }
+        };
+        fetchChannel.port1.start();
+
         // Resolve importmap to absolute host-origin URLs
         const importMapEl = document.querySelector('script[type="importmap"]');
         const rawImportMap = importMapEl
@@ -304,7 +358,7 @@ export function registerIsolatedPatchworkViewElement(
           : { imports: {} };
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
-        // Send init message with transferred ports
+        // Send init message with transferred ports (repo, rpc, fetch proxy)
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -315,7 +369,7 @@ export function registerIsolatedPatchworkViewElement(
             hostOrigin: window.location.origin,
           },
           "*",
-          [bridge.iframePort, rpcChannel.port2]
+          [bridge.iframePort, rpcChannel.port2, fetchChannel.port2]
         );
       }
 
