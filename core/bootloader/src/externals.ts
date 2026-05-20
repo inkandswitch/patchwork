@@ -33,5 +33,7 @@ const externals = [
   "solid-js/h",
   "solid-js/store",
   "solid-js/jsx-runtime",
+
+  "capnweb",
 ];
 export default externals;

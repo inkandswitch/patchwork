@@ -142,6 +142,12 @@ importers:
 
   core/elements:
     dependencies:
+      '@automerge/automerge-repo-network-messagechannel':
+        specifier: 2.6.0-subduction.20
+        version: 2.6.0-subduction.20
+      capnweb:
+        specifier: ^0.8.0
+        version: 0.8.0
       debug:
         specifier: ^4.4.3
         version: 4.4.3
@@ -463,6 +469,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      capnweb:
+        specifier: ^0.8.0
+        version: 0.8.0
       solid-js:
         specifier: ^1.9.9
         version: 1.9.10
@@ -548,6 +557,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      capnweb:
+        specifier: ^0.8.0
+        version: 0.8.0
       solid-js:
         specifier: ^1.9.9
         version: 1.9.10
@@ -1945,6 +1957,9 @@ packages:
   callsites@3.1.0:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
+
+  capnweb@0.8.0:
+    resolution: {integrity: sha512-BK/TuXUiyfLSKsmjojn70yN7oYG/JJzoURZ3tckjg5Zj2KcygPm0A5jyOlswK7SYB4f0Gh9tt+RZ132b80iLfA==}
 
   cbor-extract@2.2.0:
     resolution: {integrity: sha512-Ig1zM66BjLfTXpNgKpvBePq271BPOvu8MR0Jl080yG7Jsl+wAZunfrwiwA+9ruzm/WEdIV5QF/bjDZTqyAIVHA==}
@@ -4541,6 +4556,8 @@ snapshots:
   cac@6.7.14: {}
 
   callsites@3.1.0: {}
+
+  capnweb@0.8.0: {}
 
   cbor-extract@2.2.0:
     dependencies:
