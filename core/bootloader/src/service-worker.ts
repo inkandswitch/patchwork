@@ -43,6 +43,7 @@ let debugging = false;
 const workerInstanceId = crypto.randomUUID();
 
 const SUBDUCTION_ENDPOINTS = ["wss://keyhive.sync.automerge.org"];
+
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
