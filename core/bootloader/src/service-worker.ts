@@ -42,7 +42,7 @@ let cachename = "default";
 let debugging = false;
 const workerInstanceId = crypto.randomUUID();
 
-const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
+const SUBDUCTION_ENDPOINTS = ["ws://localhost:3030"];
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────

@@ -59,8 +59,8 @@
   },
   "peerDependencies": {
     "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "*",
-    "@automerge/automerge-repo-keyhive": "*",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-keyhive": "catalog:",
     "@automerge/vanillajs": "catalog:"
   },
   "scripts": {
