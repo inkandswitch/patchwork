@@ -42,7 +42,7 @@ let cachename = "default";
 let debugging = false;
 const workerInstanceId = crypto.randomUUID();
 
-const SUBDUCTION_ENDPOINTS = ["ws://localhost:3030"];
+const SUBDUCTION_ENDPOINTS = ["wss://keyhive.sync.automerge.org"];
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
