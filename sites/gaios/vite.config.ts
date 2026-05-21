@@ -22,6 +22,7 @@ const subductionDir = dirname(
 export default defineConfig({
   define: {
     __SITE_NAME__: JSON.stringify("gaios"),
+    __KEYHIVE__: JSON.stringify(process.env.KEYHIVE === "true"),
   },
   plugins: [
     tailwindcss(),

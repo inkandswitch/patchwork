@@ -1,5 +1,7 @@
 import "./global.css";
 
+declare const __KEYHIVE__: boolean;
+
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
 
@@ -14,5 +16,5 @@ await bootPatchworkSite({
   defaultModulesUrl: DEFAULT_MODULES_URL,
   accountStorageKey: "gaiosAccountUrl",
   titleSuffix: "GAIOS",
-  keyhive: true,
+  keyhive: __KEYHIVE__,
 });

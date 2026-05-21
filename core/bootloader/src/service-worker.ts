@@ -12,6 +12,7 @@ import { initializeWasm, hasHeads } from "@automerge/automerge/slim";
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
 
 import {
   Repo,
@@ -33,6 +34,7 @@ import {
 } from "@automerge/automerge-repo-keyhive";
 
 declare const __SITE_NAME__: string;
+declare const __KEYHIVE__: boolean;
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
 
@@ -40,8 +42,7 @@ let cachename = "default";
 let debugging = false;
 const workerInstanceId = crypto.randomUUID();
 
-// const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
-const SUBDUCTION_ENDPOINTS = ["ws://localhost:3030"];
+const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
@@ -107,8 +108,10 @@ self.addEventListener("activate", async () => {
 
 let repoHivePromise: Promise<{
   repo: Repo;
-  hive: AutomergeRepoKeyhiveRust;
+  hive?: AutomergeRepoKeyhiveRust;
 }> | null = null;
+
+const useKeyhive = typeof __KEYHIVE__ !== "undefined" && __KEYHIVE__;
 
 function getRepoHive() {
   if (!repoHivePromise) {
@@ -124,6 +127,31 @@ function getRepoHive() {
       initSubductionSync(new Uint8Array(sdnWasmBuf));
       await initializeWasm(new Uint8Array(amWasmBuf));
       logger.info("wasm initialized");
+
+      if (!useKeyhive) {
+        const signer = await WebCryptoSigner.setup();
+
+        const repo = new Repo({
+          storage: new IndexedDBStorageAdapter(),
+          signer,
+          peerId: ("service-worker-" +
+            Math.random().toString(36).slice(2)) as import("@automerge/automerge-repo/slim").PeerId,
+          async sharePolicy(peerId) {
+            return peerId.includes("storage-server");
+          },
+          enableRemoteHeadsGossiping: true,
+          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+        });
+
+        (self as any).repo = repo;
+        logger.info("repo constructed (no keyhive), waiting for network subsystem");
+
+        repo.networkSubsystem.whenReady().then(() => {
+          logger.info("repo network subsystem ready");
+        });
+
+        return { repo };
+      }
 
       initKeyhiveWasm();
       const keyhiveStorage = new IndexedDBStorageAdapter(
@@ -197,6 +225,12 @@ function getRepoHive() {
 async function connectPort(port: MessagePort) {
   const { hive, repo } = await getRepoHive();
   const networkAdapter = new MessageChannelNetworkAdapter(port, { useWeakRef: true });
+
+  if (!hive) {
+    repo.networkSubsystem.addNetworkAdapter(networkAdapter);
+    return;
+  }
+
   const onlyShareWithHardcodedServerPeerId = false;
   const periodicallyRequestKeyhiveSync = false;
   const keyhiveNetworkAdapter = hive.createKeyhiveNetworkAdapter(networkAdapter, onlyShareWithHardcodedServerPeerId, periodicallyRequestKeyhiveSync, 2000);
