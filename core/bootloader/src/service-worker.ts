@@ -187,6 +187,7 @@ function getRepoHive() {
         peerId: hive.peerId,
         enableRemoteHeadsGossiping: true,
         idFactory: hive.idFactory,
+        subductionBlobInterceptor: hive.blobInterceptor,
         //network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
