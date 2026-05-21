@@ -7,10 +7,11 @@
  *
  * The host resolves the tool's module URL and importmap to absolute URLs.
  * The iframe uses es-module-shims to load modules from the host origin.
- * Document sync happens via a filtered bridge over MessagePort.
+ * Document sync happens via a direct MessageChannel connection to the host repo.
  */
 
 import { type AutomergeUrl, type Repo } from "@automerge/automerge-repo";
+import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import {
   getRegistry,
   getFallbackTool,
@@ -22,11 +23,6 @@ import {
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
 import { MountedEvent, OpenDocumentEvent } from "../events.js";
-import {
-  createFilteredBridge,
-  type FilteredBridge,
-} from "./filtered-bridge.js";
-import { setupRpc } from "./rpc.js";
 import getSrcdocHtml from "./srcdoc.js";
 
 /** Resolve the host importmap entries to absolute URLs. */
@@ -65,12 +61,11 @@ function resolveImportMap(importMap: any, baseURI: string): any {
 }
 
 /**
- * Resolve a tool's automerge folder URL to a blob URL with rewritten imports.
+ * Resolve a tool's automerge folder URL to rewritten JS source.
  *
  * The host fetches the tool's entry point JS through its service worker,
- * rewrites all relative imports to absolute automerge URLs, and returns a
- * blob URL. This allows the sandboxed iframe to load the module without
- * needing to resolve relative paths (which fail with blob/srcdoc base URLs).
+ * rewrites all relative imports to absolute automerge URLs, and returns
+ * the source string. The iframe will create its own blob URL from it.
  */
 async function resolveToolEntryUrl(
   toolImportUrl: string
@@ -107,8 +102,6 @@ async function resolveToolEntryUrl(
     }
   );
 
-  // Return the rewritten source as a string — the iframe will create its own
-  // blob URL (blob URLs are origin-scoped and can't cross the sandbox boundary)
   return source;
 }
 
@@ -145,10 +138,10 @@ export function registerIsolatedPatchworkViewElement(
       #docUrl: AutomergeUrl | null = null;
       #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
-      #bridge: FilteredBridge | null = null;
-      #rpc: { navigate(docUrl: string, toolId: string): void } | null = null;
+      #repoChannel: MessageChannel | null = null;
       #initEpoch = 0;
       #readyHandler: ((e: MessageEvent) => void) | null = null;
+      #messageHandler: ((e: MessageEvent) => void) | null = null;
 
       get docUrl() {
         return this.#docUrl;
@@ -200,18 +193,12 @@ export function registerIsolatedPatchworkViewElement(
 
         if (name === attrs.toolId) {
           this.#toolId = val;
-          this.#teardown();
-          this.#init();
         } else if (name === attrs.docUrl) {
           this.#docUrl = val as AutomergeUrl;
-          if (this.#rpc && this.#toolId) {
-            this.#bridge?.allow(this.#docUrl!);
-            this.#rpc.navigate(this.#docUrl!, this.#toolId);
-          } else {
-            this.#teardown();
-            this.#init();
-          }
         }
+
+        this.#teardown();
+        this.#init();
       }
 
       async #init() {
@@ -223,8 +210,6 @@ export function registerIsolatedPatchworkViewElement(
         const docUrl = this.#docUrl;
 
         // Resolve which tool module to load.
-        // If tool-id is specified, look it up in the registry.
-        // Otherwise, determine the fallback tool from the document's datatype.
         let toolImportUrl: string | undefined;
         if (toolId) {
           const registeredTool =
@@ -246,7 +231,6 @@ export function registerIsolatedPatchworkViewElement(
         if (!toolId) return;
 
         // Resolve tool entry point URL on the host side
-        // (packages.ts uses window.location.origin which is null in srcdoc)
         let toolEntryUrl: string | undefined;
         if (toolImportUrl) {
           toolEntryUrl = await resolveToolEntryUrl(toolImportUrl);
@@ -277,51 +261,38 @@ export function registerIsolatedPatchworkViewElement(
 
         if (epoch !== this.#initEpoch) return;
 
-        // Create filtered bridge
-        const bridge = createFilteredBridge(repo, [docUrl]);
-        this.#bridge = bridge;
+        // Connect iframe repo directly to host repo via MessageChannel
+        const repoChannel = new MessageChannel();
+        repo.networkSubsystem.addNetworkAdapter(
+          new MessageChannelNetworkAdapter(repoChannel.port1, {
+            useWeakRef: true,
+          })
+        );
+        this.#repoChannel = repoChannel;
 
-        // Create RPC channel
-        const rpcChannel = new MessageChannel();
-
-        // Set up RPC
-        this.#rpc = setupRpc(rpcChannel.port1, {
-          onRequestDocument: async (
-            requestedDocUrl: string,
-            reason: string
-          ) => {
-            console.warn(
-              `[isolated-patchwork-view] tool "${toolId}" requests document access:`,
-              requestedDocUrl,
-              reason
-            );
-            bridge.allow(requestedDocUrl as AutomergeUrl);
-            return true;
-          },
-          onOpenDocument: (
-            url: string,
-            openToolId: string,
-            title: string,
-            type: string
-          ) => {
-            this.dispatchEvent(
-              new OpenDocumentEvent({
-                url: url as AutomergeUrl,
-                toolId: openToolId,
-                title,
-                type,
-              })
-            );
-          },
-          onMounted: (url: string, mountedToolId: string) => {
+        // Listen for messages from the iframe (event forwarding)
+        this.#messageHandler = (e: MessageEvent) => {
+          if (e.source !== iframe.contentWindow) return;
+          const msg = e.data;
+          if (msg?.type === "patchwork:mounted") {
             this.dispatchEvent(
               new MountedEvent({
-                url: url as AutomergeUrl,
-                toolId: mountedToolId,
+                url: msg.url as AutomergeUrl,
+                toolId: msg.toolId,
               })
             );
-          },
-        });
+          } else if (msg?.type === "patchwork:open-document") {
+            this.dispatchEvent(
+              new OpenDocumentEvent({
+                url: msg.url as AutomergeUrl,
+                toolId: msg.toolId,
+                title: msg.title,
+                type: msg.docType,
+              })
+            );
+          }
+        };
+        window.addEventListener("message", this.#messageHandler);
 
         // Create fetch proxy channel — the iframe proxies automerge URL
         // fetches through the host, which has a service worker that can
@@ -358,7 +329,7 @@ export function registerIsolatedPatchworkViewElement(
           : { imports: {} };
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
-        // Send init message with transferred ports (repo, rpc, fetch proxy)
+        // Send init message with transferred ports (repo, fetch proxy)
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -369,7 +340,7 @@ export function registerIsolatedPatchworkViewElement(
             hostOrigin: window.location.origin,
           },
           "*",
-          [bridge.iframePort, rpcChannel.port2, fetchChannel.port2]
+          [repoChannel.port2, fetchChannel.port2]
         );
       }
 
@@ -381,12 +352,16 @@ export function registerIsolatedPatchworkViewElement(
           this.#readyHandler = null;
         }
 
-        if (this.#bridge) {
-          this.#bridge.destroy();
-          this.#bridge = null;
+        if (this.#messageHandler) {
+          window.removeEventListener("message", this.#messageHandler);
+          this.#messageHandler = null;
         }
 
-        this.#rpc = null;
+        if (this.#repoChannel) {
+          this.#repoChannel.port1.close();
+          this.#repoChannel.port2.close();
+          this.#repoChannel = null;
+        }
 
         if (this.#iframe) {
           this.#iframe.remove();

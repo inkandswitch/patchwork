@@ -24,15 +24,14 @@ export default function getSrcdocHtml(): string {
   }
   log('ready, waiting for init...');
 
-  // 2. Wait for init message (receives 3 ports: repo, rpc, fetch proxy)
+  // 2. Wait for init message (receives 2 ports: repo, fetch proxy)
   var init = await new Promise(function(resolve) {
     window.addEventListener('message', function handler(event) {
       if (!event.data || event.data.type !== 'isolated-patchwork-init') return;
       window.removeEventListener('message', handler);
       resolve({
         repoPort: event.ports[0],
-        rpcPort: event.ports[1],
-        fetchPort: event.ports[2],
+        fetchPort: event.ports[1],
         data: event.data,
       });
     });
@@ -107,11 +106,9 @@ export default function getSrcdocHtml(): string {
     self.importShim('@automerge/automerge-subduction/slim'),
     self.importShim('@inkandswitch/patchwork-elements'),
     self.importShim('@inkandswitch/patchwork-plugins'),
-    self.importShim('capnweb'),
   ]);
   var automerge = mods[0], amRepo = mods[1], network = mods[2],
-      subduction = mods[3], elements = mods[4], plugins = mods[5],
-      capnweb = mods[6];
+      subduction = mods[3], elements = mods[4], plugins = mods[5];
   log('modules loaded');
 
   // 7. Initialize WASM (subduction first)
@@ -154,24 +151,24 @@ export default function getSrcdocHtml(): string {
   rootElement.setAttribute('doc-url', d.docUrl);
   rootElement.setAttribute('tool-id', d.toolId);
 
-  // 12. RPC
-  var iframeApi = Object.assign(Object.create(capnweb.RpcTarget.prototype), {
-    navigate: function(docUrl, toolId) {
-      log('navigate', { docUrl: docUrl, toolId: toolId });
-      rootElement.setAttribute('doc-url', docUrl);
-      rootElement.setAttribute('tool-id', toolId);
-    },
-  });
-  var hostStub = capnweb.newMessagePortRpcSession(init.rpcPort, iframeApi);
-
-  // 13. Forward events to host
+  // 12. Forward events to host via postMessage
   rootElement.addEventListener('patchwork:open-document', function(event) {
     var detail = event.detail;
-    hostStub.openDocument(detail.url, detail.toolId, detail.title, detail.type);
+    window.parent.postMessage({
+      type: 'patchwork:open-document',
+      url: detail.url,
+      toolId: detail.toolId,
+      title: detail.title,
+      docType: detail.type,
+    }, '*');
   });
   rootElement.addEventListener('patchwork:mounted', function(event) {
     var detail = event.detail;
-    hostStub.mounted(detail.url, detail.toolId);
+    window.parent.postMessage({
+      type: 'patchwork:mounted',
+      url: detail.url,
+      toolId: detail.toolId,
+    }, '*');
   });
 
   log('boot complete');
