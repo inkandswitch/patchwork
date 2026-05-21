@@ -1,0 +1,30 @@
+{
+  "name": "@inkandswitch/patchwork-comments",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Schema types and write helpers for Patchwork comment threads.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput"
+  },
+  "author": "Ink & Switch",
+  "license": "ISC",
+  "peerDependencies": {
+    "@automerge/automerge-repo": "*"
+  },
+  "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "typescript": "^5.9.2"
+  }
+}

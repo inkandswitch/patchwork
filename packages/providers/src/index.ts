@@ -65,7 +65,7 @@ export function request<T = unknown>(
   });
 }
 
-export function respond(
+export function provide(
   event: RequestEvent,
   handle: DocHandle<unknown> | null
 ): void {
@@ -76,21 +76,4 @@ export function respond(
       detail: { id: event.detail.id, handle },
     })
   );
-}
-
-/**
- * Attach a provider to `element`. Return a DocHandle (or null) to respond;
- * return undefined to let the request keep bubbling to outer providers.
- */
-export function provide(
-  element: HTMLElement,
-  handler: (event: RequestEvent) => DocHandle<unknown> | null | undefined
-): () => void {
-  const onRequest = (event: RequestEvent) => {
-    const result = handler(event);
-    if (result === undefined) return;
-    respond(event, result);
-  };
-  element.addEventListener("patchwork:request", onRequest);
-  return () => element.removeEventListener("patchwork:request", onRequest);
 }

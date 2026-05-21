@@ -3,7 +3,7 @@ import type { Ref, RefUrl } from "@automerge/automerge-repo";
 
 export type CommentThread = {
   id: string;
-  refs: Ref[];
+  refs: RefUrl[];
   isResolved: boolean;
   comments: Comment[];
 };
