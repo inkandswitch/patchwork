@@ -20,13 +20,13 @@ interface ImportShim {
 /** Init message sent from the host to the iframe. */
 interface InitMessage {
   repoPort: MessagePort;
-  fetchPort: MessagePort;
   data: {
     docUrl: string;
     toolId: string;
     toolEntryUrl?: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
-    hostOrigin: string;
+    automergeWasm: ArrayBuffer;
+    subductionWasm: ArrayBuffer;
   };
 }
 
@@ -46,14 +46,13 @@ async function boot() {
   }
   log("ready, waiting for init...");
 
-  // 2. Wait for init message (receives 2 ports: repo, fetch proxy)
+  // 2. Wait for init message (receives 1 port: repo)
   const init: InitMessage = await new Promise((resolve) => {
     window.addEventListener("message", function handler(event: MessageEvent) {
       if (!event.data || event.data.type !== "isolated-patchwork-init") return;
       window.removeEventListener("message", handler);
       resolve({
         repoPort: event.ports[0],
-        fetchPort: event.ports[1],
         data: event.data,
       });
     });
@@ -61,55 +60,7 @@ async function boot() {
   const d = init.data;
   log("received init", { docUrl: d.docUrl, toolId: d.toolId });
 
-  // 3. Set up fetch proxy for automerge URLs.
-  // The sandboxed iframe can't fetch automerge URLs directly (no host SW).
-  // Proxy automerge URL fetches through the host via a dedicated MessagePort.
-  const fetchPort = init.fetchPort;
-  let nextFetchId = 0;
-  const pendingFetches: Record<
-    number,
-    { resolve: (r: Response) => void }
-  > = {};
-
-  fetchPort.onmessage = (event: MessageEvent) => {
-    const msg = event.data;
-    const pending = pendingFetches[msg.id];
-    if (pending) {
-      delete pendingFetches[msg.id];
-      pending.resolve(
-        new Response(msg.body, { status: msg.status, headers: msg.headers })
-      );
-    }
-  };
-  fetchPort.start();
-
-  function proxyFetch(url: string): Promise<Response> {
-    return new Promise((resolve) => {
-      const id = nextFetchId++;
-      pendingFetches[id] = { resolve };
-      fetchPort.postMessage({ id, url });
-    });
-  }
-
-  function isAutomergeUrl(url: string): boolean {
-    return url.includes("/automerge%3A") || url.includes("/automerge:");
-  }
-
-  // Patch window.fetch for non-importShim callers (WASM loads, package.json)
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = ((input: RequestInfo | URL, fetchInit?: RequestInit) => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.href
-          : input.url;
-    if (isAutomergeUrl(url)) return proxyFetch(url);
-    return originalFetch(input, fetchInit);
-  }) as typeof window.fetch;
-  log("fetch proxy configured");
-
-  // 4. Stub localStorage — sandboxed iframes throw SecurityError on access.
+  // 3. Stub localStorage — sandboxed iframes throw SecurityError on access.
   try {
     void localStorage;
   } catch {
@@ -122,18 +73,8 @@ async function boot() {
     });
   }
 
-  // 5. Load es-module-shims in shim mode.
-  // Use esmsInitOptions.fetch so es-module-shims preserves the original URL
-  // for relative import resolution (patching window.fetch doesn't work because
-  // constructed Response objects have an empty .url property).
-  (self as any).esmsInitOptions = {
-    shimMode: true,
-    fetch(url: string, opts?: RequestInit) {
-      if (isAutomergeUrl(url)) return proxyFetch(url);
-      return originalFetch(url, opts);
-    },
-  };
-  // Dynamic import — the URL is a runtime string to avoid tsc module resolution.
+  // 4. Load es-module-shims in shim mode.
+  (self as any).esmsInitOptions = { shimMode: true };
   const esmsUrl =
     "https://ga.jspm.io/npm:es-module-shims@1.6.2/dist/es-module-shims.wasm.js";
   await import(/* @vite-ignore */ esmsUrl);
@@ -141,7 +82,7 @@ async function boot() {
   importShim.addImportMap(d.importMap);
   log("importmap configured");
 
-  // 6. Import core modules
+  // 5. Import core modules
   const [automerge, amRepo, network, subduction, elements, plugins] =
     await Promise.all([
       importShim("@automerge/automerge/slim"),
@@ -153,16 +94,12 @@ async function boot() {
     ]);
   log("modules loaded");
 
-  // 7. Initialize WASM (subduction first)
-  const [automergeWasm, subductionWasm] = await Promise.all([
-    fetch(d.hostOrigin + "/automerge.wasm").then((r) => r.arrayBuffer()),
-    fetch(d.hostOrigin + "/subduction.wasm").then((r) => r.arrayBuffer()),
-  ]);
-  subduction.initSync(new Uint8Array(subductionWasm));
-  await automerge.initializeWasm(new Uint8Array(automergeWasm));
+  // 6. Initialize WASM from transferred ArrayBuffers (subduction first)
+  subduction.initSync(new Uint8Array(d.subductionWasm));
+  await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
   log("wasm initialized");
 
-  // 8. Create ephemeral Repo (no storage — srcdoc has no IndexedDB)
+  // 7. Create ephemeral Repo (no storage — srcdoc has no IndexedDB)
   const repo = new amRepo.Repo({
     peerId: "isolated-" + d.toolId + "-" + crypto.randomUUID().slice(0, 8),
     async sharePolicy() {
@@ -174,10 +111,10 @@ async function boot() {
   );
   log("repo connected");
 
-  // 9. Register patchwork-view element
+  // 8. Register patchwork-view element
   elements.registerPatchworkViewElement({ repo });
 
-  // 10. Import and register the tool module.
+  // 9. Import and register the tool module.
   // toolEntryUrl is the rewritten JS source (not a URL) — create a blob URL
   // in this origin so it's accessible from the sandbox.
   if (d.toolEntryUrl) {
@@ -192,12 +129,12 @@ async function boot() {
   }
   log("tool loaded");
 
-  // 11. Render
+  // 10. Render
   const rootElement = document.getElementById("root")!;
   rootElement.setAttribute("doc-url", d.docUrl);
   rootElement.setAttribute("tool-id", d.toolId);
 
-  // 12. Forward events to host via postMessage
+  // 11. Forward events to host via postMessage
   rootElement.addEventListener("patchwork:open-document", ((
     event: CustomEvent
   ) => {
@@ -247,10 +184,7 @@ export default function getSrcdocHtml(): string {
   // boot.toString() includes the function signature, so we wrap it as an IIFE.
   const bootSource = boot
     .toString()
-    // Strip TypeScript type annotations that tsc leaves as comments or that
-    // survive in esnext output. In practice tsc with target:esnext strips
-    // them, so this is the raw JS body.
-    .replace(/<\/script>/g, "<\\/script>"); // Escape </script> if it ever appears
+    .replace(/<\/script>/g, "<\\/script>");
 
   return `<!DOCTYPE html>
 <html>

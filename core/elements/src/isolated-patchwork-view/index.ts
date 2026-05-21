@@ -294,33 +294,13 @@ export function registerIsolatedPatchworkViewElement(
         };
         window.addEventListener("message", this.#messageHandler);
 
-        // Create fetch proxy channel — the iframe proxies automerge URL
-        // fetches through the host, which has a service worker that can
-        // resolve them.
-        const fetchChannel = new MessageChannel();
-        fetchChannel.port1.onmessage = async (event) => {
-          const { id, url } = event.data;
-          try {
-            const response = await fetch(url);
-            const body = await response.arrayBuffer();
-            const headers: Record<string, string> = {};
-            response.headers.forEach((value, key) => {
-              headers[key] = value;
-            });
-            fetchChannel.port1.postMessage(
-              { id, status: response.status, headers, body },
-              [body]
-            );
-          } catch {
-            fetchChannel.port1.postMessage({
-              id,
-              status: 500,
-              headers: {},
-              body: new ArrayBuffer(0),
-            });
-          }
-        };
-        fetchChannel.port1.start();
+        // Pre-fetch WASM binaries to transfer to the iframe
+        const [automergeWasm, subductionWasm] = await Promise.all([
+          fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
+          fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
+        ]);
+
+        if (epoch !== this.#initEpoch) return;
 
         // Resolve importmap to absolute host-origin URLs
         const importMapEl = document.querySelector('script[type="importmap"]');
@@ -329,7 +309,7 @@ export function registerIsolatedPatchworkViewElement(
           : { imports: {} };
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
-        // Send init message with transferred ports (repo, fetch proxy)
+        // Send init message with transferred port and WASM binaries
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -337,10 +317,11 @@ export function registerIsolatedPatchworkViewElement(
             toolId,
             toolEntryUrl,
             importMap,
-            hostOrigin: window.location.origin,
+            automergeWasm,
+            subductionWasm,
           },
           "*",
-          [repoChannel.port2, fetchChannel.port2]
+          [repoChannel.port2, automergeWasm, subductionWasm]
         );
       }
 
