@@ -5,10 +5,7 @@ import {
   type LoadedPlugin,
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
-import debug from "debug";
 import { MountedEvent } from "./events.js";
-
-const log = debug("patchwork:elements:view-2");
 
 export type ComponentRender = (element: HTMLElement) => () => void;
 
@@ -90,6 +87,12 @@ export function registerPatchworkView2Element(
       }
 
       connectedCallback() {
+        // Default to a layout-invisible box so the wrapper can sit around
+        // existing JSX without disturbing the surrounding layout. Visual
+        // components can override `this.style.display` if they need a box.
+        if (!this.style.display) {
+          this.style.display = "contents";
+        }
         this.componentId = this.getAttribute(attrs.componentId);
         this.#init();
       }
@@ -176,7 +179,6 @@ export function registerPatchworkView2Element(
 
         this.#teardowns.clear();
         this.#component = null;
-        this.textContent = "";
         this.#state = State.none;
       }
 
@@ -194,16 +196,14 @@ export function registerPatchworkView2Element(
           return;
         }
 
-        this.#resetDisplay();
-
         const componentId = this.componentId;
         const registry = getRegistry<LoadedComponent>("patchwork:component");
         this.#component = registry.get(componentId) ?? null;
 
         if (!this.#component) {
           this.#state = "unable";
-          this.#displayError(
-            `I couldn't find the component with id ${componentId}.`
+          console.warn(
+            `patchwork-view-2: no component registered with id "${componentId}"`
           );
           return;
         }
@@ -212,12 +212,11 @@ export function registerPatchworkView2Element(
           registry.load(this.#component.id);
           if (registry.isLoading(this.#component.id)) {
             this.#state = "unable";
-            log(`loading ${componentId}`);
-            this.#displayLoading(componentId);
+            console.info(`patchwork-view-2: loading component "${componentId}"`);
           } else {
             this.#state = "unable";
-            this.#displayError(
-              `I couldn't load the component with id ${componentId}.`
+            console.warn(
+              `patchwork-view-2: failed to load component "${componentId}"`
             );
           }
           return;
@@ -233,72 +232,13 @@ export function registerPatchworkView2Element(
           this.#state = "rendered";
           this.dispatchEvent(new MountedEvent({ componentId }));
         } catch (error) {
-          this.append(
-            Object.assign(document.createElement("div"), {
-              innerHTML: /* html */ `
-                <p>oh no!</p>
-                <details>
-                  <summary>${(error as Error).message ?? error}</summary>
-                  <pre style="white-space: pre-wrap;">${(error as Error).stack ?? ""}</pre>
-                </details>
-              `,
-            })
+          console.error(
+            `patchwork-view-2: component "${componentId}" threw during mount`,
+            error
           );
-          console.error(error);
-
           this.#state = "error";
         }
       }
-
-      #displayLoading = (componentId: string) => {
-        const div = document.createElement("div");
-        div.style.display = "flex";
-        div.style.alignItems = "center";
-        div.style.justifyContent = "center";
-        div.style.height = "100%";
-        div.innerHTML = /* html */ `
-          <style>
-            @keyframes pw-loading-spin {
-              to { transform: rotate(360deg); }
-            }
-          </style>
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <div style="
-              width: 24px;
-              height: 24px;
-              border: 3px solid #e0e0e0;
-              border-top-color: #888;
-              border-radius: 50%;
-              animation: pw-loading-spin 0.8s linear infinite;
-            "></div>
-            <div style="font-size: 12px; color: #888;">loading ${componentId}</div>
-          </div>
-        `;
-        this.append(div);
-      };
-
-      #displayError = (error: string) => {
-        const div = document.createElement("div");
-        div.style.display = "flex";
-        div.style.alignItems = "center";
-        div.style.justifyContent = "center";
-        div.style.transition = "opacity 2s linear 2s";
-        div.style.opacity = "0";
-        div.innerHTML = /* html */ `
-          <details style="display: flex"><summary></summary><pre style="white-space: pre-wrap;"><code>${error}</code></pre></details>
-        `;
-        this.append(div);
-        setTimeout(() => {
-          div.style.opacity = "1";
-        });
-      };
-
-      #resetDisplay = () => {
-        this.replaceChildren();
-        this.style.display = "";
-        this.style.alignItems = "";
-        this.style.justifyContent = "";
-      };
     }
   );
 }
