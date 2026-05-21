@@ -187,7 +187,7 @@ function getRepoHive() {
         peerId: hive.peerId,
         enableRemoteHeadsGossiping: true,
         idFactory: hive.idFactory,
-        subductionBlobInterceptor: hive.blobInterceptor,
+        // subductionBlobInterceptor: hive.blobInterceptor,
         //network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
@@ -197,7 +197,7 @@ function getRepoHive() {
 
       (self as any).repo = repo;
       (self as any).hive = hive;
-      logger.info("repo constructed (E2EE enabled), waiting for network subsystem");
+      logger.info("repo constructed, waiting for network subsystem");
 
       // Don't block getRepoHive() on whenReady() — the network subsystem starts
       // with only the subduction adapter, and the MessageChannel adapter is
