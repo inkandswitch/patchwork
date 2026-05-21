@@ -1,0 +1,37 @@
+{
+  "name": "@inkandswitch/patchwork-providers-solid",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Solid bindings for the Patchwork providers request/respond protocol.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput"
+  },
+  "author": "Ink & Switch",
+  "license": "ISC",
+  "dependencies": {
+    "@inkandswitch/patchwork-providers": "workspace:^"
+  },
+  "peerDependencies": {
+    "@automerge/automerge-repo": "*",
+    "@automerge/automerge-repo-solid-primitives": "*",
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-solid-primitives": "catalog:",
+    "solid-js": "^1.9.0",
+    "typescript": "^5.9.2"
+  }
+}
