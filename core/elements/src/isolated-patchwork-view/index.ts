@@ -231,7 +231,7 @@ export function registerIsolatedPatchworkViewElement(
         // Create srcdoc iframe with sandbox for security isolation
         const iframe = document.createElement("iframe");
         iframe.sandbox.add("allow-scripts");
-        iframe.srcdoc = getSrcdocHtml();
+        iframe.srcdoc = getSrcdocHtml(window.location.origin);
         iframe.style.cssText =
           "position:absolute;inset:0;border:none;width:100%;height:100%;";
         this.appendChild(iframe);
