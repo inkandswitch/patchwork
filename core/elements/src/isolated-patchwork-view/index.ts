@@ -30,6 +30,7 @@ import {
 } from "@inkandswitch/patchwork-filesystem";
 import { MountedEvent, OpenDocumentEvent } from "../events.js";
 import type { HostRpcContract, IframeRpcContract } from "./rpc-types.js";
+import { type ResourcePolicy, AllowAllPolicy } from "./resource-policy.js";
 import getSrcdocHtml from "./srcdoc.js";
 
 /** Resolve the host importmap entries to absolute URLs. */
@@ -96,19 +97,32 @@ async function resolveToolEntryUrl(
  */
 class HostApi extends RpcTarget implements HostRpcContract {
   #element: HTMLElement;
+  #policy: ResourcePolicy;
 
-  constructor(element: HTMLElement) {
+  constructor(element: HTMLElement, policy: ResourcePolicy) {
     super();
     this.#element = element;
+    this.#policy = policy;
+  }
+
+  #checkPolicy(url: string): void {
+    if (!this.#policy.canFetch(url)) {
+      console.warn(
+        `[isolated-patchwork-view] policy denied: ${url}`
+      );
+      throw new Error(`Access denied: ${url}`);
+    }
   }
 
   async loadModuleSource(url: string): Promise<string> {
+    this.#checkPolicy(url);
     return fetch(url).then((r) => r.text());
   }
 
   async fetchResource(
     url: string
   ): Promise<{ contentType: string; body: string | Uint8Array }> {
+    this.#checkPolicy(url);
     const res = await fetch(url);
     const contentType = res.headers.get("content-type") || "";
     const isBinary =
@@ -147,6 +161,8 @@ class HostApi extends RpcTarget implements HostRpcContract {
 export interface RegisterIsolatedPatchworkViewElementParams {
   name?: string;
   repo: Repo;
+  /** Optional factory to create per-tool resource policies. Defaults to AllowAllPolicy. */
+  createPolicy?: (toolId: string) => ResourcePolicy;
 }
 
 export interface IsolatedPatchworkViewElement extends HTMLElement {
@@ -160,6 +176,7 @@ export function registerIsolatedPatchworkViewElement(
 ) {
   const elementName = params.name ?? "isolated-patchwork-view";
   const repo = params.repo;
+  const createPolicy = params.createPolicy ?? (() => new AllowAllPolicy());
 
   if (customElements.get(elementName)) {
     console.error(`can't redefine custom element "${elementName}"`);
@@ -379,7 +396,8 @@ export function registerIsolatedPatchworkViewElement(
         // Set up capnweb RPC channel — the HostApi handles module loading,
         // fetch proxying, and event callbacks from the iframe.
         const rpcChannel = new MessageChannel();
-        const hostApi = new HostApi(this);
+        const policy = createPolicy(toolId);
+        const hostApi = new HostApi(this, policy);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
           rpcChannel.port1,
           hostApi
