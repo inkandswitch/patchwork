@@ -8,10 +8,16 @@
  * The host resolves the tool's module URL and importmap to absolute URLs.
  * The iframe uses es-module-shims to load modules from the host origin.
  * Document sync happens via a direct MessageChannel connection to the host repo.
+ *
+ * Host↔iframe communication uses capnweb RPC over MessagePort for type-safe
+ * bidirectional method calls with object-capability semantics. A minimal
+ * postMessage bootstrap loads capnweb itself before RPC takes over.
  */
 
 import { type AutomergeUrl, type Repo } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+import { RpcTarget, newMessagePortRpcSession } from "capnweb";
+import type { RpcStub } from "capnweb";
 import {
   getRegistry,
   getFallbackTool,
@@ -23,6 +29,7 @@ import {
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
 import { MountedEvent, OpenDocumentEvent } from "../events.js";
+import type { HostRpcContract, IframeRpcContract } from "./rpc-types.js";
 import getSrcdocHtml from "./srcdoc.js";
 
 /** Resolve the host importmap entries to absolute URLs. */
@@ -83,6 +90,60 @@ async function resolveToolEntryUrl(
   return new URL(entryPoint, base).href;
 }
 
+/**
+ * Host-side RPC target exposed to the isolated iframe via capnweb.
+ * The iframe calls these methods through its RpcStub<HostRpcContract>.
+ */
+class HostApi extends RpcTarget implements HostRpcContract {
+  #element: HTMLElement;
+
+  constructor(element: HTMLElement) {
+    super();
+    this.#element = element;
+  }
+
+  async loadModuleSource(url: string): Promise<string> {
+    return fetch(url).then((r) => r.text());
+  }
+
+  async fetchResource(
+    url: string
+  ): Promise<{ contentType: string; body: string | Uint8Array }> {
+    const res = await fetch(url);
+    const contentType = res.headers.get("content-type") || "";
+    const isBinary =
+      contentType.includes("wasm") || contentType.includes("octet-stream");
+    if (isBinary) {
+      const buf = await res.arrayBuffer();
+      return { contentType, body: new Uint8Array(buf) };
+    }
+    const body = await res.text();
+    return { contentType, body };
+  }
+
+  onMounted(url: string, toolId: string): void {
+    this.#element.dispatchEvent(
+      new MountedEvent({ url: url as AutomergeUrl, toolId })
+    );
+  }
+
+  onOpenDocument(
+    url: string,
+    toolId?: string,
+    title?: string,
+    docType?: string
+  ): void {
+    this.#element.dispatchEvent(
+      new OpenDocumentEvent({
+        url: url as AutomergeUrl,
+        toolId,
+        title,
+        type: docType,
+      })
+    );
+  }
+}
+
 export interface RegisterIsolatedPatchworkViewElementParams {
   name?: string;
   repo: Repo;
@@ -117,10 +178,11 @@ export function registerIsolatedPatchworkViewElement(
       #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #repoChannel: MessageChannel | null = null;
-      #moduleChannel: MessageChannel | null = null;
+      #rpcChannel: MessageChannel | null = null;
+      #iframeStub: RpcStub<IframeRpcContract> | null = null;
       #initEpoch = 0;
       #readyHandler: ((e: MessageEvent) => void) | null = null;
-      #messageHandler: ((e: MessageEvent) => void) | null = null;
+      #bootstrapChannel: MessageChannel | null = null;
 
       get docUrl() {
         return this.#docUrl;
@@ -252,6 +314,28 @@ export function registerIsolatedPatchworkViewElement(
 
         if (epoch !== this.#initEpoch) return;
 
+        // Bootstrap channel — handles the iframe's requests to load module
+        // source during the bootstrap phase (before capnweb RPC is ready).
+        // Once the iframe has loaded capnweb via this channel and established
+        // its RPC session, all further communication goes over capnweb RPC.
+        const bootstrapChannel = new MessageChannel();
+        bootstrapChannel.port1.onmessage = async (e) => {
+          const { id, type, url } = e.data;
+          if (type !== "load-module-source") return;
+          try {
+            const source = await fetch(url).then((r) => r.text());
+            bootstrapChannel.port1.postMessage({ id, ok: true, value: source });
+          } catch (err) {
+            bootstrapChannel.port1.postMessage({
+              id,
+              ok: false,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        };
+        bootstrapChannel.port1.start();
+        this.#bootstrapChannel = bootstrapChannel;
+
         // Connect iframe repo directly to host repo via MessageChannel
         const repoChannel = new MessageChannel();
         repo.networkSubsystem.addNetworkAdapter(
@@ -261,77 +345,15 @@ export function registerIsolatedPatchworkViewElement(
         );
         this.#repoChannel = repoChannel;
 
-        // Module RPC channel — iframe requests module source over this port,
-        // host fetches it (using its service worker for Automerge URLs) and
-        // returns the source text.
-        const moduleChannel = new MessageChannel();
-        moduleChannel.port1.onmessage = async (e) => {
-          const { id, type, url } = e.data;
-          try {
-            if (type === "load-module-source") {
-              const source = await fetch(url).then((r) => r.text());
-              moduleChannel.port1.postMessage({ id, ok: true, value: source });
-            } else if (type === "fetch") {
-              const res = await fetch(url);
-              const contentType = res.headers.get("content-type") || "";
-              const isBinary =
-                contentType.includes("wasm") ||
-                contentType.includes("octet-stream");
-              if (isBinary) {
-                const buf = await res.arrayBuffer();
-                moduleChannel.port1.postMessage(
-                  {
-                    id,
-                    ok: true,
-                    value: { contentType, body: buf },
-                  },
-                  [buf]
-                );
-              } else {
-                const body = await res.text();
-                moduleChannel.port1.postMessage({
-                  id,
-                  ok: true,
-                  value: { contentType, body },
-                });
-              }
-            } else {
-              throw new Error(`Unknown module RPC type: ${type}`);
-            }
-          } catch (err) {
-            moduleChannel.port1.postMessage({
-              id,
-              ok: false,
-              error: err instanceof Error ? err.message : String(err),
-            });
-          }
-        };
-        moduleChannel.port1.start();
-        this.#moduleChannel = moduleChannel;
-
-        // Listen for messages from the iframe (event forwarding)
-        this.#messageHandler = (e: MessageEvent) => {
-          if (e.source !== iframe.contentWindow) return;
-          const msg = e.data;
-          if (msg?.type === "patchwork:mounted") {
-            this.dispatchEvent(
-              new MountedEvent({
-                url: msg.url as AutomergeUrl,
-                toolId: msg.toolId,
-              })
-            );
-          } else if (msg?.type === "patchwork:open-document") {
-            this.dispatchEvent(
-              new OpenDocumentEvent({
-                url: msg.url as AutomergeUrl,
-                toolId: msg.toolId,
-                title: msg.title,
-                type: msg.docType,
-              })
-            );
-          }
-        };
-        window.addEventListener("message", this.#messageHandler);
+        // Set up capnweb RPC channel — the HostApi handles module loading,
+        // fetch proxying, and event callbacks from the iframe.
+        const rpcChannel = new MessageChannel();
+        const hostApi = new HostApi(this);
+        this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
+          rpcChannel.port1,
+          hostApi
+        );
+        this.#rpcChannel = rpcChannel;
 
         // Resolve importmap to absolute host-origin URLs
         const importMapEl = document.querySelector('script[type="importmap"]');
@@ -340,7 +362,11 @@ export function registerIsolatedPatchworkViewElement(
           : { imports: {} };
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
-        // Send init message with transferred ports and pre-fetched assets
+        // Send init message with transferred ports and pre-fetched assets.
+        // Three ports are transferred:
+        //   [0] repoPort     — Automerge document sync
+        //   [1] bootstrapPort — one-shot module loading (to load capnweb)
+        //   [2] rpcPort       — capnweb RPC (used after bootstrap)
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -356,7 +382,8 @@ export function registerIsolatedPatchworkViewElement(
           "*",
           [
             repoChannel.port2,
-            moduleChannel.port2,
+            bootstrapChannel.port2,
+            rpcChannel.port2,
             automergeWasm,
             subductionWasm,
           ]
@@ -371,22 +398,25 @@ export function registerIsolatedPatchworkViewElement(
           this.#readyHandler = null;
         }
 
-        if (this.#messageHandler) {
-          window.removeEventListener("message", this.#messageHandler);
-          this.#messageHandler = null;
-        }
-
         if (this.#repoChannel) {
           this.#repoChannel.port1.close();
           this.#repoChannel.port2.close();
           this.#repoChannel = null;
         }
 
-        if (this.#moduleChannel) {
-          this.#moduleChannel.port1.close();
-          this.#moduleChannel.port2.close();
-          this.#moduleChannel = null;
+        if (this.#bootstrapChannel) {
+          this.#bootstrapChannel.port1.close();
+          this.#bootstrapChannel.port2.close();
+          this.#bootstrapChannel = null;
         }
+
+        if (this.#rpcChannel) {
+          this.#rpcChannel.port1.close();
+          this.#rpcChannel.port2.close();
+          this.#rpcChannel = null;
+        }
+
+        this.#iframeStub = null;
 
         if (this.#iframe) {
           this.#iframe.remove();
