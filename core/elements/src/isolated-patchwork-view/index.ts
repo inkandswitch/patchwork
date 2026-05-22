@@ -61,11 +61,8 @@ function resolveImportMap(importMap: any, baseURI: string): any {
 }
 
 /**
- * Resolve a tool's automerge folder URL to rewritten JS source.
- *
- * The host fetches the tool's entry point JS through its service worker,
- * rewrites all relative imports to absolute automerge URLs, and returns
- * the source string. The iframe will create its own blob URL from it.
+ * Resolve a tool's automerge folder URL to an absolute entry point URL.
+ * This runs on the host side where window.location.origin is valid.
  */
 async function resolveToolEntryUrl(
   toolImportUrl: string
@@ -83,26 +80,7 @@ async function resolveToolEntryUrl(
   const entryPoint = resolvePackageExport(pkgJson);
   if (!entryPoint) return undefined;
 
-  const entryUrl = new URL(entryPoint, base).href;
-  const entryBase = entryUrl.substring(0, entryUrl.lastIndexOf("/") + 1);
-
-  // Fetch the entry point source through the host's SW
-  const sourceResponse = await fetch(entryUrl);
-  if (!sourceResponse.ok) return undefined;
-  let source = await sourceResponse.text();
-
-  // Rewrite relative imports to absolute automerge URLs so the sandboxed
-  // iframe's fetch proxy can handle them. Covers:
-  //   import("./path")  import('./path')  from "./path"  from './path'
-  source = source.replace(
-    /(from\s+|import\s*\()(['"])(\.\.?\/[^'"]+)\2/g,
-    (_match, prefix, quote, relativePath) => {
-      const absoluteUrl = new URL(relativePath, entryBase).href;
-      return prefix + quote + absoluteUrl + quote;
-    }
-  );
-
-  return source;
+  return new URL(entryPoint, base).href;
 }
 
 export interface RegisterIsolatedPatchworkViewElementParams {
@@ -239,7 +217,7 @@ export function registerIsolatedPatchworkViewElement(
 
         // Create srcdoc iframe with sandbox for security isolation
         const iframe = document.createElement("iframe");
-        iframe.sandbox.add("allow-scripts");
+        // iframe.sandbox.add("allow-scripts");
         iframe.srcdoc = getSrcdocHtml();
         iframe.style.cssText =
           "position:absolute;inset:0;border:none;width:100%;height:100%;";
@@ -294,14 +272,6 @@ export function registerIsolatedPatchworkViewElement(
         };
         window.addEventListener("message", this.#messageHandler);
 
-        // Pre-fetch WASM binaries to transfer to the iframe
-        const [automergeWasm, subductionWasm] = await Promise.all([
-          fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
-          fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
-        ]);
-
-        if (epoch !== this.#initEpoch) return;
-
         // Resolve importmap to absolute host-origin URLs
         const importMapEl = document.querySelector('script[type="importmap"]');
         const rawImportMap = importMapEl
@@ -309,7 +279,7 @@ export function registerIsolatedPatchworkViewElement(
           : { imports: {} };
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
-        // Send init message with transferred port and WASM binaries
+        // Send init message with transferred port
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -317,11 +287,10 @@ export function registerIsolatedPatchworkViewElement(
             toolId,
             toolEntryUrl,
             importMap,
-            automergeWasm,
-            subductionWasm,
+            hostOrigin: window.location.origin,
           },
           "*",
-          [repoChannel.port2, automergeWasm, subductionWasm]
+          [repoChannel.port2]
         );
       }
 
