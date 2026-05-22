@@ -31,6 +31,18 @@ export class MountedEvent extends CustomEvent<MountedEventDetail> {
   }
 }
 
+export type UnmountedEventDetail = MountedEventDetail;
+
+export class UnmountedEvent extends CustomEvent<UnmountedEventDetail> {
+  constructor(detail: UnmountedEventDetail) {
+    super("patchwork:unmounted", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
+  }
+}
+
 export interface NoToolEventDetail {
   url: AutomergeUrl;
 }
@@ -49,11 +61,13 @@ declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
+    "patchwork:unmounted": UnmountedEvent;
     "patchwork:no-tool": NoToolEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
+    "patchwork:unmounted": UnmountedEvent;
     "patchwork:no-tool": NoToolEvent;
   }
 }

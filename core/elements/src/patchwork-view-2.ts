@@ -5,7 +5,7 @@ import {
   type LoadedPlugin,
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
-import { MountedEvent } from "./events.js";
+import { MountedEvent, UnmountedEvent } from "./events.js";
 
 export type ComponentRender = (element: HTMLElement) => () => void;
 
@@ -65,6 +65,8 @@ export function registerPatchworkView2Element(
       #state: State = State.none;
       #initEpoch = 0;
       #teardowns = new Set<() => unknown | Promise<void>>();
+      #mounted: { componentId: string } | null = null;
+      #capturedParent: Element | null = null;
 
       get componentId() {
         return this.#componentId;
@@ -87,6 +89,7 @@ export function registerPatchworkView2Element(
       }
 
       connectedCallback() {
+        this.#capturedParent = this.parentElement;
         // Default to a layout-invisible box so the wrapper can sit around
         // existing JSX without disturbing the surrounding layout. Visual
         // components can override `this.style.display` if they need a box.
@@ -101,9 +104,9 @@ export function registerPatchworkView2Element(
         this.#teardown();
       }
 
-      // When defined, this is called instead of connectedCallback() and disconnectedCallback()
-      // each time the element is moved to a different place in the DOM via Element.moveBefore()
-      connectedMoveCallback() {}
+      connectedMoveCallback() {
+        this.#capturedParent = this.parentElement;
+      }
 
       attributeChangedCallback(
         name: string,
@@ -180,6 +183,23 @@ export function registerPatchworkView2Element(
         this.#teardowns.clear();
         this.#component = null;
         this.#state = State.none;
+
+        const mounted = this.#mounted;
+        if (mounted) {
+          this.#mounted = null;
+          this.#dispatchUnmount(new UnmountedEvent(mounted));
+        }
+      }
+
+      // See `patchwork-view.ts` `#dispatchUnmount`.
+      #dispatchUnmount(event: UnmountedEvent) {
+        if (this.isConnected) {
+          this.dispatchEvent(event);
+          return;
+        }
+        let node: Element | null = this.#capturedParent;
+        while (node && !node.isConnected) node = node.parentElement;
+        if (node) node.dispatchEvent(event);
       }
 
       #queueRender() {
@@ -230,6 +250,7 @@ export function registerPatchworkView2Element(
             console.warn(`return a cleanup function from ${componentId}`);
           }
           this.#state = "rendered";
+          this.#mounted = { componentId };
           this.dispatchEvent(new MountedEvent({ componentId }));
         } catch (error) {
           console.error(

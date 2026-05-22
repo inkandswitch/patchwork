@@ -15,7 +15,7 @@ import {
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
 import debug from "debug";
-import { MountedEvent, NoToolEvent } from "./events.js";
+import { MountedEvent, NoToolEvent, UnmountedEvent } from "./events.js";
 
 const log = debug("patchwork:elements:view");
 
@@ -80,6 +80,8 @@ export function registerPatchworkViewElement(
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
       #initEpoch = 0;
+      #mounted: { url: AutomergeUrl; toolId: string } | null = null;
+      #capturedParent: Element | null = null;
 
       get docUrl() {
         return this.#docUrl;
@@ -118,6 +120,7 @@ export function registerPatchworkViewElement(
       }
 
       connectedCallback() {
+        this.#capturedParent = this.parentElement;
         this.docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
         this.toolId = this.getAttribute(attrs.toolId);
         this.#init();
@@ -127,9 +130,9 @@ export function registerPatchworkViewElement(
         this.#teardown();
       }
 
-      // When defined, this is called instead of connectedCallback() and disconnectedCallback()
-      // each time the element is moved to a different place in the DOM via Element.moveBefore()
-      connectedMoveCallback() {}
+      connectedMoveCallback() {
+        this.#capturedParent = this.parentElement;
+      }
 
       attributeChangedCallback(
         name: string,
@@ -261,6 +264,24 @@ export function registerPatchworkViewElement(
         this.#requestedToolImports.clear();
         this.textContent = "";
         this.#state = State.none;
+
+        const mounted = this.#mounted;
+        if (mounted) {
+          this.#mounted = null;
+          this.#dispatchUnmount(new UnmountedEvent(mounted));
+        }
+      }
+
+      // Detached elements have no parent path, so `bubbles: true` is a
+      // no-op; fall back to the closest still-connected ancestor.
+      #dispatchUnmount(event: UnmountedEvent) {
+        if (this.isConnected) {
+          this.dispatchEvent(event);
+          return;
+        }
+        let node: Element | null = this.#capturedParent;
+        while (node && !node.isConnected) node = node.parentElement;
+        if (node) node.dispatchEvent(event);
       }
 
       #queueRender() {
@@ -347,6 +368,7 @@ export function registerPatchworkViewElement(
             console.warn(`return a cleanup function from ${toolId}`);
           }
           this.#state = fallingBack ? "fallback" : "rendered";
+          this.#mounted = { url: this.docUrl, toolId };
           this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
           this.append(
