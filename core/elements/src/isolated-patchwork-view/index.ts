@@ -314,14 +314,45 @@ export function registerIsolatedPatchworkViewElement(
 
         if (epoch !== this.#initEpoch) return;
 
+        // Resolve importmap to absolute host-origin URLs (needed before
+        // bootstrap channel setup to restrict which URLs it can serve).
+        const importMapEl = document.querySelector('script[type="importmap"]');
+        const rawImportMap = importMapEl
+          ? JSON.parse(importMapEl.textContent || "{}")
+          : { imports: {} };
+        const importMap = resolveImportMap(rawImportMap, document.baseURI);
+
+        // Collect the set of URLs the bootstrap channel is allowed to serve.
+        // Only importmap entry values are permitted — this ensures the
+        // bootstrap channel can load capnweb (and its importmap peers) but
+        // nothing else.
+        const allowedBootstrapUrls = new Set<string>();
+        if (importMap.imports) {
+          for (const url of Object.values(importMap.imports)) {
+            allowedBootstrapUrls.add(url as string);
+          }
+        }
+
         // Bootstrap channel — handles the iframe's requests to load module
         // source during the bootstrap phase (before capnweb RPC is ready).
         // Once the iframe has loaded capnweb via this channel and established
         // its RPC session, all further communication goes over capnweb RPC.
+        // Only importmap URLs are allowed.
         const bootstrapChannel = new MessageChannel();
         bootstrapChannel.port1.onmessage = async (e) => {
           const { id, type, url } = e.data;
           if (type !== "load-module-source") return;
+          if (!allowedBootstrapUrls.has(url)) {
+            console.warn(
+              `[isolated-patchwork-view] bootstrap denied: ${url}`
+            );
+            bootstrapChannel.port1.postMessage({
+              id,
+              ok: false,
+              error: `Bootstrap: URL not in importmap: ${url}`,
+            });
+            return;
+          }
           try {
             const source = await fetch(url).then((r) => r.text());
             bootstrapChannel.port1.postMessage({ id, ok: true, value: source });
@@ -354,13 +385,6 @@ export function registerIsolatedPatchworkViewElement(
           hostApi
         );
         this.#rpcChannel = rpcChannel;
-
-        // Resolve importmap to absolute host-origin URLs
-        const importMapEl = document.querySelector('script[type="importmap"]');
-        const rawImportMap = importMapEl
-          ? JSON.parse(importMapEl.textContent || "{}")
-          : { imports: {} };
-        const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
         // Send init message with transferred ports and pre-fetched assets.
         // Three ports are transferred:
