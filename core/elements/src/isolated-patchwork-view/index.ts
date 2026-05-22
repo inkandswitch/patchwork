@@ -117,6 +117,7 @@ export function registerIsolatedPatchworkViewElement(
       #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #repoChannel: MessageChannel | null = null;
+      #moduleChannel: MessageChannel | null = null;
       #initEpoch = 0;
       #readyHandler: ((e: MessageEvent) => void) | null = null;
       #messageHandler: ((e: MessageEvent) => void) | null = null;
@@ -208,16 +209,28 @@ export function registerIsolatedPatchworkViewElement(
 
         if (!toolId) return;
 
-        // Resolve tool entry point URL on the host side
+        // Resolve tool entry point URL on the host side, and pre-fetch
+        // es-module-shims source + WASM buffers in parallel (the sandboxed
+        // iframe cannot fetch anything itself).
         let toolEntryUrl: string | undefined;
-        if (toolImportUrl) {
-          toolEntryUrl = await resolveToolEntryUrl(toolImportUrl);
-          if (epoch !== this.#initEpoch) return;
-        }
+        const esmsUrl =
+          "https://ga.jspm.io/npm:es-module-shims@2.8.1/dist/es-module-shims.wasm.js";
+
+        const [resolvedToolEntry, esmsSource, automergeWasm, subductionWasm] =
+          await Promise.all([
+            toolImportUrl
+              ? resolveToolEntryUrl(toolImportUrl)
+              : Promise.resolve(undefined),
+            fetch(esmsUrl).then((r) => r.text()),
+            fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
+            fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
+          ]);
+        if (epoch !== this.#initEpoch) return;
+        toolEntryUrl = resolvedToolEntry;
 
         // Create srcdoc iframe with sandbox for security isolation
         const iframe = document.createElement("iframe");
-        // iframe.sandbox.add("allow-scripts");
+        iframe.sandbox.add("allow-scripts");
         iframe.srcdoc = getSrcdocHtml();
         iframe.style.cssText =
           "position:absolute;inset:0;border:none;width:100%;height:100%;";
@@ -247,6 +260,54 @@ export function registerIsolatedPatchworkViewElement(
           })
         );
         this.#repoChannel = repoChannel;
+
+        // Module RPC channel — iframe requests module source over this port,
+        // host fetches it (using its service worker for Automerge URLs) and
+        // returns the source text.
+        const moduleChannel = new MessageChannel();
+        moduleChannel.port1.onmessage = async (e) => {
+          const { id, type, url } = e.data;
+          try {
+            if (type === "load-module-source") {
+              const source = await fetch(url).then((r) => r.text());
+              moduleChannel.port1.postMessage({ id, ok: true, value: source });
+            } else if (type === "fetch") {
+              const res = await fetch(url);
+              const contentType = res.headers.get("content-type") || "";
+              const isBinary =
+                contentType.includes("wasm") ||
+                contentType.includes("octet-stream");
+              if (isBinary) {
+                const buf = await res.arrayBuffer();
+                moduleChannel.port1.postMessage(
+                  {
+                    id,
+                    ok: true,
+                    value: { contentType, body: buf },
+                  },
+                  [buf]
+                );
+              } else {
+                const body = await res.text();
+                moduleChannel.port1.postMessage({
+                  id,
+                  ok: true,
+                  value: { contentType, body },
+                });
+              }
+            } else {
+              throw new Error(`Unknown module RPC type: ${type}`);
+            }
+          } catch (err) {
+            moduleChannel.port1.postMessage({
+              id,
+              ok: false,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        };
+        moduleChannel.port1.start();
+        this.#moduleChannel = moduleChannel;
 
         // Listen for messages from the iframe (event forwarding)
         this.#messageHandler = (e: MessageEvent) => {
@@ -279,7 +340,7 @@ export function registerIsolatedPatchworkViewElement(
           : { imports: {} };
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
-        // Send init message with transferred port
+        // Send init message with transferred ports and pre-fetched assets
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -288,9 +349,17 @@ export function registerIsolatedPatchworkViewElement(
             toolEntryUrl,
             importMap,
             hostOrigin: window.location.origin,
+            esmsSource,
+            automergeWasm,
+            subductionWasm,
           },
           "*",
-          [repoChannel.port2]
+          [
+            repoChannel.port2,
+            moduleChannel.port2,
+            automergeWasm,
+            subductionWasm,
+          ]
         );
       }
 
@@ -311,6 +380,12 @@ export function registerIsolatedPatchworkViewElement(
           this.#repoChannel.port1.close();
           this.#repoChannel.port2.close();
           this.#repoChannel = null;
+        }
+
+        if (this.#moduleChannel) {
+          this.#moduleChannel.port1.close();
+          this.#moduleChannel.port2.close();
+          this.#moduleChannel = null;
         }
 
         if (this.#iframe) {

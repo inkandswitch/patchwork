@@ -20,12 +20,16 @@ interface ImportShim {
 /** Init message sent from the host to the iframe. */
 interface InitMessage {
   repoPort: MessagePort;
+  modulePort: MessagePort;
   data: {
     docUrl: string;
     toolId: string;
     toolEntryUrl?: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
     hostOrigin: string;
+    esmsSource: string;
+    automergeWasm: ArrayBuffer;
+    subductionWasm: ArrayBuffer;
   };
 }
 
@@ -45,13 +49,14 @@ async function boot() {
   }
   log("ready, waiting for init...");
 
-  // 2. Wait for init message (receives 1 port: repo)
+  // 2. Wait for init message (receives 2 ports: repo, module RPC)
   const init: InitMessage = await new Promise((resolve) => {
     window.addEventListener("message", function handler(event: MessageEvent) {
       if (!event.data || event.data.type !== "isolated-patchwork-init") return;
       window.removeEventListener("message", handler);
       resolve({
         repoPort: event.ports[0],
+        modulePort: event.ports[1],
         data: event.data,
       });
     });
@@ -72,16 +77,100 @@ async function boot() {
     });
   }
 
-  // 4. Load es-module-shims in shim mode.
-  (self as any).esmsInitOptions = { shimMode: true };
-  const esmsUrl =
-    "https://ga.jspm.io/npm:es-module-shims@1.6.2/dist/es-module-shims.wasm.js";
-  await import(/* @vite-ignore */ esmsUrl);
+  // 4. Set up module RPC over the dedicated MessagePort.
+  //    The source hook will use this to request module source from the host.
+  let rpcId = 0;
+  const pending = new Map<
+    number,
+    { resolve: (v: any) => void; reject: (e: Error) => void }
+  >();
+
+  init.modulePort.onmessage = (event: MessageEvent) => {
+    const { id, ok, value, error } = event.data;
+    const p = pending.get(id);
+    if (!p) return;
+    pending.delete(id);
+    if (ok) {
+      p.resolve(value);
+    } else {
+      p.reject(new Error(error));
+    }
+  };
+  init.modulePort.start();
+
+  function moduleRpc(msg: Record<string, unknown>): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const id = ++rpcId;
+      pending.set(id, { resolve, reject });
+      init.modulePort.postMessage({ id, ...msg });
+    });
+  }
+  log("module RPC ready");
+
+  // 5. Override fetch — the sandboxed iframe cannot make network requests,
+  //    so we proxy all fetch calls through the host via RPC. This is needed
+  //    because some modules (e.g., non-slim @automerge/automerge via
+  //    vite-plugin-wasm) call fetch() at evaluation time to load WASM binaries.
+  //    The host does the real fetch and returns both the content-type and body.
+  (self as any).fetch = async (
+    input: RequestInfo | URL,
+    _init?: RequestInit
+  ): Promise<Response> => {
+    const url = typeof input === "string" ? input : input.toString();
+    log("fetch proxy:", url);
+    const { contentType, body } = await moduleRpc({ type: "fetch", url });
+    return new Response(body, {
+      status: 200,
+      headers: { "Content-Type": contentType },
+    });
+  };
+
+  // 6. Load es-module-shims in shim mode with custom source hook.
+  //    The source hook intercepts all module fetches and routes them through
+  //    the MessagePort RPC to the host, which can fetch using its service
+  //    worker (for Automerge URLs) or normal fetch (for host-origin URLs).
+  (self as any).esmsInitOptions = {
+    shimMode: true,
+    async source(
+      url: string,
+      _fetchOpts: any,
+      _parent: string,
+      _defaultSource: Function
+    ) {
+      log("source hook:", url);
+      let source = await moduleRpc({ type: "load-module-source", url });
+      // Workaround: es-module-shims' lexer misidentifies class methods named
+      // `import` as dynamic import() expressions, causing parse errors.
+      // A method definition is always preceded by newline + whitespace
+      // (e.g., `  import(binary, args) {`), while a real dynamic import is
+      // preceded by operators/delimiters (e.g., `= import(`, `(import(`).
+      // Rewriting `import(` → `["import"](` in method-definition position
+      // is semantically identical JS but avoids the lexer false-positive.
+      source = source.replace(
+        /^(\s+)import\s*\(/gm,
+        '$1["import"]('
+      );
+      return { source, type: "js" };
+    },
+  };
+
+  // Inject es-module-shims from the source text transferred by the host
+  // (the sandboxed iframe cannot fetch it from a CDN).
+  const esmsScript = document.createElement("script");
+  esmsScript.textContent = d.esmsSource;
+  document.head.appendChild(esmsScript);
+
+  // es-module-shims may need a microtask to finish initialization
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
   const importShim: ImportShim = (self as any).importShim;
+  if (!importShim) {
+    throw new Error("es-module-shims failed to initialize");
+  }
   importShim.addImportMap(d.importMap);
   log("importmap configured");
 
-  // 5. Import core modules
+  // 7. Import core modules via RPC-backed source hook
   const [automerge, amRepo, network, subduction, elements, plugins] =
     await Promise.all([
       importShim("@automerge/automerge/slim"),
@@ -93,20 +182,12 @@ async function boot() {
     ]);
   log("modules loaded");
 
-  // 6. Initialize WASM (subduction first)
-  const [automergeWasm, subductionWasm] = await Promise.all([
-    fetch(d.hostOrigin + "/automerge.wasm").then((r: Response) =>
-      r.arrayBuffer()
-    ),
-    fetch(d.hostOrigin + "/subduction.wasm").then((r: Response) =>
-      r.arrayBuffer()
-    ),
-  ]);
-  subduction.initSync(new Uint8Array(subductionWasm));
-  await automerge.initializeWasm(new Uint8Array(automergeWasm));
+  // 8. Initialize WASM from transferred ArrayBuffers (subduction first)
+  subduction.initSync(new Uint8Array(d.subductionWasm));
+  await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
   log("wasm initialized");
 
-  // 7. Create ephemeral Repo (no storage — srcdoc has no IndexedDB)
+  // 9. Create ephemeral Repo (no storage — srcdoc has no IndexedDB)
   const repo = new amRepo.Repo({
     peerId: "isolated-" + d.toolId + "-" + crypto.randomUUID().slice(0, 8),
     async sharePolicy() {
@@ -118,10 +199,10 @@ async function boot() {
   );
   log("repo connected");
 
-  // 8. Register patchwork-view element
+  // 10. Register patchwork-view element
   elements.registerPatchworkViewElement({ repo });
 
-  // 9. Import and register the tool module.
+  // 11. Import and register the tool module.
   if (d.toolEntryUrl) {
     const mod = await importShim(d.toolEntryUrl);
     if (Array.isArray(mod.plugins)) {
@@ -131,12 +212,12 @@ async function boot() {
   }
   log("tool loaded");
 
-  // 10. Render
+  // 12. Render
   const rootElement = document.getElementById("root")!;
   rootElement.setAttribute("doc-url", d.docUrl);
   rootElement.setAttribute("tool-id", d.toolId);
 
-  // 11. Forward events to host via postMessage
+  // 13. Forward events to host via postMessage
   rootElement.addEventListener("patchwork:open-document", ((
     event: CustomEvent
   ) => {
@@ -188,10 +269,34 @@ export default function getSrcdocHtml(): string {
     .toString()
     .replace(/<\/script>/g, "<\\/script>");
 
+  // CSP for the sandboxed iframe: allow inline scripts (boot code + es-module-shims),
+  // blob: URLs (es-module-shims may create them), and wasm-unsafe-eval for WASM.
+  // unsafe-eval may be needed by es-module-shims for module evaluation.
+  // CSP notes:
+  //   - connect-src blob: — es-module-shims uses blob: URLs internally for
+  //     module evaluation via dynamic import(). Without this, blob:null/...
+  //     connections are blocked.
+  //   - script-src blob: — same reason, es-module-shims creates blob script URLs.
+  //   - unsafe-eval — es-module-shims may need eval for module graph execution.
+  //   - wasm-unsafe-eval — required for WebAssembly.instantiate/compile.
+  const csp = [
+    "default-src 'none'",
+    "script-src 'unsafe-inline' 'unsafe-eval' blob: 'wasm-unsafe-eval'",
+    "style-src 'unsafe-inline' blob:",
+    "img-src blob: data:",
+    "font-src blob: data:",
+    "connect-src blob:",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-src 'none'",
+  ].join("; ");
+
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="${csp}">
 <style>${SRCDOC_CSS}</style>
 </head>
 <body>

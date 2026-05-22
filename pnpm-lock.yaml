@@ -145,9 +145,6 @@ importers:
       '@automerge/automerge-repo-network-messagechannel':
         specifier: 2.6.0-subduction.20
         version: 2.6.0-subduction.20
-      capnweb:
-        specifier: ^0.8.0
-        version: 0.8.0
       debug:
         specifier: ^4.4.3
         version: 4.4.3
