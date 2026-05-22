@@ -262,7 +262,7 @@ const SRCDOC_CSS = `
 `;
 
 /** Generate the srcdoc HTML for the isolated iframe. */
-export default function getSrcdocHtml(): string {
+export default function getSrcdocHtml(hostOrigin: string): string {
   // Embed boot() as a self-invoking async function in a module script.
   // boot.toString() includes the function signature, so we wrap it as an IIFE.
   const bootSource = boot
@@ -279,13 +279,21 @@ export default function getSrcdocHtml(): string {
   //   - script-src blob: — same reason, es-module-shims creates blob script URLs.
   //   - unsafe-eval — es-module-shims may need eval for module graph execution.
   //   - wasm-unsafe-eval — required for WebAssembly.instantiate/compile.
+  // The host origin is allowed in style-src, img-src, font-src, and
+  // connect-src so the browser can load stylesheets, images, fonts, and
+  // source maps from the host. This is safe because the iframe can only
+  // reach the host (CSP blocks all other origins), and the host is the
+  // trust boundary that enforces resource policy.
+  //
+  // script-src intentionally does NOT include the host origin — module
+  // loading is controlled through the es-module-shims source hook.
   const csp = [
     "default-src 'none'",
     "script-src 'unsafe-inline' 'unsafe-eval' blob: 'wasm-unsafe-eval'",
-    "style-src 'unsafe-inline' blob:",
-    "img-src blob: data:",
-    "font-src blob: data:",
-    "connect-src blob:",
+    `style-src 'unsafe-inline' blob: ${hostOrigin}`,
+    `img-src blob: data: ${hostOrigin}`,
+    `font-src blob: data: ${hostOrigin}`,
+    `connect-src blob: ${hostOrigin}`,
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'none'",
