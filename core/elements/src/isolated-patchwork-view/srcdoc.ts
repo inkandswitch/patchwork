@@ -269,35 +269,22 @@ export default function getSrcdocHtml(hostOrigin: string): string {
     .toString()
     .replace(/<\/script>/g, "<\\/script>");
 
-  // CSP for the sandboxed iframe: allow inline scripts (boot code + es-module-shims),
-  // blob: URLs (es-module-shims may create them), and wasm-unsafe-eval for WASM.
-  // unsafe-eval may be needed by es-module-shims for module evaluation.
-  // CSP notes:
-  //   - connect-src blob: — es-module-shims uses blob: URLs internally for
-  //     module evaluation via dynamic import(). Without this, blob:null/...
-  //     connections are blocked.
-  //   - script-src blob: — same reason, es-module-shims creates blob script URLs.
-  //   - unsafe-eval — es-module-shims may need eval for module graph execution.
-  //   - wasm-unsafe-eval — required for WebAssembly.instantiate/compile.
-  // The host origin is allowed in style-src, img-src, font-src, and
-  // connect-src so the browser can load stylesheets, images, fonts, and
-  // source maps from the host. This is safe because the iframe can only
-  // reach the host (CSP blocks all other origins), and the host is the
-  // trust boundary that enforces resource policy.
+  // CSP security model: the iframe can load resources from the host origin,
+  // blob: URIs, data: URIs, and inline sources — but nothing else. This
+  // prevents exfiltration to external servers. The host is the trust
+  // boundary and can enforce per-tool capability policies at the server
+  // level (deciding which resources to serve for each tool).
   //
-  // script-src intentionally does NOT include the host origin — module
-  // loading is controlled through the es-module-shims source hook.
+  // Key directives:
+  //   - default-src allows the host origin, blob:, data:, and inline/eval
+  //     (needed by es-module-shims for module graph execution and WASM).
+  //   - form-action 'none' — prevent form submissions (not covered by
+  //     default-src).
+  //   - frame-src falls back to default-src, so nested iframes can only
+  //     load from the host origin (same restriction as everything else).
   const csp = [
-    "default-src 'none'",
-    "script-src 'unsafe-inline' 'unsafe-eval' blob: 'wasm-unsafe-eval'",
-    `style-src 'unsafe-inline' blob: ${hostOrigin}`,
-    `img-src blob: data: ${hostOrigin}`,
-    `font-src blob: data: ${hostOrigin}`,
-    `connect-src blob: ${hostOrigin}`,
-    "object-src 'none'",
-    "base-uri 'none'",
+    `default-src ${hostOrigin} blob: data: 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'`,
     "form-action 'none'",
-    "frame-src 'none'",
   ].join("; ");
 
   return `<!DOCTYPE html>
