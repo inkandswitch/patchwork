@@ -170,14 +170,26 @@ async function boot() {
   log("capnweb RPC ready, bootstrap channel closed");
 
   // 8. Override fetch via capnweb RPC.
+  //    Only GET and HEAD are allowed. Request bodies are rejected to prevent
+  //    tool code from using fetchResource as a general-purpose host-side
+  //    request primitive.
   (self as any).fetch = async (
     input: RequestInfo | URL,
-    _init?: RequestInit
+    init?: RequestInit
   ): Promise<Response> => {
+    const method = (init?.method || "GET").toUpperCase();
+    if (method !== "GET" && method !== "HEAD") {
+      throw new TypeError(
+        `fetch proxy: only GET and HEAD are allowed, got ${method}`
+      );
+    }
+    if (init?.body != null) {
+      throw new TypeError("fetch proxy: request bodies are not allowed");
+    }
     const url = typeof input === "string" ? input : input.toString();
     log("fetch proxy:", url);
     const result = await hostStub.fetchResource(url);
-    return new Response(result.body, {
+    return new Response(method === "HEAD" ? null : result.body, {
       status: 200,
       headers: { "Content-Type": result.contentType },
     });
@@ -269,8 +281,23 @@ export default function getSrcdocHtml(hostOrigin: string): string {
     .toString()
     .replace(/<\/script>/g, "<\\/script>");
 
+  // CSP: start from default-src 'none' and explicitly allow only what is
+  // needed. This prevents script-initiated network access (connect-src,
+  // worker-src) and blocks nested iframes (frame-src) and plugins (object-src).
+  // The actual network boundary is: sandbox + CSP + ResourcePolicy on host
+  // RPC methods. CSP alone does not cover RPC-proxied fetches.
   const csp = [
-    `default-src ${hostOrigin} blob: data: 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'`,
+    "default-src 'none'",
+    "script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:",
+    "connect-src blob:",
+    `img-src ${hostOrigin} blob: data:`,
+    `style-src ${hostOrigin} blob: 'unsafe-inline'`,
+    `font-src ${hostOrigin} blob: data:`,
+    `media-src ${hostOrigin} blob: data:`,
+    "worker-src 'none'",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'none'",
     "form-action 'none'",
   ].join("; ");
 
