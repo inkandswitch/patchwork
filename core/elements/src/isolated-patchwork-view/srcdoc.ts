@@ -25,8 +25,7 @@ interface InitMessage {
     toolId: string;
     toolEntryUrl?: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
-    automergeWasm: ArrayBuffer;
-    subductionWasm: ArrayBuffer;
+    hostOrigin: string;
   };
 }
 
@@ -94,9 +93,17 @@ async function boot() {
     ]);
   log("modules loaded");
 
-  // 6. Initialize WASM from transferred ArrayBuffers (subduction first)
-  subduction.initSync(new Uint8Array(d.subductionWasm));
-  await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
+  // 6. Initialize WASM (subduction first)
+  const [automergeWasm, subductionWasm] = await Promise.all([
+    fetch(d.hostOrigin + "/automerge.wasm").then((r: Response) =>
+      r.arrayBuffer()
+    ),
+    fetch(d.hostOrigin + "/subduction.wasm").then((r: Response) =>
+      r.arrayBuffer()
+    ),
+  ]);
+  subduction.initSync(new Uint8Array(subductionWasm));
+  await automerge.initializeWasm(new Uint8Array(automergeWasm));
   log("wasm initialized");
 
   // 7. Create ephemeral Repo (no storage — srcdoc has no IndexedDB)
@@ -115,16 +122,11 @@ async function boot() {
   elements.registerPatchworkViewElement({ repo });
 
   // 9. Import and register the tool module.
-  // toolEntryUrl is the rewritten JS source (not a URL) — create a blob URL
-  // in this origin so it's accessible from the sandbox.
   if (d.toolEntryUrl) {
-    const toolBlobUrl = URL.createObjectURL(
-      new Blob([d.toolEntryUrl], { type: "application/javascript" })
-    );
-    const mod = await importShim(toolBlobUrl);
+    const mod = await importShim(d.toolEntryUrl);
     if (Array.isArray(mod.plugins)) {
       log("registering " + mod.plugins.length + " plugin(s)");
-      plugins.registerPlugins(mod.plugins, toolBlobUrl);
+      plugins.registerPlugins(mod.plugins, d.toolEntryUrl);
     }
   }
   log("tool loaded");
