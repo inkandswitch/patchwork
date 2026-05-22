@@ -11,7 +11,8 @@
     "@automerge/automerge-repo": "*",
     "@automerge/automerge-repo-network-messagechannel": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^"
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "capnweb": "^0.8.0"
   },
   "dependencies": {
     "debug": "^4.4.3"
@@ -27,6 +28,7 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@types/debug": "^4.1.12",
-    "@types/node": "^20.19.9"
+    "@types/node": "^20.19.9",
+    "capnweb": "^0.8.0"
   }
 }

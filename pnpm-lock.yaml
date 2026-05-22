@@ -167,6 +167,9 @@ importers:
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.22
+      capnweb:
+        specifier: ^0.8.0
+        version: 0.8.0
 
   core/filesystem:
     dependencies:
