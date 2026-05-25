@@ -1,21 +1,9 @@
 import { createEffect, createSignal, onCleanup } from "solid-js";
 import { findRef, type Ref, type RefUrl, type Repo } from "@automerge/automerge-repo";
 
-// NOTE: these helpers are a temporary shim. Once subdoc handles land,
-// `RefUrl`s will resolve to `Ref`s synchronously from a parent handle, the
-// async `findRef` dance below becomes a single property access, and there
-// is no reason for either of these hooks to exist. Delete this file then.
+// TODO: delete both hooks once subdoc handles land — `RefUrl`s will then
+// resolve to `Ref`s synchronously from the parent handle.
 
-/**
- * Resolve a reactive list of `RefUrl`s into `Ref`s asynchronously, with a
- * shared in-memory cache so the same URL is never `findRef`'d twice for the
- * lifetime of the hook. Failed resolutions are logged and silently dropped
- * from the result.
- *
- * Returns an accessor that initially reads `[]` and updates each time a
- * `findRef` resolves. Caller-supplied `urls` is read inside a reactive
- * scope, so changes to the URL list automatically trigger a refresh.
- */
 export function useResolvedRefs(
   urls: () => RefUrl[],
   repo: Repo
@@ -52,11 +40,7 @@ export function useResolvedRefs(
   return refs;
 }
 
-/**
- * Same as {@link useResolvedRefs} but preserves grouping: input is a map
- * from arbitrary keys (e.g. parent URLs) to lists of `RefUrl`s, output is
- * a map from those same keys to the resolved `Ref` arrays.
- */
+// Same as useResolvedRefs but grouped by key.
 export function useResolvedRefMap<K>(
   urlMap: () => Map<K, RefUrl[]>,
   repo: Repo
