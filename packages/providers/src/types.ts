@@ -2,6 +2,7 @@ import type {
   AnyDocumentId,
   DocHandle,
   DocumentId,
+  DocumentProgress,
 } from "@automerge/automerge-repo";
 
 /**
@@ -10,12 +11,16 @@ import type {
  * should type the result as `RepoLike` rather than `Repo` so the overlay
  * path stays honest.
  *
- * Tracks just the methods that `automerge-repo-solid-primitives`
- * (`useDocHandle`, `useDocument`, etc.) reaches for: `find`, `create`,
- * and the synchronous `handles` index.
+ * Tracks the methods that hook libraries reach for:
+ * - `find` (used by `automerge-repo-solid-primitives`)
+ * - `findWithProgress` (used by `automerge-repo-react-hooks`'
+ *   `useDocHandle` for the synchronous fast-path peek)
+ * - `create`
+ * - `handles` (synchronous documentId → handle index)
  */
 export type RepoLike = {
   find<T>(id: AnyDocumentId): Promise<DocHandle<T>>;
+  findWithProgress<T>(id: AnyDocumentId): DocumentProgress<T>;
   create<T>(initialValue?: T): DocHandle<T>;
   readonly handles: Record<DocumentId, DocHandle<unknown>>;
 };
