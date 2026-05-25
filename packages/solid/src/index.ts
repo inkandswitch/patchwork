@@ -12,6 +12,8 @@ import {
 import { createEffect, createRoot, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
+export { useResolvedRefs, useResolvedRefMap } from "./useResolvedRefs";
+
 export type MaybeAccessor<T> = T | (() => T);
 
 /**
