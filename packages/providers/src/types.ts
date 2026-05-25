@@ -15,12 +15,14 @@ import type {
  * - `find` (used by `automerge-repo-solid-primitives`)
  * - `findWithProgress` (used by `automerge-repo-react-hooks`'
  *   `useDocHandle` for the synchronous fast-path peek)
- * - `create`
+ * - `create` / `create2` (the latter awaits the deterministic id factory,
+ *   used by `createDocOfDatatype2`)
  * - `handles` (synchronous documentId → handle index)
  */
 export type RepoLike = {
   find<T>(id: AnyDocumentId): Promise<DocHandle<T>>;
   findWithProgress<T>(id: AnyDocumentId): DocumentProgress<T>;
   create<T>(initialValue?: T): DocHandle<T>;
+  create2<T>(initialValue?: T): Promise<DocHandle<T>>;
   readonly handles: Record<DocumentId, DocHandle<unknown>>;
 };
