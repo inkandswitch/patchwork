@@ -1,7 +1,7 @@
 import { createSignal, onMount, type Accessor } from "solid-js";
 import { createDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import type { Doc, DocHandle } from "@automerge/automerge-repo";
-import { request as requestHandle } from "@inkandswitch/patchwork-providers";
+import * as Providers from "@inkandswitch/patchwork-providers";
 
 /**
  * Request a handle from a provider once on mount and project it into a
@@ -16,7 +16,7 @@ export function request<T extends object>(
 ): [Accessor<Doc<T> | undefined>, Accessor<DocHandle<T> | undefined>] {
   const [handle, setHandle] = createSignal<DocHandle<T> | undefined>(undefined);
   onMount(() => {
-    requestHandle<T>(element, type, args).then((h) => {
+    Providers.request<DocHandle<T>>(element, type, args).then((h) => {
       if (!h) return;
       // Wrap in a thunk so Solid does not treat the DocHandle (which has
       // call-like methods) as a setter function.

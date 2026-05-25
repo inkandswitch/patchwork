@@ -39,6 +39,10 @@ import {
   registerPatchworkView2Element,
 } from "@inkandswitch/patchwork-elements";
 import {
+  registerFallbackProviderElement,
+  registerRepoProviderElement,
+} from "@inkandswitch/patchwork-providers";
+import {
   type AccountDoc,
   type DatatypeDescription,
   type DatatypeImplementation,
@@ -183,7 +187,23 @@ export async function bootPatchworkSite(
   await sw.subscribeToRepoChannel(connectServiceWorkerPort);
 
   installDevConsoleGlobals(repo);
-  registerPatchworkViewElement({ repo });
+
+  registerRepoProviderElement(repo);
+  registerFallbackProviderElement();
+
+  const rootElement = document.getElementById(config.rootElementId ?? "root");
+  if (!rootElement) {
+    throw new Error(
+      `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
+    );
+  }
+  const repoProvider = document.createElement("repo-provider");
+  const fallbackProvider = document.createElement("fallback-provider");
+  rootElement.parentElement!.insertBefore(fallbackProvider, rootElement);
+  fallbackProvider.appendChild(repoProvider);
+  repoProvider.appendChild(rootElement);
+
+  registerPatchworkViewElement();
   registerPatchworkView2Element();
 
   // The watcher is started with the site's default-tools bundle alone so that
@@ -204,13 +224,6 @@ export async function bootPatchworkSite(
   window.accountDocHandle = accountDocHandle;
 
   wireModuleSettingsWhenReady(accountDocHandle, moduleWatcher);
-
-  const rootElement = document.getElementById(config.rootElementId ?? "root");
-  if (!rootElement) {
-    throw new Error(
-      `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
-    );
-  }
 
   primeRootElement(rootElement, accountDocHandle);
   logToolRegistryWhenLoaded(moduleWatcher);

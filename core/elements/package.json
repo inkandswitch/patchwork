@@ -10,7 +10,8 @@
   "peerDependencies": {
     "@automerge/automerge-repo": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^"
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^"
   },
   "dependencies": {
     "debug": "^4.4.3"
@@ -25,6 +26,7 @@
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^",
     "@types/debug": "^4.1.12",
     "@types/node": "^20.19.9"
   }

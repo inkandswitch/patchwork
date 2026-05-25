@@ -114,6 +114,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../plugins
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../packages/providers
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -158,6 +161,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../plugins
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../packages/providers
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12

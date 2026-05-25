@@ -14,6 +14,7 @@ import {
   isLoadablePlugin,
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
+import { request } from "@inkandswitch/patchwork-providers";
 import debug from "debug";
 import { MountedEvent, NoToolEvent, UnmountedEvent } from "./events.js";
 
@@ -39,7 +40,6 @@ type State = (typeof State)[keyof typeof State];
 
 export interface RegisterPatchworkViewElementParams {
   name?: string;
-  repo: Repo;
   hive?: AutomergeRepoKeyhive;
 }
 
@@ -51,11 +51,9 @@ export interface PatchworkViewElement extends HTMLElement {
 }
 
 export function registerPatchworkViewElement(
-  params: RegisterPatchworkViewElementParams
+  params: RegisterPatchworkViewElementParams = {}
 ) {
   const name = params.name ?? "patchwork-view";
-
-  const repo = params.repo;
 
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
@@ -70,7 +68,7 @@ export function registerPatchworkViewElement(
   customElements.define(
     name,
     class PatchworkViewElement extends HTMLElement {
-      repo = repo;
+      repo!: Repo;
       hive = params.hive;
       // attributes, if these change it's new game +
       #docUrl: AutomergeUrl | null = null;
@@ -224,6 +222,17 @@ export function registerPatchworkViewElement(
           removeAddedListener();
           removeLoadedListener();
         });
+
+        const repo = await request<Repo>(this, "patchwork:repo");
+        if (epoch !== this.#initEpoch) return;
+        if (!repo) {
+          this.#state = State.unable;
+          this.#displayError(
+            `no \`patchwork:repo\` provider in the DOM ancestry of <${name}>.`
+          );
+          return;
+        }
+        this.repo = repo;
 
         let handle: DocHandle<HasPatchworkMetadata>;
         try {
