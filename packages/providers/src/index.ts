@@ -98,3 +98,4 @@ export {
   registerFallbackProviderElement,
   type FallbackProviderElement,
 } from "./fallback-provider.js";
+export type { RepoLike } from "./types.js";

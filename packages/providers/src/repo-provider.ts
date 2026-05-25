@@ -33,19 +33,19 @@ export function registerRepoProviderElement(
       repo: Repo = repo;
 
       #onRequest = (event: RequestEvent) => {
-        provide<Repo>(event, this.repo);
-
         const { type } = event.detail;
         if (type === "patchwork:repo") {
           provide<Repo>(event, this.repo);
-
-        } else if (type === "patchwork:dochandle") {
-          const url = event.detail.args?.url as AutomergeUrl;
+          return;
+        }
+        if (type === "patchwork:dochandle") {
+          const url = event.detail.url as AutomergeUrl | undefined;
           if (url) {
             provide<DocHandle<unknown>>(event, this.repo.find<unknown>(url));
           } else {
             provide<DocHandle<unknown>>(event, this.repo.create<unknown>());
           }
+          return;
         }
       };
 

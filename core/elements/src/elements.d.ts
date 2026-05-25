@@ -17,6 +17,7 @@ declare module "react" {
         HTMLElement
       > & {
         "component-id"?: string | null;
+        "doc-url"?: string | null;
         class?: string;
       };
     }
@@ -32,6 +33,7 @@ declare module "solid-js" {
       };
       "patchwork-view-2": {
         "component-id": string;
+        "doc-url"?: string;
       };
     }
   }
@@ -53,6 +55,7 @@ declare namespace JSX {
       HTMLElement
     > & {
       "component-id"?: string | null;
+      "doc-url"?: string | null;
       class?: string;
     };
   }

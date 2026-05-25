@@ -1,3 +1,4 @@
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 import {
   getRegistry,
   isLoadablePlugin,
@@ -41,6 +42,7 @@ export interface RegisterPatchworkView2ElementParams {
 
 export interface PatchworkView2Element extends HTMLElement {
   componentId?: string | null;
+  docUrl?: AutomergeUrl | null;
 }
 
 export function registerPatchworkView2Element(
@@ -55,12 +57,14 @@ export function registerPatchworkView2Element(
 
   const attrs = {
     componentId: "component-id",
+    docUrl: "doc-url",
   };
 
   customElements.define(
     name,
     class PatchworkView2Element extends HTMLElement {
       #componentId: string | null = null;
+      #docUrl: AutomergeUrl | null = null;
       #component: LoadedComponent | null = null;
       #state: State = State.none;
       #initEpoch = 0;
@@ -84,8 +88,24 @@ export function registerPatchworkView2Element(
         }
       }
 
+      get docUrl() {
+        return this.#docUrl;
+      }
+
+      set docUrl(url: AutomergeUrl | null) {
+        if (this.#docUrl === url) return;
+        this.#docUrl = url;
+        const attr = this.getAttribute(attrs.docUrl);
+        if (attr == url) return;
+        if (url) {
+          this.setAttribute(attrs.docUrl, url);
+        } else {
+          this.removeAttribute(attrs.docUrl);
+        }
+      }
+
       static get observedAttributes() {
-        return [attrs.componentId];
+        return [attrs.componentId, attrs.docUrl];
       }
 
       connectedCallback() {
@@ -97,6 +117,7 @@ export function registerPatchworkView2Element(
           this.style.display = "contents";
         }
         this.componentId = this.getAttribute(attrs.componentId);
+        this.docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl | null;
         this.#init();
       }
 
@@ -117,6 +138,11 @@ export function registerPatchworkView2Element(
 
         if (name === attrs.componentId) {
           this.#componentId = val;
+          this.#teardown().then(() => this.#init());
+        }
+
+        if (name === attrs.docUrl) {
+          this.#docUrl = val as AutomergeUrl | null;
           this.#teardown().then(() => this.#init());
         }
       }
