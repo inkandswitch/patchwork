@@ -1,6 +1,5 @@
 export {
   CommentThread,
-  type SerializedCommentThread,
   type Comment,
   type DocWithComments,
 } from "./types";
