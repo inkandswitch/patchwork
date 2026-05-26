@@ -50,7 +50,6 @@ export type PatchworkViewElement = HTMLElement & {
 export function registerPatchworkViewElement(
   params: RegisterPatchworkViewElementParams = {}
 ) {
-
   registerPatchworkViewLegacyElement();
 
   const name = params.name ?? "patchwork-view";
@@ -78,6 +77,8 @@ export function registerPatchworkViewElement(
       #teardowns = new Set<() => unknown | Promise<void>>();
       #mounted: { componentId: string } | null = null;
       #capturedParent: Element | null = null;
+
+      #legacyChild?: HTMLElement | null = null;
 
       get component() {
         return this.#component;
@@ -183,35 +184,29 @@ export function registerPatchworkViewElement(
         const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
 
-        const removeAddedListener = registry.on(
-          "registered",
-          async (added) => {
-            if (added.id !== this.component) return;
-            if (isLoadablePlugin(added)) {
-              registry.load(added.id);
+        const removeAddedListener = registry.on("registered", async (added) => {
+          if (added.id !== this.component) return;
+          if (isLoadablePlugin(added)) {
+            registry.load(added.id);
+          }
+        });
+
+        const removeLoadedListener = registry.on("loaded", async (loaded) => {
+          if (loaded.id !== this.component) return;
+
+          if (this.#state == "unable" || this.#state == "initializing") {
+            this.#queueRender();
+            return;
+          }
+
+          // Hot reload: a newer importUrl re-mounts.
+          if (this.#state == "error" || this.#state == "rendered") {
+            if (loaded.importUrl !== this.#loaded?.importUrl) {
+              await this.#teardown();
+              this.#init();
             }
           }
-        );
-
-        const removeLoadedListener = registry.on(
-          "loaded",
-          async (loaded) => {
-            if (loaded.id !== this.component) return;
-
-            if (this.#state == "unable" || this.#state == "initializing") {
-              this.#queueRender();
-              return;
-            }
-
-            // Hot reload: a newer importUrl re-mounts.
-            if (this.#state == "error" || this.#state == "rendered") {
-              if (loaded.importUrl !== this.#loaded?.importUrl) {
-                await this.#teardown();
-                this.#init();
-              }
-            }
-          }
-        );
+        });
 
         this.#teardowns.add(() => {
           removeAddedListener();
