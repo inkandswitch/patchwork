@@ -124,7 +124,7 @@ function getRepo() {
         },
         enableRemoteHeadsGossiping: true,
         subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
-        //network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
+        network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
       (self as any).repo = repo;
