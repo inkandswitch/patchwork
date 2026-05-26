@@ -1,23 +1,40 @@
 import "react";
 import "solid-js";
 
+// ─── <patchwork-view> attribute shapes ──────────────────────────────────
+//
+// The new element accepts EITHER the new-style attributes (`url`/`component`)
+// OR the legacy passthrough attributes (`doc-url`/`tool-id`)
+
+type PatchworkViewNewAttrs = {
+  url?: string | null;
+  component?: string | null;
+  "doc-url"?: never;
+  "tool-id"?: never;
+};
+
+type PatchworkViewLegacyAttrs = {
+  "doc-url"?: string | null;
+  "tool-id"?: string | null;
+  url?: never;
+  component?: never;
+};
+
+type PatchworkViewAttrs = PatchworkViewNewAttrs | PatchworkViewLegacyAttrs;
+
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       "patchwork-view": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement>,
         HTMLElement
-      > & {
-        "doc-url": string;
-        "tool-id"?: string | null;
-        class?: string;
-      };
-      "patchwork-view-2": React.DetailedHTMLProps<
+      > & { class?: string } & PatchworkViewAttrs;
+      "patchwork-view-legacy": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement>,
         HTMLElement
       > & {
-        "component-id"?: string | null;
-        "doc-url"?: string | null;
+        "doc-url": string;
+        "tool-id"?: string | null;
         class?: string;
       };
     }
@@ -27,13 +44,10 @@ declare module "react" {
 declare module "solid-js" {
   namespace JSX {
     interface IntrinsicElements {
-      "patchwork-view": {
+      "patchwork-view": PatchworkViewAttrs;
+      "patchwork-view-legacy": {
         "doc-url": string;
-        "tool-id": string;
-      };
-      "patchwork-view-2": {
-        "component-id": string;
-        "doc-url"?: string;
+        "tool-id"?: string | null;
       };
     }
   }
@@ -45,17 +59,13 @@ declare namespace JSX {
     "patchwork-view": React.DetailedHTMLProps<
       React.HTMLAttributes<HTMLElement>,
       HTMLElement
-    > & {
-      "doc-url": string;
-      "tool-id"?: string | null;
-      class?: string;
-    };
-    "patchwork-view-2": React.DetailedHTMLProps<
+    > & { class?: string } & PatchworkViewAttrs;
+    "patchwork-view-legacy": React.DetailedHTMLProps<
       React.HTMLAttributes<HTMLElement>,
       HTMLElement
     > & {
-      "component-id"?: string | null;
-      "doc-url"?: string | null;
+      "doc-url": string;
+      "tool-id"?: string | null;
       class?: string;
     };
   }

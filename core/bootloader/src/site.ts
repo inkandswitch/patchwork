@@ -36,7 +36,6 @@ import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
   openDocument,
   registerPatchworkViewElement,
-  registerPatchworkView2Element,
 } from "@inkandswitch/patchwork-elements";
 import {
   registerFallbackProviderElement,
@@ -111,8 +110,8 @@ export interface SiteConfig {
   titleSuffix: string;
 
   /**
-   * DOM id of the `<patchwork-view>` element that will host the root tool.
-   * Defaults to `"root"`.
+   * DOM id of the `<patchwork-view>` element that will host the root
+   * tool. Defaults to `"root"`.
    */
   rootElementId?: string;
 
@@ -204,7 +203,6 @@ export async function bootPatchworkSite(
   repoProvider.appendChild(rootElement);
 
   registerPatchworkViewElement();
-  registerPatchworkView2Element();
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
@@ -313,9 +311,10 @@ function wireModuleSettingsWhenReady(
 }
 
 /**
- * Set initial `tool-id` / `doc-url` attributes on the root `<patchwork-view>`
- * based on the URL hash (if it specifies a frame override) or the account
- * doc's configured frame tool + the account doc itself.
+ * Set initial `tool-id` / `doc-url` attributes on the root
+ * `<patchwork-view-legacy>` based on the URL hash (if it specifies a frame
+ * override) or the account doc's configured frame tool + the account doc
+ * itself.
  */
 function primeRootElement(
   rootElement: HTMLElement,

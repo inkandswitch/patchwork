@@ -7,6 +7,7 @@ import {
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
 import { MountedEvent, UnmountedEvent } from "./events.js";
+import { registerPatchworkViewLegacyElement } from "./patchwork-view-legacy.js";
 
 export type ComponentRender = (element: HTMLElement) => () => void;
 
@@ -31,24 +32,28 @@ const State = {
   rendering: "rendering",
   unable: "unable",
   rendered: "rendered",
+  legacy: "legacy",
   error: "error",
 } as const;
 
 type State = (typeof State)[keyof typeof State];
 
-export interface RegisterPatchworkView2ElementParams {
+export type RegisterPatchworkViewElementParams = {
   name?: string;
-}
+};
 
-export interface PatchworkView2Element extends HTMLElement {
-  componentId?: string | null;
-  docUrl?: AutomergeUrl | null;
-}
+export type PatchworkViewElement = HTMLElement & {
+  component?: string | null;
+  url?: AutomergeUrl | null;
+};
 
-export function registerPatchworkView2Element(
-  params: RegisterPatchworkView2ElementParams = {}
+export function registerPatchworkViewElement(
+  params: RegisterPatchworkViewElementParams = {}
 ) {
-  const name = params.name ?? "patchwork-view-2";
+
+  registerPatchworkViewLegacyElement();
+
+  const name = params.name ?? "patchwork-view";
 
   if (customElements.get(name)) {
     console.error(`can't redefine a custom element. defining "${name}"`);
@@ -56,56 +61,63 @@ export function registerPatchworkView2Element(
   }
 
   const attrs = {
-    componentId: "component-id",
-    docUrl: "doc-url",
+    component: "component",
+    url: "url",
+    legacyToolId: "tool-id",
+    legacyDocUrl: "doc-url",
   };
 
   customElements.define(
     name,
-    class PatchworkView2Element extends HTMLElement {
-      #componentId: string | null = null;
-      #docUrl: AutomergeUrl | null = null;
-      #component: LoadedComponent | null = null;
+    class PatchworkViewElement extends HTMLElement {
+      #component: string | null = null;
+      #url: AutomergeUrl | null = null;
+      #loaded: LoadedComponent | null = null;
       #state: State = State.none;
       #initEpoch = 0;
       #teardowns = new Set<() => unknown | Promise<void>>();
       #mounted: { componentId: string } | null = null;
       #capturedParent: Element | null = null;
 
-      get componentId() {
-        return this.#componentId;
+      get component() {
+        return this.#component;
       }
 
-      set componentId(id: string | null) {
-        if (this.#componentId === id) return;
-        this.#componentId = id;
-        const attr = this.getAttribute(attrs.componentId);
+      set component(id: string | null) {
+        if (this.#component === id) return;
+        this.#component = id;
+        const attr = this.getAttribute(attrs.component);
         if (attr == id) return;
         if (id) {
-          this.setAttribute(attrs.componentId, id);
+          this.setAttribute(attrs.component, id);
         } else {
-          this.removeAttribute(attrs.componentId);
+          this.removeAttribute(attrs.component);
         }
       }
 
-      get docUrl() {
-        return this.#docUrl;
+      get url() {
+        return this.#url;
       }
 
-      set docUrl(url: AutomergeUrl | null) {
-        if (this.#docUrl === url) return;
-        this.#docUrl = url;
-        const attr = this.getAttribute(attrs.docUrl);
+      set url(url: AutomergeUrl | null) {
+        if (this.#url === url) return;
+        this.#url = url;
+        const attr = this.getAttribute(attrs.url);
         if (attr == url) return;
         if (url) {
-          this.setAttribute(attrs.docUrl, url);
+          this.setAttribute(attrs.url, url);
         } else {
-          this.removeAttribute(attrs.docUrl);
+          this.removeAttribute(attrs.url);
         }
       }
 
       static get observedAttributes() {
-        return [attrs.componentId, attrs.docUrl];
+        return [
+          attrs.component,
+          attrs.url,
+          attrs.legacyToolId,
+          attrs.legacyDocUrl,
+        ];
       }
 
       connectedCallback() {
@@ -116,8 +128,8 @@ export function registerPatchworkView2Element(
         if (!this.style.display) {
           this.style.display = "contents";
         }
-        this.componentId = this.getAttribute(attrs.componentId);
-        this.docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl | null;
+        this.component = this.getAttribute(attrs.component);
+        this.url = this.getAttribute(attrs.url) as AutomergeUrl | null;
         this.#init();
       }
 
@@ -130,29 +142,43 @@ export function registerPatchworkView2Element(
       }
 
       attributeChangedCallback(
-        name: string,
+        attrName: string,
         old: string | null,
         val: string | null
       ) {
         if (old === val) return;
 
-        if (name === attrs.componentId) {
-          this.#componentId = val;
-          this.#teardown().then(() => this.#init());
+        if (attrName === attrs.component) {
+          this.#component = val;
+        } else if (attrName === attrs.url) {
+          this.#url = val as AutomergeUrl | null;
         }
+        // For legacy attrs we don't track them on the instance; the
+        // fallback child reads them off the DOM directly on re-init.
 
-        if (name === attrs.docUrl) {
-          this.#docUrl = val as AutomergeUrl | null;
-          this.#teardown().then(() => this.#init());
-        }
+        this.#teardown().then(() => this.#init());
+      }
+
+      #isLegacyMode() {
+        return (
+          this.hasAttribute(attrs.legacyToolId) ||
+          this.hasAttribute(attrs.legacyDocUrl)
+        );
       }
 
       #init = async () => {
+        if (this.#state != State.none) return;
+
+        if (this.#isLegacyMode()) {
+          this.#initLegacy();
+          return;
+        }
+
+        if (!this.component) return;
+
         const registry = getRegistry<ComponentDescription>(
           "patchwork:component"
         );
-        if (this.#state != State.none) return;
-        if (!this.componentId) return;
 
         const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
@@ -160,7 +186,7 @@ export function registerPatchworkView2Element(
         const removeAddedListener = registry.on(
           "registered",
           async (added) => {
-            if (added.id !== this.componentId) return;
+            if (added.id !== this.component) return;
             if (isLoadablePlugin(added)) {
               registry.load(added.id);
             }
@@ -170,7 +196,7 @@ export function registerPatchworkView2Element(
         const removeLoadedListener = registry.on(
           "loaded",
           async (loaded) => {
-            if (loaded.id !== this.componentId) return;
+            if (loaded.id !== this.component) return;
 
             if (this.#state == "unable" || this.#state == "initializing") {
               this.#queueRender();
@@ -179,7 +205,7 @@ export function registerPatchworkView2Element(
 
             // Hot reload: a newer importUrl re-mounts.
             if (this.#state == "error" || this.#state == "rendered") {
-              if (loaded.importUrl !== this.#component?.importUrl) {
+              if (loaded.importUrl !== this.#loaded?.importUrl) {
                 await this.#teardown();
                 this.#init();
               }
@@ -197,6 +223,30 @@ export function registerPatchworkView2Element(
         this.#queueRender();
       };
 
+      #initLegacy() {
+        const hasNewAttrs =
+          this.hasAttribute(attrs.component) || this.hasAttribute(attrs.url);
+        if (hasNewAttrs) {
+          console.warn(
+            `<patchwork-view>: legacy attributes (doc-url/tool-id) take precedence; ignoring url/component.`
+          );
+        }
+
+        const child = document.createElement("patchwork-view-legacy");
+        const docUrl = this.getAttribute(attrs.legacyDocUrl);
+        const toolId = this.getAttribute(attrs.legacyToolId);
+        if (docUrl) child.setAttribute("doc-url", docUrl);
+        if (toolId) child.setAttribute("tool-id", toolId);
+        this.appendChild(child);
+        this.#legacyChild = child;
+        this.#state = State.legacy;
+
+        this.#teardowns.add(() => {
+          child.remove();
+          this.#legacyChild = null;
+        });
+      }
+
       async #teardown() {
         if (this.#state == State.none) return;
 
@@ -207,7 +257,7 @@ export function registerPatchworkView2Element(
         }
 
         this.#teardowns.clear();
-        this.#component = null;
+        this.#loaded = null;
         this.#state = State.none;
 
         const mounted = this.#mounted;
@@ -217,7 +267,7 @@ export function registerPatchworkView2Element(
         }
       }
 
-      // See `patchwork-view.ts` `#dispatchUnmount`.
+      // See `patchwork-view-legacy.ts` `#dispatchUnmount`.
       #dispatchUnmount(event: UnmountedEvent) {
         if (this.isConnected) {
           this.dispatchEvent(event);
@@ -237,39 +287,39 @@ export function registerPatchworkView2Element(
 
       #render() {
         if (this.#state != "rendering") return;
-        if (!this.componentId) {
+        if (!this.component) {
           this.#state = "unable";
           return;
         }
 
-        const componentId = this.componentId;
+        const componentId = this.component;
         const registry = getRegistry<LoadedComponent>("patchwork:component");
-        this.#component = registry.get(componentId) ?? null;
+        this.#loaded = registry.get(componentId) ?? null;
 
-        if (!this.#component) {
+        if (!this.#loaded) {
           this.#state = "unable";
           console.warn(
-            `patchwork-view-2: no component registered with id "${componentId}"`
+            `patchwork-view: no component registered with id "${componentId}"`
           );
           return;
         }
 
-        if (!this.#component.module) {
-          registry.load(this.#component.id);
-          if (registry.isLoading(this.#component.id)) {
+        if (!this.#loaded.module) {
+          registry.load(this.#loaded.id);
+          if (registry.isLoading(this.#loaded.id)) {
             this.#state = "unable";
-            console.info(`patchwork-view-2: loading component "${componentId}"`);
+            console.info(`patchwork-view: loading component "${componentId}"`);
           } else {
             this.#state = "unable";
             console.warn(
-              `patchwork-view-2: failed to load component "${componentId}"`
+              `patchwork-view: failed to load component "${componentId}"`
             );
           }
           return;
         }
 
         try {
-          const cleanup = this.#component.module(this);
+          const cleanup = this.#loaded.module(this);
           if (typeof cleanup === "function") {
             this.#teardowns.add(cleanup);
           } else {
@@ -280,7 +330,7 @@ export function registerPatchworkView2Element(
           this.dispatchEvent(new MountedEvent({ componentId }));
         } catch (error) {
           console.error(
-            `patchwork-view-2: component "${componentId}" threw during mount`,
+            `patchwork-view: component "${componentId}" threw during mount`,
             error
           );
           this.#state = "error";

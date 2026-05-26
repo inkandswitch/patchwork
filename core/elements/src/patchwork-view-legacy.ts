@@ -18,7 +18,7 @@ import { request } from "@inkandswitch/patchwork-providers";
 import debug from "debug";
 import { MountedEvent, NoToolEvent, UnmountedEvent } from "./events.js";
 
-const log = debug("patchwork:elements:view");
+const log = debug("patchwork:elements:view-legacy");
 
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
@@ -38,27 +38,24 @@ const State = {
 
 type State = (typeof State)[keyof typeof State];
 
-export interface RegisterPatchworkViewElementParams {
+export type RegisterPatchworkViewLegacyElementParams = {
   name?: string;
   hive?: AutomergeRepoKeyhive;
-}
+};
 
-export interface PatchworkViewElement extends HTMLElement {
+export type PatchworkViewLegacyElement = HTMLElement & {
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
   docUrl?: AutomergeUrl;
   toolId?: string;
-}
+};
 
-export function registerPatchworkViewElement(
-  params: RegisterPatchworkViewElementParams = {}
+export function registerPatchworkViewLegacyElement(
+  params: RegisterPatchworkViewLegacyElementParams = {}
 ) {
-  const name = params.name ?? "patchwork-view";
+  const name = params.name ?? "patchwork-view-legacy";
 
-  if (customElements.get(name)) {
-    console.error(`can't redefine a custom element. defining "${name}"`);
-    return;
-  }
+  if (customElements.get(name)) return;
 
   const attrs = {
     docUrl: "doc-url",
@@ -67,7 +64,7 @@ export function registerPatchworkViewElement(
 
   customElements.define(
     name,
-    class PatchworkViewElement extends HTMLElement {
+    class PatchworkViewLegacyElement extends HTMLElement {
       repo!: Repo;
       hive = params.hive;
       // attributes, if these change it's new game +
