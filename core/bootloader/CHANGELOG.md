@@ -1,5 +1,16 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.2.3
+
+### Patch Changes
+
+- 0101e42: sync versions
+- Updated dependencies [0101e42]
+  - @inkandswitch/patchwork-elements@1.0.3
+  - @inkandswitch/patchwork-filesystem@0.0.8
+  - @inkandswitch/patchwork-plugins@0.0.11
+  - @inkandswitch/patchwork-providers@0.1.2
+
 ## 0.2.0
 
 ### Minor Changes

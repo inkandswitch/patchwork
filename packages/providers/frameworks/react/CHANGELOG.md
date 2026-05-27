@@ -1,5 +1,13 @@
 # @inkandswitch/patchwork-providers-react
 
+## 0.1.3
+
+### Patch Changes
+
+- 0101e42: sync versions
+- Updated dependencies [0101e42]
+  - @inkandswitch/patchwork-providers@0.1.2
+
 ## 0.1.0
 
 ### Minor Changes
