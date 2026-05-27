@@ -45,6 +45,13 @@ export interface PluginMetadata {
  */
 export interface PluginRegistryCapability {
   /**
+   * List all known registry type keys (e.g., "patchwork:tool", "patchwork:datatype",
+   * "codemirror:extension"). Used at boot to discover all plugin types and
+   * pre-populate the iframe's local registries.
+   */
+  listRegistryTypes(): Promise<string[]>;
+
+  /**
    * List all plugins of a given type.
    * Mirrors getRegistry(type).all() with opaque importUrls.
    */

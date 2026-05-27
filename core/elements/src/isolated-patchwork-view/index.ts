@@ -24,6 +24,7 @@ import { RpcTarget, newMessagePortRpcSession } from "capnweb";
 import type { RpcStub } from "capnweb";
 import {
   getRegistry,
+  getAllRegistries,
   getFallbackTool,
   getSupportedTools,
   getSupportedToolsForType,
@@ -139,7 +140,9 @@ class OpaqueUrlMapper {
     // Check if we've already mapped a segment in this URL
     for (const [segment, token] of this.#segmentToToken) {
       if (url.includes(`/${segment}/`)) {
-        return url.replace(segment, `__plugin__/${token}`);
+        const result = url.replace(segment, `__plugin__/${token}`);
+        console.log(`[OpaqueUrlMapper] toOpaque (cached): ${url} → ${result}`);
+        return result;
       }
     }
     // Not registered yet — find the automerge URL segment via URL parsing
@@ -152,12 +155,15 @@ class OpaqueUrlMapper {
           const token = `p${this.#counter++}`;
           this.#segmentToToken.set(segment, token);
           this.#tokenToSegment.set(token, segment);
-          return url.replace(segment, `__plugin__/${token}`);
+          const result = url.replace(segment, `__plugin__/${token}`);
+          console.log(`[OpaqueUrlMapper] toOpaque (new ${token}): segment="${segment}" decoded="${decoded}" → ${result}`);
+          return result;
         }
       }
     } catch {
       // not a valid URL, return as-is
     }
+    console.log(`[OpaqueUrlMapper] toOpaque (no match): ${url}`);
     return url;
   }
 
@@ -169,7 +175,9 @@ class OpaqueUrlMapper {
     for (const [token, segment] of this.#tokenToSegment) {
       const opaqueSegment = `__plugin__/${token}`;
       if (url.includes(opaqueSegment)) {
-        return url.replace(opaqueSegment, segment);
+        const result = url.replace(opaqueSegment, segment);
+        console.log(`[OpaqueUrlMapper] toReal: ${url} → ${result}`);
+        return result;
       }
     }
     return null;
@@ -234,6 +242,10 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
       if (plugin) return this.#toMetadata(plugin);
     }
     return null;
+  }
+
+  async listRegistryTypes(): Promise<string[]> {
+    return Array.from(getAllRegistries().keys());
   }
 
   async getSupportedToolsForType(type: string): Promise<PluginMetadata[]> {
@@ -312,8 +324,14 @@ class HostApi extends RpcTarget implements HostRpcContract {
     // Resolve opaque __plugin__ URLs back to real automerge-backed paths
     const realUrl = this.#mapper.toReal(url);
     if (realUrl) {
-      return fetch(realUrl).then((r) => r.text());
+      console.log(`[isolated-patchwork-view] loadModuleSource: ${url} → ${realUrl}`);
+      const res = await fetch(realUrl);
+      if (!res.ok) {
+        console.error(`[isolated-patchwork-view] loadModuleSource FAILED (${res.status}): ${realUrl}`);
+      }
+      return res.text();
     }
+    console.log(`[isolated-patchwork-view] loadModuleSource (passthrough): ${url}`);
     this.#checkPolicy(url);
     return fetch(url).then((r) => r.text());
   }
