@@ -20,10 +20,6 @@ declare global {
     "patchwork:request": RequestEvent;
     "patchwork:response": ResponseEvent;
   }
-  interface ShadowRootEventMap {
-    "patchwork:request": RequestEvent;
-    "patchwork:response": ResponseEvent;
-  }
 }
 
 export function request<T = unknown>(
