@@ -34,6 +34,7 @@ interface InitMessage {
   rpcPort: MessagePort;
   data: {
     docUrl: string;
+    toolId?: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
     hostOrigin: string;
     esmsSource: string;
@@ -259,14 +260,29 @@ async function boot() {
   log("patchwork-view registered with tool resolution callbacks");
 
   // 14. Resolve and load the tool for the document via the capability.
-  const toolMeta = await registry.resolveToolForDocument(d.docUrl);
+  //     If a toolId hint was provided in the init message, use it directly.
+  //     Otherwise, resolve the default tool for the document's datatype.
+  let toolMeta: any = null;
   let toolId: string | undefined;
-  if (toolMeta) {
-    await loadPluginModule(toolMeta.importUrl);
-    toolId = toolMeta.id;
-    log("tool resolved:", toolId);
-  } else {
-    log("no tool found for document");
+  if (d.toolId) {
+    toolMeta = await registry.get(d.toolId);
+    if (toolMeta) {
+      await loadPluginModule(toolMeta.importUrl);
+      toolId = toolMeta.id;
+      log("tool resolved by id:", toolId);
+    } else {
+      log("tool id not found, falling back to document resolution");
+    }
+  }
+  if (!toolMeta) {
+    toolMeta = await registry.resolveToolForDocument(d.docUrl);
+    if (toolMeta) {
+      await loadPluginModule(toolMeta.importUrl);
+      toolId = toolMeta.id;
+      log("tool resolved for document:", toolId);
+    } else {
+      log("no tool found for document");
+    }
   }
 
   // 15. Render

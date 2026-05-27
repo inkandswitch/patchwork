@@ -369,6 +369,7 @@ export interface RegisterIsolatedPatchworkViewElementParams {
 export interface IsolatedPatchworkViewElement extends HTMLElement {
   repo: Repo;
   docUrl?: AutomergeUrl;
+  toolId?: string;
 }
 
 export function registerIsolatedPatchworkViewElement(
@@ -385,12 +386,14 @@ export function registerIsolatedPatchworkViewElement(
 
   const attrs = {
     docUrl: "doc-url",
+    toolId: "tool-id",
   };
 
   customElements.define(
     elementName,
     class IsolatedPatchworkViewElement extends HTMLElement {
       #docUrl: AutomergeUrl | null = null;
+      #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #repoChannel: MessageChannel | null = null;
       #rpcChannel: MessageChannel | null = null;
@@ -410,8 +413,19 @@ export function registerIsolatedPatchworkViewElement(
         else this.removeAttribute(attrs.docUrl);
       }
 
+      get toolId() {
+        return this.#toolId;
+      }
+
+      set toolId(id: string | null) {
+        if (this.#toolId === id) return;
+        this.#toolId = id;
+        if (id) this.setAttribute(attrs.toolId, id);
+        else this.removeAttribute(attrs.toolId);
+      }
+
       static get observedAttributes() {
-        return [attrs.docUrl];
+        return [attrs.docUrl, attrs.toolId];
       }
 
       connectedCallback() {
@@ -421,6 +435,7 @@ export function registerIsolatedPatchworkViewElement(
         this.style.display = "block";
 
         this.#docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
+        this.#toolId = this.getAttribute(attrs.toolId);
         this.#init();
       }
 
@@ -435,7 +450,9 @@ export function registerIsolatedPatchworkViewElement(
       ) {
         if (old === val) return;
 
-        if (name === attrs.docUrl) {
+        if (name === attrs.toolId) {
+          this.#toolId = val;
+        } else if (name === attrs.docUrl) {
           this.#docUrl = val as AutomergeUrl;
         }
 
@@ -449,6 +466,7 @@ export function registerIsolatedPatchworkViewElement(
 
         const epoch = ++this.#initEpoch;
         const docUrl = this.#docUrl;
+        const toolId = this.#toolId;
 
         // Pre-fetch tool-independent assets in parallel (the sandboxed
         // iframe cannot fetch anything itself).
@@ -560,6 +578,7 @@ export function registerIsolatedPatchworkViewElement(
           {
             type: "isolated-patchwork-init",
             docUrl,
+            toolId,
             importMap,
             hostOrigin: window.location.origin,
             esmsSource,
