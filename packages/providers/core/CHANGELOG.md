@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-providers
 
+## 0.1.2
+
+### Patch Changes
+
+- 0101e42: sync versions
+
 ## 0.1.0
 
 ### Minor Changes

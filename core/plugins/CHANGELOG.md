@@ -1,5 +1,13 @@
 # @inkandswitch/patchwork-plugins
 
+## 0.0.11
+
+### Patch Changes
+
+- 0101e42: sync versions
+- Updated dependencies [0101e42]
+  - @inkandswitch/patchwork-filesystem@0.0.8
+
 ## 0.0.8
 
 ### Patch Changes

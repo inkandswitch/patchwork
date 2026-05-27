@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-filesystem
 
+## 0.0.8
+
+### Patch Changes
+
+- 0101e42: sync versions
+
 ## 0.0.6
 
 ### Patch Changes
