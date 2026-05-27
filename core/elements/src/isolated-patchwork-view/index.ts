@@ -485,6 +485,29 @@ export function registerIsolatedPatchworkViewElement(
         const esmsUrl =
           "https://ga.jspm.io/npm:es-module-shims@2.8.1/dist/es-module-shims.wasm.js";
 
+        // Collect host page stylesheets so tools inside the iframe get the
+        // same CSS framework (Tailwind/DaisyUI utility classes, etc.).
+        const hostStyles = await Promise.all(
+          Array.from(document.styleSheets).map(async (sheet) => {
+            try {
+              // Inline <style> tags — read cssRules directly
+              return Array.from(sheet.cssRules)
+                .map((r) => r.cssText)
+                .join("\n");
+            } catch {
+              // Cross-origin <link> stylesheets — fetch the href
+              if (sheet.href) {
+                try {
+                  return await fetch(sheet.href).then((r) => r.text());
+                } catch {
+                  return "";
+                }
+              }
+              return "";
+            }
+          })
+        ).then((sheets) => sheets.filter(Boolean).join("\n"));
+
         const [esmsSource, automergeWasm, subductionWasm] = await Promise.all([
           fetch(esmsUrl).then((r) => r.text()),
           fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
@@ -593,6 +616,7 @@ export function registerIsolatedPatchworkViewElement(
             toolId,
             importMap,
             hostOrigin: window.location.origin,
+            hostStyles,
             esmsSource,
             automergeWasm,
             subductionWasm,

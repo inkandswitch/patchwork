@@ -37,6 +37,7 @@ interface InitMessage {
     toolId?: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
     hostOrigin: string;
+    hostStyles: string;
     esmsSource: string;
     automergeWasm: ArrayBuffer;
     subductionWasm: ArrayBuffer;
@@ -86,6 +87,14 @@ async function boot() {
         removeItem: () => {},
       },
     });
+  }
+
+  // 3b. Inject host page stylesheets (Tailwind/DaisyUI, etc.) so tools
+  //     that rely on the host's CSS framework render correctly.
+  if (d.hostStyles) {
+    const style = document.createElement("style");
+    style.textContent = d.hostStyles;
+    document.head.appendChild(style);
   }
 
   // 4. Set up temporary postMessage RPC on the bootstrap port.
