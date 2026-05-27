@@ -10,7 +10,7 @@ import * as Providers from "@inkandswitch/patchwork-providers";
  * plain data, a `DocHandle`).
  *
  * For request types that return a `DocHandle<T>` and a live doc is wanted,
- * prefer `useRequestDoc` instead.
+ * prefer `useDocRequest` instead.
  */
 export function useRequest<T>(
   element: HTMLElement,
@@ -40,7 +40,7 @@ export function useRequest<T>(
  * `useDocument` from `@automerge/automerge-repo-react-hooks`. `T` is the doc
  * shape inside the handle.
  */
-export function useRequestDoc<T>(
+export function useDocRequest<T>(
   element: HTMLElement,
   type: string,
   args?: Record<string, unknown>

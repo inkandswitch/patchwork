@@ -1,7 +1,7 @@
 {
   "name": "@inkandswitch/patchwork-comments",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Schema types and write helpers for Patchwork comment threads.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
