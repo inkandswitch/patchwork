@@ -10,10 +10,12 @@
   down, mirroring `patchwork:mounted`. `MountedEventDetail` is now a union
   covering both view (`{ url, toolId }`) and component
   (`{ componentId }`) mounts.
-- Inline the JSX intrinsic element typings for `patchwork-view` and the
-  new `patchwork-component` into `index.ts` and drop the standalone
-  `elements.d.ts` declaration file. React, Solid, and global `JSX`
-  namespaces are augmented in one place.
+- Extend the JSX intrinsic-element augmentations to cover the new
+  `patchwork-component` element alongside `patchwork-view`, for React,
+  Solid, and the global `JSX` namespace. The augmentations live in a
+  dedicated `elements` module (`dist/elements.d.ts`) and are pulled in
+  by `index.ts` via a side-effect import so consumers get them
+  automatically.
 - Add `@inkandswitch/patchwork-providers` and optional `react` /
   `solid-js` / `@types/react` peer dependencies; `registerPatchworkViewElement`
   no longer takes a `{ repo }` argument and instead resolves the repo
