@@ -170,6 +170,15 @@ importers:
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.22
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.1
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      solid-js:
+        specifier: ^1.9.10
+        version: 1.9.10
 
   core/filesystem:
     dependencies:

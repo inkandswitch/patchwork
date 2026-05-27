@@ -49,14 +49,14 @@ html {
   }
 }
 
-patchwork-view-legacy {
+patchwork-view {
   display: block;
   height: 100%;
   width: 100%;
   contain: layout;
 }
 
-body patchwork-view-legacy#root {
+body patchwork-view#root {
   height: 100vh;
   height: 100dvh;
   width: 100vw;
