@@ -3,6 +3,8 @@
  * fetch/load through the capnweb RPC channel.
  */
 
+import { isValidAutomergeUrl } from "@automerge/automerge-repo";
+
 /** Policy that gates HostApi.loadModuleSource() and HostApi.fetchResource(). */
 export interface ResourcePolicy {
   /** Can this tool fetch/load this URL? */
@@ -60,7 +62,7 @@ export class RestrictivePolicy implements ResourcePolicy {
     const segments = parsed.pathname.split("/");
     for (const segment of segments) {
       const decoded = decodeURIComponent(segment);
-      if (decoded.startsWith("automerge:")) return false;
+      if (isValidAutomergeUrl(decoded)) return false;
     }
 
     return true;
