@@ -16,6 +16,9 @@
 - Add `registerPatchworkViewLegacyElement` exposing the legacy element
   under its own name (`<patchwork-view-legacy>`) for code that wants to
   bypass the wrapper.
+- `registerPatchworkViewElement` now accepts a `hive` option that is
+  forwarded to the inner `<patchwork-view-legacy>` registration, so
+  Keyhive-enabled sites can wire `hive` through a single call.
 - Remove `registerPatchworkComponentElement` and the
   `<patchwork-component>` element; use `<patchwork-view component="...">`
   instead.

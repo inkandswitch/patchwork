@@ -1,4 +1,5 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import {
   getRegistry,
   isLoadablePlugin,
@@ -8,6 +9,10 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import { MountedEvent, UnmountedEvent } from "./events.js";
 import { registerPatchworkViewLegacyElement } from "./patchwork-view-legacy.js";
+
+type AutomergeRepoKeyhive = Awaited<
+  ReturnType<typeof initializeAutomergeRepoKeyhive>
+>;
 
 export type ComponentRender = (element: HTMLElement) => () => void;
 
@@ -37,14 +42,6 @@ const State = {
 
 type State = (typeof State)[keyof typeof State];
 
-const Mode = {
-  idle: "idle",
-  component: "component",
-  legacy: "legacy",
-} as const;
-
-type Mode = (typeof Mode)[keyof typeof Mode];
-
 const ATTRS = {
   component: "component",
   url: "url",
@@ -54,14 +51,19 @@ const ATTRS = {
 
 export type RegisterPatchworkViewElementParams = {
   name?: string;
+  /**
+   * Forwarded to the inner `<patchwork-view-legacy>` element so legacy
+   * tools rendered in fallback mode get access to a Keyhive instance.
+   */
+  hive?: AutomergeRepoKeyhive;
 };
 
 /**
- * `<patchwork-view>` operates in one of two modes based on its
- * attributes: **component mode** (`component`) mounts a registered
- * `patchwork:component` plugin in place; **legacy mode** (`doc-url` /
- * `tool-id`, no `component`) delegates to an inner
- * `<patchwork-view-legacy>`. `component` wins if both are set.
+ * `<patchwork-view>` reacts to whichever attributes it carries: a
+ * `component` attribute mounts a registered `patchwork:component`
+ * plugin in place; the legacy `doc-url` / `tool-id` attributes (and no
+ * `component`) cause an inner `<patchwork-view-legacy>` to be appended
+ * and forwarded to. `component` wins if both are set.
  */
 export type PatchworkViewElement = HTMLElement & {
   component?: string | null;
@@ -75,16 +77,16 @@ export function registerPatchworkViewElement(
 ) {
   const name = params.name ?? "patchwork-view";
 
-  // Also registers `<patchwork-view-legacy>` (the wrapper's delegation
-  // target). Both register functions are idempotent.
-  registerPatchworkViewLegacyElement();
+  // Also registers `<patchwork-view-legacy>` (the inner element used
+  // when legacy attributes are set). Both register functions are
+  // idempotent.
+  registerPatchworkViewLegacyElement({ hive: params.hive });
 
   if (customElements.get(name)) return;
 
   customElements.define(
     name,
     class PatchworkViewElement extends HTMLElement {
-      #mode: Mode = Mode.idle;
       #capturedParent: Element | null = null;
 
       #component: string | null = null;
@@ -150,7 +152,7 @@ export function registerPatchworkViewElement(
         this.#capturedParent = this.parentElement;
         this.#component = this.getAttribute(ATTRS.component);
         this.#url = this.getAttribute(ATTRS.url) as AutomergeUrl | null;
-        this.#syncMode();
+        this.#sync();
       }
 
       disconnectedCallback() {
@@ -171,13 +173,9 @@ export function registerPatchworkViewElement(
         if (attrName === ATTRS.component) this.#component = val;
         else if (attrName === ATTRS.url) this.#url = val as AutomergeUrl | null;
 
-        const targetMode = this.#pickMode();
-        if (targetMode !== this.#mode) {
-          void this.#teardown().then(() => this.#syncMode());
-          return;
-        }
-
-        if (this.#mode === Mode.legacy && this.#legacyChild) {
+        // Already showing the legacy child and still want it: forward
+        // doc-url / tool-id changes through to it without reattaching.
+        if (this.#legacyChild && !this.#wantsComponent()) {
           if (attrName === ATTRS.docUrl || attrName === ATTRS.toolId) {
             if (val !== null) this.#legacyChild.setAttribute(attrName, val);
             else this.#legacyChild.removeAttribute(attrName);
@@ -185,39 +183,46 @@ export function registerPatchworkViewElement(
           return;
         }
 
-        if (this.#mode === Mode.component) {
-          if (attrName === ATTRS.component || attrName === ATTRS.url) {
-            void this.#teardown().then(() => this.#syncMode());
-          }
+        // Already mounting a component and still want one: only react
+        // to the component-driving attributes; doc-url / tool-id are
+        // ignored while a `component` attribute is set.
+        if (this.#state !== State.none && this.#wantsComponent()) {
+          if (attrName !== ATTRS.component && attrName !== ATTRS.url) return;
         }
+
+        // Either transitioning between forms or initial setup after an
+        // attribute landed on an idle element. Tear down whatever is
+        // there (no-op when idle) and re-sync against the attributes.
+        void this.#teardown().then(() => this.#sync());
       }
 
-      #pickMode(): Mode {
-        if (this.hasAttribute(ATTRS.component)) return Mode.component;
-        if (this.hasAttribute(ATTRS.docUrl) || this.hasAttribute(ATTRS.toolId)) {
-          return Mode.legacy;
-        }
-        return Mode.idle;
+      #wantsComponent() {
+        return this.hasAttribute(ATTRS.component);
       }
 
-      #syncMode() {
-        const target = this.#pickMode();
-        this.#mode = target;
+      #wantsLegacy() {
+        return (
+          !this.hasAttribute(ATTRS.component) &&
+          (this.hasAttribute(ATTRS.docUrl) ||
+            this.hasAttribute(ATTRS.toolId))
+        );
+      }
 
-        if (target === Mode.idle) return;
-
-        if (target === Mode.legacy) {
-          this.#initLegacy();
+      #sync() {
+        if (this.#wantsLegacy()) {
+          this.#renderLegacy();
           return;
         }
 
-        // Component-only: legacy mode leaves `display` alone so sites'
-        // CSS rules on `patchwork-view` (e.g. `display: block`) apply.
-        if (!this.style.display) this.style.display = "contents";
-        this.#initComponent();
+        if (this.#wantsComponent()) {
+          // Legacy mode leaves `display` alone so sites' CSS rules on
+          // `patchwork-view` (e.g. `display: block`) apply.
+          if (!this.style.display) this.style.display = "contents";
+          this.#initComponent();
+        }
       }
 
-      #initLegacy() {
+      #renderLegacy() {
         if (this.#legacyChild) return;
         const child = document.createElement("patchwork-view-legacy");
         const docUrl = this.getAttribute(ATTRS.docUrl);
@@ -261,7 +266,7 @@ export function registerPatchworkViewElement(
           if (this.#state == "error" || this.#state == "rendered") {
             if (loaded.importUrl !== this.#loaded?.importUrl) {
               await this.#teardown();
-              this.#syncMode();
+              this.#sync();
             }
           }
         });
@@ -277,43 +282,32 @@ export function registerPatchworkViewElement(
       };
 
       async #teardown() {
-        if (this.#mode === Mode.legacy) {
-          if (this.#legacyChild) {
-            this.#legacyChild.remove();
-            this.#legacyChild = null;
-          }
-          this.#mode = Mode.idle;
-          return;
+        if (this.#legacyChild) {
+          this.#legacyChild.remove();
+          this.#legacyChild = null;
         }
 
-        if (this.#mode === Mode.component) {
-          if (this.#state == State.none) {
-            this.#mode = Mode.idle;
-            return;
-          }
+        if (this.#state == State.none) return;
 
-          // Only `rendered` reached the `MountedEvent` dispatch.
-          const wasMounted = this.#state == State.rendered;
-          const mountedComponentId = this.#loaded?.id;
+        // Only `rendered` reached the `MountedEvent` dispatch.
+        const wasMounted = this.#state == State.rendered;
+        const mountedComponentId = this.#loaded?.id;
 
-          this.#initEpoch++;
+        this.#initEpoch++;
 
-          for (const fn of this.#teardowns) {
-            await fn?.();
-          }
-
-          this.#teardowns.clear();
-          this.#loaded = null;
-          this.#state = State.none;
-
-          if (wasMounted && mountedComponentId) {
-            this.#dispatchUnmount(
-              new UnmountedEvent({ componentId: mountedComponentId })
-            );
-          }
+        for (const fn of this.#teardowns) {
+          await fn?.();
         }
 
-        this.#mode = Mode.idle;
+        this.#teardowns.clear();
+        this.#loaded = null;
+        this.#state = State.none;
+
+        if (wasMounted && mountedComponentId) {
+          this.#dispatchUnmount(
+            new UnmountedEvent({ componentId: mountedComponentId })
+          );
+        }
       }
 
       // Bubbling is a no-op when detached; fall back to the closest
