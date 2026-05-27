@@ -24,9 +24,7 @@ import { RpcTarget, newMessagePortRpcSession } from "capnweb";
 import type { RpcStub } from "capnweb";
 import {
   getRegistry,
-  getFallbackTool,
-  getSupportedTools,
-  type LoadedTool,
+  getAllRegistries,
 } from "@inkandswitch/patchwork-plugins";
 import { type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -173,6 +171,23 @@ class OpaqueUrlMapper {
     }
     return null;
   }
+
+  /**
+   * Rewrite automerge URL strings in module source text, replacing them with
+   * opaque equivalents. This runs on the host before sending source to the
+   * iframe, so real automerge URLs never enter the isolated context.
+   *
+   * For each known mapping, replaces the decoded automerge URL string
+   * (e.g., "automerge:xyz...") with its opaque path segment
+   * (e.g., "__plugin__/p0"). Only replaces exact strings we've registered.
+   */
+  rewriteAutomergeUrls(source: string): string {
+    for (const [segment, token] of this.#segmentToToken) {
+      const decoded = decodeURIComponent(segment);
+      source = source.replaceAll(decoded, `__plugin__/${token}`);
+    }
+    return source;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -219,6 +234,10 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
     return meta;
   }
 
+  async listRegistryTypes(): Promise<string[]> {
+    return Array.from(getAllRegistries().keys());
+  }
+
   async list(pluginType: string): Promise<PluginMetadata[]> {
     const registry = getRegistry(pluginType);
     const all = registry.all();
@@ -227,37 +246,12 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
   }
 
   async get(pluginId: string): Promise<PluginMetadata | null> {
-    // Search across known registry types
-    for (const type of ["patchwork:tool", "patchwork:datatype"] as const) {
-      const plugin = getRegistry(type).get(pluginId);
+    // Search across all registry types
+    for (const [, registry] of getAllRegistries()) {
+      const plugin = registry.get(pluginId);
       if (plugin) return this.#toMetadata(plugin);
     }
     return null;
-  }
-
-  async resolveToolForDocument(docUrl: string): Promise<PluginMetadata | null> {
-    const handle = await this.#repo.find<HasPatchworkMetadata>(
-      docUrl as AutomergeUrl
-    );
-    const doc = handle.doc();
-    if (!doc) return null;
-
-    const tool = getFallbackTool(doc);
-    if (!tool) return null;
-
-    return this.#toMetadata(tool);
-  }
-
-  async getSupportedTools(docUrl: string): Promise<PluginMetadata[]> {
-    const handle = await this.#repo.find<HasPatchworkMetadata>(
-      docUrl as AutomergeUrl
-    );
-    const doc = handle.doc();
-    if (!doc) return [];
-
-    const tools = getSupportedTools(doc);
-    const results = await Promise.all(tools.map((t) => this.#toMetadata(t)));
-    return results.filter((m): m is PluginMetadata => m != null);
   }
 }
 
@@ -305,7 +299,11 @@ class HostApi extends RpcTarget implements HostRpcContract {
     // Resolve opaque __plugin__ URLs back to real automerge-backed paths
     const realUrl = this.#mapper.toReal(url);
     if (realUrl) {
-      return fetch(realUrl).then((r) => r.text());
+      const source = await fetch(realUrl).then((r) => r.text());
+      // Rewrite any automerge URL strings in the source so they never
+      // enter the iframe. Plugin modules contain importUrl literals like
+      // "automerge:xyz..." — these are replaced with opaque equivalents.
+      return this.#mapper.rewriteAutomergeUrls(source);
     }
     this.#checkPolicy(url);
     return fetch(url).then((r) => r.text());

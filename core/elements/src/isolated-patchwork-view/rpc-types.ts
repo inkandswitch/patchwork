@@ -45,6 +45,13 @@ export interface PluginMetadata {
  */
 export interface PluginRegistryCapability {
   /**
+   * List all known registry type keys (e.g., "patchwork:tool", "patchwork:datatype").
+   * Used at boot to discover all plugin types and pre-populate the iframe's
+   * local registries.
+   */
+  listRegistryTypes(): Promise<string[]>;
+
+  /**
    * List all plugins of a given type.
    * e.g., list("patchwork:tool") → all tool descriptions
    * e.g., list("patchwork:datatype") → all datatype descriptions
@@ -55,17 +62,6 @@ export interface PluginRegistryCapability {
    * Get a single plugin by ID. Returns null if not found.
    */
   get(pluginId: string): Promise<PluginMetadata | null>;
-
-  /**
-   * Get the default tool for a document based on its `@patchwork.type`.
-   * Returns null if no tool supports the document's type.
-   */
-  resolveToolForDocument(docUrl: string): Promise<PluginMetadata | null>;
-
-  /**
-   * Get all tools that support a document's datatype.
-   */
-  getSupportedTools(docUrl: string): Promise<PluginMetadata[]>;
 }
 
 // ---------------------------------------------------------------------------

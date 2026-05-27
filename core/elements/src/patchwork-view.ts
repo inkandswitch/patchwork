@@ -41,22 +41,6 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
-  /**
-   * Optional callback to resolve the default tool for a document. Called when
-   * no tool is found in the local registry (e.g., inside an isolated iframe).
-   * The callback should load the tool module and register its plugins as a
-   * side effect — the existing registry "loaded" listener will trigger re-render.
-   * Returns the toolId if resolved, null otherwise.
-   */
-  resolveToolForDocument?: (
-    docUrl: AutomergeUrl
-  ) => Promise<{ toolId: string } | null>;
-  /**
-   * Optional callback to resolve a specific tool by ID. Called when tool-id is
-   * set but the tool isn't in the local registry. The callback should load the
-   * tool module and register its plugins as a side effect.
-   */
-  resolveToolById?: (toolId: string) => Promise<void>;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
@@ -96,7 +80,6 @@ export function registerPatchworkViewElement(
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
       #initEpoch = 0;
-      #resolving = false;
 
       get docUrl() {
         return this.#docUrl;
@@ -276,7 +259,6 @@ export function registerPatchworkViewElement(
         this.#handle = null;
         this.#tool = null;
         this.#requestedToolImports.clear();
-        this.#resolving = false;
         this.textContent = "";
         this.#state = State.none;
       }
@@ -310,29 +292,6 @@ export function registerPatchworkViewElement(
         }
 
         if (!toolId) {
-          // If a resolveToolForDocument callback is provided and we haven't
-          // tried it yet, use it to resolve the tool via RPC (e.g., from an
-          // isolated iframe). The callback loads the tool module and registers
-          // its plugins, which triggers the existing "loaded" listener to
-          // re-render.
-          if (params.resolveToolForDocument && !this.#resolving && this.docUrl) {
-            this.#resolving = true;
-            this.#state = "unable";
-            this.#displayLoading("...");
-            params.resolveToolForDocument(this.docUrl).then((result) => {
-              this.#resolving = false;
-              // If a toolId was returned but the registry listener hasn't
-              // already triggered a re-render, queue one now.
-              if (result?.toolId && this.#state === "unable") {
-                this.#queueRender();
-              }
-            }).catch((err) => {
-              this.#resolving = false;
-              console.error("resolveToolForDocument failed:", err);
-            });
-            return;
-          }
-
           this.#state = "unable";
 
           // Check if the document is missing @patchwork metadata
@@ -357,25 +316,6 @@ export function registerPatchworkViewElement(
           getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
         if (!this.#tool) {
-          // If a resolveToolById callback is provided and we haven't tried it
-          // yet, use it to load the tool via RPC. The callback registers the
-          // tool's plugins, which triggers the "loaded" listener to re-render.
-          if (params.resolveToolById && !this.#resolving) {
-            this.#resolving = true;
-            this.#state = "unable";
-            this.#displayLoading(toolId);
-            params.resolveToolById(toolId).then(() => {
-              this.#resolving = false;
-              if (this.#state === "unable") {
-                this.#queueRender();
-              }
-            }).catch((err) => {
-              this.#resolving = false;
-              console.error("resolveToolById failed:", err);
-            });
-            return;
-          }
-
           this.#notool();
         }
 
