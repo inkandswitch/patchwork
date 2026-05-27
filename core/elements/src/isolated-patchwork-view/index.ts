@@ -113,6 +113,23 @@ async function resolvePluginEntryUrl(
   return new URL(entryPoint, base).href;
 }
 
+/**
+ * Resolve a package folder URL (absolute, ending with "/") to its entry point
+ * by reading package.json. Used for lazy entry point resolution when the
+ * folder URL was stored in metadata instead of the full entry URL.
+ */
+async function resolveEntryFromFolder(
+  folderUrl: string
+): Promise<string | undefined> {
+  const packageJsonUrl = new URL("package.json", folderUrl).href;
+  const response = await fetch(packageJsonUrl);
+  if (!response.ok) return undefined;
+  const pkgJson = await response.json();
+  const entryPoint = resolvePackageExport(pkgJson);
+  if (!entryPoint) return undefined;
+  return new URL(entryPoint, folderUrl).href;
+}
+
 // ---------------------------------------------------------------------------
 // Opaque URL mapper — hides automerge document IDs from the iframe
 // ---------------------------------------------------------------------------
@@ -140,9 +157,7 @@ class OpaqueUrlMapper {
     // Check if we've already mapped a segment in this URL
     for (const [segment, token] of this.#segmentToToken) {
       if (url.includes(`/${segment}/`)) {
-        const result = url.replace(segment, `__plugin__/${token}`);
-        console.log(`[OpaqueUrlMapper] toOpaque (cached): ${url} → ${result}`);
-        return result;
+        return url.replace(segment, `__plugin__/${token}`);
       }
     }
     // Not registered yet — find the automerge URL segment via URL parsing
@@ -153,17 +168,15 @@ class OpaqueUrlMapper {
         const decoded = decodeURIComponent(segment);
         if (isValidAutomergeUrl(decoded)) {
           const token = `p${this.#counter++}`;
+          console.log(`[OpaqueUrlMapper] NEW mapping: ${token} = ${segment} (decoded: ${decoded})`);
           this.#segmentToToken.set(segment, token);
           this.#tokenToSegment.set(token, segment);
-          const result = url.replace(segment, `__plugin__/${token}`);
-          console.log(`[OpaqueUrlMapper] toOpaque (new ${token}): segment="${segment}" decoded="${decoded}" → ${result}`);
-          return result;
+          return url.replace(segment, `__plugin__/${token}`);
         }
       }
     } catch {
       // not a valid URL, return as-is
     }
-    console.log(`[OpaqueUrlMapper] toOpaque (no match): ${url}`);
     return url;
   }
 
@@ -173,14 +186,28 @@ class OpaqueUrlMapper {
    */
   toReal(url: string): string | null {
     for (const [token, segment] of this.#tokenToSegment) {
-      const opaqueSegment = `__plugin__/${token}`;
+      // Use __plugin__/pN/ (with trailing slash) to avoid prefix matches
+      // e.g., __plugin__/p1/ must not match __plugin__/p10/
+      const opaqueSegment = `__plugin__/${token}/`;
       if (url.includes(opaqueSegment)) {
-        const result = url.replace(opaqueSegment, segment);
-        console.log(`[OpaqueUrlMapper] toReal: ${url} → ${result}`);
+        const result = url.replace(opaqueSegment, `${segment}/`);
         return result;
       }
     }
     return null;
+  }
+
+  /**
+   * Rewrite automerge URL strings in module source text, replacing them with
+   * opaque equivalents. This runs on the host before sending source to the
+   * iframe, so real automerge URLs never enter the isolated context.
+   */
+  rewriteAutomergeUrls(source: string): string {
+    for (const [segment, token] of this.#segmentToToken) {
+      const decoded = decodeURIComponent(segment);
+      source = source.replaceAll(decoded, `__plugin__/${token}`);
+    }
+    return source;
   }
 }
 
@@ -206,17 +233,32 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
    * Convert a host-side plugin object to PluginMetadata with an opaque
    * importUrl. Returns null if the plugin has no importUrl or resolution fails.
    */
-  async #toMetadata(plugin: any): Promise<PluginMetadata | null> {
+  /**
+   * Convert a host-side plugin object to PluginMetadata with an opaque
+   * importUrl. No network requests — just builds the opaque URL from the
+   * plugin's importUrl. Entry point resolution is deferred to loadModuleSource.
+   */
+  #toMetadata(plugin: any): PluginMetadata | null {
     if (!plugin.importUrl) return null;
 
-    const entryUrl = await resolvePluginEntryUrl(plugin.importUrl);
-    if (!entryUrl) return null;
+    // Build a folder-level opaque URL from the plugin's automerge importUrl.
+    // The actual entry point (dist/index.js etc.) is resolved lazily in
+    // loadModuleSource when the module is actually loaded. This avoids
+    // fetching package.json for all plugins upfront (which would cause
+    // concurrent service worker requests and 400 errors for unsynced plugins).
+    const folderPath = getImportableUrlFromAutomergeUrl(
+      plugin.importUrl as AutomergeUrl
+    );
+    const folderUrl = new URL(folderPath, window.location.origin).href;
+
+    const opaqueUrl = this.#mapper.toOpaque(folderUrl);
+    console.log(`[PluginRegistryTarget] toMetadata: id=${plugin.id} type=${plugin.type} importUrl=${plugin.importUrl} → ${opaqueUrl}`);
 
     const meta: PluginMetadata = {
       id: plugin.id,
       type: plugin.type,
       name: plugin.name,
-      importUrl: this.#mapper.toOpaque(entryUrl),
+      importUrl: opaqueUrl,
     };
 
     if (plugin.icon != null) meta.icon = plugin.icon;
@@ -231,27 +273,28 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
   async list(pluginType: string): Promise<PluginMetadata[]> {
     const registry = getRegistry(pluginType);
     const all = registry.all();
-    const results = await Promise.all(all.map((p) => this.#toMetadata(p)));
-    return results.filter((m): m is PluginMetadata => m != null);
-  }
-
-  async get(pluginId: string): Promise<PluginMetadata | null> {
-    // Search across known registry types
-    for (const type of ["patchwork:tool", "patchwork:datatype"] as const) {
-      const plugin = getRegistry(type).get(pluginId);
-      if (plugin) return this.#toMetadata(plugin);
-    }
-    return null;
+    return all
+      .map((p) => this.#toMetadata(p))
+      .filter((m): m is PluginMetadata => m != null);
   }
 
   async listRegistryTypes(): Promise<string[]> {
     return Array.from(getAllRegistries().keys());
   }
 
+  async get(pluginId: string): Promise<PluginMetadata | null> {
+    // Search across all registry types
+    for (const [, registry] of getAllRegistries()) {
+      const plugin = registry.get(pluginId);
+      if (plugin) return this.#toMetadata(plugin);
+    }
+    return null;
+  }
+
   async getSupportedToolsForType(type: string): Promise<PluginMetadata[]> {
-    const tools = getSupportedToolsForType(type);
-    const results = await Promise.all(tools.map((t) => this.#toMetadata(t)));
-    return results.filter((m): m is PluginMetadata => m != null);
+    return getSupportedToolsForType(type)
+      .map((t) => this.#toMetadata(t))
+      .filter((m): m is PluginMetadata => m != null);
   }
 
   async getFallbackTool(docUrl: string): Promise<PluginMetadata | null> {
@@ -274,9 +317,9 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
     const doc = handle.doc();
     if (!doc) return [];
 
-    const tools = getSupportedTools(doc);
-    const results = await Promise.all(tools.map((t) => this.#toMetadata(t)));
-    return results.filter((m): m is PluginMetadata => m != null);
+    return getSupportedTools(doc)
+      .map((t) => this.#toMetadata(t))
+      .filter((m): m is PluginMetadata => m != null);
   }
 }
 
@@ -324,14 +367,27 @@ class HostApi extends RpcTarget implements HostRpcContract {
     // Resolve opaque __plugin__ URLs back to real automerge-backed paths
     const realUrl = this.#mapper.toReal(url);
     if (realUrl) {
-      console.log(`[isolated-patchwork-view] loadModuleSource: ${url} → ${realUrl}`);
-      const res = await fetch(realUrl);
-      if (!res.ok) {
-        console.error(`[isolated-patchwork-view] loadModuleSource FAILED (${res.status}): ${realUrl}`);
+      // If this is a folder URL (ends with /), lazily resolve the entry
+      // point from package.json. This happens for plugins whose entry
+      // URL couldn't be resolved at metadata time (e.g., not synced yet).
+      if (realUrl.endsWith("/")) {
+        // Folder URL — resolve the entry point and return a re-export stub.
+        // This ensures relative imports within the entry module resolve
+        // against the correct subdirectory (e.g., dist/), not the folder root.
+        const entry = await resolveEntryFromFolder(realUrl);
+        if (!entry) {
+          console.warn(
+            `[isolated-patchwork-view] could not resolve entry for ${url}, plugin may not be synced`
+          );
+          return "export default undefined;";
+        }
+        // Compute the entry subpath relative to the folder
+        const entrySubpath = entry.slice(realUrl.length);
+        return `export * from "./${entrySubpath}";`;
       }
-      return res.text();
+      const source = await fetch(realUrl).then((r) => r.text());
+      return this.#mapper.rewriteAutomergeUrls(source);
     }
-    console.log(`[isolated-patchwork-view] loadModuleSource (passthrough): ${url}`);
     this.#checkPolicy(url);
     return fetch(url).then((r) => r.text());
   }
@@ -431,6 +487,7 @@ export function registerIsolatedPatchworkViewElement(
       #initEpoch = 0;
       #readyHandler: ((e: MessageEvent) => void) | null = null;
       #bootstrapChannel: MessageChannel | null = null;
+      #registryUnsubs: (() => void)[] = [];
 
       get docUrl() {
         return this.#docUrl;
@@ -648,6 +705,33 @@ export function registerIsolatedPatchworkViewElement(
             subductionWasm,
           ]
         );
+
+        // Subscribe to host registry changes and push updates to the iframe.
+        // When plugins are re-registered (e.g., ModuleWatcher discovers a
+        // newer version), the iframe's local registry is updated to match.
+        for (const [, registry] of getAllRegistries()) {
+          const unsub = registry.on("registered", (plugin: any) => {
+            if (!plugin.importUrl || !this.#iframeStub) return;
+            const folderPath = getImportableUrlFromAutomergeUrl(
+              plugin.importUrl as AutomergeUrl
+            );
+            const folderUrl = new URL(folderPath, window.location.origin).href;
+            const opaqueUrl = mapper.toOpaque(folderUrl);
+            const meta: any = {
+              id: plugin.id,
+              type: plugin.type,
+              name: plugin.name,
+              importUrl: opaqueUrl,
+            };
+            if (plugin.icon != null) meta.icon = plugin.icon;
+            if (plugin.unlisted != null) meta.unlisted = plugin.unlisted;
+            if (plugin.supportedDatatypes != null) meta.supportedDatatypes = plugin.supportedDatatypes;
+            if (plugin.tags != null) meta.tags = plugin.tags;
+            if (plugin.forTitleBar != null) meta.forTitleBar = plugin.forTitleBar;
+            this.#iframeStub!.onPluginRegistered(meta);
+          });
+          this.#registryUnsubs.push(unsub);
+        }
       }
 
       #teardown() {
@@ -677,6 +761,9 @@ export function registerIsolatedPatchworkViewElement(
         }
 
         this.#iframeStub = null;
+
+        for (const unsub of this.#registryUnsubs) unsub();
+        this.#registryUnsubs = [];
 
         if (this.#iframe) {
           this.#iframe.remove();

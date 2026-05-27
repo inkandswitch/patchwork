@@ -45,9 +45,8 @@ export interface PluginMetadata {
  */
 export interface PluginRegistryCapability {
   /**
-   * List all known registry type keys (e.g., "patchwork:tool", "patchwork:datatype",
-   * "codemirror:extension"). Used at boot to discover all plugin types and
-   * pre-populate the iframe's local registries.
+   * List all known registry type keys (e.g., "patchwork:tool",
+   * "patchwork:datatype", "codemirror:extension").
    */
   listRegistryTypes(): Promise<string[]>;
 
@@ -116,7 +115,9 @@ export interface HostRpcContract {
 
 /**
  * Iframe exposes these methods to the host via capnweb RPC.
- * Currently empty — placeholder for future host→iframe calls
- * (e.g., navigate, focus, theme changes).
+ * The host calls these methods to push updates to the iframe.
  */
-export interface IframeRpcContract {}
+export interface IframeRpcContract {
+  /** Host pushes a plugin registration update to the iframe. */
+  onPluginRegistered(meta: PluginMetadata): void;
+}

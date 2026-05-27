@@ -82,7 +82,9 @@ async function boot() {
   } catch {
     Object.defineProperty(window, "localStorage", {
       value: {
-        getItem: () => null,
+        // Return "patchwork:*" for the "debug" key so the debug package
+        // enables logging inside the iframe (which has no real localStorage).
+        getItem: (key: string) => key === "debug" ? "patchwork:*" : null,
         setItem: () => {},
         removeItem: () => {},
       },
@@ -165,7 +167,32 @@ async function boot() {
   log("capnweb loaded");
 
   // 7. Establish capnweb RPC session and close bootstrap channel.
-  class IframeApi extends capnweb.RpcTarget {}
+  //    The IframeApi receives host→iframe calls (e.g., registry updates).
+  //    Late-bound references are filled in after modules load (step 9).
+  let _plugins: any = null;
+  let _importShim: any = null;
+
+  class IframeApi extends capnweb.RpcTarget {
+    onPluginRegistered(meta: any) {
+      if (!_plugins || !_importShim) return;
+      log("registry update from host:", meta.id, meta.importUrl);
+      _plugins.getRegistry(meta.type).register({
+        ...meta,
+        load: async () => {
+          const mod = await _importShim(meta.importUrl);
+          if (Array.isArray(mod.plugins)) {
+            const match = mod.plugins.find(
+              (p: any) => p.id === meta.id && p.type === meta.type
+            );
+            if (match && typeof match.load === "function") {
+              return match.load();
+            }
+          }
+          return mod.default ?? mod;
+        },
+      }, meta.importUrl);
+    }
+  }
 
   const hostStub = capnweb.newMessagePortRpcSession(
     init.rpcPort,
@@ -217,6 +244,10 @@ async function boot() {
     ]);
   log("modules loaded");
 
+  // Fill in late-bound references for IframeApi (host→iframe push updates)
+  _plugins = plugins;
+  _importShim = importShim;
+
   // 10. Initialize WASM from transferred ArrayBuffers (subduction first)
   subduction.initSync(new Uint8Array(d.subductionWasm));
   await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
@@ -250,9 +281,16 @@ async function boot() {
       plugins.getRegistry(meta.type).register({
         ...meta,
         load: async () => {
-          const mod = await importShim(meta.importUrl);
+          // Get the current importUrl from the host — it may have been
+          // updated by ModuleWatcher since the iframe booted.
+          const current = await registryCap.get(meta.id);
+          const importUrl = current?.importUrl ?? meta.importUrl;
+          log("loading plugin:", meta.id, "importUrl:", importUrl);
+          const mod = await importShim(importUrl);
           if (Array.isArray(mod.plugins)) {
-            const match = mod.plugins.find((p: any) => p.id === meta.id);
+            const match = mod.plugins.find(
+              (p: any) => p.id === meta.id && p.type === meta.type
+            );
             if (match && typeof match.load === "function") {
               return match.load();
             }
@@ -263,6 +301,12 @@ async function boot() {
     }
   }
   log("local registries pre-populated with", allMetasByType.flat().length, "plugins");
+
+  // Log specific tools for debugging
+  for (const id of ["new-file", "raw", "codemirror-base"]) {
+    const entry = plugins.getRegistry("patchwork:tool").get(id);
+    log("pre-populated tool:", id, "importUrl:", entry?.importUrl ?? "(not found)");
+  }
 
   // 13. Register patchwork-view element — no special callbacks needed.
   //     The pre-populated local registry handles tool resolution via the
