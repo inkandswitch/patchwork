@@ -1,6 +1,6 @@
 {
   "name": "@inkandswitch/patchwork-elements",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "author": "Ink & Switch",
   "type": "module",
   "description": "",
@@ -17,9 +17,15 @@
     "solid-js": "*"
   },
   "peerDependenciesMeta": {
-    "@types/react": { "optional": true },
-    "react": { "optional": true },
-    "solid-js": { "optional": true }
+    "@types/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "solid-js": {
+      "optional": true
+    }
   },
   "dependencies": {
     "debug": "^4.4.3"
