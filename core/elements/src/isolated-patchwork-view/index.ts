@@ -107,7 +107,11 @@ async function resolvePluginEntry(
   const entryPoint = resolvePackageExport(pkgJson);
   if (!entryPoint) return undefined;
 
-  return { baseUrl, entrySubpath: entryPoint };
+  // Strip leading "./" — resolvePackageExport returns paths like "./dist/index.js"
+  const normalizedEntry = entryPoint.startsWith("./")
+    ? entryPoint.slice(2)
+    : entryPoint;
+  return { baseUrl, entrySubpath: normalizedEntry };
 }
 
 // ---------------------------------------------------------------------------
@@ -145,10 +149,21 @@ class OpaqueUrlMapper {
   /**
    * Resolve an opaque URL back to a real URL. Returns null if the URL does
    * not use the opaque prefix or the token is unknown.
+   *
+   * Handles both bare paths (`/__plugin__/p0/...`) and full URLs
+   * (`http://host/__plugin__/p0/...`) since es-module-shims resolves
+   * import specifiers to absolute URLs before calling the source hook.
    */
   resolve(url: string): string | null {
-    if (!url.startsWith(OPAQUE_PREFIX)) return null;
-    const rest = url.slice(OPAQUE_PREFIX.length);
+    // Extract the path portion — the URL may arrive as a full absolute URL
+    // (e.g., "http://localhost:5173/__plugin__/p0/dist/index.js") when
+    // es-module-shims resolves the specifier against the document base.
+    let path = url;
+    const prefixIdx = url.indexOf(OPAQUE_PREFIX);
+    if (prefixIdx < 0) return null;
+    path = url.slice(prefixIdx);
+
+    const rest = path.slice(OPAQUE_PREFIX.length);
     const slashIdx = rest.indexOf("/");
     if (slashIdx < 0) return null;
     const token = rest.slice(0, slashIdx);
