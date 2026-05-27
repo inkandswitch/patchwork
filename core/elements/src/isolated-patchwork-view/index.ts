@@ -1,13 +1,17 @@
 /**
  * <isolated-patchwork-view> — renders a patchwork tool inside a srcdoc iframe.
  *
- * Same external interface as <patchwork-view> (attributes: doc-url, tool-id;
+ * Same external interface as <patchwork-view> (attributes: doc-url;
  * events: patchwork:mounted, patchwork:open-document) but the tool runs in
  * an iframe with a null origin (srcdoc), no service worker, and no IndexedDB.
  *
- * The host resolves the tool's module URL and importmap to absolute URLs.
- * The iframe uses es-module-shims to load modules from the host origin.
- * Document sync happens via a direct MessageChannel connection to the host repo.
+ * Tool resolution is deferred to the iframe — the host never pre-resolves
+ * which tool to use. Instead, the iframe requests tool information via a
+ * PluginRegistryCapability granted through capnweb RPC.
+ *
+ * Plugin/tool source code is served through opaque URLs (`/__plugin__/...`)
+ * that hide the underlying automerge document IDs. Automerge URLs never flow
+ * from host to iframe — only from iframe to host (for document references).
  *
  * Host↔iframe communication uses capnweb RPC over MessagePort for type-safe
  * bidirectional method calls with object-capability semantics. A minimal
@@ -21,6 +25,7 @@ import type { RpcStub } from "capnweb";
 import {
   getRegistry,
   getFallbackTool,
+  getSupportedTools,
   type LoadedTool,
 } from "@inkandswitch/patchwork-plugins";
 import { type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
@@ -29,9 +34,18 @@ import {
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
 import { MountedEvent, OpenDocumentEvent } from "../events.js";
-import type { HostRpcContract, IframeRpcContract } from "./rpc-types.js";
+import type {
+  HostRpcContract,
+  IframeRpcContract,
+  PluginMetadata,
+  PluginRegistryCapability,
+} from "./rpc-types.js";
 import { type ResourcePolicy, AllowAllPolicy } from "./resource-policy.js";
 import getSrcdocHtml from "./srcdoc.js";
+
+// ---------------------------------------------------------------------------
+// Import map resolution
+// ---------------------------------------------------------------------------
 
 /** Resolve the host importmap entries to absolute URLs. */
 function resolveImportMap(importMap: any, baseURI: string): any {
@@ -68,18 +82,23 @@ function resolveImportMap(importMap: any, baseURI: string): any {
   return resolved;
 }
 
+// ---------------------------------------------------------------------------
+// Plugin entry point resolution
+// ---------------------------------------------------------------------------
+
 /**
- * Resolve a tool's automerge folder URL to an absolute entry point URL.
- * This runs on the host side where window.location.origin is valid.
+ * Resolve a plugin's automerge import URL to its package base URL and entry
+ * subpath. Returns both so the caller can register the base in the
+ * OpaqueUrlMapper and construct an opaque entry URL.
  */
-async function resolveToolEntryUrl(
-  toolImportUrl: string
-): Promise<string | undefined> {
+async function resolvePluginEntry(
+  importUrl: string
+): Promise<{ baseUrl: string; entrySubpath: string } | undefined> {
   const folderPath = getImportableUrlFromAutomergeUrl(
-    toolImportUrl as AutomergeUrl
+    importUrl as AutomergeUrl
   );
-  const base = new URL(folderPath, window.location.origin);
-  const packageJsonUrl = new URL("package.json", base).href;
+  const baseUrl = new URL(folderPath, window.location.origin).href;
+  const packageJsonUrl = new URL("package.json", baseUrl).href;
 
   const response = await fetch(packageJsonUrl);
   if (!response.ok) return undefined;
@@ -88,8 +107,149 @@ async function resolveToolEntryUrl(
   const entryPoint = resolvePackageExport(pkgJson);
   if (!entryPoint) return undefined;
 
-  return new URL(entryPoint, base).href;
+  return { baseUrl, entrySubpath: entryPoint };
 }
+
+// ---------------------------------------------------------------------------
+// Opaque URL mapper — hides automerge document IDs from the iframe
+// ---------------------------------------------------------------------------
+
+const OPAQUE_PREFIX = "/__plugin__/";
+
+/**
+ * Maps opaque `/__plugin__/<token>/<subpath>` URLs to real automerge-backed
+ * package URLs. The token is a short per-session identifier (p0, p1, ...).
+ *
+ * When a plugin is first encountered, the mapper assigns it a token and
+ * records the mapping from token to real package base URL. Subsequent
+ * requests for files in the same package reuse the same token.
+ */
+class OpaqueUrlMapper {
+  #counter = 0;
+  #tokenToBase = new Map<string, string>();
+
+  /**
+   * Register a plugin's package base URL and return an opaque URL for its
+   * entry point. If the same base URL was already registered, reuses the
+   * existing token.
+   */
+  register(realBaseUrl: string, entrySubpath: string): string {
+    for (const [token, base] of this.#tokenToBase) {
+      if (base === realBaseUrl) return `${OPAQUE_PREFIX}${token}/${entrySubpath}`;
+    }
+    const token = `p${this.#counter++}`;
+    this.#tokenToBase.set(token, realBaseUrl);
+    return `${OPAQUE_PREFIX}${token}/${entrySubpath}`;
+  }
+
+  /**
+   * Resolve an opaque URL back to a real URL. Returns null if the URL does
+   * not use the opaque prefix or the token is unknown.
+   */
+  resolve(url: string): string | null {
+    if (!url.startsWith(OPAQUE_PREFIX)) return null;
+    const rest = url.slice(OPAQUE_PREFIX.length);
+    const slashIdx = rest.indexOf("/");
+    if (slashIdx < 0) return null;
+    const token = rest.slice(0, slashIdx);
+    const subpath = rest.slice(slashIdx + 1);
+    const base = this.#tokenToBase.get(token);
+    if (!base) return null;
+    return new URL(subpath, base).href;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PluginRegistryTarget — capnweb capability for querying the plugin registry
+// ---------------------------------------------------------------------------
+
+/**
+ * Host-side capability that the iframe receives as a capnweb stub. Each
+ * method call is proxied back to this target on the host.
+ */
+class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability {
+  #repo: Repo;
+  #mapper: OpaqueUrlMapper;
+
+  constructor(repo: Repo, mapper: OpaqueUrlMapper) {
+    super();
+    this.#repo = repo;
+    this.#mapper = mapper;
+  }
+
+  /**
+   * Convert a host-side plugin object to PluginMetadata with an opaque
+   * importUrl. Returns null if the plugin has no importUrl or resolution fails.
+   */
+  async #toMetadata(plugin: any): Promise<PluginMetadata | null> {
+    if (!plugin.importUrl) return null;
+
+    const resolved = await resolvePluginEntry(plugin.importUrl);
+    if (!resolved) return null;
+
+    const opaqueUrl = this.#mapper.register(resolved.baseUrl, resolved.entrySubpath);
+
+    const meta: PluginMetadata = {
+      id: plugin.id,
+      type: plugin.type,
+      name: plugin.name,
+      importUrl: opaqueUrl,
+    };
+
+    if (plugin.icon != null) meta.icon = plugin.icon;
+    if (plugin.unlisted != null) meta.unlisted = plugin.unlisted;
+    if (plugin.supportedDatatypes != null) meta.supportedDatatypes = plugin.supportedDatatypes;
+    if (plugin.tags != null) meta.tags = plugin.tags;
+    if (plugin.forTitleBar != null) meta.forTitleBar = plugin.forTitleBar;
+
+    return meta;
+  }
+
+  async list(pluginType: string): Promise<PluginMetadata[]> {
+    const registry = getRegistry(pluginType);
+    const all = registry.all();
+    const results = await Promise.all(all.map((p) => this.#toMetadata(p)));
+    return results.filter((m): m is PluginMetadata => m != null);
+  }
+
+  async get(pluginId: string): Promise<PluginMetadata | null> {
+    // Search across known registry types
+    for (const type of ["patchwork:tool", "patchwork:datatype"] as const) {
+      const plugin = getRegistry(type).get(pluginId);
+      if (plugin) return this.#toMetadata(plugin);
+    }
+    return null;
+  }
+
+  async resolveToolForDocument(docUrl: string): Promise<PluginMetadata | null> {
+    const handle = await this.#repo.find<HasPatchworkMetadata>(
+      docUrl as AutomergeUrl
+    );
+    const doc = handle.doc();
+    if (!doc) return null;
+
+    const tool = getFallbackTool(doc);
+    if (!tool) return null;
+
+    return this.#toMetadata(tool);
+  }
+
+  async getSupportedTools(docUrl: string): Promise<PluginMetadata[]> {
+    const handle = await this.#repo.find<HasPatchworkMetadata>(
+      docUrl as AutomergeUrl
+    );
+    const doc = handle.doc();
+    if (!doc) return [];
+
+    const tools = getSupportedTools(doc);
+    const results = await Promise.all(tools.map((t) => this.#toMetadata(t)));
+    return results.filter((m): m is PluginMetadata => m != null);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// HostApi — root RPC target exposed to the iframe
+// ---------------------------------------------------------------------------
 
 /**
  * Host-side RPC target exposed to the isolated iframe via capnweb.
@@ -98,23 +258,41 @@ async function resolveToolEntryUrl(
 class HostApi extends RpcTarget implements HostRpcContract {
   #element: HTMLElement;
   #policy: ResourcePolicy;
+  #repo: Repo;
+  #mapper: OpaqueUrlMapper;
+  #registryTarget: PluginRegistryTarget;
 
-  constructor(element: HTMLElement, policy: ResourcePolicy) {
+  constructor(
+    element: HTMLElement,
+    policy: ResourcePolicy,
+    repo: Repo,
+    mapper: OpaqueUrlMapper
+  ) {
     super();
     this.#element = element;
     this.#policy = policy;
+    this.#repo = repo;
+    this.#mapper = mapper;
+    this.#registryTarget = new PluginRegistryTarget(repo, mapper);
+  }
+
+  getPluginRegistry(): PluginRegistryCapability {
+    return this.#registryTarget;
   }
 
   #checkPolicy(url: string): void {
     if (!this.#policy.canFetch(url)) {
-      console.warn(
-        `[isolated-patchwork-view] policy denied: ${url}`
-      );
+      console.warn(`[isolated-patchwork-view] policy denied: ${url}`);
       throw new Error(`Access denied: ${url}`);
     }
   }
 
   async loadModuleSource(url: string): Promise<string> {
+    // Resolve opaque /__plugin__/ URLs back to real automerge-backed paths
+    const realUrl = this.#mapper.resolve(url);
+    if (realUrl) {
+      return fetch(realUrl).then((r) => r.text());
+    }
     this.#checkPolicy(url);
     return fetch(url).then((r) => r.text());
   }
@@ -122,8 +300,12 @@ class HostApi extends RpcTarget implements HostRpcContract {
   async fetchResource(
     url: string
   ): Promise<{ contentType: string; body: string | Uint8Array }> {
-    this.#checkPolicy(url);
-    const res = await fetch(url);
+    // Resolve opaque URLs for fetch too (e.g., CSS, images from tool packages)
+    const realUrl = this.#mapper.resolve(url) ?? url;
+    if (!this.#mapper.resolve(url)) {
+      this.#checkPolicy(url);
+    }
+    const res = await fetch(realUrl);
     const contentType = res.headers.get("content-type") || "";
     const isBinary =
       contentType.includes("wasm") || contentType.includes("octet-stream");
@@ -158,17 +340,20 @@ class HostApi extends RpcTarget implements HostRpcContract {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Custom element registration
+// ---------------------------------------------------------------------------
+
 export interface RegisterIsolatedPatchworkViewElementParams {
   name?: string;
   repo: Repo;
-  /** Optional factory to create per-tool resource policies. Defaults to AllowAllPolicy. */
-  createPolicy?: (toolId: string) => ResourcePolicy;
+  /** Optional resource policy. Defaults to AllowAllPolicy. */
+  createPolicy?: () => ResourcePolicy;
 }
 
 export interface IsolatedPatchworkViewElement extends HTMLElement {
   repo: Repo;
   docUrl?: AutomergeUrl;
-  toolId?: string;
 }
 
 export function registerIsolatedPatchworkViewElement(
@@ -185,14 +370,12 @@ export function registerIsolatedPatchworkViewElement(
 
   const attrs = {
     docUrl: "doc-url",
-    toolId: "tool-id",
   };
 
   customElements.define(
     elementName,
     class IsolatedPatchworkViewElement extends HTMLElement {
       #docUrl: AutomergeUrl | null = null;
-      #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #repoChannel: MessageChannel | null = null;
       #rpcChannel: MessageChannel | null = null;
@@ -212,19 +395,8 @@ export function registerIsolatedPatchworkViewElement(
         else this.removeAttribute(attrs.docUrl);
       }
 
-      get toolId() {
-        return this.#toolId;
-      }
-
-      set toolId(id: string | null) {
-        if (this.#toolId === id) return;
-        this.#toolId = id;
-        if (id) this.setAttribute(attrs.toolId, id);
-        else this.removeAttribute(attrs.toolId);
-      }
-
       static get observedAttributes() {
-        return [attrs.docUrl, attrs.toolId];
+        return [attrs.docUrl];
       }
 
       connectedCallback() {
@@ -234,7 +406,6 @@ export function registerIsolatedPatchworkViewElement(
         this.style.display = "block";
 
         this.#docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
-        this.#toolId = this.getAttribute(attrs.toolId);
         this.#init();
       }
 
@@ -249,9 +420,7 @@ export function registerIsolatedPatchworkViewElement(
       ) {
         if (old === val) return;
 
-        if (name === attrs.toolId) {
-          this.#toolId = val;
-        } else if (name === attrs.docUrl) {
+        if (name === attrs.docUrl) {
           this.#docUrl = val as AutomergeUrl;
         }
 
@@ -264,48 +433,19 @@ export function registerIsolatedPatchworkViewElement(
         if (this.#iframe) return;
 
         const epoch = ++this.#initEpoch;
-        let toolId = this.#toolId;
         const docUrl = this.#docUrl;
 
-        // Resolve which tool module to load.
-        let toolImportUrl: string | undefined;
-        if (toolId) {
-          const registeredTool =
-            getRegistry<LoadedTool>("patchwork:tool").get(toolId);
-          if (registeredTool?.importUrl) {
-            toolImportUrl = registeredTool.importUrl;
-          }
-        }
-        if (!toolImportUrl) {
-          const handle = await repo.find<HasPatchworkMetadata>(docUrl);
-          if (epoch !== this.#initEpoch) return;
-          const fallback = getFallbackTool(handle.doc());
-          toolImportUrl = fallback?.importUrl;
-          if (!toolId && fallback?.id) {
-            toolId = fallback.id;
-          }
-        }
-
-        if (!toolId) return;
-
-        // Resolve tool entry point URL on the host side, and pre-fetch
-        // es-module-shims source + WASM buffers in parallel (the sandboxed
+        // Pre-fetch tool-independent assets in parallel (the sandboxed
         // iframe cannot fetch anything itself).
-        let toolEntryUrl: string | undefined;
         const esmsUrl =
           "https://ga.jspm.io/npm:es-module-shims@2.8.1/dist/es-module-shims.wasm.js";
 
-        const [resolvedToolEntry, esmsSource, automergeWasm, subductionWasm] =
-          await Promise.all([
-            toolImportUrl
-              ? resolveToolEntryUrl(toolImportUrl)
-              : Promise.resolve(undefined),
-            fetch(esmsUrl).then((r) => r.text()),
-            fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
-            fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
-          ]);
+        const [esmsSource, automergeWasm, subductionWasm] = await Promise.all([
+          fetch(esmsUrl).then((r) => r.text()),
+          fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
+          fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
+        ]);
         if (epoch !== this.#initEpoch) return;
-        toolEntryUrl = resolvedToolEntry;
 
         // Create srcdoc iframe with sandbox for security isolation
         const iframe = document.createElement("iframe");
@@ -340,9 +480,6 @@ export function registerIsolatedPatchworkViewElement(
         const importMap = resolveImportMap(rawImportMap, document.baseURI);
 
         // Collect the set of URLs the bootstrap channel is allowed to serve.
-        // Only importmap entry values are permitted — this ensures the
-        // bootstrap channel can load capnweb (and its importmap peers) but
-        // nothing else.
         const allowedBootstrapUrls = new Set<string>();
         if (importMap.imports) {
           for (const url of Object.values(importMap.imports)) {
@@ -350,11 +487,8 @@ export function registerIsolatedPatchworkViewElement(
           }
         }
 
-        // Bootstrap channel — handles the iframe's requests to load module
-        // source during the bootstrap phase (before capnweb RPC is ready).
-        // Once the iframe has loaded capnweb via this channel and established
-        // its RPC session, all further communication goes over capnweb RPC.
-        // Only importmap URLs are allowed.
+        // Bootstrap channel — handles module loading before capnweb RPC is
+        // ready. Only importmap URLs are allowed.
         const bootstrapChannel = new MessageChannel();
         bootstrapChannel.port1.onmessage = async (e) => {
           const { id, type, url } = e.data;
@@ -393,11 +527,11 @@ export function registerIsolatedPatchworkViewElement(
         );
         this.#repoChannel = repoChannel;
 
-        // Set up capnweb RPC channel — the HostApi handles module loading,
-        // fetch proxying, and event callbacks from the iframe.
+        // Set up capnweb RPC channel with the HostApi and opaque URL mapper.
         const rpcChannel = new MessageChannel();
-        const policy = createPolicy(toolId);
-        const hostApi = new HostApi(this, policy);
+        const policy = createPolicy();
+        const mapper = new OpaqueUrlMapper();
+        const hostApi = new HostApi(this, policy, repo, mapper);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
           rpcChannel.port1,
           hostApi
@@ -405,16 +539,12 @@ export function registerIsolatedPatchworkViewElement(
         this.#rpcChannel = rpcChannel;
 
         // Send init message with transferred ports and pre-fetched assets.
-        // Three ports are transferred:
-        //   [0] repoPort     — Automerge document sync
-        //   [1] bootstrapPort — one-shot module loading (to load capnweb)
-        //   [2] rpcPort       — capnweb RPC (used after bootstrap)
+        // Tool resolution is deferred — the iframe will request it via the
+        // PluginRegistryCapability after RPC is established.
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
             docUrl,
-            toolId,
-            toolEntryUrl,
             importMap,
             hostOrigin: window.location.origin,
             esmsSource,

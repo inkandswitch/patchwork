@@ -12,6 +12,8 @@
  *   4. importShim("capnweb") to get capnweb through the same channel
  *   5. Establish capnweb RPC session on rpc port — close bootstrap channel
  *   6. Rewire fetch proxy and source hook to use capnweb RPC
+ *   7. Get PluginRegistryCapability and resolve tool for the document
+ *   8. Register patchwork-view with tool resolution callbacks
  */
 
 // ---------------------------------------------------------------------------
@@ -32,8 +34,6 @@ interface InitMessage {
   rpcPort: MessagePort;
   data: {
     docUrl: string;
-    toolId: string;
-    toolEntryUrl?: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
     hostOrigin: string;
     esmsSource: string;
@@ -72,7 +72,7 @@ async function boot() {
     });
   });
   const d = init.data;
-  log("received init", { docUrl: d.docUrl, toolId: d.toolId });
+  log("received init", { docUrl: d.docUrl });
 
   // 3. Stub localStorage — sandboxed iframes throw SecurityError on access.
   try {
@@ -214,7 +214,7 @@ async function boot() {
 
   // 11. Create ephemeral Repo (no storage — srcdoc has no IndexedDB)
   const repo = new amRepo.Repo({
-    peerId: "isolated-" + d.toolId + "-" + crypto.randomUUID().slice(0, 8),
+    peerId: "isolated-" + crypto.randomUUID().slice(0, 8),
     async sharePolicy() {
       return true;
     },
@@ -224,25 +224,64 @@ async function boot() {
   );
   log("repo connected");
 
-  // 12. Register patchwork-view element
-  elements.registerPatchworkViewElement({ repo });
+  // 12. Get PluginRegistryCapability from host
+  const registry = hostStub.getPluginRegistry();
+  log("plugin registry capability obtained");
 
-  // 13. Import and register the tool module.
-  if (d.toolEntryUrl) {
-    const mod = await importShim(d.toolEntryUrl);
+  // Helper: load a plugin module and register its plugins in the local registry.
+  async function loadPluginModule(importUrl: string) {
+    const mod = await importShim(importUrl);
     if (Array.isArray(mod.plugins)) {
-      log("registering " + mod.plugins.length + " plugin(s)");
-      plugins.registerPlugins(mod.plugins, d.toolEntryUrl);
+      log("registering " + mod.plugins.length + " plugin(s) from", importUrl);
+      plugins.registerPlugins(mod.plugins, importUrl);
     }
   }
-  log("tool loaded");
 
-  // 14. Render
+  // 13. Register patchwork-view element with tool resolution callbacks.
+  //     These callbacks are invoked by <patchwork-view> inside the iframe
+  //     when it needs a tool that isn't in the local registry (e.g., when
+  //     a container tool renders sub-documents).
+  elements.registerPatchworkViewElement({
+    repo,
+    resolveToolForDocument: async (docUrl: string) => {
+      const meta = await registry.resolveToolForDocument(docUrl);
+      if (meta) {
+        await loadPluginModule(meta.importUrl);
+        return { toolId: meta.id };
+      }
+      return null;
+    },
+    resolveToolById: async (toolId: string) => {
+      const meta = await registry.get(toolId);
+      if (meta) await loadPluginModule(meta.importUrl);
+    },
+  });
+  log("patchwork-view registered with tool resolution callbacks");
+
+  // 14. Resolve and load the tool for the document via the capability.
+  const toolMeta = await registry.resolveToolForDocument(d.docUrl);
+  let toolId: string | undefined;
+  if (toolMeta) {
+    await loadPluginModule(toolMeta.importUrl);
+    toolId = toolMeta.id;
+    log("tool resolved:", toolId);
+  } else {
+    log("no tool found for document");
+  }
+
+  // 15. Render
   const rootElement = document.getElementById("root")!;
   rootElement.setAttribute("doc-url", d.docUrl);
-  rootElement.setAttribute("tool-id", d.toolId);
+  if (toolId) {
+    rootElement.setAttribute("tool-id", toolId);
+  }
 
-  // 15. Forward events to host via capnweb RPC
+  // 16. Expose plugin registry capability for tools loaded inside the iframe.
+  //     Tools like space/folder can use this to list datatypes, resolve tools
+  //     for sub-documents, etc.
+  (window as any).__patchwork = { registry };
+
+  // 17. Forward events to host via capnweb RPC
   rootElement.addEventListener("patchwork:open-document", ((
     event: CustomEvent
   ) => {
