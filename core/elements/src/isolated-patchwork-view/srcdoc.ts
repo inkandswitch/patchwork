@@ -338,6 +338,26 @@ async function boot() {
     hostStub.onMounted(detail.url, detail.toolId);
   }) as EventListener);
 
+  // 18. Forward hash changes to host (tools like folder use <a href="#doc=...">)
+  window.addEventListener("hashchange", () => {
+    log("hashchange:", window.location.hash);
+    hostStub.onHashChange(window.location.hash);
+  });
+
+  // Also intercept link clicks that would change the hash, in case
+  // hashchange doesn't fire in sandboxed iframes.
+  document.addEventListener("click", (e: MouseEvent) => {
+    const anchor = (e.target as HTMLElement)?.closest?.("a[href^='#']");
+    if (anchor) {
+      e.preventDefault();
+      const href = anchor.getAttribute("href");
+      if (href) {
+        log("intercepted hash link click:", href);
+        hostStub.onHashChange(href);
+      }
+    }
+  });
+
   log("boot complete");
 }
 

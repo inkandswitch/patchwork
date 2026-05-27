@@ -111,6 +111,8 @@ export interface HostRpcContract {
     title?: string,
     docType?: string
   ): void;
+  /** Iframe forwards a hash change (e.g., from <a href="#doc=..."> links). */
+  onHashChange(hash: string): void;
 }
 
 /**
