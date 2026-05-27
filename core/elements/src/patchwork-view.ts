@@ -75,7 +75,6 @@ export function registerPatchworkViewElement(
       #state: State = State.none;
       #requestedToolImports = new Set<string>();
       #initEpoch = 0;
-      #mounted: { url: AutomergeUrl; toolId: string } | null = null;
       #capturedParent: Element | null = null;
 
       get docUrl() {
@@ -258,6 +257,16 @@ export function registerPatchworkViewElement(
       async #teardown() {
         if (this.#state == State.none) return;
 
+        // Capture the mount-event payload (if any) before clearing state,
+        // so the unmount echoes the same {url, toolId} we dispatched at
+        // mount. `rendered`/`fallback` are exactly the states in which
+        // `#render` dispatched a MountedEvent (it sets `#tool` only after
+        // the tool's module call succeeds).
+        const wasMounted =
+          this.#state == State.rendered || this.#state == State.fallback;
+        const mountedUrl = this.#handle?.url;
+        const mountedToolId = this.#tool?.id;
+
         this.#initEpoch++;
 
         for (const fn of this.#teardowns) {
@@ -271,10 +280,10 @@ export function registerPatchworkViewElement(
         this.textContent = "";
         this.#state = State.none;
 
-        const mounted = this.#mounted;
-        if (mounted) {
-          this.#mounted = null;
-          this.#dispatchUnmount(new UnmountedEvent(mounted));
+        if (wasMounted && mountedUrl && mountedToolId) {
+          this.#dispatchUnmount(
+            new UnmountedEvent({ url: mountedUrl, toolId: mountedToolId })
+          );
         }
       }
 
@@ -374,7 +383,6 @@ export function registerPatchworkViewElement(
             console.warn(`return a cleanup function from ${toolId}`);
           }
           this.#state = fallingBack ? "fallback" : "rendered";
-          this.#mounted = { url: this.docUrl, toolId };
           this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
         } catch (error) {
           this.append(
