@@ -50,6 +50,7 @@
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^",
     "@types/debug": "^4.1.12",
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",

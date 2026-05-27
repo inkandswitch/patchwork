@@ -17,14 +17,25 @@ export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
   }
 }
 
-export interface MountedEventDetail {
-  url: AutomergeUrl;
-  toolId: string;
-}
+export type MountedEventDetail =
+  | { url: AutomergeUrl; toolId: string }
+  | { componentId: string };
 
 export class MountedEvent extends CustomEvent<MountedEventDetail> {
   constructor(detail: MountedEventDetail) {
     super("patchwork:mounted", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
+  }
+}
+
+export type UnmountedEventDetail = MountedEventDetail;
+
+export class UnmountedEvent extends CustomEvent<UnmountedEventDetail> {
+  constructor(detail: UnmountedEventDetail) {
+    super("patchwork:unmounted", {
       detail,
       composed: true,
       bubbles: true,
@@ -50,11 +61,13 @@ declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
+    "patchwork:unmounted": UnmountedEvent;
     "patchwork:no-tool": NoToolEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
+    "patchwork:unmounted": UnmountedEvent;
     "patchwork:no-tool": NoToolEvent;
   }
 }

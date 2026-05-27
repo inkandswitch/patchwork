@@ -114,6 +114,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../plugins
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../packages/providers/core
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -158,12 +161,24 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../plugins
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../packages/providers/core
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
       '@types/node':
         specifier: ^20.19.9
         version: 20.19.22
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.1
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      solid-js:
+        specifier: ^1.9.10
+        version: 1.9.10
 
   core/filesystem:
     dependencies:
@@ -229,25 +244,6 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 18.3.1
-
-  packages/annotations/annotation-types/comments:
-    dependencies:
-      '@inkandswitch/annotations':
-        specifier: workspace:*
-        version: link:../../core
-      '@inkandswitch/annotations-context':
-        specifier: workspace:*
-        version: link:../../context
-      '@inkandswitch/subscribables':
-        specifier: workspace:*
-        version: link:../../../subscribables/core
-    devDependencies:
-      '@automerge/automerge-repo':
-        specifier: 2.6.0-subduction.23
-        version: 2.6.0-subduction.23
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
 
   packages/annotations/annotation-types/diff:
     dependencies:
@@ -331,6 +327,65 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.9.1)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@20.8.9)(jsdom@26.1.0)(lightningcss@1.32.0)(terser@5.44.0)
 
+  packages/comments:
+    devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/providers/core:
+    devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/providers/frameworks/react:
+    dependencies:
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../core
+    devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
+      '@automerge/automerge-repo-react-hooks':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.1
+      react:
+        specifier: 'catalog:'
+        version: 18.3.1
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/providers/frameworks/solid:
+    dependencies:
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../core
+    devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23(@automerge/automerge@3.3.0-fragments.1)(solid-js@1.9.10)
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.10
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
   packages/react:
     devDependencies:
       '@automerge/automerge-repo-react-hooks':
@@ -373,15 +428,22 @@ importers:
 
   packages/solid:
     dependencies:
-      '@automerge/automerge-repo-solid-primitives':
-        specifier: 2.6.0-subduction.23
-        version: 2.6.0-subduction.23(@automerge/automerge@3.3.0-fragments.1)(solid-js@1.9.9)
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+    devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
+      '@automerge/automerge-repo-solid-primitives':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23(@automerge/automerge@3.3.0-fragments.1)(solid-js@1.9.9)
       solid-js:
         specifier: ^1.9.0
         version: 1.9.9
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/subscribables/core:
     dependencies:
@@ -3404,6 +3466,11 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@automerge/automerge-repo-solid-primitives@2.6.0-subduction.23(@automerge/automerge@3.3.0-fragments.1)(solid-js@1.9.10)':
+    dependencies:
+      '@automerge/automerge': 3.3.0-fragments.1
+      solid-js: 1.9.10
 
   '@automerge/automerge-repo-solid-primitives@2.6.0-subduction.23(@automerge/automerge@3.3.0-fragments.1)(solid-js@1.9.9)':
     dependencies:

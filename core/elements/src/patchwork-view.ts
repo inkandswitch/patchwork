@@ -1,29 +1,35 @@
+import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import {
-  type AutomergeUrl,
-  type DocHandle,
-  type DocHandleChangePayload,
-  type Repo,
-} from "@automerge/automerge-repo";
-import {
-  getType,
-  type HasPatchworkMetadata,
-} from "@inkandswitch/patchwork-filesystem";
-import {
-  getFallbackTool,
   getRegistry,
   isLoadablePlugin,
-  type LoadedTool,
+  type LoadablePlugin,
+  type LoadedPlugin,
+  type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
-import debug from "debug";
-import { MountedEvent, NoToolEvent } from "./events.js";
-
-const log = debug("patchwork:elements:view");
-
-import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
+import { MountedEvent, UnmountedEvent } from "./events.js";
+import { registerPatchworkViewLegacyElement } from "./patchwork-view-legacy.js";
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
 >;
+
+export type ComponentRender = (element: HTMLElement) => () => void;
+
+export type ComponentDescription = PluginDescription & {
+  id: string;
+  type: "patchwork:component";
+  name: string;
+  icon?: string;
+  tags?: string[];
+};
+
+export type LoadedComponent = LoadedPlugin<
+  ComponentDescription,
+  ComponentRender
+>;
+
+export type Component = LoadablePlugin<ComponentDescription, ComponentRender>;
 
 const State = {
   none: "none",
@@ -31,223 +37,261 @@ const State = {
   rendering: "rendering",
   unable: "unable",
   rendered: "rendered",
-  fallback: "fallback",
   error: "error",
 } as const;
 
 type State = (typeof State)[keyof typeof State];
 
-export interface RegisterPatchworkViewElementParams {
-  name?: string;
-  repo: Repo;
-  hive?: AutomergeRepoKeyhive;
-}
+const ATTRS = {
+  component: "component",
+  url: "url",
+  docUrl: "doc-url",
+  toolId: "tool-id",
+} as const;
 
-export interface PatchworkViewElement extends HTMLElement {
-  repo: Repo;
+export type RegisterPatchworkViewElementParams = {
+  name?: string;
+  /**
+   * Forwarded to the inner `<patchwork-view-legacy>` element so legacy
+   * tools rendered in fallback mode get access to a Keyhive instance.
+   */
   hive?: AutomergeRepoKeyhive;
-  docUrl?: AutomergeUrl;
-  toolId?: string;
-}
+};
+
+/**
+ * `<patchwork-view>` reacts to whichever attributes it carries: a
+ * `component` attribute mounts a registered `patchwork:component`
+ * plugin in place; the legacy `doc-url` / `tool-id` attributes (and no
+ * `component`) cause an inner `<patchwork-view-legacy>` to be appended
+ * and forwarded to. `component` wins if both are set.
+ */
+export type PatchworkViewElement = HTMLElement & {
+  component?: string | null;
+  url?: AutomergeUrl | null;
+  docUrl?: AutomergeUrl | null;
+  toolId?: string | null;
+};
 
 export function registerPatchworkViewElement(
-  params: RegisterPatchworkViewElementParams
+  params: RegisterPatchworkViewElementParams = {}
 ) {
   const name = params.name ?? "patchwork-view";
 
-  const repo = params.repo;
+  // Also registers `<patchwork-view-legacy>` (the inner element used
+  // when legacy attributes are set). Both register functions are
+  // idempotent.
+  registerPatchworkViewLegacyElement({ hive: params.hive });
 
-  if (customElements.get(name)) {
-    console.error(`can't redefine a custom element. defining "${name}"`);
-    return;
-  }
-
-  const attrs = {
-    docUrl: "doc-url",
-    toolId: "tool-id",
-  };
+  if (customElements.get(name)) return;
 
   customElements.define(
     name,
     class PatchworkViewElement extends HTMLElement {
-      repo = repo;
-      hive = params.hive;
-      // attributes, if these change it's new game +
-      #docUrl: AutomergeUrl | null = null;
-      #toolId: string | null = null;
-      #handle: DocHandle<HasPatchworkMetadata> | null = null;
-      #tool: LoadedTool | null = null;
-      #state: State = State.none;
-      #requestedToolImports = new Set<string>();
-      #initEpoch = 0;
+      #capturedParent: Element | null = null;
 
-      get docUrl() {
-        return this.#docUrl;
+      #component: string | null = null;
+      #url: AutomergeUrl | null = null;
+      #loaded: LoadedComponent | null = null;
+      #state: State = State.none;
+      #initEpoch = 0;
+      #teardowns = new Set<() => unknown | Promise<void>>();
+
+      #legacyChild: HTMLElement | null = null;
+
+      get component() {
+        return this.#component;
+      }
+
+      set component(id: string | null) {
+        if (this.#component === id) return;
+        this.#component = id;
+        const attr = this.getAttribute(ATTRS.component);
+        if (attr == id) return;
+        if (id) this.setAttribute(ATTRS.component, id);
+        else this.removeAttribute(ATTRS.component);
+      }
+
+      get url() {
+        return this.#url;
+      }
+
+      set url(url: AutomergeUrl | null) {
+        if (this.#url === url) return;
+        this.#url = url;
+        const attr = this.getAttribute(ATTRS.url);
+        if (attr == url) return;
+        if (url) this.setAttribute(ATTRS.url, url);
+        else this.removeAttribute(ATTRS.url);
+      }
+
+      get docUrl(): AutomergeUrl | null {
+        return this.getAttribute(ATTRS.docUrl) as AutomergeUrl | null;
       }
 
       set docUrl(url: AutomergeUrl | null) {
-        if (this.#docUrl === url) return;
-        this.#docUrl = url;
-        const attr = this.getAttribute(attrs.docUrl);
-        if (attr == url) return;
-        if (url) {
-          this.setAttribute(attrs.docUrl, url);
-        } else {
-          this.removeAttribute(attrs.docUrl);
-        }
+        if (this.docUrl === url) return;
+        if (url) this.setAttribute(ATTRS.docUrl, url);
+        else this.removeAttribute(ATTRS.docUrl);
       }
 
-      get toolId() {
-        return this.#toolId;
+      get toolId(): string | null {
+        return this.getAttribute(ATTRS.toolId);
       }
 
       set toolId(id: string | null) {
-        if (this.#toolId === id) return;
-        this.#toolId = id;
-        const attr = this.getAttribute(attrs.toolId);
-        if (attr == id) return;
-        if (id) {
-          this.setAttribute(attrs.toolId, id);
-        } else {
-          this.removeAttribute(attrs.toolId);
-        }
+        if (this.toolId === id) return;
+        if (id) this.setAttribute(ATTRS.toolId, id);
+        else this.removeAttribute(ATTRS.toolId);
       }
 
       static get observedAttributes() {
-        return [attrs.docUrl, attrs.toolId];
+        return [ATTRS.component, ATTRS.url, ATTRS.docUrl, ATTRS.toolId];
       }
 
       connectedCallback() {
-        this.docUrl = this.getAttribute(attrs.docUrl) as AutomergeUrl;
-        this.toolId = this.getAttribute(attrs.toolId);
-        this.#init();
+        this.#capturedParent = this.parentElement;
+        this.#component = this.getAttribute(ATTRS.component);
+        this.#url = this.getAttribute(ATTRS.url) as AutomergeUrl | null;
+        this.#sync();
       }
 
       disconnectedCallback() {
-        this.#teardown();
+        void this.#teardown();
       }
 
-      // When defined, this is called instead of connectedCallback() and disconnectedCallback()
-      // each time the element is moved to a different place in the DOM via Element.moveBefore()
-      connectedMoveCallback() {}
+      connectedMoveCallback() {
+        this.#capturedParent = this.parentElement;
+      }
 
       attributeChangedCallback(
-        name: string,
+        attrName: string,
         old: string | null,
         val: string | null
       ) {
         if (old === val) return;
 
-        if (name === attrs.toolId) {
-          this.#toolId = val;
-          this.#teardown().then(() => this.#init());
+        if (attrName === ATTRS.component) this.#component = val;
+        else if (attrName === ATTRS.url) this.#url = val as AutomergeUrl | null;
+
+        // Already showing the legacy child and still want it: forward
+        // doc-url / tool-id changes through to it without reattaching.
+        if (this.#legacyChild && !this.#wantsComponent()) {
+          if (attrName === ATTRS.docUrl || attrName === ATTRS.toolId) {
+            if (val !== null) this.#legacyChild.setAttribute(attrName, val);
+            else this.#legacyChild.removeAttribute(attrName);
+          }
+          return;
         }
 
-        if (name === attrs.docUrl) {
-          this.#docUrl = val as AutomergeUrl;
-          this.#teardown().then(() => this.#init());
+        // Already mounting a component and still want one: only react
+        // to the component-driving attributes; doc-url / tool-id are
+        // ignored while a `component` attribute is set.
+        if (this.#state !== State.none && this.#wantsComponent()) {
+          if (attrName !== ATTRS.component && attrName !== ATTRS.url) return;
+        }
+
+        // Either transitioning between forms or initial setup after an
+        // attribute landed on an idle element. Tear down whatever is
+        // there (no-op when idle) and re-sync against the attributes.
+        void this.#teardown().then(() => this.#sync());
+      }
+
+      #wantsComponent() {
+        return this.hasAttribute(ATTRS.component);
+      }
+
+      #wantsLegacy() {
+        return (
+          !this.hasAttribute(ATTRS.component) &&
+          (this.hasAttribute(ATTRS.docUrl) ||
+            this.hasAttribute(ATTRS.toolId))
+        );
+      }
+
+      #sync() {
+        if (this.#wantsLegacy()) {
+          this.#renderLegacy();
+          return;
+        }
+
+        if (this.#wantsComponent()) {
+          // Legacy mode leaves `display` alone so sites' CSS rules on
+          // `patchwork-view` (e.g. `display: block`) apply.
+          if (!this.style.display) this.style.display = "contents";
+          this.#initComponent();
         }
       }
 
-      #onDocChange = (
-        payload: DocHandleChangePayload<HasPatchworkMetadata>
-      ) => {
-        const { before, after } = payload.patchInfo;
+      #renderLegacy() {
+        if (this.#legacyChild) return;
+        const child = document.createElement("patchwork-view-legacy");
+        const docUrl = this.getAttribute(ATTRS.docUrl);
+        const toolId = this.getAttribute(ATTRS.toolId);
+        if (docUrl) child.setAttribute(ATTRS.docUrl, docUrl);
+        if (toolId) child.setAttribute(ATTRS.toolId, toolId);
+        this.appendChild(child);
+        this.#legacyChild = child;
+      }
 
-        if (getType(before) != getType(after)) {
-          this.#teardown().then(() => this.#init());
-        }
-      };
+      #initComponent = async () => {
+        if (this.#state != State.none) return;
+        if (!this.component) return;
 
-      #init = async () => {
-        const toolRegistry = getRegistry("patchwork:tool");
-        if (this.#state != State.none) {
-          return;
-        }
-
-        if (!this.docUrl) {
-          return;
-        }
+        const registry = getRegistry<ComponentDescription>(
+          "patchwork:component"
+        );
 
         const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
 
-        const removeAddedListener = toolRegistry.on(
+        const removeAddedListener = registry.on(
           "registered",
-          async (addedTool) => {
-            const toolId = addedTool.id;
-            const isChosenTool = toolId == this.toolId;
-            if (this.#handle) {
-              this.#fallbackId = getFallbackTool(this.#handle.doc())?.id;
-            }
-            const isFallbackTool = toolId == this.#fallbackId;
-
-            if (isChosenTool || isFallbackTool) {
-              if (isLoadablePlugin(addedTool)) {
-                // if it's not loaded, load it now
-                toolRegistry.load(addedTool.id);
-              }
+          async (added) => {
+            if (added.id !== this.component) return;
+            if (isLoadablePlugin(added)) {
+              registry.load(added.id);
             }
           }
         );
 
-        const removeLoadedListener = toolRegistry.on(
-          "loaded",
-          async (loadedTool) => {
-            const toolId = loadedTool.id;
-            const isChosenTool = toolId == this.toolId;
-            const isFallbackTool = toolId == this.#fallbackId;
+        const removeLoadedListener = registry.on("loaded", async (loaded) => {
+          if (loaded.id !== this.component) return;
 
-            if (isChosenTool || isFallbackTool) {
-              if (this.#state == "unable" || this.#state == "initializing") {
-                this.#queueRender();
-              }
+          if (this.#state == "unable" || this.#state == "initializing") {
+            this.#queueRender();
+            return;
+          }
 
-              if (
-                ((this.#state == "error" || this.#state == "rendered") &&
-                  isChosenTool) ||
-                (this.#state == "fallback" && isFallbackTool)
-              ) {
-                if (loadedTool.importUrl !== this.#tool?.importUrl) {
-                  await this.#teardown();
-                  this.#init();
-                }
-              }
+          // Hot reload: a newer importUrl re-mounts.
+          if (this.#state == "error" || this.#state == "rendered") {
+            if (loaded.importUrl !== this.#loaded?.importUrl) {
+              await this.#teardown();
+              this.#sync();
             }
           }
-        );
+        });
 
         this.#teardowns.add(() => {
           removeAddedListener();
           removeLoadedListener();
         });
 
-        let handle: DocHandle<HasPatchworkMetadata>;
-        try {
-          handle = await repo.find<HasPatchworkMetadata>(this.docUrl!);
-        } catch (err) {
-          // If teardown ran while we were awaiting, the listener cleanup
-          // already happened — silently abort.
-          if (epoch !== this.#initEpoch) return;
-          throw err;
-        }
-
-        // Teardown ran during the await — abort before clobbering state.
         if (epoch !== this.#initEpoch) return;
-
-        this.#handle = handle;
-        this.#handle.on("change", this.#onDocChange);
-        this.#teardowns.add(() =>
-          this.#handle!.off("change", this.#onDocChange)
-        );
 
         this.#queueRender();
       };
 
-      #teardowns = new Set<() => unknown | Promise<void>>();
-
       async #teardown() {
+        if (this.#legacyChild) {
+          this.#legacyChild.remove();
+          this.#legacyChild = null;
+        }
+
         if (this.#state == State.none) return;
+
+        // Only `rendered` reached the `MountedEvent` dispatch.
+        const wasMounted = this.#state == State.rendered;
+        const mountedComponentId = this.#loaded?.id;
 
         this.#initEpoch++;
 
@@ -256,182 +300,87 @@ export function registerPatchworkViewElement(
         }
 
         this.#teardowns.clear();
-        this.#handle = null;
-        this.#tool = null;
-        this.#requestedToolImports.clear();
-        this.textContent = "";
+        this.#loaded = null;
         this.#state = State.none;
+
+        if (wasMounted && mountedComponentId) {
+          this.#dispatchUnmount(
+            new UnmountedEvent({ componentId: mountedComponentId })
+          );
+        }
+      }
+
+      // Bubbling is a no-op when detached; fall back to the closest
+      // still-connected ancestor.
+      #dispatchUnmount(event: UnmountedEvent) {
+        if (this.isConnected) {
+          this.dispatchEvent(event);
+          return;
+        }
+        let node: Element | null = this.#capturedParent;
+        while (node && !node.isConnected) node = node.parentElement;
+        if (node) node.dispatchEvent(event);
       }
 
       #queueRender() {
         if (this.#state == "none") return;
         if (this.#state == "rendering") return;
         this.#state = "rendering";
-        queueMicrotask(() => this.#render());
+        queueMicrotask(() => this.#renderComponent());
       }
 
-      #fallbackId: string | undefined;
-
-      #render() {
+      #renderComponent() {
         if (this.#state != "rendering") return;
-        if (!this.docUrl || !this.#handle) {
+        if (!this.component) {
           this.#state = "unable";
           return;
         }
 
-        // Clear any previous content and error styles
-        this.#resetDisplay();
+        const componentId = this.component;
+        const registry = getRegistry<LoadedComponent>("patchwork:component");
+        this.#loaded = registry.get(componentId) ?? null;
 
-        const doc = this.#handle.doc();
-        this.#fallbackId = getFallbackTool(doc)?.id;
-        const fallingBack = !this.toolId;
-        const toolId = this.toolId || this.#fallbackId;
-
-        if (fallingBack) {
-          console.warn(`falling back to default tool for ${this.#docUrl}`);
+        if (!this.#loaded) {
+          this.#state = "unable";
+          console.warn(
+            `patchwork-view: no component registered with id "${componentId}"`
+          );
+          return;
         }
 
-        if (!toolId) {
-          this.#state = "unable";
-
-          // Check if the document is missing @patchwork metadata
-          const hasPatchworkMetadata = doc && "@patchwork" in doc;
-          if (!hasPatchworkMetadata) {
+        if (!this.#loaded.module) {
+          registry.load(this.#loaded.id);
+          if (registry.isLoading(this.#loaded.id)) {
+            this.#state = "unable";
+            console.info(
+              `patchwork-view: loading component "${componentId}"`
+            );
+          } else {
+            this.#state = "unable";
             console.warn(
-              `Document ${this.#docUrl} is missing @patchwork metadata`
+              `patchwork-view: failed to load component "${componentId}"`
             );
-            this.#displayError(
-              `This document is missing @patchwork metadata and cannot be opened.`
-            );
-          } else {
-            console.warn(`no tool for ${this.#docUrl}`);
-            this.#displayError(
-              `I couldn't find a tool to open ${this.#docUrl}.`
-            );
-          }
-          return;
-        }
-
-        this.#tool =
-          getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
-
-        if (!this.#tool) {
-          this.#notool();
-        }
-
-        if (!this.#tool) {
-          this.#state = "unable";
-          this.#displayError(`I couldn't find the tool with id ${toolId}.`);
-          return;
-        }
-
-        if (!this.#tool.module) {
-          const toolRegistry = getRegistry("patchwork:tool");
-          toolRegistry.load(this.#tool.id);
-          if (toolRegistry.isLoading(this.#tool.id)) {
-            this.#state = "unable";
-            log(`loading ${toolId}`);
-            this.#displayLoading(toolId);
-          } else {
-            this.#state = "unable";
-            this.#displayError(`I couldn't load the tool with id ${toolId}.`);
           }
           return;
         }
 
         try {
-          const cleanup = this.#tool.module(this.#handle, this);
+          const cleanup = this.#loaded.module(this);
           if (typeof cleanup === "function") {
             this.#teardowns.add(cleanup);
           } else {
-            console.warn(`return a cleanup function from ${toolId}`);
+            console.warn(`return a cleanup function from ${componentId}`);
           }
-          this.#state = fallingBack ? "fallback" : "rendered";
-          this.dispatchEvent(new MountedEvent({ url: this.docUrl, toolId }));
+          this.#state = "rendered";
+          this.dispatchEvent(new MountedEvent({ componentId }));
         } catch (error) {
-          this.append(
-            Object.assign(document.createElement("div"), {
-              innerHTML: /* html */ `
-                <p>oh no!</p>
-                <details>
-                  <summary>${(error as Error).message ?? error}</summary>
-                  <pre style="white-space: pre-wrap;">${(error as Error).stack ?? ""}</pre>
-                </details>
-              `,
-            })
+          console.error(
+            `patchwork-view: component "${componentId}" threw during mount`,
+            error
           );
-          console.error(error);
-
           this.#state = "error";
         }
       }
-
-      #displayLoading = (toolId: string) => {
-        const div = document.createElement("div");
-        div.style.display = "flex";
-        div.style.alignItems = "center";
-        div.style.justifyContent = "center";
-        div.style.height = "100%";
-        div.innerHTML = /* html */ `
-          <style>
-            @keyframes pw-loading-spin {
-              to { transform: rotate(360deg); }
-            }
-          </style>
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <div style="
-              width: 24px;
-              height: 24px;
-              border: 3px solid #e0e0e0;
-              border-top-color: #888;
-              border-radius: 50%;
-              animation: pw-loading-spin 0.8s linear infinite;
-            "></div>
-            <div style="font-size: 12px; color: #888;">loading ${toolId}</div>
-          </div>
-        `;
-        this.append(div);
-      };
-
-      #displayError = (error: string) => {
-        const div = document.createElement("div");
-        div.style.display = "flex";
-        div.style.alignItems = "center";
-        div.style.justifyContent = "center";
-        // wait a second then face in over half a second
-        div.style.transition = "opacity 2s linear 2s";
-        div.style.opacity = "0";
-        div.innerHTML = /* html */ `
-          <details style="display: flex"><summary></summary><pre style="white-space: pre-wrap;"><code>${error}</code></pre></details>
-        `;
-        this.append(div);
-        setTimeout(() => {
-          div.style.opacity = "1";
-        });
-      };
-
-      #notool() {
-        if (!this.docUrl || !this.#handle) return;
-        const suggestedImportUrl =
-          this.#handle.doc()?.["@patchwork"]?.suggestedImportUrl;
-        if (
-          !suggestedImportUrl ||
-          this.#requestedToolImports.has(suggestedImportUrl)
-        )
-          return;
-        this.#requestedToolImports.add(suggestedImportUrl);
-        let url = this.docUrl;
-
-        log("dispatching patchwork:no-tool for", this.docUrl);
-        this.dispatchEvent(new NoToolEvent({ url }));
-      }
-
-      #resetDisplay = () => {
-        this.replaceChildren();
-        this.style.display = "";
-        this.style.alignItems = "";
-        this.style.justifyContent = "";
-      };
     }
   );
 }

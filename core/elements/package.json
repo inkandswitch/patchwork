@@ -10,7 +10,16 @@
   "peerDependencies": {
     "@automerge/automerge-repo": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^"
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^",
+    "@types/react": "*",
+    "react": "*",
+    "solid-js": "*"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": { "optional": true },
+    "react": { "optional": true },
+    "solid-js": { "optional": true }
   },
   "dependencies": {
     "debug": "^4.4.3"
@@ -25,7 +34,11 @@
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^",
     "@types/debug": "^4.1.12",
-    "@types/node": "^20.19.9"
+    "@types/node": "^20.19.9",
+    "@types/react": "catalog:",
+    "react": "^18.3.1",
+    "solid-js": "^1.9.10"
   }
 }

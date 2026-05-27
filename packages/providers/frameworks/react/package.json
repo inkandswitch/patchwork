@@ -1,9 +1,8 @@
 {
-  "name": "@patchwork/solid",
+  "name": "@inkandswitch/patchwork-providers-react",
   "type": "module",
-  "private": true,
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.0",
+  "description": "React bindings for the Patchwork providers request/respond protocol.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -17,24 +16,23 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w --preserveWatchOutput",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc -w --preserveWatchOutput"
   },
-  "keywords": [],
   "author": "Ink & Switch",
   "license": "ISC",
   "dependencies": {
-    "@inkandswitch/patchwork-plugins": "workspace:^"
+    "@inkandswitch/patchwork-providers": "workspace:^"
   },
   "peerDependencies": {
     "@automerge/automerge-repo": "*",
-    "@automerge/automerge-repo-solid-primitives": "*",
-    "solid-js": "^1.9.0"
+    "@automerge/automerge-repo-react-hooks": "*",
+    "react": "^18.0.0"
   },
   "devDependencies": {
     "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-repo-solid-primitives": "catalog:",
-    "solid-js": "^1.9.0",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
+    "@types/react": "catalog:",
+    "react": "catalog:",
     "typescript": "^5.9.2"
   }
 }

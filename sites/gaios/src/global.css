@@ -56,7 +56,7 @@ patchwork-view {
   contain: layout;
 }
 
-body > patchwork-view {
+body patchwork-view#root {
   height: 100vh;
   height: 100dvh;
   width: 100vw;

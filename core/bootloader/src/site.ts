@@ -38,6 +38,10 @@ import {
   registerPatchworkViewElement,
 } from "@inkandswitch/patchwork-elements";
 import {
+  registerFallbackProviderElement,
+  registerRepoProviderElement,
+} from "@inkandswitch/patchwork-providers";
+import {
   type AccountDoc,
   type DatatypeDescription,
   type DatatypeImplementation,
@@ -182,7 +186,25 @@ export async function bootPatchworkSite(
   await sw.subscribeToRepoChannel(connectServiceWorkerPort);
 
   installDevConsoleGlobals(repo);
-  registerPatchworkViewElement({ repo });
+
+  registerRepoProviderElement(repo);
+  registerFallbackProviderElement();
+
+  const rootElement = document.getElementById(config.rootElementId ?? "root");
+  if (!rootElement) {
+    throw new Error(
+      `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
+    );
+  }
+  const repoProvider = document.createElement("repo-provider");
+  const fallbackProvider = document.createElement("fallback-provider");
+  rootElement.parentElement!.insertBefore(fallbackProvider, rootElement);
+  fallbackProvider.appendChild(repoProvider);
+  repoProvider.appendChild(rootElement);
+
+  // Registers `<patchwork-view>` and the `<patchwork-view-legacy>` it
+  // delegates to in one go.
+  registerPatchworkViewElement();
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
@@ -202,13 +224,6 @@ export async function bootPatchworkSite(
   window.accountDocHandle = accountDocHandle;
 
   wireModuleSettingsWhenReady(accountDocHandle, moduleWatcher);
-
-  const rootElement = document.getElementById(config.rootElementId ?? "root");
-  if (!rootElement) {
-    throw new Error(
-      `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
-    );
-  }
 
   primeRootElement(rootElement, accountDocHandle);
   logToolRegistryWhenLoaded(moduleWatcher);
@@ -298,9 +313,10 @@ function wireModuleSettingsWhenReady(
 }
 
 /**
- * Set initial `tool-id` / `doc-url` attributes on the root `<patchwork-view>`
- * based on the URL hash (if it specifies a frame override) or the account
- * doc's configured frame tool + the account doc itself.
+ * Set initial `tool-id` / `doc-url` attributes on the root
+ * `<patchwork-view>` based on the URL hash (if it specifies a frame
+ * override) or the account doc's configured frame tool + the account doc
+ * itself.
  */
 function primeRootElement(
   rootElement: HTMLElement,
