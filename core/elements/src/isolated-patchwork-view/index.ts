@@ -18,7 +18,7 @@
  * postMessage bootstrap loads capnweb itself before RPC takes over.
  */
 
-import { type AutomergeUrl, type Repo } from "@automerge/automerge-repo";
+import { type AutomergeUrl, type Repo, isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import { RpcTarget, newMessagePortRpcSession } from "capnweb";
 import type { RpcStub } from "capnweb";
@@ -87,18 +87,19 @@ function resolveImportMap(importMap: any, baseURI: string): any {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve a plugin's automerge import URL to its package base URL and entry
- * subpath. Returns both so the caller can register the base in the
- * OpaqueUrlMapper and construct an opaque entry URL.
+ * Resolve a plugin's automerge import URL to an absolute entry point URL.
+ * The returned URL contains the automerge document ID in the path — the
+ * OpaqueUrlMapper replaces this with an opaque token before exposing it
+ * to the iframe.
  */
-async function resolvePluginEntry(
+async function resolvePluginEntryUrl(
   importUrl: string
-): Promise<{ baseUrl: string; entrySubpath: string } | undefined> {
+): Promise<string | undefined> {
   const folderPath = getImportableUrlFromAutomergeUrl(
     importUrl as AutomergeUrl
   );
-  const baseUrl = new URL(folderPath, window.location.origin).href;
-  const packageJsonUrl = new URL("package.json", baseUrl).href;
+  const base = new URL(folderPath, window.location.origin);
+  const packageJsonUrl = new URL("package.json", base).href;
 
   const response = await fetch(packageJsonUrl);
   if (!response.ok) return undefined;
@@ -107,70 +108,70 @@ async function resolvePluginEntry(
   const entryPoint = resolvePackageExport(pkgJson);
   if (!entryPoint) return undefined;
 
-  // Strip leading "./" — resolvePackageExport returns paths like "./dist/index.js"
-  const normalizedEntry = entryPoint.startsWith("./")
-    ? entryPoint.slice(2)
-    : entryPoint;
-  return { baseUrl, entrySubpath: normalizedEntry };
+  return new URL(entryPoint, base).href;
 }
 
 // ---------------------------------------------------------------------------
 // Opaque URL mapper — hides automerge document IDs from the iframe
 // ---------------------------------------------------------------------------
 
-const OPAQUE_PREFIX = "/__plugin__/";
-
 /**
- * Maps opaque `/__plugin__/<token>/<subpath>` URLs to real automerge-backed
- * package URLs. The token is a short per-session identifier (p0, p1, ...).
+ * Replaces automerge document ID segments in URLs with opaque tokens to
+ * hide tool source code locations from the iframe. The real URL
+ * `http://host/%automerge%3Axyz.../dist/index.js` becomes
+ * `http://host/__plugin__/p0/dist/index.js`.
  *
- * When a plugin is first encountered, the mapper assigns it a token and
- * records the mapping from token to real package base URL. Subsequent
- * requests for files in the same package reuse the same token.
+ * Uses standard URL parsing and `isValidAutomergeUrl` to identify automerge
+ * segments rather than regex matching.
  */
 class OpaqueUrlMapper {
   #counter = 0;
-  #tokenToBase = new Map<string, string>();
+  #segmentToToken = new Map<string, string>();
+  #tokenToSegment = new Map<string, string>();
 
   /**
-   * Register a plugin's package base URL and return an opaque URL for its
-   * entry point. If the same base URL was already registered, reuses the
-   * existing token.
+   * Replace the automerge URL segment in a full URL with an opaque token.
+   * If the segment hasn't been seen before, registers a new token.
+   * Returns the URL unchanged if no automerge segment is found.
    */
-  register(realBaseUrl: string, entrySubpath: string): string {
-    for (const [token, base] of this.#tokenToBase) {
-      if (base === realBaseUrl) return `${OPAQUE_PREFIX}${token}/${entrySubpath}`;
+  toOpaque(url: string): string {
+    // Check if we've already mapped a segment in this URL
+    for (const [segment, token] of this.#segmentToToken) {
+      if (url.includes(`/${segment}/`)) {
+        return url.replace(segment, `__plugin__/${token}`);
+      }
     }
-    const token = `p${this.#counter++}`;
-    this.#tokenToBase.set(token, realBaseUrl);
-    return `${OPAQUE_PREFIX}${token}/${entrySubpath}`;
+    // Not registered yet — find the automerge URL segment via URL parsing
+    try {
+      const parsed = new URL(url);
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      for (const segment of segments) {
+        const decoded = decodeURIComponent(segment);
+        if (isValidAutomergeUrl(decoded)) {
+          const token = `p${this.#counter++}`;
+          this.#segmentToToken.set(segment, token);
+          this.#tokenToSegment.set(token, segment);
+          return url.replace(segment, `__plugin__/${token}`);
+        }
+      }
+    } catch {
+      // not a valid URL, return as-is
+    }
+    return url;
   }
 
   /**
-   * Resolve an opaque URL back to a real URL. Returns null if the URL does
-   * not use the opaque prefix or the token is unknown.
-   *
-   * Handles both bare paths (`/__plugin__/p0/...`) and full URLs
-   * (`http://host/__plugin__/p0/...`) since es-module-shims resolves
-   * import specifiers to absolute URLs before calling the source hook.
+   * Replace the opaque token in a URL with the real automerge URL segment.
+   * Returns null if no opaque token is found.
    */
-  resolve(url: string): string | null {
-    // Extract the path portion — the URL may arrive as a full absolute URL
-    // (e.g., "http://localhost:5173/__plugin__/p0/dist/index.js") when
-    // es-module-shims resolves the specifier against the document base.
-    let path = url;
-    const prefixIdx = url.indexOf(OPAQUE_PREFIX);
-    if (prefixIdx < 0) return null;
-    path = url.slice(prefixIdx);
-
-    const rest = path.slice(OPAQUE_PREFIX.length);
-    const slashIdx = rest.indexOf("/");
-    if (slashIdx < 0) return null;
-    const token = rest.slice(0, slashIdx);
-    const subpath = rest.slice(slashIdx + 1);
-    const base = this.#tokenToBase.get(token);
-    if (!base) return null;
-    return new URL(subpath, base).href;
+  toReal(url: string): string | null {
+    for (const [token, segment] of this.#tokenToSegment) {
+      const opaqueSegment = `__plugin__/${token}`;
+      if (url.includes(opaqueSegment)) {
+        return url.replace(opaqueSegment, segment);
+      }
+    }
+    return null;
   }
 }
 
@@ -199,16 +200,14 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
   async #toMetadata(plugin: any): Promise<PluginMetadata | null> {
     if (!plugin.importUrl) return null;
 
-    const resolved = await resolvePluginEntry(plugin.importUrl);
-    if (!resolved) return null;
-
-    const opaqueUrl = this.#mapper.register(resolved.baseUrl, resolved.entrySubpath);
+    const entryUrl = await resolvePluginEntryUrl(plugin.importUrl);
+    if (!entryUrl) return null;
 
     const meta: PluginMetadata = {
       id: plugin.id,
       type: plugin.type,
       name: plugin.name,
-      importUrl: opaqueUrl,
+      importUrl: this.#mapper.toOpaque(entryUrl),
     };
 
     if (plugin.icon != null) meta.icon = plugin.icon;
@@ -303,8 +302,8 @@ class HostApi extends RpcTarget implements HostRpcContract {
   }
 
   async loadModuleSource(url: string): Promise<string> {
-    // Resolve opaque /__plugin__/ URLs back to real automerge-backed paths
-    const realUrl = this.#mapper.resolve(url);
+    // Resolve opaque __plugin__ URLs back to real automerge-backed paths
+    const realUrl = this.#mapper.toReal(url);
     if (realUrl) {
       return fetch(realUrl).then((r) => r.text());
     }
@@ -316,8 +315,8 @@ class HostApi extends RpcTarget implements HostRpcContract {
     url: string
   ): Promise<{ contentType: string; body: string | Uint8Array }> {
     // Resolve opaque URLs for fetch too (e.g., CSS, images from tool packages)
-    const realUrl = this.#mapper.resolve(url) ?? url;
-    if (!this.#mapper.resolve(url)) {
+    const realUrl = this.#mapper.toReal(url) ?? url;
+    if (!this.#mapper.toReal(url)) {
       this.#checkPolicy(url);
     }
     const res = await fetch(realUrl);

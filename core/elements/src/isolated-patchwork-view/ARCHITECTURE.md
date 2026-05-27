@@ -32,13 +32,19 @@ HOST PAGE                                SANDBOXED IFRAME (srcdoc, opaque origin
   |                                       |
   +- HostApi (capnweb RpcTarget) on       +- bootstrap port closed
   |  rpcChannel.port1:                    |
-  |  - loadModuleSource(url)              +- fetch proxy rewired to use
-  |  - fetchResource(url)                 |  hostStub.fetchResource()
+  |  - getPluginRegistry() → capability   +- gets PluginRegistryCapability:
+  |  - loadModuleSource(url)              |  registry.resolveToolForDocument(docUrl)
+  |  - fetchResource(url)                 |  or registry.get(toolId) if hint given
   |  - onMounted(url, toolId)             |
-  |  - onOpenDocument(url, ...)           +- core modules loaded via importShim
-  |                                       |  (now routed through capnweb RPC)
-  +- ResourcePolicy gates all RPC         |
-     fetch/load methods                   +- tool renders, events forwarded
+  |  - onOpenDocument(url, ...)           +- loads tool module via importShim
+  |                                       |  (opaque URL → loadModuleSource →
+  +- OpaqueUrlMapper replaces             |   host resolves real URL → fetch)
+  |  automerge doc IDs with tokens        |
+  |  in plugin URLs                       +- patchwork-view registered with
+  |                                       |  resolveToolForDocument/resolveToolById
+  +- ResourcePolicy gates all RPC         |  callbacks for sub-document resolution
+     fetch/load methods                   |
+                                          +- tool renders, events forwarded
                                              to host via capnweb RPC calls
 ```
 
@@ -85,6 +91,44 @@ Some modules (notably the non-slim `@automerge/automerge` via `vite-plugin-wasm`
 
 The Automerge Repo class has a method literally named `import(binary, args)`. The es-module-shims lexer misidentifies this as a dynamic `import()` expression and fails to parse it. We work around this in the source hook by rewriting `import(` in method-definition position (preceded by newline + whitespace) to `["import"](`, which is semantically identical JavaScript but doesn't trip the lexer.
 
+## Plugin registry capability
+
+The iframe resolves tools and datatypes via a `PluginRegistryCapability` — a capnweb object-capability granted by the host through `hostStub.getPluginRegistry()`. The capability provides methods for querying the host's plugin registry:
+
+- `list(pluginType)` — list all plugins of a given type (e.g., `"patchwork:tool"`, `"patchwork:datatype"`)
+- `get(pluginId)` — get a single plugin by ID
+- `resolveToolForDocument(docUrl)` — get the default tool for a document based on its `@patchwork.type`
+- `getSupportedTools(docUrl)` — get all tools that support a document's datatype
+
+All methods return `PluginMetadata` objects — the same shape as plugin descriptions from the host registry, but with automerge URLs in the `importUrl` field replaced by opaque URLs (see below). This means existing tool code that reads `plugin.importUrl` works unchanged.
+
+The host can gate which capabilities are granted. A simple tool gets `getPluginRegistry()` for tool resolution; a container tool (folder, space) also uses it to list datatypes, create documents, etc.
+
+## Opaque URL scheme
+
+Tool/plugin source code lives in automerge documents. The host serves these files at URLs like `http://host/%automerge%3Axyz.../dist/index.js`, where the path contains an encoded automerge document ID. If the iframe learned these URLs, it could use the repo sync channel to access and modify tool source code.
+
+To prevent this, the `OpaqueUrlMapper` replaces automerge document ID segments with opaque tokens:
+
+```
+Real:   http://host/%automerge%3Axyz.../dist/index.js
+Opaque: http://host/__plugin__/p0/dist/index.js
+```
+
+**How it works:**
+
+1. When the `PluginRegistryTarget` returns plugin metadata, it calls `mapper.toOpaque(entryUrl)` which finds the automerge URL segment in the path (using `isValidAutomergeUrl` after URI-decoding each path segment), assigns a per-session token (`p0`, `p1`, ...), and replaces the segment.
+
+2. The iframe receives the opaque URL in `meta.importUrl` and calls `importShim(meta.importUrl)`. es-module-shims triggers the source hook, which calls `hostStub.loadModuleSource(url)`.
+
+3. The host's `loadModuleSource` calls `mapper.toReal(url)` to reverse the replacement, then fetches the real URL.
+
+4. Relative imports within the tool (e.g., `./utils.js`) resolve against the opaque base URL, producing more opaque URLs like `http://host/__plugin__/p0/dist/utils.js` — the same `loadModuleSource` → `toReal` → fetch path handles them.
+
+5. Bare specifiers (e.g., `@automerge/automerge-repo`) resolve via the import map to normal `https://` URLs — unchanged, no opaque mapping needed.
+
+**Security rule:** Automerge URLs flow iframe → host only (e.g., document URLs in `resolveToolForDocument(docUrl)`). They never flow host → iframe — `importUrl` fields always contain opaque URLs.
+
 ## Communication model: capnweb RPC
 
 Host-iframe communication uses [capnweb](https://github.com/cloudflare/capnweb), a JavaScript-native RPC library with object-capability semantics. This replaces the earlier hand-rolled postMessage request/response protocol.
@@ -92,10 +136,17 @@ Host-iframe communication uses [capnweb](https://github.com/cloudflare/capnweb),
 ### RPC contracts
 
 **HostRpcContract** (host exposes to iframe):
-- `loadModuleSource(url)` — fetch module source text for es-module-shims
-- `fetchResource(url)` — fetch any resource (returns content-type + body)
+- `getPluginRegistry()` → `PluginRegistryCapability` — grants a capability for querying the plugin registry
+- `loadModuleSource(url)` — fetch module source text for es-module-shims (handles opaque `__plugin__/` URLs)
+- `fetchResource(url)` — fetch any resource (returns content-type + body, handles opaque URLs)
 - `onMounted(url, toolId)` — iframe reports successful tool mount
 - `onOpenDocument(url, toolId?, title?, docType?)` — iframe requests navigation
+
+**PluginRegistryCapability** (returned by `getPluginRegistry()`):
+- `list(pluginType)` — list all plugins of a given type
+- `get(pluginId)` — get a single plugin by ID
+- `resolveToolForDocument(docUrl)` — get the default tool for a document
+- `getSupportedTools(docUrl)` — get all tools that support a document's datatype
 
 **IframeRpcContract** (iframe exposes to host):
 - Currently empty — placeholder for future host→iframe calls (navigate, focus, theme)
