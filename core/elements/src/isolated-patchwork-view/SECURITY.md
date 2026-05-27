@@ -10,16 +10,16 @@ Sidebar and document toolbar tools are assumed trusted (or will be moved into `i
 
 | # | Vulnerability | Severity | Exploitability |
 |---|---|---|---|
-| # | Vulnerability | Severity | Exploitability |
 | 1 | Plugin entry module executes in host context | **Critical** | Trivial — side effects in index module |
 | 2 | Unrestricted repo document access | **Critical** | Trivial — `repo.find(url)` |
 | 3 | ~~`AllowAllPolicy` enables exfiltration via RPC~~ | ~~High~~ **Mitigated** | `RestrictivePolicy` is now the default |
-| 4 | `onOpenDocument` unvalidated navigation | **Medium** | Easy — single RPC call |
+| 4 | ~~`onOpenDocument` unvalidated navigation~~ | ~~Medium~~ **Mostly mitigated** | Navigation always targets `isolated-patchwork-view` |
 | 5 | Browser-initiated loads bypass policy | **Medium** | Moderate — requires host SW cooperation |
 | 6 | Registry leaks workspace metadata | **Low–Medium** | Trivial — `registry.list()` |
 | 7 | Indirect IndexedDB corruption via repo | Covered by #2 | Same as #2 |
 | 8 | `unsafe-eval` CSP | **Low** | Amplifier, not standalone |
 | 9 | `postMessage("*")` race | **Low** | Unlikely in practice |
+| 10 | `suggestedImportUrl` exposes tool source URLs | **Medium** | Trivial — read `doc["@patchwork"].suggestedImportUrl` |
 
 ## 1. Plugin entry module executes in host context (CRITICAL)
 
@@ -79,19 +79,23 @@ Opaque `__plugin__/` URLs are resolved by `OpaqueUrlMapper.toReal()` before the 
 
 **Remaining residual risk:** The policy allows all same-origin non-automerge paths. A tool could probe for the existence of host-served static assets. This is low-severity since the assets are public to any same-origin code anyway.
 
-## 4. `onOpenDocument` has no validation (MEDIUM)
+## 4. ~~`onOpenDocument` has no validation~~ (MOSTLY MITIGATED)
 
-**Location:** `index.ts:347–361`
+**Location:** `index.ts:371–385`, `site.ts:447–486`
 
-The RPC method `onOpenDocument(url, toolId?, title?, docType?)` dispatches an `OpenDocumentEvent` with no validation. The host site handler parses the URL and navigates to it.
+**Status:** Mostly mitigated by architecture. The main document view is always rendered inside `<isolated-patchwork-view>`, so `onOpenDocument` navigation always targets the sandboxed iframe — not a trusted host context.
 
-**Attack:**
+**What was wrong:** The RPC method `onOpenDocument(url, toolId?, title?, docType?)` dispatches an `OpenDocumentEvent` with no validation. The original concern was that a malicious tool could force navigation to a document using a trusted, non-sandboxed tool (e.g., a sidebar tool), escalating privileges.
 
-- A tool can cause the host to **navigate to any automerge document**, potentially one the user didn't intend to open.
-- If the target document is opened with a **tool of the attacker's choosing** (via the `toolId` parameter), the attacker could chain this with a malicious tool that now runs in a trusted context (if sidebar/toolbar tools are trusted).
-- The `title` and `docType` parameters could be used for **UI spoofing** (showing a misleading document name).
+**Why this is now mostly mitigated:** The host handler in `site.ts:447–465` updates `window.location.hash`, which causes `<isolated-patchwork-view>` to re-render with the new document. Since the target document always opens inside the sandbox, the `toolId` parameter cannot be used for privilege escalation — the chosen tool still runs in the sandboxed iframe with the same restrictions.
 
-**Mitigation:** Validate `onOpenDocument` parameters: confirm the URL is a valid automerge URL the tool was authorized to reference, restrict `toolId` to tools in the registry, and sanitize title/type.
+**Residual risks (Low):**
+
+- **UI spoofing** — the host handler sets `document.title` from the tool-supplied `title` parameter (`site.ts:480`), which could mislead the user about which document they're viewing.
+- **Unwanted navigation** — a tool can silently navigate the user away from their current document. This is disorienting but not a privilege escalation.
+- **Host-side `repo.find()`** — the host handler calls `repo.find()` on the requested URL (`site.ts:468`) to resolve the document title. This runs on the host repo (not the iframe's), so even with `FilteredBridge` wired up, a malicious tool could cause the host to load arbitrary documents into memory. The tool doesn't get the data back, but it's a minor information-theoretic concern.
+
+**Optional hardening:** Basic validation (is the URL a valid automerge URL? is `toolId` a known registry entry?) would address the residual risks but is no longer security-critical.
 
 ## 5. Browser-initiated loads bypass ResourcePolicy (MEDIUM)
 
@@ -144,20 +148,48 @@ The init message is posted with `targetOrigin: "*"` (necessary because the srcdo
 
 **In practice:** The iframe is created by the host element and there's an epoch guard, making interception unlikely. But `"*"` as targetOrigin is worth noting — any code with a reference to the iframe's `contentWindow` could theoretically race the message.
 
+## 10. `suggestedImportUrl` exposes tool source document URLs (MEDIUM)
+
+**Location:** `patchwork-plugins/src/datatypes.ts:60–63`, `patchwork-filesystem/src/metadata.ts:6`
+
+Every document created via `createDocumentOfType()` stamps the raw automerge URL of its tool's source code package into the document content at `doc["@patchwork"].suggestedImportUrl`. This field is part of the document's CRDT state and syncs to any peer that has the document.
+
+**Attack chain (requires #2):** A malicious tool running inside the iframe can:
+
+1. Read `handle.doc()["@patchwork"].suggestedImportUrl` from any document it can sync — which today is all of them (vulnerability #2).
+2. Use that automerge URL to call `repo.find()` on the tool source code document.
+3. Call `handle.change()` to inject malicious code into the tool's source.
+4. All users who subsequently load that tool get compromised.
+
+This is a tool-on-tool attack: a malicious tool can modify the source code of other tools.
+
+**Why this matters independently of #2:** The opaque URL mapping (`OpaqueUrlMapper`) carefully hides tool source document IDs from the iframe through the RPC and module-loading channels. `suggestedImportUrl` bypasses that protection entirely by embedding the real automerge URL in ordinary document content, which the iframe has direct access to via the repo channel.
+
+**Interaction with FilteredBridge:** If vulnerability #2 is fixed (FilteredBridge with an allowlist), this vulnerability is largely neutralized — the tool can still *read* the URL from documents it's authorized to access, but it cannot `repo.find()` the tool source document unless that document is also on the allowlist (which it shouldn't be). However, the information leak itself remains: a tool learns the automerge URLs of other tools' source code, which could be useful in chained attacks.
+
+**Mitigation:** Stop writing `suggestedImportUrl` into document content. Options:
+
+- **Remove the field entirely** — use the plugin registry to resolve which tool handles a given document type. The `patchwork-view` `#notool()` fallback (`patchwork-view.ts:413–427`) already dispatches a `patchwork:no-tool` event that the host handles via `ModuleWatcher.loadSuggestedImportUrl()`. Replace this with a registry-based lookup that doesn't require the document to carry the URL.
+- **Replace with a non-URL identifier** — store only the datatype ID (already in `doc["@patchwork"].type`), not the automerge URL of the tool source. The host can resolve the datatype ID to the correct tool package through the registry.
+- **Strip the field at sync boundaries** — if the field must exist for backwards compatibility, the `FilteredBridge` could strip `suggestedImportUrl` from documents before syncing them to the iframe.
+
 ## What's already working well
 
 - **Origin isolation** via `sandbox="allow-scripts"` (no `allow-same-origin`) — prevents direct access to host DOM, cookies, localStorage, IndexedDB, and service workers.
 - **CSP from `default-src 'none'`** — blocks direct network access (`connect-src blob:` only), nested iframes, workers, plugins, and form submissions.
-- **Opaque URL mapping** — automerge document IDs for tool source code never flow host → iframe.
+- **RestrictivePolicy** — blocks cross-origin exfiltration and automerge URL paths through the RPC fetch/load channels.
+- **Opaque URL mapping** — automerge document IDs for tool source code never flow host → iframe through the module-loading path.
 - **Bootstrap channel restrictions** — only serves importmap URLs, closed after capnweb loads.
 - **Fetch proxy constraints** — GET/HEAD only, no request bodies.
 - **capnweb RPC** — type-safe, capability-oriented; good foundation for tightening access over time.
+- **Navigation isolation** — `onOpenDocument` always targets `<isolated-patchwork-view>`, preventing privilege escalation via forced navigation to trusted tool contexts.
 
 ## Recommended priority
 
 1. **Stop executing plugin entry modules in the host context** — extract metadata from a static manifest or run discovery in a sandbox (fixes #1).
-2. **Wire up `FilteredBridge`** with a per-tool document allowlist (fixes #2 and #7).
+2. **Wire up `FilteredBridge`** with a per-tool document allowlist (fixes #2, #7, and largely neutralizes #10).
 3. ~~**Implement a real `ResourcePolicy`** that blocks external origins and automerge URL paths (fixes #3).~~ **Done** — `RestrictivePolicy` is now the default.
-4. **Validate `onOpenDocument` parameters** on the host side (fixes #4).
-5. **Scope `PluginRegistryCapability` queries** to authorized documents (fixes #6).
-6. **Restrict host SW automerge URL resolution** to the RPC channel (fixes #5).
+4. ~~**Validate `onOpenDocument` parameters** on the host side (fixes #4).~~ **Mostly done** — navigation always targets `isolated-patchwork-view`, so no privilege escalation is possible. Optional hardening for UI spoofing and unwanted navigation.
+5. **Remove `suggestedImportUrl` from document content** — stop leaking tool source code automerge URLs through CRDT state (fixes #10).
+6. **Scope `PluginRegistryCapability` queries** to authorized documents (fixes #6).
+7. **Restrict host SW automerge URL resolution** to the RPC channel (fixes #5).
