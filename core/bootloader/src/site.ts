@@ -35,7 +35,6 @@ import { initSync as initSubductionSync } from "@automerge/automerge-subduction/
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
   openDocument,
-  registerPatchworkComponentElement,
   registerPatchworkViewElement,
 } from "@inkandswitch/patchwork-elements";
 import {
@@ -203,8 +202,9 @@ export async function bootPatchworkSite(
   fallbackProvider.appendChild(repoProvider);
   repoProvider.appendChild(rootElement);
 
+  // Registers `<patchwork-view>` and the `<patchwork-view-legacy>` it
+  // delegates to in one go.
   registerPatchworkViewElement();
-  registerPatchworkComponentElement();
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
