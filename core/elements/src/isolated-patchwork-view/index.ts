@@ -41,7 +41,7 @@ import type {
   PluginMetadata,
   PluginRegistryCapability,
 } from "./rpc-types.js";
-import { type ResourcePolicy, AllowAllPolicy } from "./resource-policy.js";
+import { type ResourcePolicy, RestrictivePolicy } from "./resource-policy.js";
 import getSrcdocHtml from "./srcdoc.js";
 
 // ---------------------------------------------------------------------------
@@ -368,8 +368,12 @@ class HostApi extends RpcTarget implements HostRpcContract {
 export interface RegisterIsolatedPatchworkViewElementParams {
   name?: string;
   repo: Repo;
-  /** Optional resource policy. Defaults to AllowAllPolicy. */
-  createPolicy?: () => ResourcePolicy;
+  /**
+   * Optional resource policy factory. Receives the host origin and the set of
+   * resolved importmap URLs so the policy can make allowlist decisions.
+   * Defaults to RestrictivePolicy (blocks cross-origin and automerge URL paths).
+   */
+  createPolicy?: (hostOrigin: string, importMapUrls: Set<string>) => ResourcePolicy;
 }
 
 export interface IsolatedPatchworkViewElement extends HTMLElement {
@@ -383,7 +387,9 @@ export function registerIsolatedPatchworkViewElement(
 ) {
   const elementName = params.name ?? "isolated-patchwork-view";
   const repo = params.repo;
-  const createPolicy = params.createPolicy ?? (() => new AllowAllPolicy());
+  const createPolicy = params.createPolicy ??
+    ((hostOrigin: string, importMapUrls: Set<string>) =>
+      new RestrictivePolicy(hostOrigin, importMapUrls));
 
   if (customElements.get(elementName)) {
     console.error(`can't redefine custom element "${elementName}"`);
@@ -568,7 +574,7 @@ export function registerIsolatedPatchworkViewElement(
 
         // Set up capnweb RPC channel with the HostApi and opaque URL mapper.
         const rpcChannel = new MessageChannel();
-        const policy = createPolicy();
+        const policy = createPolicy(window.location.origin, allowedBootstrapUrls);
         const mapper = new OpaqueUrlMapper();
         const hostApi = new HostApi(this, policy, repo, mapper);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
