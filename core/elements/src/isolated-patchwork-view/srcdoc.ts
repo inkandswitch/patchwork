@@ -351,8 +351,7 @@ async function boot() {
 // ---------------------------------------------------------------------------
 
 const SRCDOC_CSS = `
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; overflow: hidden; }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
   patchwork-view { display: block; width: 100%; height: 100%; }
 `;
 
