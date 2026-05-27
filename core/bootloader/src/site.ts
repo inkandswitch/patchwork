@@ -111,8 +111,8 @@ export interface SiteConfig {
   titleSuffix: string;
 
   /**
-   * DOM id of the `<patchwork-view>` element that will host the root
-   * tool. Defaults to `"root"`.
+   * DOM id of the `<patchwork-view>` element that will host the root tool.
+   * Defaults to `"root"`.
    */
   rootElementId?: string;
 

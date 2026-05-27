@@ -116,7 +116,7 @@ importers:
         version: link:../plugins
       '@inkandswitch/patchwork-providers':
         specifier: workspace:^
-        version: link:../../packages/providers
+        version: link:../../packages/providers/core
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -163,7 +163,7 @@ importers:
         version: link:../plugins
       '@inkandswitch/patchwork-providers':
         specifier: workspace:^
-        version: link:../../packages/providers
+        version: link:../../packages/providers/core
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -244,25 +244,6 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 18.3.1
-
-  packages/annotations/annotation-types/comments:
-    dependencies:
-      '@inkandswitch/annotations':
-        specifier: workspace:*
-        version: link:../../core
-      '@inkandswitch/annotations-context':
-        specifier: workspace:*
-        version: link:../../context
-      '@inkandswitch/subscribables':
-        specifier: workspace:*
-        version: link:../../../subscribables/core
-    devDependencies:
-      '@automerge/automerge-repo':
-        specifier: 2.6.0-subduction.23
-        version: 2.6.0-subduction.23
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
 
   packages/annotations/annotation-types/diff:
     dependencies:
@@ -355,7 +336,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/providers:
+  packages/providers/core:
     devDependencies:
       '@automerge/automerge-repo':
         specifier: 2.6.0-subduction.23
@@ -364,11 +345,33 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/providers-solid:
+  packages/providers/frameworks/react:
     dependencies:
       '@inkandswitch/patchwork-providers':
         specifier: workspace:^
-        version: link:../providers
+        version: link:../../core
+    devDependencies:
+      '@automerge/automerge-repo':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
+      '@automerge/automerge-repo-react-hooks':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.1
+      react:
+        specifier: 'catalog:'
+        version: 18.3.1
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/providers/frameworks/solid:
+    dependencies:
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../core
     devDependencies:
       '@automerge/automerge-repo':
         specifier: 2.6.0-subduction.23

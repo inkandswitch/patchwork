@@ -9,9 +9,9 @@
     "lib": ["ESNext", "DOM"],
     "strict": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "jsx": "react-jsx"
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]
 }
-
