@@ -1,5 +1,5 @@
-import type {} from "react";
-import type {} from "solid-js";
+import "react";
+import "solid-js";
 
 declare module "react" {
   namespace JSX {
