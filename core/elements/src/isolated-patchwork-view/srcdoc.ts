@@ -281,12 +281,7 @@ async function boot() {
       plugins.getRegistry(meta.type).register({
         ...meta,
         load: async () => {
-          // Get the current importUrl from the host — it may have been
-          // updated by ModuleWatcher since the iframe booted.
-          const current = await registryCap.get(meta.id);
-          const importUrl = current?.importUrl ?? meta.importUrl;
-          log("loading plugin:", meta.id, "importUrl:", importUrl);
-          const mod = await importShim(importUrl);
+          const mod = await importShim(meta.importUrl);
           if (Array.isArray(mod.plugins)) {
             const match = mod.plugins.find(
               (p: any) => p.id === meta.id && p.type === meta.type

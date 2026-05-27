@@ -113,23 +113,6 @@ async function resolvePluginEntryUrl(
   return new URL(entryPoint, base).href;
 }
 
-/**
- * Resolve a package folder URL (absolute, ending with "/") to its entry point
- * by reading package.json. Used for lazy entry point resolution when the
- * folder URL was stored in metadata instead of the full entry URL.
- */
-async function resolveEntryFromFolder(
-  folderUrl: string
-): Promise<string | undefined> {
-  const packageJsonUrl = new URL("package.json", folderUrl).href;
-  const response = await fetch(packageJsonUrl);
-  if (!response.ok) return undefined;
-  const pkgJson = await response.json();
-  const entryPoint = resolvePackageExport(pkgJson);
-  if (!entryPoint) return undefined;
-  return new URL(entryPoint, folderUrl).href;
-}
-
 // ---------------------------------------------------------------------------
 // Opaque URL mapper — hides automerge document IDs from the iframe
 // ---------------------------------------------------------------------------
@@ -231,34 +214,20 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
 
   /**
    * Convert a host-side plugin object to PluginMetadata with an opaque
-   * importUrl. Returns null if the plugin has no importUrl or resolution fails.
+   * importUrl. Returns null if the plugin has no importUrl or entry point
+   * resolution fails (e.g., plugin not synced locally).
    */
-  /**
-   * Convert a host-side plugin object to PluginMetadata with an opaque
-   * importUrl. No network requests — just builds the opaque URL from the
-   * plugin's importUrl. Entry point resolution is deferred to loadModuleSource.
-   */
-  #toMetadata(plugin: any): PluginMetadata | null {
+  async #toMetadata(plugin: any): Promise<PluginMetadata | null> {
     if (!plugin.importUrl) return null;
 
-    // Build a folder-level opaque URL from the plugin's automerge importUrl.
-    // The actual entry point (dist/index.js etc.) is resolved lazily in
-    // loadModuleSource when the module is actually loaded. This avoids
-    // fetching package.json for all plugins upfront (which would cause
-    // concurrent service worker requests and 400 errors for unsynced plugins).
-    const folderPath = getImportableUrlFromAutomergeUrl(
-      plugin.importUrl as AutomergeUrl
-    );
-    const folderUrl = new URL(folderPath, window.location.origin).href;
-
-    const opaqueUrl = this.#mapper.toOpaque(folderUrl);
-    console.log(`[PluginRegistryTarget] toMetadata: id=${plugin.id} type=${plugin.type} importUrl=${plugin.importUrl} → ${opaqueUrl}`);
+    const entryUrl = await resolvePluginEntryUrl(plugin.importUrl);
+    if (!entryUrl) return null;
 
     const meta: PluginMetadata = {
       id: plugin.id,
       type: plugin.type,
       name: plugin.name,
-      importUrl: opaqueUrl,
+      importUrl: this.#mapper.toOpaque(entryUrl),
     };
 
     if (plugin.icon != null) meta.icon = plugin.icon;
@@ -273,9 +242,8 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
   async list(pluginType: string): Promise<PluginMetadata[]> {
     const registry = getRegistry(pluginType);
     const all = registry.all();
-    return all
-      .map((p) => this.#toMetadata(p))
-      .filter((m): m is PluginMetadata => m != null);
+    const results = await Promise.all(all.map((p) => this.#toMetadata(p)));
+    return results.filter((m): m is PluginMetadata => m != null);
   }
 
   async listRegistryTypes(): Promise<string[]> {
@@ -292,9 +260,9 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
   }
 
   async getSupportedToolsForType(type: string): Promise<PluginMetadata[]> {
-    return getSupportedToolsForType(type)
-      .map((t) => this.#toMetadata(t))
-      .filter((m): m is PluginMetadata => m != null);
+    const tools = getSupportedToolsForType(type);
+    const results = await Promise.all(tools.map((t) => this.#toMetadata(t)));
+    return results.filter((m): m is PluginMetadata => m != null);
   }
 
   async getFallbackTool(docUrl: string): Promise<PluginMetadata | null> {
@@ -317,9 +285,9 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
     const doc = handle.doc();
     if (!doc) return [];
 
-    return getSupportedTools(doc)
-      .map((t) => this.#toMetadata(t))
-      .filter((m): m is PluginMetadata => m != null);
+    const tools = getSupportedTools(doc);
+    const results = await Promise.all(tools.map((t) => this.#toMetadata(t)));
+    return results.filter((m): m is PluginMetadata => m != null);
   }
 }
 
@@ -367,24 +335,6 @@ class HostApi extends RpcTarget implements HostRpcContract {
     // Resolve opaque __plugin__ URLs back to real automerge-backed paths
     const realUrl = this.#mapper.toReal(url);
     if (realUrl) {
-      // If this is a folder URL (ends with /), lazily resolve the entry
-      // point from package.json. This happens for plugins whose entry
-      // URL couldn't be resolved at metadata time (e.g., not synced yet).
-      if (realUrl.endsWith("/")) {
-        // Folder URL — resolve the entry point and return a re-export stub.
-        // This ensures relative imports within the entry module resolve
-        // against the correct subdirectory (e.g., dist/), not the folder root.
-        const entry = await resolveEntryFromFolder(realUrl);
-        if (!entry) {
-          console.warn(
-            `[isolated-patchwork-view] could not resolve entry for ${url}, plugin may not be synced`
-          );
-          return "export default undefined;";
-        }
-        // Compute the entry subpath relative to the folder
-        const entrySubpath = entry.slice(realUrl.length);
-        return `export * from "./${entrySubpath}";`;
-      }
       const source = await fetch(realUrl).then((r) => r.text());
       return this.#mapper.rewriteAutomergeUrls(source);
     }

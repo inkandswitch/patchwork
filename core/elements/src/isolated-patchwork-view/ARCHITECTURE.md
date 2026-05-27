@@ -79,9 +79,9 @@ At boot, the iframe pre-populates its local plugin registries from the host so t
 1. Calls `registryCap.listRegistryTypes()` to discover all registry types (e.g., `patchwork:tool`, `patchwork:datatype`, `codemirror:extension`)
 2. Calls `registryCap.list(type)` for each type to get all plugin metadata (with opaque `importUrl` values)
 3. Registers each as a `LoadablePlugin` in the local registry with a `load()` function that:
-   - Queries `registryCap.get(meta.id)` for the current `importUrl` (may have been updated by ModuleWatcher)
-   - Calls `importShim(importUrl)` → es-module-shims source hook → `loadModuleSource` RPC → host serves source
-   - Finds the matching plugin in `mod.plugins` by both `id` AND `type`, calls its `load()`
+   - Calls `importShim(meta.importUrl)` → es-module-shims source hook → `loadModuleSource` RPC → host serves source
+   - Finds the matching plugin in `mod.plugins` by both `id` AND `type` (to avoid collisions when a module exports both a datatype and a tool with the same ID)
+   - Calls the plugin's own `load()` function to get the implementation
    - Returns the implementation
 
 After pre-population, sync APIs like `getRegistry("codemirror:extension").filter(...).loadAll(...)`, `getFallbackTool(doc)`, `getSupportedToolsForType(type)` all work against local data. Module code is only loaded on demand when `load()` or `loadAll()` is called.
@@ -96,16 +96,9 @@ The host's ModuleWatcher may re-register plugins with new `importUrl` values aft
 
 This ensures the iframe always has current plugin metadata without polling.
 
-### Lazy entry point resolution
+### Entry point resolution
 
-Plugin metadata in the pre-populated registry uses folder-level opaque URLs (e.g., `__plugin__/p0/`) rather than full entry point URLs (e.g., `__plugin__/p0/dist/index.js`). This avoids fetching `package.json` for every plugin at boot time — some plugins may not be synced locally, and concurrent fetches could overload the service worker.
-
-When `loadModuleSource` receives a folder-level URL (ending with `/`), it:
-1. Resolves `toReal` to get the real automerge folder URL
-2. Fetches `package.json` to find the entry point
-3. Returns a re-export stub: `export * from "./dist/index.js";`
-
-This ensures relative imports within the entry module resolve correctly against the `dist/` subdirectory, not the folder root.
+During pre-population, `#toMetadata` calls `resolvePluginEntryUrl` to resolve each plugin's `package.json` and find its entry point (e.g., `dist/index.js`). The full entry URL is then converted to an opaque URL. Plugins that fail resolution (automerge document not synced locally) return `null` and are filtered out — they simply won't appear in the iframe's registry.
 
 ## How module resolution works
 
@@ -115,15 +108,15 @@ The es-module-shims `resolve` hook is **synchronous** (not awaited in the es-mod
 
 2. **Relative imports resolve via standard URL resolution.** `./helper.js` relative to `http://localhost:5173/__plugin__/p0/dist/index.js` produces `http://localhost:5173/__plugin__/p0/dist/helper.js`. The opaque `__plugin__` prefix is preserved.
 
-3. **The `source` hook does the heavy lifting.** It's async. It receives the already-resolved URL and calls `hostStub.loadModuleSource(url)` via capnweb RPC. The host resolves opaque URLs via `OpaqueUrlMapper.toReal()`, handles folder URLs via re-export stubs, fetches the real source, rewrites automerge URL strings, and returns the source text.
+3. **The `source` hook does the heavy lifting.** It's async. It receives the already-resolved URL and calls `hostStub.loadModuleSource(url)` via capnweb RPC. The host resolves opaque URLs via `OpaqueUrlMapper.toReal()`, fetches the real source, rewrites automerge URL strings via `rewriteAutomergeUrls()`, and returns the source text.
 
 ## Plugin registry capability
 
 The `PluginRegistryCapability` is used primarily for pre-population at boot. Its methods:
 
 - `listRegistryTypes()` — discover all registry types from the host
-- `list(pluginType)` — list all plugins of a given type (with opaque `importUrl` values)
-- `get(pluginId)` — get a single plugin by ID (used by `load()` to get the current `importUrl`)
+- `list(pluginType)` — list all plugins of a given type with full entry URLs resolved and converted to opaque `importUrl` values. Plugins that can't be resolved (not synced) are filtered out.
+- `get(pluginId)` — get a single plugin by ID
 - `getSupportedToolsForType(type)` — mirrors `getSupportedToolsForType(type)` from tools.ts
 - `getFallbackTool(docUrl)` — mirrors `getFallbackTool(doc)`, takes docUrl since doc objects can't cross RPC
 - `getSupportedTools(docUrl)` — mirrors `getSupportedTools(doc)`
