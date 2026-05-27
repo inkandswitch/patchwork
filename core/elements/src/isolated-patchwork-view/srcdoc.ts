@@ -225,56 +225,97 @@ async function boot() {
   );
   log("repo connected");
 
-  // 12. Pre-populate local plugin registries from host.
-  //     Fetch all plugin metadata (with opaque importUrls) and register each
-  //     as a loadable plugin. Sync APIs like getSupportedToolsForType(),
-  //     getFallbackTool(), getRegistry().get() then work against local data.
-  //     Module loading (registry.load()) calls importShim with the opaque URL,
-  //     which goes through the RPC-backed source hook to the host.
-  const registryCap = hostStub.getPluginRegistry();
-  const registryTypes = await registryCap.listRegistryTypes();
-  const allMetasByType = await Promise.all(
-    registryTypes.map((type: string) => registryCap.list(type))
-  );
-  for (const metas of allMetasByType) {
-    for (const meta of metas) {
-      const loadablePlugin = {
-        ...meta,
-        load: async () => {
-          // Import the module — the host rewrites automerge URLs in the
-          // source text before serving, so no real automerge URLs enter
-          // the iframe. Find our specific plugin and call its load() to
-          // get the implementation.
-          const mod = await importShim(meta.importUrl);
-          if (Array.isArray(mod.plugins)) {
-            const match = mod.plugins.find((p: any) => p.id === meta.id);
-            if (match && typeof match.load === "function") {
-              return match.load();
-            }
-          }
-          return undefined;
-        },
-      };
-      plugins.getRegistry(meta.type).register(loadablePlugin, meta.importUrl);
+  // 12. Get PluginRegistryCapability from host
+  const registry = hostStub.getPluginRegistry();
+  log("plugin registry capability obtained");
+
+  // Helper: load a plugin module and register its plugins in the local registry.
+  async function loadPluginModule(importUrl: string) {
+    const mod = await importShim(importUrl);
+    if (Array.isArray(mod.plugins)) {
+      log("registering " + mod.plugins.length + " plugin(s) from", importUrl);
+      plugins.registerPlugins(mod.plugins, importUrl);
     }
   }
-  log("local registries pre-populated with", allMetasByType.flat().length, "plugins");
 
-  // 13. Register patchwork-view element (no special callbacks needed —
-  //     the pre-populated local registry handles tool resolution)
-  elements.registerPatchworkViewElement({ repo });
+  // 13. Register patchwork-view element with tool resolution callbacks.
+  //     These callbacks are invoked by <patchwork-view> inside the iframe
+  //     when it needs a tool that isn't in the local registry (e.g., when
+  //     a container tool renders sub-documents).
+  elements.registerPatchworkViewElement({
+    repo,
+    getFallbackTool: async (docUrl: string) => {
+      const meta = await registry.getFallbackTool(docUrl);
+      if (meta) {
+        await loadPluginModule(meta.importUrl);
+        return { toolId: meta.id };
+      }
+      return null;
+    },
+    resolveToolById: async (toolId: string) => {
+      const meta = await registry.get(toolId);
+      if (meta) await loadPluginModule(meta.importUrl);
+    },
+  });
+  log("patchwork-view registered with tool resolution callbacks");
 
-  // 14. Render — patchwork-view uses the local registry to find and load tools
-  const rootElement = document.getElementById("root")!;
-  rootElement.setAttribute("doc-url", d.docUrl);
+  // 14. Resolve and load the tool for the document via the capability.
+  //     If a toolId hint was provided in the init message, use it directly.
+  //     Otherwise, resolve the default tool for the document's datatype.
+  let toolMeta: any = null;
+  let toolId: string | undefined;
   if (d.toolId) {
-    rootElement.setAttribute("tool-id", d.toolId);
+    toolMeta = await registry.get(d.toolId);
+    if (toolMeta) {
+      await loadPluginModule(toolMeta.importUrl);
+      toolId = toolMeta.id;
+      log("tool resolved by id:", toolId);
+    } else {
+      log("tool id not found, falling back to document resolution");
+    }
+  }
+  if (!toolMeta) {
+    toolMeta = await registry.getFallbackTool(d.docUrl);
+    if (toolMeta) {
+      await loadPluginModule(toolMeta.importUrl);
+      toolId = toolMeta.id;
+      log("tool resolved for document:", toolId);
+    } else {
+      log("no tool found for document");
+    }
   }
 
-  // 15. Expose plugin registry capability for tools inside the iframe
-  (window as any).__patchwork = { registry: registryCap };
+  // 15. Render
+  const rootElement = document.getElementById("root")!;
+  rootElement.setAttribute("doc-url", d.docUrl);
+  if (toolId) {
+    rootElement.setAttribute("tool-id", toolId);
+  }
 
-  // 16. Forward events to host via capnweb RPC
+  // 16. Expose plugin registry capability and wrapper functions for tools
+  //     inside the iframe. Wrappers have the same contract as the original
+  //     sync APIs from @inkandswitch/patchwork-plugins, but are async.
+  //     Tools just need to add `await`.
+  (window as any).__patchwork = {
+    registry,
+    // Same signature as getFallbackTool(doc) but async, takes doc object
+    async getFallbackTool(doc: any) {
+      const url = doc?.url || doc?.["@patchwork"]?.url;
+      if (!url) return null;
+      return registry.getFallbackTool(url);
+    },
+    // Same signature as getSupportedTools(doc) but async, takes doc object
+    async getSupportedTools(doc: any) {
+      const url = doc?.url || doc?.["@patchwork"]?.url;
+      if (!url) return [];
+      return registry.getSupportedTools(url);
+    },
+    // Same signature as getSupportedToolsForType(type) but async
+    getSupportedToolsForType: (type: string) =>
+      registry.getSupportedToolsForType(type),
+  };
+
+  // 17. Forward events to host via capnweb RPC
   rootElement.addEventListener("patchwork:open-document", ((
     event: CustomEvent
   ) => {
