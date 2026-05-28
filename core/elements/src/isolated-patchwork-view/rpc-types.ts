@@ -106,13 +106,20 @@ export interface HostRpcContract {
   ): Promise<{ contentType: string; body: string | Uint8Array }>;
   /** Iframe reports successful tool mount. */
   onMounted(url: string, toolId: string): void;
-  /** Iframe wants the host to navigate to a different document. */
+  /** Iframe wants the host to navigate to a different document.
+   * If the document is not on the sync allowlist, the user will be prompted. */
   onOpenDocument(
     url: string,
     toolId?: string,
     title?: string,
     docType?: string
-  ): void;
+  ): Promise<void>;
+  /**
+   * Request access to a document not currently on the sync allowlist.
+   * The host will prompt the user and return whether access was granted.
+   * If already allowlisted, returns true immediately.
+   */
+  requestDocumentAccess(url: string): Promise<boolean>;
   /** Iframe forwards a hash change (e.g., from <a href="#doc=..."> links). */
   onHashChange(hash: string): void;
 }

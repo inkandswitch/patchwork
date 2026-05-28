@@ -156,14 +156,70 @@ If we decide we're worried about this, we could throttle repo requests.
 
 #### security conclusion
 
-One obvious approach is to protect documents by filtering and explicitly allow-listing what can be synced, but this is very heavy-handed and will interfere with our usage goals, causing high UX pain for point (2) above.
-
-It seems better to firsty try protecting against the cases identified above by other means.
+One obvious approach is to protect documents by filtering and explicitly allow-listing what can be synced. This feels heavy-handed and may interfere with our usage goals, causing high UX pain for point (2) above, but some of the concerns above can't be easily & reliably mitigated otherwise.
 
 #### Questions
 
 - If I understand sharePolicy correctly, then the generous share policy means that everything the peer knows about will be shared. We want this from the iframe side, but we don't want this from the host side. The host should only share documents that the iframe repo explicitly requests. This is something I need to check on.
 - are we concerned about (4) the brute force attempt to discover unauthorized documents?
+
+## 5b. Sync Restriction: Intermediary Repo with Document Allowlist
+
+### The problem
+
+Section 5 identifies four ways the iframe can obtain document IDs, three of which represent unauthorized access vectors: document IDs leaking from the host (1), hard-coded IDs in tool source (3), and brute force discovery (4). Without filtering at the sync layer, any of these vectors gives a malicious tool full read/write access to the discovered document.
+
+By carefully scoping what is automatically allowlisted and prompting the user only for unexpected access, we'll try to minimize interference with normal tool use while enforcing sync-level restrictions..
+
+### The proposed approach
+
+An **intermediary Repo** sits between the host repo and the iframe repo, enforcing a document allowlist:
+
+```
+[iframe repo] ←MessagePort→ [intermediary repo] ←MessagePort→ [host repo]
+                                     │
+                              shareConfig.access(peerId, documentId)
+                              → checks allowlist
+```
+
+The intermediary is an ephemeral, in-memory Repo (no storage) created per-iframe on the host side. It uses Automerge-repo's `shareConfig` API, which provides per-peer, per-document filtering via two policies:
+
+- **`announce(peerId, documentId)`** — controls proactive sharing. The intermediary announces allowlisted documents to both peers (so iframe-created documents flow back to the host).
+- **`access(peerId, documentId)`** — controls responses to incoming sync requests. The intermediary accepts everything from the host peer but only responds to iframe requests for allowlisted documents. Non-allowlisted requests receive `doc-unavailable`.
+
+The intermediary lazily acquires documents from the host — it does not proactively fetch all allowlisted documents. When the iframe calls `repo.find(url)` for an allowlisted document, the intermediary forwards the sync request upstream, acquires the document from the host, and shares it with the iframe.
+
+#### Allowlist population
+
+The allowlist is populated automatically at init time and expanded dynamically at runtime:
+
+**At init time:**
+
+- The root document (`docUrl`) is always allowlisted.
+- If the root document is a folder (has a `docs[]` array of `DocLink` entries), all direct children are allowlisted. This makes transitive consent work naturally — opening a folder grants access to its contents.
+- A change watcher on the root document adds newly-linked children as they appear.
+
+**At runtime:**
+
+- **User navigation:** When the iframe requests navigation to a non-allowlisted document via `onOpenDocument`, the host looks up the document's title and type, then prompts the user for approval. Navigation proceeds only if the user approves.
+- **Explicit access requests:** The iframe can call `requestDocumentAccess(url)` via RPC to request access to a document without navigating. The same user prompt flow applies.
+- **Iframe-created documents:** Documents created inside the iframe via `repo.create()` are automatically added to the allowlist, since `create()` always generates a new document ID and cannot be used to access existing documents.
+
+#### How this addresses the security vectors
+
+**Vector 1 — document IDs provided by the host:** The allowlist ensures that only the root document and its direct children (for folders) are shared. Other document IDs that might leak through host→iframe channels (e.g., `suggestedImportUrl` in document content, section 13) are useless because the intermediary blocks sync requests for non-allowlisted documents. This neutralizes the tool-on-tool attack chain described in section 13 even without removing `suggestedImportUrl`.
+
+**Vector 3 — hard-coded document IDs in tool source:** A tool with a hard-coded AutomergeUrl cannot sync that document through the intermediary — it will receive `doc-unavailable`. This prevents the exfiltration-by-sync attack (write stolen data to a hard-coded document, exfiltrate via sync to a remote peer).
+
+**Vector 4 — brute force discovery:** Any `repo.find()` call for a document not on the allowlist is blocked by the intermediary. Brute force is no longer a concern regardless of throttling.
+
+**Vector 2 — documents provided by the user:** User-initiated access (navigation, future drag-and-drop) goes through the allowlist expansion flow. For navigation to non-allowlisted documents, the user is prompted. This is the only case where the allowlist adds friction, and it's appropriate — the user should know when a tool is accessing documents beyond what it was given.
+
+### Security notes
+
+The intermediary repo does not prevent the iframe from _discovering_ document IDs (e.g., from `suggestedImportUrl` fields in synced documents). It prevents the iframe from _using_ those IDs to sync documents. This is defense in depth — even if other protections (source rewriting, package URL mapping) fail to hide a document ID, the allowlist prevents unauthorized access.
+
+Documents created inside the iframe are auto-allowlisted without user approval. This is safe because `repo.create()` generates a fresh document ID — it cannot be used to access an existing document. The auto-allowlisting ensures that tools which create documents (e.g., creating a new note in the space tool) work without interruption.
 
 ## 6. Loading Tool Code Without Network Access
 

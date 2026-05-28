@@ -18,7 +18,7 @@
  * postMessage bootstrap loads capnweb itself before RPC takes over.
  */
 
-import { type AutomergeUrl, type Repo, isValidAutomergeUrl, isValidDocumentId } from "@automerge/automerge-repo";
+import { type AutomergeUrl, type DocumentId, type PeerId, type Repo, Repo as RepoClass, isValidAutomergeUrl, isValidDocumentId, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import { RpcTarget, newMessagePortRpcSession } from "capnweb";
 import type { RpcStub } from "capnweb";
@@ -90,6 +90,32 @@ function resolveImportMap(importMap: ImportMap, baseURI: string): ImportMap {
     }
   }
   return resolved;
+}
+
+// ---------------------------------------------------------------------------
+// SyncAllowlist — controls which documents the iframe can sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Maintains a set of document IDs that the iframe is allowed to sync.
+ * Used by the intermediary repo's shareConfig to gate document access.
+ */
+class SyncAllowlist {
+  #allowed = new Set<DocumentId>();
+
+  add(url: AutomergeUrl): void {
+    const { documentId } = parseAutomergeUrl(url);
+    this.#allowed.add(documentId);
+  }
+
+  has(documentId: DocumentId): boolean {
+    return this.#allowed.has(documentId);
+  }
+
+  hasUrl(url: AutomergeUrl): boolean {
+    const { documentId } = parseAutomergeUrl(url);
+    return this.#allowed.has(documentId);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -350,12 +376,14 @@ class HostApi extends RpcTarget implements HostRpcContract {
   #repo: Repo;
   #mapper: PackageUrlMapper;
   #registryTarget: PluginRegistryTarget;
+  #allowlist: SyncAllowlist;
 
   constructor(
     element: HTMLElement,
     policy: ResourcePolicy,
     repo: Repo,
-    mapper: PackageUrlMapper
+    mapper: PackageUrlMapper,
+    allowlist: SyncAllowlist
   ) {
     super();
     this.#element = element;
@@ -363,6 +391,7 @@ class HostApi extends RpcTarget implements HostRpcContract {
     this.#repo = repo;
     this.#mapper = mapper;
     this.#registryTarget = new PluginRegistryTarget(repo, mapper);
+    this.#allowlist = allowlist;
   }
 
   getPluginRegistry(): PluginRegistryCapability {
@@ -419,20 +448,75 @@ class HostApi extends RpcTarget implements HostRpcContract {
     );
   }
 
-  onOpenDocument(
+  async #promptUserAccess(
+    url: AutomergeUrl,
+    title: string,
+    type: string
+  ): Promise<boolean> {
+    return window.confirm(
+      `This tool wants to access a document:\n\n` +
+      `Title: ${title}\n` +
+      `Type: ${type}\n` +
+      `URL: ${url}\n\n` +
+      `Allow access?`
+    );
+  }
+
+  async onOpenDocument(
     url: string,
     toolId?: string,
     title?: string,
     docType?: string
-  ): void {
+  ): Promise<void> {
+    const automergeUrl = url as AutomergeUrl;
+
+    // If already allowlisted, navigate immediately
+    if (this.#allowlist.hasUrl(automergeUrl)) {
+      this.#element.dispatchEvent(
+        new OpenDocumentEvent({
+          url: automergeUrl,
+          toolId,
+          title,
+          type: docType,
+        })
+      );
+      return;
+    }
+
+    // Look up document info for the prompt
+    const handle = await this.#repo.find<HasPatchworkMetadata>(automergeUrl);
+    const doc = handle.doc();
+    const docTitle = (doc as any)?.title ?? title ?? "Unknown document";
+    const docTypeStr = doc?.["@patchwork"]?.type ?? docType ?? "unknown";
+
+    const allowed = await this.#promptUserAccess(automergeUrl, docTitle, docTypeStr);
+    if (!allowed) return;
+
+    this.#allowlist.add(automergeUrl);
     this.#element.dispatchEvent(
       new OpenDocumentEvent({
-        url: url as AutomergeUrl,
+        url: automergeUrl,
         toolId,
         title,
         type: docType,
       })
     );
+  }
+
+  async requestDocumentAccess(url: string): Promise<boolean> {
+    const automergeUrl = url as AutomergeUrl;
+    if (this.#allowlist.hasUrl(automergeUrl)) return true;
+
+    const handle = await this.#repo.find<HasPatchworkMetadata>(automergeUrl);
+    const doc = handle.doc();
+    const title = (doc as any)?.title ?? "Unknown document";
+    const type = doc?.["@patchwork"]?.type ?? "unknown";
+
+    const allowed = await this.#promptUserAccess(automergeUrl, title, type);
+    if (allowed) {
+      this.#allowlist.add(automergeUrl);
+    }
+    return allowed;
   }
 
   onHashChange(hash: string): void {
@@ -490,13 +574,19 @@ export function registerIsolatedPatchworkViewElement(
       #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #repoChannel: MessageChannel | null = null;
-      #repoAdapter: MessageChannelNetworkAdapter | null = null;
       #rpcChannel: MessageChannel | null = null;
       #iframeStub: RpcStub<IframeRpcContract> | null = null;
       #initEpoch = 0;
       #readyHandler: ((e: MessageEvent) => void) | null = null;
       #bootstrapChannel: MessageChannel | null = null;
       #registryUnsubs: (() => void)[] = [];
+      #intermediaryRepo: RepoClass | null = null;
+      #hostRepoAdapter: MessageChannelNetworkAdapter | null = null;
+      #intermediaryHostAdapter: MessageChannelNetworkAdapter | null = null;
+      #intermediaryIframeAdapter: MessageChannelNetworkAdapter | null = null;
+      #hostChannel: MessageChannel | null = null;
+      #allowlist: SyncAllowlist | null = null;
+      #rootDocUnsub: (() => void) | null = null;
 
       get docUrl() {
         return this.#docUrl;
@@ -674,21 +764,102 @@ export function registerIsolatedPatchworkViewElement(
         bootstrapChannel.port1.start();
         this.#bootstrapChannel = bootstrapChannel;
 
-        // Connect iframe repo directly to host repo via MessageChannel
+        // Set up document sync allowlist and intermediary repo.
+        // The intermediary sits between the host repo and the iframe repo,
+        // enforcing an allowlist of which documents the iframe can sync.
+        const allowlist = new SyncAllowlist();
+        allowlist.add(docUrl);
+        this.#allowlist = allowlist;
+
+        const hostRepoPeerId = repo.peerId;
+        const intermediaryRepo = new RepoClass({
+          peerId: `intermediary-${crypto.randomUUID().slice(0, 8)}` as PeerId,
+          isEphemeral: true,
+          shareConfig: {
+            announce: async (_peerId: PeerId, documentId?: DocumentId) => {
+              if (!documentId) return false;
+              return allowlist.has(documentId);
+            },
+            access: async (peerId: PeerId, documentId?: DocumentId) => {
+              // Accept everything from the host repo
+              if (peerId === hostRepoPeerId) return true;
+              // Gate iframe peer by allowlist
+              if (!documentId) return false;
+              return allowlist.has(documentId);
+            },
+          },
+        });
+        this.#intermediaryRepo = intermediaryRepo;
+
+        // Auto-allowlist documents created inside the iframe.
+        // When the intermediary learns about a document it doesn't recognize,
+        // it must have been created by the iframe (since the intermediary has
+        // no storage and starts empty, and host-originated docs are already
+        // on the allowlist). This is safe because repo.create() always
+        // generates a new document ID — it can't be used to access existing docs.
+        intermediaryRepo.on("document", ({ handle }) => {
+          const { documentId } = parseAutomergeUrl(handle.url);
+          if (!allowlist.has(documentId)) {
+            log("auto-allowlisting iframe-created document: %s", handle.url);
+            allowlist.add(handle.url);
+          }
+        });
+
+        // Connect intermediary ↔ host repo
+        const hostChannel = new MessageChannel();
+        const hostAdapter = new MessageChannelNetworkAdapter(
+          hostChannel.port1,
+          { useWeakRef: true }
+        );
+        repo.networkSubsystem.addNetworkAdapter(hostAdapter);
+        this.#hostRepoAdapter = hostAdapter;
+        const intermediaryHostAdapter = new MessageChannelNetworkAdapter(
+          hostChannel.port2,
+          { useWeakRef: true }
+        );
+        intermediaryRepo.networkSubsystem.addNetworkAdapter(intermediaryHostAdapter);
+        this.#hostChannel = hostChannel;
+        this.#intermediaryHostAdapter = intermediaryHostAdapter;
+
+        // Connect intermediary ↔ iframe
         const repoChannel = new MessageChannel();
-        const repoAdapter = new MessageChannelNetworkAdapter(
+        const intermediaryIframeAdapter = new MessageChannelNetworkAdapter(
           repoChannel.port1,
           { useWeakRef: true }
         );
-        repo.networkSubsystem.addNetworkAdapter(repoAdapter);
+        intermediaryRepo.networkSubsystem.addNetworkAdapter(intermediaryIframeAdapter);
         this.#repoChannel = repoChannel;
-        this.#repoAdapter = repoAdapter;
+        this.#intermediaryIframeAdapter = intermediaryIframeAdapter;
+
+        // Populate allowlist from container documents (e.g., folder children)
+        const rootHandle = await repo.find(docUrl);
+        await rootHandle.whenReady();
+        const rootDoc = rootHandle.doc() as any;
+        if (rootDoc && Array.isArray(rootDoc.docs)) {
+          for (const link of rootDoc.docs) {
+            if (link.url) allowlist.add(link.url);
+          }
+          log("allowlisted %d folder children", rootDoc.docs.length);
+        }
+        // Watch for new children added to the root document
+        const onRootChange = ({ doc }: { doc: any }) => {
+          if (doc && Array.isArray(doc.docs)) {
+            for (const link of doc.docs) {
+              if (link.url) allowlist.add(link.url);
+            }
+          }
+        };
+        rootHandle.on("change", onRootChange);
+        this.#rootDocUnsub = () => rootHandle.off("change", onRootChange);
+
+        if (epoch !== this.#initEpoch) return;
+        log("intermediary repo and allowlist ready");
 
         // Set up capnweb RPC channel with the HostApi and package URL mapper.
         const rpcChannel = new MessageChannel();
         const policy = createPolicy(window.location.origin, allowedBootstrapUrls);
         const mapper = new PackageUrlMapper();
-        const hostApi = new HostApi(this, policy, repo, mapper);
+        const hostApi = new HostApi(this, policy, repo, mapper, allowlist);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
           rpcChannel.port1,
           hostApi
@@ -750,10 +921,34 @@ export function registerIsolatedPatchworkViewElement(
           this.#readyHandler = null;
         }
 
-        if (this.#repoAdapter) {
-          this.#repoAdapter.disconnect();
-          this.#repoAdapter = null;
+        if (this.#rootDocUnsub) {
+          this.#rootDocUnsub();
+          this.#rootDocUnsub = null;
         }
+
+        // Tear down intermediary repo and its adapters
+        if (this.#hostRepoAdapter) {
+          this.#hostRepoAdapter.disconnect();
+          this.#hostRepoAdapter = null;
+        }
+        if (this.#intermediaryHostAdapter) {
+          this.#intermediaryHostAdapter.disconnect();
+          this.#intermediaryHostAdapter = null;
+        }
+        if (this.#intermediaryIframeAdapter) {
+          this.#intermediaryIframeAdapter.disconnect();
+          this.#intermediaryIframeAdapter = null;
+        }
+        if (this.#hostChannel) {
+          this.#hostChannel.port1.close();
+          this.#hostChannel.port2.close();
+          this.#hostChannel = null;
+        }
+        if (this.#intermediaryRepo) {
+          this.#intermediaryRepo.shutdown();
+          this.#intermediaryRepo = null;
+        }
+        this.#allowlist = null;
 
         if (this.#repoChannel) {
           this.#repoChannel.port1.close();
