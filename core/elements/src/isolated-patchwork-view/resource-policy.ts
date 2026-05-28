@@ -30,6 +30,9 @@ export class AllowAllPolicy implements ResourcePolicy {
  * check, so they never reach this code — their real (automerge) URLs are
  * fetched directly. This policy only gates non-package URLs.
  */
+// TODO: replace with per-tool resource whitelisting
+const ALLOWED_ORIGINS = new Set(["https://cdn.tldraw.com"]);
+
 export class RestrictivePolicy implements ResourcePolicy {
   #hostOrigin: string;
   #importMapUrls: Set<string>;
@@ -51,6 +54,9 @@ export class RestrictivePolicy implements ResourcePolicy {
     } catch {
       return false;
     }
+
+    // Allow requests to explicitly allowed external origins.
+    if (ALLOWED_ORIGINS.has(parsed.origin)) return true;
 
     // Block cross-origin requests — prevents exfiltration to external servers.
     if (parsed.origin !== this.#hostOrigin) return false;

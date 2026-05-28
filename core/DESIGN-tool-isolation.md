@@ -107,6 +107,8 @@ CSP is defense in depth on top of the sandbox. The sandbox provides the isolatio
 
 **Gap:** The `img-src`, `style-src`, `font-src`, and `media-src` directives allow the browser to fetch resources from the host origin. A tool could insert `<img src="http://host/some-path">` and the browser would make the request directly — bypassing the fetch proxy (section 7). The tool cannot read the response content as data (CSP blocks that), but it can detect whether the resource exists via `onload`/`onerror` events, and it can observe timing. This is a limited information leak, not full exfiltration, and it's acceptable for our threat model.
 
+Currently there's a hard-coded exception in the CSP which allows the tldraw cdn for assets (section 13). This should be removed or we should find some nice way of doing tool-specific asset white-listing (section 16).
+
 ## 5. The Automerge Repo Inside the Iframe
 
 ### The problem
@@ -351,7 +353,7 @@ A quick list of issues to address with current tools
 
 - tldraw assets fail to load because we depend on tldraw's CDN which is blocked by our CSP which prevents cross-origin fetch. This affects tldraw4, space, and likely others. Possible solutions:
   - self-host the assets bundled into the tool. This seems like the best approach, though some (solvable) issues popped up initially when I tried it. I didn't put significant time into debugging this while proving out the concepts above.
-  - self-host the assets on the site outside of the tool. I have pragmatically done this for the moment to get it working without requiring resolving the issue above
+  - self-host the assets on the site outside of the tool.
   - allow the tldraw CDN in the iframe CSP. I think we should try to avoid putting exceptions into the CSP, but I do think this one is unlikely to be a security vulnerability so this could also be a pragmatic short-term solution if we intend to move to the first option.
 - tools that use the account doc: sideboard, module-settings-manager, context-sidebar, settings, account
   - these tools should be reworked a bit so that the account doc is never passed in to a tool directly, and then I think we should see if we can explicitly prevent that document from syncing to an iframe repo

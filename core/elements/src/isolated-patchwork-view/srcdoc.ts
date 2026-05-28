@@ -381,14 +381,19 @@ export default function getSrcdocHtml(hostOrigin: string): string {
   // worker-src) and blocks nested iframes (frame-src) and plugins (object-src).
   // The actual network boundary is: sandbox + CSP + ResourcePolicy on host
   // RPC methods. CSP alone does not cover RPC-proxied fetches.
+
+  // TODO: replace with per-tool resource whitelisting
+  const allowedAssetOrigins = "https://cdn.tldraw.com";
+  const assetSources = `${hostOrigin} ${allowedAssetOrigins}`;
+
   const csp = [
     "default-src 'none'",
     "script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:",
     "connect-src blob:",
-    `img-src ${hostOrigin} blob: data:`,
+    `img-src ${assetSources} blob: data:`,
     `style-src ${hostOrigin} blob: 'unsafe-inline'`,
-    `font-src ${hostOrigin} blob: data:`,
-    `media-src ${hostOrigin} blob: data:`,
+    `font-src ${assetSources} blob: data:`,
+    `media-src ${assetSources} blob: data:`,
     "worker-src 'none'",
     "frame-src 'none'",
     "object-src 'none'",
