@@ -44,6 +44,9 @@ import type {
 } from "./rpc-types.js";
 import { type ResourcePolicy, RestrictivePolicy } from "./resource-policy.js";
 import getSrcdocHtml from "./srcdoc.js";
+import debug from "debug";
+
+const log = debug("patchwork:elements:isolated-view");
 
 // ---------------------------------------------------------------------------
 // Import map resolution
@@ -365,7 +368,7 @@ class HostApi extends RpcTarget implements HostRpcContract {
 
   #checkPolicy(url: string): void {
     if (!this.#policy.canFetch(url)) {
-      console.warn(`[isolated-patchwork-view] policy denied: ${url}`);
+      log("policy denied: %s", url);
       throw new Error(`Access denied: ${url}`);
     }
   }
@@ -632,9 +635,7 @@ export function registerIsolatedPatchworkViewElement(
           const { id, type, url } = e.data;
           if (type !== "load-module-source") return;
           if (!allowedBootstrapUrls.has(url)) {
-            console.warn(
-              `[isolated-patchwork-view] bootstrap denied: ${url}`
-            );
+            log("bootstrap denied: %s", url);
             bootstrapChannel.port1.postMessage({
               id,
               ok: false,

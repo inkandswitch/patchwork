@@ -51,8 +51,28 @@ interface InitMessage {
 // ---------------------------------------------------------------------------
 
 async function boot() {
-  const log = (...args: unknown[]) =>
-    console.log("[isolated-iframe]", ...args);
+  // Minimal debug-compatible logger. The real `debug` package isn't available
+  // until modules load (step 9), but we need logging during bootstrap.
+  // Respects the same localStorage("debug") namespace convention as the rest
+  // of patchwork-next/core so logs can be filtered consistently.
+  const NAMESPACE = "patchwork:elements:isolated-view";
+  const debugEnabled = (() => {
+    try {
+      const pattern = localStorage.getItem("debug") || "";
+      if (!pattern) return false;
+      // Support simple wildcard matching (e.g., "patchwork:*")
+      const re = new RegExp(
+        "^" + pattern.replace(/\*/g, ".*?") + "$"
+      );
+      return re.test(NAMESPACE);
+    } catch {
+      return false;
+    }
+  })();
+  const log = (...args: unknown[]) => {
+    if (!debugEnabled) return;
+    console.debug(`%c${NAMESPACE}`, "color: #7c3aed", ...args);
+  };
 
   // 1. Signal ready to parent
   if (window.parent !== window) {
@@ -296,12 +316,6 @@ async function boot() {
     }
   }
   log("local registries pre-populated with", allMetasByType.flat().length, "plugins");
-
-  // Log specific tools for debugging
-  for (const id of ["new-file", "raw", "codemirror-base"]) {
-    const entry = plugins.getRegistry("patchwork:tool").get(id);
-    log("pre-populated tool:", id, "importUrl:", entry?.importUrl ?? "(not found)");
-  }
 
   // 13. Register patchwork-view element — no special callbacks needed.
   //     The pre-populated local registry handles tool resolution via the
