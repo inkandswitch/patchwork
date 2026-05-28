@@ -261,7 +261,7 @@ Opaque: http://host/__plugin__/p0/dist/index.js
 
 When the iframe requests a module at `http://host/__plugin__/p0/dist/helper.js`, the host maps `p0` back to the real automerge document ID, fetches the source, and returns it. The token `p0` is meaningless outside the current session — it's a monotonic counter that cannot be used to `repo.find()` anything.
 
-The token approach is a proof of concept and should be replaced with a recognizable name like the tool id, which would improve clarity and aid debugging.
+The token approach is a proof of concept and should be replaced with a recognizable name, which would improve clarity and aid debugging. pvh suggested using tool bare names which would be nice, but these map to packages rather than to individual plugins, so the package name makes more sense.
 
 **Source text rewriting.** Tool module source code may contain hardcoded import URLs with automerge document IDs (e.g., in plugin registration metadata). Before sending source text to the iframe, `rewriteAutomergeUrls()` scans the text and replaces any automerge URL literals with their opaque equivalents. This is also a proof of concept which can be improved.
 
