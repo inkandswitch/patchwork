@@ -353,8 +353,8 @@ A quick list of issues to address with current tools
 
 - tldraw assets fail to load because we depend on tldraw's CDN which is blocked by our CSP which prevents cross-origin fetch. This affects tldraw4, space, and likely others. Possible solutions:
   - self-host the assets bundled into the tool. This seems like the best approach, though some (solvable) issues popped up initially when I tried it. I didn't put significant time into debugging this while proving out the concepts above.
-  - self-host the assets on the site outside of the tool. This is obviously not the right path, but it does work without requiring resolving the issue above, so it may be pragmatic for merging the isolation code and then resolving afterwards.
-  - white-list the tldraw CDN. I don't think this is an exception worth making if we're trying to have as few as possible, but it's unlikely to be a security vulnerability. If/when we implement tool-specific resource requests, this would only be for the tldraw tools.
+  - self-host the assets on the site outside of the tool. I have pragmatically done this for the moment to get it working without requiring resolving the issue above
+  - allow the tldraw CDN in the iframe CSP. I think we should try to avoid putting exceptions into the CSP, but I do think this one is unlikely to be a security vulnerability so this could also be a pragmatic short-term solution if we intend to move to the first option.
 - tools that use the account doc: sideboard, module-settings-manager, context-sidebar, settings, account
   - these tools should be reworked a bit so that the account doc is never passed in to a tool directly, and then I think we should see if we can explicitly prevent that document from syncing to an iframe repo
   - currently the tools which open in the non-sandboxed sidebars work, but I think we should sandbox the sidebars in the future so people can bring their own 3rd-party sidebar tools
