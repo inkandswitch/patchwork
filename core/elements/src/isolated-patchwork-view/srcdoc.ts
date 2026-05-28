@@ -63,19 +63,7 @@ async function boot() {
   // Respects the same localStorage("debug") namespace convention as the rest
   // of patchwork-next/core so logs can be filtered consistently.
   const NAMESPACE = "patchwork:elements:isolated-view";
-  const debugEnabled = (() => {
-    try {
-      const pattern = localStorage.getItem("debug") || "";
-      if (!pattern) return false;
-      // Support simple wildcard matching (e.g., "patchwork:*")
-      const re = new RegExp(
-        "^" + pattern.replace(/\*/g, ".*?") + "$"
-      );
-      return re.test(NAMESPACE);
-    } catch {
-      return false;
-    }
-  })();
+  let debugEnabled = false;
   const log = (...args: unknown[]) => {
     if (!debugEnabled) return;
     console.debug(`%c${NAMESPACE}`, "color: #7c3aed", ...args);
@@ -85,7 +73,6 @@ async function boot() {
   if (window.parent !== window) {
     window.parent.postMessage({ type: "isolated-patchwork-ready" }, "*");
   }
-  log("ready, waiting for init...");
 
   // 2. Wait for init message (receives 3 ports: repo, bootstrap, rpc)
   const init: InitMessage = await new Promise((resolve) => {
@@ -101,7 +88,6 @@ async function boot() {
     });
   });
   const d = init.data;
-  log("received init", { docUrl: d.docUrl });
 
   // 3. Stub localStorage — sandboxed iframes throw SecurityError on access.
   try {
@@ -109,14 +95,27 @@ async function boot() {
   } catch {
     Object.defineProperty(window, "localStorage", {
       value: {
-        // Return "patchwork:*" for the "debug" key so the debug package
-        // enables logging inside the iframe (which has no real localStorage).
-        getItem: (key: string) => key === "debug" ? "patchwork:*" : null,
+        // Return "patchwork:*,iframe:patchwork*" for the "debug" key so the
+        // debug package enables logging inside the iframe (which has no real
+        // localStorage). Covers both patchwork:* and iframe:patchwork* namespaces.
+        getItem: (key: string) => key === "debug" ? "patchwork:*,iframe:patchwork*" : null,
         setItem: () => {},
         removeItem: () => {},
       },
     });
   }
+
+  // Now that localStorage is available (real or stubbed), evaluate debug flag.
+  {
+    const pattern = localStorage.getItem("debug") || "";
+    if (pattern) {
+      const re = new RegExp(
+        "^" + pattern.split(",").map(p => p.trim().replace(/\*/g, ".*?")).join("$|^") + "$"
+      );
+      debugEnabled = re.test(NAMESPACE);
+    }
+  }
+  log("init", { docUrl: d.docUrl });
 
   // 3b. Inject host page stylesheets (Tailwind/DaisyUI, etc.) so tools
   //     that rely on the host's CSS framework render correctly.
@@ -327,7 +326,7 @@ async function boot() {
   // 13. Register patchwork-view element — no special callbacks needed.
   //     The pre-populated local registry handles tool resolution via the
   //     standard getFallbackTool(doc) → getRegistry().get() → load() path.
-  elements.registerPatchworkViewElement({ repo });
+  elements.registerPatchworkViewElement({ repo, debugNamespace: "iframe:patchwork:elements:view" });
 
   // 14. Render — patchwork-view resolves the tool via the local registry.
   const rootElement = document.getElementById("root")!;

@@ -563,6 +563,7 @@ export function registerIsolatedPatchworkViewElement(
         const epoch = ++this.#initEpoch;
         const docUrl = this.#docUrl;
         const toolId = this.#toolId;
+        log("init %s tool=%s", docUrl, toolId);
 
         // Pre-fetch tool-independent assets in parallel (the sandboxed
         // iframe cannot fetch anything itself).
@@ -626,6 +627,7 @@ export function registerIsolatedPatchworkViewElement(
         });
 
         if (epoch !== this.#initEpoch) return;
+        log("iframe ready");
 
         // Resolve importmap to absolute host-origin URLs (needed before
         // bootstrap channel setup to restrict which URLs it can serve).
@@ -696,6 +698,7 @@ export function registerIsolatedPatchworkViewElement(
         // Send init message with transferred ports and pre-fetched assets.
         // Tool resolution is deferred — the iframe will request it via the
         // PluginRegistryCapability after RPC is established.
+        log("sending init message");
         iframe.contentWindow!.postMessage(
           {
             type: "isolated-patchwork-init",
@@ -724,6 +727,7 @@ export function registerIsolatedPatchworkViewElement(
         for (const [, registry] of getAllRegistries()) {
           const unsub = registry.on("registered", (plugin) => {
             if (!plugin.importUrl || !this.#iframeStub) return;
+            log("pushing registry update: %s", plugin.id);
             const folderPath = getImportableUrlFromAutomergeUrl(
               plugin.importUrl as AutomergeUrl
             );
@@ -734,9 +738,11 @@ export function registerIsolatedPatchworkViewElement(
           });
           this.#registryUnsubs.push(unsub);
         }
+        log("registry subscriptions active");
       }
 
       #teardown() {
+        log("teardown");
         this.#initEpoch++;
 
         if (this.#readyHandler) {

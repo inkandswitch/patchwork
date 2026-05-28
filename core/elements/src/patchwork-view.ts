@@ -17,8 +17,6 @@ import {
 import debug from "debug";
 import { MountedEvent, NoToolEvent } from "./events.js";
 
-const log = debug("patchwork:elements:view");
-
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 type AutomergeRepoKeyhive = Awaited<
@@ -41,6 +39,7 @@ export interface RegisterPatchworkViewElementParams {
   name?: string;
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
+  debugNamespace?: string;
 }
 
 export interface PatchworkViewElement extends HTMLElement {
@@ -66,6 +65,8 @@ export function registerPatchworkViewElement(
     docUrl: "doc-url",
     toolId: "tool-id",
   };
+
+  const log = debug(params.debugNamespace ?? "patchwork:elements:view");
 
   customElements.define(
     name,
