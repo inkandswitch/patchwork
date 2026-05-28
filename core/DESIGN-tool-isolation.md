@@ -370,7 +370,25 @@ I got this working by adding the provider request/response to the capnweb RPC. I
 
 One big security question to think about - providers can request/respond with anything. In the existing example providers this is mostly tied to a specific document url, but it doesn't have to be. We need to think this through carefully, which I haven't done yet.
 
-## 15. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
+## 15. Open Problem: hash change navigation
+
+### The problem
+
+Some tools (e.g., `patchwork-base/folder`) use `<a href="#doc=...">` links for navigation rather than dispatching `patchwork:open-document` events. Inside the isolated iframe, these hash links can't update the host's URL bar directly, so the iframe intercepts them and forwards the raw hash string to the host via `onHashChange` RPC.
+
+The host's `onHashChange` handler validates that the `doc` param contains a valid document ID, then sets `window.location.hash` directly. This triggers the host's `handleHashChange` listener in `site.ts`, which parses the full hash — including `tool`, `title`, `type`, `frame`, and `heads` params — and acts on all of them.
+
+### Why this matters
+
+`onOpenDocument` receives structured, named parameters and dispatches a typed `OpenDocumentEvent`. `onHashChange` accepts a raw string that the host writes directly into `window.location.hash`, where it is parsed and acted upon with less control. A malicious tool could inject arbitrary hash params to force a specific frame tool, set a misleading title, or supply unexpected `heads` values.
+
+### Current state
+
+The severity is low — the same UI spoofing and unwanted navigation risks exist through `onOpenDocument` (see SECURITY.md item 4), but `onHashChange` provides less structured input. Both paths ultimately target the isolated iframe, so privilege escalation is not possible.
+
+The preferred direction is to migrate tools that use `<a href="#doc=...">` links to dispatch `patchwork:open-document` events instead, then remove `onHashChange` from the RPC contract. This would eliminate the raw-string path entirely, leaving only the structured `onOpenDocument` method.
+
+## 16. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
 
 This POC was implemented by creating a drop-in replacement for patchwork-view that provides all of the isolation and mechanics described above, so it has the same element shape as the old patchwork-view. I took this approach because it was simple to test while working through the challenges above.
 
@@ -380,14 +398,14 @@ Paul has proposed moving from `<patchwork-view>` to functions like `(element: HT
 
 I think we should move to a better approach than `isolated-patchwork-view` in one of these directions, but for pragmatic reasons I propose merging the isolation work with `isolated-patchwork-view` and revisiting this afterwards as a distinct task.
 
-## 16. Open Problems: List of open problems mentioned in previous sections:
+## 17. Open Problems: List of open problems mentioned in previous sections:
 
 - data exfiltration via hard-coded AutomergeUrls (section 5)
 - brute force document discovery (section 5)
 - tool-specific resource requests/white-listing for external URLs (section 7)
 - better source rewriting / URL redaction for tool source code responses (section 5, section 9)
 
-## 17. Summary of Security Layers
+## 18. Summary of Security Layers
 
 | Layer                          | Addresses                                                       | Current gaps                                        |
 | ------------------------------ | --------------------------------------------------------------- | --------------------------------------------------- |
