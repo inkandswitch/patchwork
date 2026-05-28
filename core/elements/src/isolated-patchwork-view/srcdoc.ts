@@ -170,7 +170,12 @@ async function boot() {
       let source = await loadModuleSource(url);
       // Workaround: es-module-shims' lexer misidentifies class methods named
       // `import` as dynamic import() expressions, causing parse errors.
-      source = source.replace(/^(\s+)import\s*\(/gm, '$1["import"](');
+      // Only rewrite `import(` when followed by `) {` (a method definition),
+      // not dynamic import() calls like `import("./module")`.
+      source = source.replace(
+        /^(\s+)import\s*\(([^)]*)\)\s*\{/gm,
+        '$1["import"]($2) {'
+      );
       return { source, type: "js" };
     },
   };
