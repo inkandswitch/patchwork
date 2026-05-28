@@ -119,6 +119,37 @@ class SyncAllowlist {
 }
 
 // ---------------------------------------------------------------------------
+// Recursive automerge URL collection
+// ---------------------------------------------------------------------------
+
+/** Keys to skip when scanning for automerge URLs in documents. */
+const SKIP_KEYS = new Set(["@patchwork"]);
+
+/**
+ * Recursively walks a value and collects all valid automerge URLs found.
+ * Skips subtrees under keys listed in SKIP_KEYS (e.g. @patchwork metadata).
+ */
+function collectAutomergeUrls(
+  value: unknown,
+  urls: Set<AutomergeUrl>,
+  key?: string
+): void {
+  if (key && SKIP_KEYS.has(key)) return;
+  if (typeof value === "string") {
+    if (isValidAutomergeUrl(value)) urls.add(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectAutomergeUrls(item, urls);
+    return;
+  }
+  if (value !== null && typeof value === "object") {
+    for (const [k, v] of Object.entries(value as Record<string, unknown>))
+      collectAutomergeUrls(v, urls, k);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Plugin entry point resolution
 // ---------------------------------------------------------------------------
 
@@ -825,23 +856,20 @@ export function registerIsolatedPatchworkViewElement(
         this.#repoChannel = repoChannel;
         this.#intermediaryIframeAdapter = intermediaryIframeAdapter;
 
-        // Populate allowlist from container documents (e.g., folder children)
+        // Populate allowlist from all automerge URLs found in the root document
         const rootHandle = await repo.find(docUrl);
         await rootHandle.whenReady();
-        const rootDoc = rootHandle.doc() as any;
-        if (rootDoc && Array.isArray(rootDoc.docs)) {
-          for (const link of rootDoc.docs) {
-            if (link.url) allowlist.add(link.url);
-          }
-          log("allowlisted %d folder children", rootDoc.docs.length);
-        }
-        // Watch for new children added to the root document
-        const onRootChange = ({ doc }: { doc: any }) => {
-          if (doc && Array.isArray(doc.docs)) {
-            for (const link of doc.docs) {
-              if (link.url) allowlist.add(link.url);
-            }
-          }
+        const rootDoc = rootHandle.doc();
+        const addUrlsFromDoc = (doc: unknown) => {
+          const urls = new Set<AutomergeUrl>();
+          collectAutomergeUrls(doc, urls);
+          for (const url of urls) allowlist.add(url);
+        };
+        addUrlsFromDoc(rootDoc);
+        log("allowlisted URLs from root document");
+        // Watch for new URLs added to the root document
+        const onRootChange = ({ doc }: { doc: unknown }) => {
+          addUrlsFromDoc(doc);
         };
         rootHandle.on("change", onRootChange);
         this.#rootDocUnsub = () => rootHandle.off("change", onRootChange);
