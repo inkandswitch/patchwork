@@ -294,6 +294,7 @@ async function boot() {
   repo.networkSubsystem.addNetworkAdapter(
     new network.MessageChannelNetworkAdapter(init.repoPort)
   );
+  (window as any).repo = repo;
   log("repo connected");
 
   // 12. Pre-populate local plugin registries from the host.
