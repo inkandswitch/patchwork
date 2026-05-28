@@ -28,7 +28,7 @@ import {
   getFallbackTool,
   getSupportedTools,
   getSupportedToolsForType,
-  type LoadedTool,
+  type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
 import { type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -49,14 +49,19 @@ import getSrcdocHtml from "./srcdoc.js";
 // Import map resolution
 // ---------------------------------------------------------------------------
 
+interface ImportMap {
+  imports?: Record<string, string>;
+  scopes?: Record<string, Record<string, string>>;
+}
+
 /** Resolve the host importmap entries to absolute URLs. */
-function resolveImportMap(importMap: any, baseURI: string): any {
-  const resolved: any = {};
+function resolveImportMap(importMap: ImportMap, baseURI: string): ImportMap {
+  const resolved: ImportMap = {};
   if (importMap.imports) {
     resolved.imports = {};
     for (const [key, value] of Object.entries(importMap.imports)) {
       try {
-        resolved.imports[key] = new URL(value as string, baseURI).href;
+        resolved.imports[key] = new URL(value, baseURI).href;
       } catch {
         resolved.imports[key] = value;
       }
@@ -72,9 +77,9 @@ function resolveImportMap(importMap: any, baseURI: string): any {
         rk = scopeKey;
       }
       resolved.scopes[rk] = {};
-      for (const [k, v] of Object.entries(scopeMap as any)) {
+      for (const [k, v] of Object.entries(scopeMap)) {
         try {
-          resolved.scopes[rk][k] = new URL(v as string, baseURI).href;
+          resolved.scopes[rk][k] = new URL(v, baseURI).href;
         } catch {
           resolved.scopes[rk][k] = v;
         }
@@ -211,6 +216,34 @@ class PackageUrlMapper {
 }
 
 // ---------------------------------------------------------------------------
+// Plugin metadata conversion
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a host-side PluginDescription to a PluginMetadata object suitable
+ * for sending to the iframe. Copies known optional fields; the caller provides
+ * the already-mapped importUrl.
+ */
+function pluginToMetadata(
+  plugin: PluginDescription,
+  importUrl: string,
+): PluginMetadata {
+  const meta: PluginMetadata = {
+    id: plugin.id,
+    type: plugin.type,
+    name: plugin.name,
+    importUrl,
+  };
+  if (plugin.icon != null) meta.icon = plugin.icon;
+  if ("unlisted" in plugin) meta.unlisted = (plugin as any).unlisted;
+  if ("supportedDatatypes" in plugin)
+    meta.supportedDatatypes = (plugin as any).supportedDatatypes;
+  if ("tags" in plugin) meta.tags = (plugin as any).tags;
+  if ("forTitleBar" in plugin) meta.forTitleBar = (plugin as any).forTitleBar;
+  return meta;
+}
+
+// ---------------------------------------------------------------------------
 // PluginRegistryTarget — capnweb capability for querying the plugin registry
 // ---------------------------------------------------------------------------
 
@@ -233,26 +266,16 @@ class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability
    * importUrl. Returns null if the plugin has no importUrl or entry point
    * resolution fails (e.g., plugin not synced locally).
    */
-  async #toMetadata(plugin: any): Promise<PluginMetadata | null> {
+  async #toMetadata(plugin: PluginDescription): Promise<PluginMetadata | null> {
     if (!plugin.importUrl) return null;
 
     const resolved = await resolvePluginEntryUrl(plugin.importUrl);
     if (!resolved) return null;
 
-    const meta: PluginMetadata = {
-      id: plugin.id,
-      type: plugin.type,
-      name: plugin.name,
-      importUrl: this.#mapper.toPackageUrl(resolved.entryUrl, resolved.packageName),
-    };
-
-    if (plugin.icon != null) meta.icon = plugin.icon;
-    if (plugin.unlisted != null) meta.unlisted = plugin.unlisted;
-    if (plugin.supportedDatatypes != null) meta.supportedDatatypes = plugin.supportedDatatypes;
-    if (plugin.tags != null) meta.tags = plugin.tags;
-    if (plugin.forTitleBar != null) meta.forTitleBar = plugin.forTitleBar;
-
-    return meta;
+    return pluginToMetadata(
+      plugin,
+      this.#mapper.toPackageUrl(resolved.entryUrl, resolved.packageName),
+    );
   }
 
   async list(pluginType: string): Promise<PluginMetadata[]> {
@@ -362,10 +385,11 @@ class HostApi extends RpcTarget implements HostRpcContract {
     url: string
   ): Promise<{ contentType: string; body: string | Uint8Array }> {
     // Resolve pkg: URLs for fetch too (e.g., CSS, images from tool packages)
-    const realUrl = this.#mapper.toAutomergeUrl(url) ?? url;
-    if (!this.#mapper.toAutomergeUrl(url)) {
+    const resolvedUrl = this.#mapper.toAutomergeUrl(url);
+    if (!resolvedUrl) {
       this.#checkPolicy(url);
     }
+    const realUrl = resolvedUrl ?? url;
     const res = await fetch(realUrl);
     const contentType = res.headers.get("content-type") || "";
     const isBinary =
@@ -530,8 +554,6 @@ export function registerIsolatedPatchworkViewElement(
 
         // Pre-fetch tool-independent assets in parallel (the sandboxed
         // iframe cannot fetch anything itself).
-        const esmsUrl =
-          "https://ga.jspm.io/npm:es-module-shims@2.8.1/dist/es-module-shims.wasm.js";
 
         // Collect host page stylesheets so tools inside the iframe get the
         // same CSS framework (Tailwind/DaisyUI utility classes, etc.).
@@ -557,7 +579,7 @@ export function registerIsolatedPatchworkViewElement(
         ).then((sheets) => sheets.filter(Boolean).join("\n"));
 
         const [esmsSource, automergeWasm, subductionWasm] = await Promise.all([
-          fetch(esmsUrl).then((r) => r.text()),
+          fetch("/es-module-shims.js").then((r) => r.text()),
           fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
           fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
         ]);
@@ -599,7 +621,7 @@ export function registerIsolatedPatchworkViewElement(
         const allowedBootstrapUrls = new Set<string>();
         if (importMap.imports) {
           for (const url of Object.values(importMap.imports)) {
-            allowedBootstrapUrls.add(url as string);
+            allowedBootstrapUrls.add(url);
           }
         }
 
@@ -683,24 +705,14 @@ export function registerIsolatedPatchworkViewElement(
         // When plugins are re-registered (e.g., ModuleWatcher discovers a
         // newer version), the iframe's local registry is updated to match.
         for (const [, registry] of getAllRegistries()) {
-          const unsub = registry.on("registered", (plugin: any) => {
+          const unsub = registry.on("registered", (plugin) => {
             if (!plugin.importUrl || !this.#iframeStub) return;
             const folderPath = getImportableUrlFromAutomergeUrl(
               plugin.importUrl as AutomergeUrl
             );
             const folderUrl = new URL(folderPath, window.location.origin).href;
             const packageUrl = mapper.toPackageUrl(folderUrl);
-            const meta: any = {
-              id: plugin.id,
-              type: plugin.type,
-              name: plugin.name,
-              importUrl: packageUrl,
-            };
-            if (plugin.icon != null) meta.icon = plugin.icon;
-            if (plugin.unlisted != null) meta.unlisted = plugin.unlisted;
-            if (plugin.supportedDatatypes != null) meta.supportedDatatypes = plugin.supportedDatatypes;
-            if (plugin.tags != null) meta.tags = plugin.tags;
-            if (plugin.forTitleBar != null) meta.forTitleBar = plugin.forTitleBar;
+            const meta = pluginToMetadata(plugin, packageUrl);
             this.#iframeStub!.onPluginRegistered(meta);
           });
           this.#registryUnsubs.push(unsub);

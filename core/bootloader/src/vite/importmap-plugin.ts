@@ -61,6 +61,15 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         fileName: "subduction.wasm",
         source: readFileSync(subdWasmPath),
       });
+
+      // Emit es-module-shims source so the isolated iframe can load it
+      // locally instead of fetching from a CDN at runtime.
+      const esmsPath = require.resolve("es-module-shims/wasm");
+      this.emitFile({
+        type: "asset",
+        fileName: "es-module-shims.js",
+        source: readFileSync(esmsPath),
+      });
     },
     resolveId(id) {
       if (id in importmap.imports && !(id in builtins)) {

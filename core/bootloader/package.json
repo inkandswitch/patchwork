@@ -52,6 +52,7 @@
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@types/debug": "^4.1.12",
     "debug": "^4.4.3",
+    "es-module-shims": "^2.8.1",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
     "tinyargs": "^0.1.4"
