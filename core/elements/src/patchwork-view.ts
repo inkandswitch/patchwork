@@ -8,7 +8,7 @@ import {
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
 import { MountedEvent, UnmountedEvent } from "./events.js";
-import { registerPatchworkViewLegacyElement } from "./patchwork-view-legacy.js";
+import { LegacyImpl } from "./legacy-impl.js";
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
@@ -52,8 +52,8 @@ const ATTRS = {
 export type RegisterPatchworkViewElementParams = {
   name?: string;
   /**
-   * Forwarded to the inner `<patchwork-view-legacy>` element so legacy
-   * tools rendered in fallback mode get access to a Keyhive instance.
+   * Threaded into the `LegacyImpl` so legacy-mode tools get access to a
+   * Keyhive instance via `element.hive`.
    */
   hive?: AutomergeRepoKeyhive;
 };
@@ -61,9 +61,9 @@ export type RegisterPatchworkViewElementParams = {
 /**
  * `<patchwork-view>` reacts to whichever attributes it carries: a
  * `component` attribute mounts a registered `patchwork:component`
- * plugin in place; the legacy `doc-url` / `tool-id` attributes (and no
- * `component`) cause an inner `<patchwork-view-legacy>` to be appended
- * and forwarded to. `component` wins if both are set.
+ * plugin in place; the legacy `doc-url` / `tool-id` attributes (and
+ * no `component`) drive tool-mounting via `LegacyImpl` hosted directly
+ * on this element. `component` wins if both are set.
  */
 export type PatchworkViewElement = HTMLElement & {
   component?: string | null;
@@ -76,11 +76,6 @@ export function registerPatchworkViewElement(
   params: RegisterPatchworkViewElementParams = {}
 ) {
   const name = params.name ?? "patchwork-view";
-
-  // Also registers `<patchwork-view-legacy>` (the inner element used
-  // when legacy attributes are set). Both register functions are
-  // idempotent.
-  registerPatchworkViewLegacyElement({ hive: params.hive });
 
   if (customElements.get(name)) return;
 
@@ -96,7 +91,11 @@ export function registerPatchworkViewElement(
       #initEpoch = 0;
       #teardowns = new Set<() => unknown | Promise<void>>();
 
-      #legacyChild: HTMLElement | null = null;
+      // In legacy mode, the legacy view logic is hosted on *this*
+      // element (not a child) so events dispatched on `<patchwork-view>`
+      // and listeners attached by the mounted tool land on the same
+      // DOM node — matching the pre-split behavior.
+      #legacyImpl: LegacyImpl | null = null;
 
       get component() {
         return this.#component;
@@ -161,6 +160,7 @@ export function registerPatchworkViewElement(
 
       connectedMoveCallback() {
         this.#capturedParent = this.parentElement;
+        this.#legacyImpl?.connectedMoveCallback();
       }
 
       attributeChangedCallback(
@@ -173,12 +173,12 @@ export function registerPatchworkViewElement(
         if (attrName === ATTRS.component) this.#component = val;
         else if (attrName === ATTRS.url) this.#url = val as AutomergeUrl | null;
 
-        // Already showing the legacy child and still want it: forward
-        // doc-url / tool-id changes through to it without reattaching.
-        if (this.#legacyChild && !this.#wantsComponent()) {
+        // Already in legacy mode and still want it: forward doc-url /
+        // tool-id changes into the impl so it tears down and re-inits
+        // without us having to rebuild the element.
+        if (this.#legacyImpl && !this.#wantsComponent()) {
           if (attrName === ATTRS.docUrl || attrName === ATTRS.toolId) {
-            if (val !== null) this.#legacyChild.setAttribute(attrName, val);
-            else this.#legacyChild.removeAttribute(attrName);
+            this.#legacyImpl.attributeChangedCallback(attrName, old, val);
           }
           return;
         }
@@ -223,14 +223,12 @@ export function registerPatchworkViewElement(
       }
 
       #renderLegacy() {
-        if (this.#legacyChild) return;
-        const child = document.createElement("patchwork-view-legacy");
-        const docUrl = this.getAttribute(ATTRS.docUrl);
-        const toolId = this.getAttribute(ATTRS.toolId);
-        if (docUrl) child.setAttribute(ATTRS.docUrl, docUrl);
-        if (toolId) child.setAttribute(ATTRS.toolId, toolId);
-        this.appendChild(child);
-        this.#legacyChild = child;
+        if (this.#legacyImpl) return;
+        this.#legacyImpl = new LegacyImpl(this, {
+          hive: params.hive,
+          hostName: name,
+        });
+        this.#legacyImpl.connectedCallback();
       }
 
       #initComponent = async () => {
@@ -282,9 +280,9 @@ export function registerPatchworkViewElement(
       };
 
       async #teardown() {
-        if (this.#legacyChild) {
-          this.#legacyChild.remove();
-          this.#legacyChild = null;
+        if (this.#legacyImpl) {
+          await this.#legacyImpl.disconnectedCallback();
+          this.#legacyImpl = null;
         }
 
         if (this.#state == State.none) return;
