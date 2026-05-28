@@ -18,7 +18,7 @@
  * postMessage bootstrap loads capnweb itself before RPC takes over.
  */
 
-import { type AutomergeUrl, type DocumentId, type PeerId, type Repo, Repo as RepoClass, isValidAutomergeUrl, isValidDocumentId, parseAutomergeUrl } from "@automerge/automerge-repo";
+import { type AutomergeUrl, type DocumentId, type PeerId, type Repo, Repo as RepoClass, isValidAutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import { RpcTarget, newMessagePortRpcSession } from "capnweb";
 import type { RpcStub } from "capnweb";
@@ -519,12 +519,6 @@ class HostApi extends RpcTarget implements HostRpcContract {
     return allowed;
   }
 
-  onHashChange(hash: string): void {
-    const params = new URLSearchParams(hash.replace(/^#/, ""));
-    const documentId = params.get("doc");
-    if (!documentId || !isValidDocumentId(documentId)) return;
-    window.location.hash = hash;
-  }
 }
 
 // ---------------------------------------------------------------------------

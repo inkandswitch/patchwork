@@ -120,8 +120,6 @@ export interface HostRpcContract {
    * If already allowlisted, returns true immediately.
    */
   requestDocumentAccess(url: string): Promise<boolean>;
-  /** Iframe forwards a hash change (e.g., from <a href="#doc=..."> links). */
-  onHashChange(hash: string): void;
 }
 
 /**

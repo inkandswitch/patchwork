@@ -419,6 +419,7 @@ A quick list of issues to address with current tools
   - these tools should be reworked a bit so that the account doc is never passed in to a tool directly, and then I think we should see if we can explicitly prevent that document from syncing to an iframe repo. tools opened in the non-sandboxed sidebars work, but I think we should sandbox the sidebars in the future so people can bring their own 3rd-party sidebar tools. Providers can probably help.
   - when the module-settings-manager opens in the main document area, it does not work properly because of the package url rewriting (section 9).
 - codemirror-base: there's an issue with the styles on remount. If I open a doc, it looks right. If I open a folder then it looks wrong and stays wrong until page refresh. Claude: "When a CodeMirror document is opened, navigated away from (e.g., through a folder), and reopened, the codemirror-markdown theme styles (gutter hiding, content padding) may not re-apply correctly inside the iframe. The extensions load successfully on re-mount, but CodeMirror's internal style injection may not re-inject `<style>` tags that were removed during teardown. This does not affect the host-side patchwork-view. Investigation needed into CodeMirror's style lifecycle in sandboxed iframes."
+- folder tool uses `<a href="#doc=...">` links for navigation rather than dispatching `patchwork:open-document` events. Inside the isolated iframe, these hash links don't work — the `onHashChange` RPC workaround has been removed because it bypassed the sync allowlist (section 5b) and accepted raw unstructured input. The folder tool should be migrated to dispatch `patchwork:open-document` events instead, which go through the structured `onOpenDocument` RPC path and its allowlist checks.
 
 ## 14. Open Problem: integrating providers
 
@@ -426,25 +427,7 @@ I got this working by adding the provider request/response to the capnweb RPC. I
 
 One big security question to think about - providers can request/respond with anything. In the existing example providers this is mostly tied to a specific document url, but it doesn't have to be. We need to think this through carefully, which I haven't done yet.
 
-## 15. Open Problem: hash change navigation
-
-### The problem
-
-Some tools (e.g., `patchwork-base/folder`) use `<a href="#doc=...">` links for navigation rather than dispatching `patchwork:open-document` events. Inside the isolated iframe, these hash links can't update the host's URL bar directly, so the iframe intercepts them and forwards the raw hash string to the host via `onHashChange` RPC.
-
-The host's `onHashChange` handler validates that the `doc` param contains a valid document ID, then sets `window.location.hash` directly. This triggers the host's `handleHashChange` listener in `site.ts`, which parses the full hash — including `tool`, `title`, `type`, `frame`, and `heads` params — and acts on all of them.
-
-### Why this matters
-
-`onOpenDocument` receives structured, named parameters and dispatches a typed `OpenDocumentEvent`. `onHashChange` accepts a raw string that the host writes directly into `window.location.hash`, where it is parsed and acted upon with less control. A malicious tool could inject arbitrary hash params to force a specific frame tool, set a misleading title, or supply unexpected `heads` values.
-
-### Current state
-
-The severity is low — the same UI spoofing and unwanted navigation risks exist through `onOpenDocument` (see SECURITY.md item 4), but `onHashChange` provides less structured input. Both paths ultimately target the isolated iframe, so privilege escalation is not possible.
-
-The preferred direction is to migrate tools that use `<a href="#doc=...">` links to dispatch `patchwork:open-document` events instead, then remove `onHashChange` from the RPC contract. This would eliminate the raw-string path entirely, leaving only the structured `onOpenDocument` method.
-
-## 16. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
+## 15. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
 
 This POC was implemented by creating a drop-in replacement for patchwork-view that provides all of the isolation and mechanics described above, so it has the same element shape as the old patchwork-view. I took this approach because it was simple to test while working through the challenges above.
 
@@ -454,12 +437,9 @@ Paul has proposed moving from `<patchwork-view>` to functions like `(element: HT
 
 I think we should move to a better approach than `isolated-patchwork-view` in one of these directions, but for pragmatic reasons I propose merging the isolation work with `isolated-patchwork-view` and revisiting this afterwards as a distinct task.
 
-## 17. Open Problems: List of open problems mentioned in previous sections:
+## 16. Open Problems: List of open problems mentioned in previous sections:
 
-- data exfiltration via hard-coded AutomergeUrls (section 5)
-- brute force document discovery (section 5)
 - tool-specific resource requests/white-listing for external URLs (section 7)
-- better source rewriting / URL redaction for tool source code responses (section 5, section 9)
 
 ## 18. Summary of Security Layers
 
@@ -468,7 +448,8 @@ I think we should move to a better approach than `isolated-patchwork-view` in on
 | Iframe sandbox (opaque origin) | Unauthorized access to DOM, storage, cookies, service workers   | None — enforced by the browser                      |
 | Content Security Policy        | Network exfiltration, Workers, nested iframes                   | `img-src`/`style-src` allow host-origin probing     |
 | Fetch proxy + ResourcePolicy   | Cross-origin exfiltration via RPC, automerge URL probing        | Browser-initiated loads bypass proxy                |
-| Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks through document content |
+| Sync allowlist (intermediary)  | Unauthorized document access via repo sync                      | Only folder children auto-allowlisted; other container types need support |
+| Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks IDs through document content (mitigated by sync allowlist) |
 | capnweb RPC + capabilities     | Scoped access — iframe can only call explicitly exposed methods | —                                                   |
 | Host CSS injection             | Tool rendering compatibility                                    | Coupled to host CSS build                           |
 | Registry pre-population        | Sync API compatibility with package URLs                        | Metadata leak (all plugins visible)                 |
@@ -476,13 +457,10 @@ I think we should move to a better approach than `isolated-patchwork-view` in on
 ### Open problems
 
 1. **Plugin discovery in host context** (section 12) — tool entry modules execute with full host privileges before any sandbox is involved. Most severe gap.
-2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping.
-3. **Current tool compatibility** (section 13) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework for sandboxed contexts.
+2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping. Mitigated by the sync allowlist (section 5b) which blocks the iframe from syncing non-allowlisted documents, but the information leak itself remains.
+3. **Current tool compatibility** (section 13) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework; folder tool uses hash-based navigation that doesn't work in the iframe.
 4. **Provider security** (section 14) — providers can request/respond with anything; security implications not yet analyzed.
 5. **Element architecture** (section 15) — `isolated-patchwork-view` is a pragmatic starting point; migration to `patchwork-box` or `withIsolation()` is planned.
-6. **Data exfiltration via hard-coded automerge URLs** (section 5) — tool source may contain literal automerge URLs that leak document IDs.
-7. **Brute force document discovery** (section 5) — a tool could guess document IDs and attempt `repo.find()`.
-8. **Tool-specific resource whitelisting** (section 7) — no mechanism for per-tool external URL exceptions (e.g., tldraw CDN).
-9. **Better source rewriting / URL redaction** (section 9) — current `rewriteAutomergeUrls` may not catch all forms of embedded automerge URLs in tool source.
+6. **Tool-specific resource whitelisting** (section 7) — no mechanism for per-tool external URL exceptions (e.g., tldraw CDN).
 
-The architecture provides meaningful isolation for tool rendering code. A tool running inside the sandbox cannot access the host's DOM, storage, or service workers; cannot make network requests to external servers; cannot see other tools' source code document IDs through the module-loading path; and uses the same APIs as before without modification. Full security requires addressing the open problems — especially host-context plugin execution, which bypasses the entire isolation architecture.
+The architecture provides meaningful isolation for tool rendering code. A tool running inside the sandbox cannot access the host's DOM, storage, or service workers; cannot make network requests to external servers; cannot see other tools' source code document IDs through the module-loading path; cannot sync documents it wasn't given access to; and uses the same APIs as before without modification. Full security requires addressing the open problems — especially host-context plugin execution, which bypasses the entire isolation architecture.
