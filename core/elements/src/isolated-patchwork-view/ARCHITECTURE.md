@@ -34,14 +34,14 @@ HOST PAGE                                SANDBOXED IFRAME (srcdoc, opaque origin
   |                                       |  registries from host via capability:
   +- HostApi (capnweb RpcTarget):         |  listRegistryTypes() → list(type)
   |  - getPluginRegistry() → capability   |  each entry is a LoadablePlugin with
-  |  - loadModuleSource(url)              |  load() → importShim(opaqueUrl)
+  |  - loadModuleSource(url)              |  load() → importShim(packageUrl)
   |  - fetchResource(url)                 |
   |  - onMounted(url, toolId)             +- sync APIs now work locally:
   |  - onOpenDocument(url, ...)           |  getFallbackTool(), getRegistry().get()
   |                                       |  filter(), loadAll(), etc.
-  +- OpaqueUrlMapper:                     |
-  |  - toOpaque: automerge segment → pN   +- registerPatchworkViewElement({ repo })
-  |  - toReal: pN → automerge segment     |  no special callbacks needed
+  +- PackageUrlMapper:                     |
+  |  - toPackageUrl: automerge → name      +- registerPatchworkViewElement({ repo })
+  |  - toAutomergeUrl: name → automerge   |  no special callbacks needed
   |  - rewriteAutomergeUrls in source     |
   |                                       +- patchwork-view resolves tool via
   +- Pushes registry updates to iframe    |  local pre-populated registry,
@@ -53,7 +53,7 @@ HOST PAGE                                SANDBOXED IFRAME (srcdoc, opaque origin
 
 ### Key files
 
-- `core/elements/src/isolated-patchwork-view/index.ts` — host-side custom element, HostApi, OpaqueUrlMapper, PluginRegistryTarget, registry push subscriptions, bootstrap + RPC channels
+- `core/elements/src/isolated-patchwork-view/index.ts` — host-side custom element, HostApi, PackageUrlMapper, PluginRegistryTarget, registry push subscriptions, bootstrap + RPC channels
 - `core/elements/src/isolated-patchwork-view/srcdoc.ts` — iframe boot script + HTML generator, registry pre-population, IframeApi (receives push updates)
 - `core/elements/src/isolated-patchwork-view/rpc-types.ts` — capnweb RPC contract types (HostRpcContract, PluginRegistryCapability, PluginMetadata, IframeRpcContract)
 - `core/elements/src/isolated-patchwork-view/resource-policy.ts` — ResourcePolicy interface + default policy
@@ -79,7 +79,7 @@ The iframe's own `SRCDOC_CSS` is minimal — just `html, body` sizing. It does n
 At boot, the iframe pre-populates its local plugin registries from the host so that existing sync APIs work unchanged:
 
 1. Calls `registryCap.listRegistryTypes()` to discover all registry types (e.g., `patchwork:tool`, `patchwork:datatype`, `codemirror:extension`)
-2. Calls `registryCap.list(type)` for each type to get all plugin metadata (with opaque `importUrl` values)
+2. Calls `registryCap.list(type)` for each type to get all plugin metadata (with package-name `importUrl` values)
 3. Registers each as a `LoadablePlugin` in the local registry with a `load()` function that:
    - Calls `importShim(meta.importUrl)` → es-module-shims source hook → `loadModuleSource` RPC → host serves source
    - Finds the matching plugin in `mod.plugins` by both `id` AND `type` (to avoid collisions when a module exports both a datatype and a tool with the same ID)
@@ -93,14 +93,14 @@ After pre-population, sync APIs like `getRegistry("codemirror:extension").filter
 The host's ModuleWatcher may re-register plugins with new `importUrl` values after the iframe boots. To keep the iframe's registry in sync:
 
 1. After RPC setup, the host subscribes to `"registered"` events on all host registries
-2. When a plugin is re-registered, the host converts it to `PluginMetadata` (with opaque URL) and calls `iframeStub.onPluginRegistered(meta)`
+2. When a plugin is re-registered, the host converts it to `PluginMetadata` (with package URL) and calls `iframeStub.onPluginRegistered(meta)`
 3. The iframe's `IframeApi.onPluginRegistered()` re-registers the plugin in the local registry with the updated `importUrl`
 
 This ensures the iframe always has current plugin metadata without polling.
 
 ### Entry point resolution
 
-During pre-population, `#toMetadata` calls `resolvePluginEntryUrl` to resolve each plugin's `package.json` and find its entry point (e.g., `dist/index.js`). The full entry URL is then converted to an opaque URL. Plugins that fail resolution (automerge document not synced locally) return `null` and are filtered out — they simply won't appear in the iframe's registry.
+During pre-population, `#toMetadata` calls `resolvePluginEntryUrl` to resolve each plugin's `package.json` and find its entry point (e.g., `dist/index.js`). The full entry URL is then converted to a package URL. Plugins that fail resolution (automerge document not synced locally) return `null` and are filtered out — they simply won't appear in the iframe's registry.
 
 ## How module resolution works
 
@@ -108,35 +108,35 @@ The es-module-shims `resolve` hook is **synchronous** (not awaited in the es-mod
 
 1. **Importmap handles bare specifiers synchronously.** The host resolves the page's importmap entries to absolute host-origin URLs and sends the resolved importmap to the iframe.
 
-2. **Relative imports resolve via standard URL resolution.** `./helper.js` relative to `http://localhost:5173/__plugin__/p0/dist/index.js` produces `http://localhost:5173/__plugin__/p0/dist/helper.js`. The opaque `__plugin__` prefix is preserved.
+2. **Relative imports resolve via standard URL resolution.** `./helper.js` relative to `http://localhost:5173/pkg:@patchwork--folder/dist/index.js` produces `http://localhost:5173/pkg:@patchwork--folder/dist/helper.js`. The `pkg:` prefix is preserved.
 
-3. **The `source` hook does the heavy lifting.** It's async. It receives the already-resolved URL and calls `hostStub.loadModuleSource(url)` via capnweb RPC. The host resolves opaque URLs via `OpaqueUrlMapper.toReal()`, fetches the real source, rewrites automerge URL strings via `rewriteAutomergeUrls()`, and returns the source text.
+3. **The `source` hook does the heavy lifting.** It's async. It receives the already-resolved URL and calls `hostStub.loadModuleSource(url)` via capnweb RPC. The host resolves package URLs via `PackageUrlMapper.toAutomergeUrl()`, fetches the real source, rewrites automerge URL strings via `rewriteAutomergeUrls()`, and returns the source text.
 
 ## Plugin registry capability
 
 The `PluginRegistryCapability` is used primarily for pre-population at boot. Its methods:
 
 - `listRegistryTypes()` — discover all registry types from the host
-- `list(pluginType)` — list all plugins of a given type with full entry URLs resolved and converted to opaque `importUrl` values. Plugins that can't be resolved (not synced) are filtered out.
+- `list(pluginType)` — list all plugins of a given type with full entry URLs resolved and converted to package-name `importUrl` values. Plugins that can't be resolved (not synced) are filtered out.
 - `get(pluginId)` — get a single plugin by ID
 - `getSupportedToolsForType(type)` — mirrors `getSupportedToolsForType(type)` from tools.ts
 - `getFallbackTool(docUrl)` — mirrors `getFallbackTool(doc)`, takes docUrl since doc objects can't cross RPC
 - `getSupportedTools(docUrl)` — mirrors `getSupportedTools(doc)`
 
-## Opaque URL scheme
+## Package URL scheme
 
-Tool/plugin source code lives in automerge documents. The `OpaqueUrlMapper` replaces automerge document ID segments in URLs with opaque tokens to hide tool source code locations from the iframe:
+Tool/plugin source code lives in automerge documents. The `PackageUrlMapper` replaces automerge document ID segments in URLs with package names (from `package.json`) to hide tool source code locations from the iframe:
 
 ```
 Real:   http://host/%automerge%3Axyz.../dist/index.js
-Opaque: http://host/__plugin__/p0/dist/index.js
+Package: http://host/pkg:@patchwork--folder/dist/index.js
 ```
 
-**`toOpaque(url)`**: Parses the URL, splits path segments, URI-decodes each, checks with `isValidAutomergeUrl()`. Assigns a per-session token and replaces the segment.
+**`toPackageUrl(url, name?)`**: Parses the URL, splits path segments, URI-decodes each, checks with `isValidAutomergeUrl()`. Replaces the automerge segment with the sanitized package name (or a fallback counter if no name is provided).
 
-**`toReal(url)`**: Scans for `__plugin__/pN/` (with trailing slash to prevent prefix matching — `p1/` must not match `p10/`) and replaces back.
+**`toAutomergeUrl(url)`**: Scans for `pkg:<name>/` (with trailing slash to prevent prefix matching — `pkg:folder/` must not match `pkg:folder-viewer/`) and replaces back.
 
-**`rewriteAutomergeUrls(source)`**: Replaces decoded automerge URL strings in module source text before sending to the iframe. Ensures `importUrl` literals in plugin definitions use opaque values.
+**`rewriteAutomergeUrls(source)`**: Replaces decoded automerge URL strings in module source text before sending to the iframe. Ensures `importUrl` literals in plugin definitions use package names instead of automerge URLs.
 
 **Security rule:** Automerge URLs flow iframe → host only. They never flow host → iframe.
 
@@ -148,8 +148,8 @@ Host-iframe communication uses [capnweb](https://github.com/cloudflare/capnweb),
 
 **HostRpcContract** (host exposes to iframe):
 - `getPluginRegistry()` → `PluginRegistryCapability`
-- `loadModuleSource(url)` — resolves opaque URLs, handles folder URLs via re-export stubs, rewrites automerge URL strings
-- `fetchResource(url)` — resolves opaque URLs, returns content-type + body
+- `loadModuleSource(url)` — resolves package URLs, handles folder URLs via re-export stubs, rewrites automerge URL strings
+- `fetchResource(url)` — resolves package URLs, returns content-type + body
 - `onMounted(url, toolId)` — iframe reports successful tool mount
 - `onOpenDocument(url, toolId?, title?, docType?)` — iframe requests navigation
 
@@ -165,7 +165,7 @@ Host-iframe communication uses [capnweb](https://github.com/cloudflare/capnweb),
 
 ## Resource policy
 
-All `loadModuleSource` and `fetchResource` calls are gated by a `ResourcePolicy` interface. Opaque `__plugin__/` URLs bypass the policy (resolved by OpaqueUrlMapper). Non-opaque URLs are checked before fetching.
+All `loadModuleSource` and `fetchResource` calls are gated by a `ResourcePolicy` interface. `pkg:` URLs bypass the policy (resolved by PackageUrlMapper to real automerge-backed paths). Other URLs are checked before fetching.
 
 The bootstrap channel is separately hardened: it only serves URLs from the resolved importmap.
 
@@ -193,7 +193,7 @@ form-action 'none'
 ### Access control layers
 
 1. **Bootstrap channel** — importmap URLs only, short-lived
-2. **capnweb RPC** — gated by ResourcePolicy; opaque URLs always allowed
+2. **capnweb RPC** — gated by ResourcePolicy; `pkg:` URLs always allowed
 3. **Fetch proxy** — GET/HEAD only, no request body
 4. **CSP** — browser-enforced network isolation
 
@@ -231,7 +231,7 @@ The iframe's ephemeral Repo uses `sharePolicy: () => true` and the host repo res
 
 ### `suggestedImportUrl` leaks tool source document IDs
 
-Most documents contain a `@patchwork.suggestedImportUrl` field with the raw automerge URL of the tool that created them, bypassing the opaque URL mapping. See DESIGN doc section 13.
+Most documents contain a `@patchwork.suggestedImportUrl` field with the raw automerge URL of the tool that created them, bypassing the package URL mapping. See DESIGN doc section 13.
 
 ### Tool-specific resource whitelisting
 

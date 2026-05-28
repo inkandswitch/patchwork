@@ -252,18 +252,16 @@ Tool source code is stored in Automerge documents. The URLs that reference tool 
 
 **Design principle:** Automerge document IDs must never flow from host to iframe through the module-loading or registry paths.
 
-The `OpaqueUrlMapper` (per-iframe, per-session) replaces automerge document ID segments in URLs with opaque tokens:
+The `PackageUrlMapper` (per-iframe, per-session) replaces automerge document ID segments in URLs with the package name from `package.json`:
 
 ```
-Real:   http://host/%automerge%3A4NMFnXJs2yE87RFXMq3bfU.../dist/index.js
-Opaque: http://host/__plugin__/p0/dist/index.js
+Real:    http://host/%automerge%3A4NMFnXJs2yE87RFXMq3bfU.../dist/index.js
+Package: http://host/pkg:@patchwork--folder/dist/index.js
 ```
 
-When the iframe requests a module at `http://host/__plugin__/p0/dist/helper.js`, the host maps `p0` back to the real automerge document ID, fetches the source, and returns it. The token `p0` is meaningless outside the current session — it's a monotonic counter that cannot be used to `repo.find()` anything.
+When the iframe requests a module at `http://host/pkg:@patchwork--folder/dist/helper.js`, the host maps `@patchwork--folder` back to the real automerge document ID, fetches the source, and returns it. The package name is human-readable for debugging but cannot be used to `repo.find()` anything.
 
-The token approach is a proof of concept and should be replaced with a recognizable name, which would improve clarity and aid debugging. pvh suggested using tool bare names which would be nice, but these map to packages rather than to individual plugins, so the package name makes more sense.
-
-**Source text rewriting.** Tool module source code may contain hardcoded import URLs with automerge document IDs (e.g., in plugin registration metadata). Before sending source text to the iframe, `rewriteAutomergeUrls()` scans the text and replaces any automerge URL literals with their opaque equivalents. This is also a proof of concept which can be improved.
+**Source text rewriting.** Tool module source code may contain hardcoded import URLs with automerge document IDs (e.g., in plugin registration metadata). Before sending source text to the iframe, `rewriteAutomergeUrls()` scans the text and replaces any automerge URL literals associated with plugin packages with their package URL equivalents. This is also a proof of concept which can be improved.
 
 ### Security notes
 
@@ -271,7 +269,7 @@ Opaque URL mapping addresses **unauthorized data access** — specifically, it p
 
 **Known gaps:**
 
-- The `@patchwork.suggestedImportUrl` field in document CRDT state contains the raw automerge URL of the tool that created the document. This field syncs to the iframe through the Automerge repo channel — completely bypassing the opaque URL mapping, since the tool can extract these URLs. See section 13.
+- The `@patchwork.suggestedImportUrl` field in document CRDT state contains the raw automerge URL of the tool that created the document. This field syncs to the iframe through the Automerge repo channel — completely bypassing the package URL mapping, since the tool can extract these URLs. See section 13.
 - Source text rewriting can be fragile, so I don't generally like this type of approach. The current handling only rewrites the specific module URL in its own source. For this case, there should be a consistent pattern to where these URLs appear so we should be able to do it better than it's done now. If other AutomergeUrls are contained in the source, they aren't currently protected
 
 ## 10. Tools Loading Other Tools and Plugins
@@ -287,13 +285,13 @@ These lookups use **synchronous** registry APIs that expect local, in-memory dat
 
 ### The proposed approach
 
-At boot, the iframe calls the host's `PluginRegistryCapability` to enumerate all registered plugins across all registry types. Each plugin's metadata includes an opaque `importUrl` (section 9). The iframe registers each as a local `LoadablePlugin` whose `load()` function calls `importShim(meta.importUrl)` — triggering RPC-backed module loading on demand. After boot, the host pushes registry updates to the iframe when plugins are re-registered (e.g., after `ModuleWatcher` discovers a newer version).
+At boot, the iframe calls the host's `PluginRegistryCapability` to enumerate all registered plugins across all registry types. Each plugin's metadata includes an rewritten `importUrl` based on the package name (section 9). The iframe registers each as a local `LoadablePlugin` whose `load()` function calls `importShim(meta.importUrl)` — triggering RPC-backed module loading on demand. After boot, the host pushes registry updates to the iframe when plugins are re-registered (e.g., after `ModuleWatcher` discovers a newer version).
 
 Existing synchronous registry APIs (`getRegistry().filter()`, `getFallbackTool()`, `getSupportedToolsForType()`) work unchanged — they query the pre-populated local registries. Module code is only fetched from the host when `load()` is actually called.
 
 ### Security notes
 
-The iframe receives metadata for **all** installed tools and datatypes, not just those relevant to the current document. A malicious tool can enumerate every tool and datatype in the user's workspace. This is a low-severity information disclosure — the metadata contains names, IDs, and supported datatypes, but no document content or real automerge document IDs (those are opaque in `importUrl`).
+The iframe receives metadata for **all** installed tools and datatypes, not just those relevant to the current document. A malicious tool can enumerate every tool and datatype in the user's workspace. This is a low-severity information disclosure — the metadata contains names, IDs, and supported datatypes, but no document content or real automerge document IDs (those are rewritten to package names in `importUrl`).
 
 Do we consider knowledge of all installed plugins to be unauthorized data access? I think it's ok as long as exfiltration is successfully prevented.
 
@@ -337,7 +335,7 @@ Possible directions include requiring static metadata manifests (in `package.jso
 
 Most documents contain a `@patchwork.suggestedImportUrl` field set to the raw automerge URL of the tool package that created them. This field is part of the document's state — it syncs to any peer that has the document, including the iframe's ephemeral repo.
 
-A malicious tool can extract `suggestedImportUrl` values to discover other tools' source code document IDs. This completely bypasses the opaque URL mapping (section 9), which carefully hides these IDs through the module-loading and registry paths.
+A malicious tool can extract `suggestedImportUrl` values to discover other tools' source code document IDs. This completely bypasses the package URL mapping (section 9), which carefully hides these IDs through the module-loading and registry paths.
 
 ### Why this matters
 
@@ -393,12 +391,12 @@ I think we should move to a better approach than `isolated-patchwork-view` in on
 | Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks through document content |
 | capnweb RPC + capabilities     | Scoped access — iframe can only call explicitly exposed methods | —                                                   |
 | Host CSS injection             | Tool rendering compatibility                                    | Coupled to host CSS build                           |
-| Registry pre-population        | Sync API compatibility with opaque URLs                         | Metadata leak (all plugins visible)                 |
+| Registry pre-population        | Sync API compatibility with package URLs                        | Metadata leak (all plugins visible)                 |
 
 ### Open problems
 
 1. **Plugin discovery in host context** (section 12) — tool entry modules execute with full host privileges before any sandbox is involved. Most severe gap.
-2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing opaque URL mapping.
+2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping.
 3. **Current tool compatibility** (section 13) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework for sandboxed contexts.
 4. **Provider security** (section 14) — providers can request/respond with anything; security implications not yet analyzed.
 5. **Element architecture** (section 15) — `isolated-patchwork-view` is a pragmatic starting point; migration to `patchwork-box` or `withIsolation()` is planned.

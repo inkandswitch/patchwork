@@ -83,7 +83,7 @@ The iframe's ephemeral Repo is connected directly to the host Repo via `MessageC
 2. **Cross-origin URLs are blocked** — `parsed.origin !== hostOrigin` rejects requests to external servers. Relative URLs (e.g., `/assets/foo.wasm`) are resolved against the host origin before checking, so legitimate same-origin paths pass.
 3. **Automerge document IDs in URL paths are blocked** — each path segment is URI-decoded and rejected if it starts with `automerge:`, preventing tools from reading documents via the host's service worker URL resolution.
 
-Opaque `__plugin__/` URLs are resolved by `OpaqueUrlMapper.toReal()` before the policy check and bypass it entirely — this is correct, as those are the host's own mapping for tool source code.
+Opaque `pkg:` URLs are resolved by `PackageUrlMapper.toAutomergeUrl()` before the policy check and bypass it entirely — this is correct, as those are the host's own mapping for tool source code.
 
 **Remaining work:** The current `RestrictivePolicy` is a blunt instrument. It needs to become more fine-grained and tool-specific — for example, some tools need access to specific external URLs (e.g., OpenRouter for LLM tools). See DESIGN doc section 7 for discussion of tool-specific resource whitelisting.
 
@@ -177,7 +177,7 @@ Every document created via `createDocumentOfType()` stamps the raw automerge URL
 
 This is a tool-on-tool attack: a malicious tool can modify the source code of other tools.
 
-**Why this matters independently of #2:** The opaque URL mapping (`OpaqueUrlMapper`) carefully hides tool source document IDs from the iframe through the RPC and module-loading channels. `suggestedImportUrl` bypasses that protection entirely by embedding the real automerge URL in ordinary document content, which the iframe has direct access to via the repo channel.
+**Why this matters independently of #2:** The opaque URL mapping (`PackageUrlMapper`) carefully hides tool source document IDs from the iframe through the RPC and module-loading channels. `suggestedImportUrl` bypasses that protection entirely by embedding the real automerge URL in ordinary document content, which the iframe has direct access to via the repo channel.
 
 **Interaction with FilteredBridge:** If vulnerability #2 is fixed (FilteredBridge with an allowlist), this vulnerability is largely neutralized — the tool can still *read* the URL from documents it's authorized to access, but it cannot `repo.find()` the tool source document unless that document is also on the allowlist (which it shouldn't be). However, the information leak itself remains: a tool learns the automerge URLs of other tools' source code, which could be useful in chained attacks.
 

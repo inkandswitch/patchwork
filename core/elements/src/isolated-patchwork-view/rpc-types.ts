@@ -12,10 +12,11 @@
 
 /**
  * Plugin metadata exposed to the iframe. Has the same shape as a plugin
- * description from the host registry, but the `importUrl` field contains an
- * opaque `/__plugin__/` URL instead of an automerge URL. This means existing
- * tool code that reads `plugin.importUrl` continues to work — it just sees a
- * safe opaque URL that cannot be used to discover or modify tool source code.
+ * description from the host registry, but the `importUrl` field contains a
+ * `/pkg:` URL (using the package name) instead of an automerge URL.
+ * This means existing tool code that reads `plugin.importUrl` continues to
+ * work — it just sees a package-name URL that cannot be used to discover or
+ * modify tool source code.
  *
  * The type is intentionally a plain object (not generic) so it can be
  * serialized over capnweb RPC without class identity.
@@ -38,10 +39,11 @@ export interface PluginMetadata {
  * as a capnweb RpcTarget — the iframe receives a stub whose method calls are
  * proxied back to the host.
  *
- * All `importUrl` values in returned metadata use the opaque `/__plugin__/`
- * scheme. The iframe loads modules via `importShim(meta.importUrl)` which
- * triggers `loadModuleSource` on the host RPC, where the opaque URL is
- * mapped back to the real automerge-backed path.
+ * All `importUrl` values in returned metadata use the `/pkg:` scheme
+ * with package names instead of automerge document IDs. The iframe loads
+ * modules via `importShim(meta.importUrl)` which triggers `loadModuleSource`
+ * on the host RPC, where the package URL is mapped back to the real
+ * automerge-backed path.
  */
 export interface PluginRegistryCapability {
   /**
@@ -52,13 +54,13 @@ export interface PluginRegistryCapability {
 
   /**
    * List all plugins of a given type.
-   * Mirrors getRegistry(type).all() with opaque importUrls.
+   * Mirrors getRegistry(type).all() with package-name importUrls.
    */
   list(pluginType: string): Promise<PluginMetadata[]>;
 
   /**
    * Get a single plugin by ID. Returns null if not found.
-   * Mirrors getRegistry(type).get(id) with opaque importUrl.
+   * Mirrors getRegistry(type).get(id) with package-name importUrl.
    */
   get(pluginId: string): Promise<PluginMetadata | null>;
 

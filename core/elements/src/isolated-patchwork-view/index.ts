@@ -9,8 +9,8 @@
  * which tool to use. Instead, the iframe requests tool information via a
  * PluginRegistryCapability granted through capnweb RPC.
  *
- * Plugin/tool source code is served through opaque URLs (`/__plugin__/...`)
- * that hide the underlying automerge document IDs. Automerge URLs never flow
+ * Plugin/tool source code is served through package URLs (`/pkg:name/...`)
+ * that replace automerge document IDs with package names. Automerge URLs never flow
  * from host to iframe — only from iframe to host (for document references).
  *
  * Host↔iframe communication uses capnweb RPC over MessagePort for type-safe
@@ -89,14 +89,14 @@ function resolveImportMap(importMap: any, baseURI: string): any {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve a plugin's automerge import URL to an absolute entry point URL.
- * The returned URL contains the automerge document ID in the path — the
- * OpaqueUrlMapper replaces this with an opaque token before exposing it
- * to the iframe.
+ * Resolve a plugin's automerge import URL to an absolute entry point URL
+ * and the package name from package.json. The returned URL contains the
+ * automerge document ID in the path — the PackageUrlMapper replaces this
+ * with the package name before exposing it to the iframe.
  */
 async function resolvePluginEntryUrl(
   importUrl: string
-): Promise<string | undefined> {
+): Promise<{ entryUrl: string; packageName?: string } | undefined> {
   const folderPath = getImportableUrlFromAutomergeUrl(
     importUrl as AutomergeUrl
   );
@@ -110,37 +110,53 @@ async function resolvePluginEntryUrl(
   const entryPoint = resolvePackageExport(pkgJson);
   if (!entryPoint) return undefined;
 
-  return new URL(entryPoint, base).href;
+  return {
+    entryUrl: new URL(entryPoint, base).href,
+    packageName: pkgJson.name,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Opaque URL mapper — hides automerge document IDs from the iframe
+// PackageUrlMapper — replaces automerge document IDs with package names
 // ---------------------------------------------------------------------------
 
 /**
- * Replaces automerge document ID segments in URLs with opaque tokens to
+ * Replaces automerge document ID segments in URLs with package names to
  * hide tool source code locations from the iframe. The real URL
  * `http://host/%automerge%3Axyz.../dist/index.js` becomes
- * `http://host/__plugin__/p0/dist/index.js`.
+ * `http://host/pkg:@patchwork--folder/dist/index.js`.
+ *
+ * When a package name is provided (from package.json), it is used as the
+ * URL segment. Otherwise falls back to `unknown-0`, `unknown-1`, etc.
  *
  * Uses standard URL parsing and `isValidAutomergeUrl` to identify automerge
  * segments rather than regex matching.
  */
-class OpaqueUrlMapper {
+class PackageUrlMapper {
   #counter = 0;
-  #segmentToToken = new Map<string, string>();
-  #tokenToSegment = new Map<string, string>();
+  #segmentToPackage = new Map<string, string>();
+  #packageToSegment = new Map<string, string>();
 
   /**
-   * Replace the automerge URL segment in a full URL with an opaque token.
-   * If the segment hasn't been seen before, registers a new token.
+   * Sanitize a package name for use as a URL path segment.
+   * "@patchwork/folder" -> "@patchwork--folder"
+   * "@grjte/codemirror-base" -> "@grjte--codemirror-base"
+   * "folder" -> "folder"
+   */
+  #sanitizeName(name: string): string {
+    return name.replace(/\//g, "--");
+  }
+
+  /**
+   * Replace the automerge URL segment in a full URL with a package name.
+   * If the segment hasn't been seen before, registers a new mapping.
    * Returns the URL unchanged if no automerge segment is found.
    */
-  toOpaque(url: string): string {
+  toPackageUrl(url: string, name?: string): string {
     // Check if we've already mapped a segment in this URL
-    for (const [segment, token] of this.#segmentToToken) {
+    for (const [segment, pkg] of this.#segmentToPackage) {
       if (url.includes(`/${segment}/`)) {
-        return url.replace(segment, `__plugin__/${token}`);
+        return url.replace(segment, `pkg:${pkg}`);
       }
     }
     // Not registered yet — find the automerge URL segment via URL parsing
@@ -150,11 +166,12 @@ class OpaqueUrlMapper {
       for (const segment of segments) {
         const decoded = decodeURIComponent(segment);
         if (isValidAutomergeUrl(decoded)) {
-          const token = `p${this.#counter++}`;
-          console.log(`[OpaqueUrlMapper] NEW mapping: ${token} = ${segment} (decoded: ${decoded})`);
-          this.#segmentToToken.set(segment, token);
-          this.#tokenToSegment.set(token, segment);
-          return url.replace(segment, `__plugin__/${token}`);
+          const pkg = name
+            ? this.#sanitizeName(name)
+            : `unknown-${this.#counter++}`;
+          this.#segmentToPackage.set(segment, pkg);
+          this.#packageToSegment.set(pkg, segment);
+          return url.replace(segment, `pkg:${pkg}`);
         }
       }
     } catch {
@@ -164,17 +181,16 @@ class OpaqueUrlMapper {
   }
 
   /**
-   * Replace the opaque token in a URL with the real automerge URL segment.
-   * Returns null if no opaque token is found.
+   * Replace the package name in a URL with the real automerge URL segment.
+   * Returns null if no package name segment is found.
    */
-  toReal(url: string): string | null {
-    for (const [token, segment] of this.#tokenToSegment) {
-      // Use __plugin__/pN/ (with trailing slash) to avoid prefix matches
-      // e.g., __plugin__/p1/ must not match __plugin__/p10/
-      const opaqueSegment = `__plugin__/${token}/`;
-      if (url.includes(opaqueSegment)) {
-        const result = url.replace(opaqueSegment, `${segment}/`);
-        return result;
+  toAutomergeUrl(url: string): string | null {
+    for (const [pkg, segment] of this.#packageToSegment) {
+      // Use trailing slash to avoid prefix matches
+      // e.g., pkg:folder/ must not match pkg:folder-viewer/
+      const packageSegment = `pkg:${pkg}/`;
+      if (url.includes(packageSegment)) {
+        return url.replace(packageSegment, `${segment}/`);
       }
     }
     return null;
@@ -182,13 +198,13 @@ class OpaqueUrlMapper {
 
   /**
    * Rewrite automerge URL strings in module source text, replacing them with
-   * opaque equivalents. This runs on the host before sending source to the
-   * iframe, so real automerge URLs never enter the isolated context.
+   * package name equivalents. This runs on the host before sending source to
+   * the iframe, so real automerge URLs never enter the isolated context.
    */
   rewriteAutomergeUrls(source: string): string {
-    for (const [segment, token] of this.#segmentToToken) {
+    for (const [segment, pkg] of this.#segmentToPackage) {
       const decoded = decodeURIComponent(segment);
-      source = source.replaceAll(decoded, `__plugin__/${token}`);
+      source = source.replaceAll(decoded, `pkg:${pkg}`);
     }
     return source;
   }
@@ -204,30 +220,30 @@ class OpaqueUrlMapper {
  */
 class PluginRegistryTarget extends RpcTarget implements PluginRegistryCapability {
   #repo: Repo;
-  #mapper: OpaqueUrlMapper;
+  #mapper: PackageUrlMapper;
 
-  constructor(repo: Repo, mapper: OpaqueUrlMapper) {
+  constructor(repo: Repo, mapper: PackageUrlMapper) {
     super();
     this.#repo = repo;
     this.#mapper = mapper;
   }
 
   /**
-   * Convert a host-side plugin object to PluginMetadata with an opaque
+   * Convert a host-side plugin object to PluginMetadata with a package
    * importUrl. Returns null if the plugin has no importUrl or entry point
    * resolution fails (e.g., plugin not synced locally).
    */
   async #toMetadata(plugin: any): Promise<PluginMetadata | null> {
     if (!plugin.importUrl) return null;
 
-    const entryUrl = await resolvePluginEntryUrl(plugin.importUrl);
-    if (!entryUrl) return null;
+    const resolved = await resolvePluginEntryUrl(plugin.importUrl);
+    if (!resolved) return null;
 
     const meta: PluginMetadata = {
       id: plugin.id,
       type: plugin.type,
       name: plugin.name,
-      importUrl: this.#mapper.toOpaque(entryUrl),
+      importUrl: this.#mapper.toPackageUrl(resolved.entryUrl, resolved.packageName),
     };
 
     if (plugin.icon != null) meta.icon = plugin.icon;
@@ -303,14 +319,14 @@ class HostApi extends RpcTarget implements HostRpcContract {
   #element: HTMLElement;
   #policy: ResourcePolicy;
   #repo: Repo;
-  #mapper: OpaqueUrlMapper;
+  #mapper: PackageUrlMapper;
   #registryTarget: PluginRegistryTarget;
 
   constructor(
     element: HTMLElement,
     policy: ResourcePolicy,
     repo: Repo,
-    mapper: OpaqueUrlMapper
+    mapper: PackageUrlMapper
   ) {
     super();
     this.#element = element;
@@ -332,8 +348,8 @@ class HostApi extends RpcTarget implements HostRpcContract {
   }
 
   async loadModuleSource(url: string): Promise<string> {
-    // Resolve opaque __plugin__ URLs back to real automerge-backed paths
-    const realUrl = this.#mapper.toReal(url);
+    // Resolve pkg: URLs back to real automerge-backed paths
+    const realUrl = this.#mapper.toAutomergeUrl(url);
     if (realUrl) {
       const source = await fetch(realUrl).then((r) => r.text());
       return this.#mapper.rewriteAutomergeUrls(source);
@@ -345,9 +361,9 @@ class HostApi extends RpcTarget implements HostRpcContract {
   async fetchResource(
     url: string
   ): Promise<{ contentType: string; body: string | Uint8Array }> {
-    // Resolve opaque URLs for fetch too (e.g., CSS, images from tool packages)
-    const realUrl = this.#mapper.toReal(url) ?? url;
-    if (!this.#mapper.toReal(url)) {
+    // Resolve pkg: URLs for fetch too (e.g., CSS, images from tool packages)
+    const realUrl = this.#mapper.toAutomergeUrl(url) ?? url;
+    if (!this.#mapper.toAutomergeUrl(url)) {
       this.#checkPolicy(url);
     }
     const res = await fetch(realUrl);
@@ -627,10 +643,10 @@ export function registerIsolatedPatchworkViewElement(
         );
         this.#repoChannel = repoChannel;
 
-        // Set up capnweb RPC channel with the HostApi and opaque URL mapper.
+        // Set up capnweb RPC channel with the HostApi and package URL mapper.
         const rpcChannel = new MessageChannel();
         const policy = createPolicy(window.location.origin, allowedBootstrapUrls);
-        const mapper = new OpaqueUrlMapper();
+        const mapper = new PackageUrlMapper();
         const hostApi = new HostApi(this, policy, repo, mapper);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
           rpcChannel.port1,
@@ -673,12 +689,12 @@ export function registerIsolatedPatchworkViewElement(
               plugin.importUrl as AutomergeUrl
             );
             const folderUrl = new URL(folderPath, window.location.origin).href;
-            const opaqueUrl = mapper.toOpaque(folderUrl);
+            const packageUrl = mapper.toPackageUrl(folderUrl);
             const meta: any = {
               id: plugin.id,
               type: plugin.type,
               name: plugin.name,
-              importUrl: opaqueUrl,
+              importUrl: packageUrl,
             };
             if (plugin.icon != null) meta.icon = plugin.icon;
             if (plugin.unlisted != null) meta.unlisted = plugin.unlisted;

@@ -26,9 +26,9 @@ export class AllowAllPolicy implements ResourcePolicy {
  *  - Blocks URLs containing encoded automerge document IDs in path segments
  *    (prevents reading documents outside the repo channel)
  *
- * Opaque `__plugin__/` URLs are resolved by the OpaqueUrlMapper *before*
- * the policy check, so they never reach this code — their real (automerge)
- * URLs are fetched directly. This policy only gates non-opaque URLs.
+ * `pkg:` URLs are resolved by the PackageUrlMapper *before* the policy
+ * check, so they never reach this code — their real (automerge) URLs are
+ * fetched directly. This policy only gates non-package URLs.
  */
 export class RestrictivePolicy implements ResourcePolicy {
   #hostOrigin: string;
