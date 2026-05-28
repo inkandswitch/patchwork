@@ -1,5 +1,7 @@
 # Sandboxed iframe module loading — architecture and open problems
 
+> **Note:** For the threat model, design rationale, and alternatives considered, see [`core/DESIGN-tool-isolation.md`](../../../DESIGN-tool-isolation.md). This document covers implementation details.
+
 ## What we proved
 
 We can load and run existing JavaScript modules inside an opaque-origin sandboxed iframe (`sandbox="allow-scripts"`, no `allow-same-origin`) without relying on iframe-owned service worker URL interception. The module graph loads, WASM initializes, the tool mounts, and document sync works via MessagePort. Existing sync plugin APIs (`getRegistry().filter().loadAll()`, `getFallbackTool()`, `getSupportedToolsForType()`) work unchanged inside the iframe via pre-populated local registries.
@@ -217,9 +219,31 @@ DevTools source map errors (`connect-src` violation) are harmless. No fix needed
 
 ## Open problems
 
-### Document-level sync filtering
+See DESIGN doc sections 12–16 for the full list and analysis of open problems. Key items relevant to this architecture:
 
-The iframe's ephemeral Repo uses `sharePolicy: () => true`. Restricting to per-tool allowed documents is desirable.
+### Plugin discovery in host context
+
+Plugin entry modules currently execute in the host page context (`import()` in `ModuleWatcher`), bypassing the iframe sandbox entirely. This is the most severe security gap. See DESIGN doc section 12.
+
+### Document access via repo
+
+The iframe's ephemeral Repo uses `sharePolicy: () => true` and the host repo responds to sync requests for any document. A tool that knows a document ID can sync it. The severity depends on how the tool obtains document IDs — see DESIGN doc section 5 for detailed analysis of the four discovery vectors.
+
+### `suggestedImportUrl` leaks tool source document IDs
+
+Most documents contain a `@patchwork.suggestedImportUrl` field with the raw automerge URL of the tool that created them, bypassing the opaque URL mapping. See DESIGN doc section 13.
+
+### Tool-specific resource whitelisting
+
+The current `RestrictivePolicy` blocks all cross-origin URLs. Some tools need external URLs (e.g., tldraw CDN, OpenRouter). Needs a per-tool whitelisting mechanism. See DESIGN doc section 7.
+
+### Integrating providers
+
+Providers have been integrated via capnweb RPC but can request/respond with anything. Security implications not yet analyzed. See DESIGN doc section 14.
+
+### Element architecture
+
+`isolated-patchwork-view` is a pragmatic POC. Migration to `patchwork-box` or `withIsolation()` is planned. See DESIGN doc section 15.
 
 ### CodeMirror extension styles on re-mount
 

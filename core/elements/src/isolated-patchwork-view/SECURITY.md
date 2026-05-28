@@ -1,21 +1,28 @@
 # Security analysis: third-party tools in `isolated-patchwork-view`
 
+> **Note:** The canonical threat model and design rationale live in [`core/DESIGN-tool-isolation.md`](../../../DESIGN-tool-isolation.md). This document catalogs specific vulnerabilities and their mitigations against that threat model.
+
 ## Threat model
+
+Our chief concern is mischievous or malicious tool authors. We want to prevent two attacks:
+
+1. **Unauthorized data access** — a tool accessing data not handed to it by the user, including documents of other tools (which could damage the user's environment).
+2. **Data exfiltration** — a tool sending data it was given by the user to external servers or other unauthorized parties.
 
 A third-party tool runs inside a **srcdoc iframe** with `sandbox="allow-scripts"` (no `allow-same-origin`). It gets an opaque origin, a CSP starting from `default-src 'none'`, and three MessagePort channels: repo sync, bootstrap (closed early), and capnweb RPC.
 
-Sidebar and document toolbar tools are assumed trusted (or will be moved into `isolated-patchwork-view` in the future). This analysis focuses on document-area tools rendered via `isolated-patchwork-view` using the `iframe-tool` / `isolated-frame` pattern.
+Sidebar and document toolbar tools are currently assumed trusted — isolating them is future work. This analysis focuses on document-area tools rendered via `isolated-patchwork-view` using the `isolated-frame` pattern.
 
 ## Vulnerability summary
 
 | # | Vulnerability | Severity | Exploitability |
 |---|---|---|---|
 | 1 | Plugin entry module executes in host context | **Critical** | Trivial — side effects in index module |
-| 2 | Unrestricted repo document access | **Critical** | Trivial — `repo.find(url)` |
+| 2 | Unrestricted repo document access | **Medium** — see notes | Requires knowing document IDs |
 | 3 | ~~`AllowAllPolicy` enables exfiltration via RPC~~ | ~~High~~ **Mitigated** | `RestrictivePolicy` is now the default |
 | 4 | ~~`onOpenDocument` unvalidated navigation~~ | ~~Medium~~ **Mostly mitigated** | Navigation always targets `isolated-patchwork-view` |
-| 5 | Browser-initiated loads bypass policy | **Medium** | Moderate — requires host SW cooperation |
-| 6 | Registry leaks workspace metadata | **Low–Medium** | Trivial — `registry.list()` |
+| 5 | Browser-initiated loads bypass policy | **Low** | Limited to existence probing — acceptable for threat model |
+| 6 | Registry leaks workspace metadata | **Low** | Acceptable if exfiltration is prevented |
 | 7 | Indirect IndexedDB corruption via repo | Covered by #2 | Same as #2 |
 | 8 | `unsafe-eval` CSP | **Low** | Amplifier, not standalone |
 | 9 | `postMessage("*")` race | **Low** | Unlikely in practice |
@@ -47,21 +54,22 @@ The `registerPlugins()` call itself is safe — it just stores description objec
 - **Sandboxed discovery** — run `ModuleWatcher` module imports inside a sandboxed iframe or worker, extract the `plugins` array via structured clone / RPC, and register it in the host without ever evaluating the module in the host context.
 - **Code review gate** — if the above are too complex short-term, require manual review/approval of plugin entry modules before they are imported. This is a process control, not a technical control.
 
-## 2. Unrestricted Automerge document access (CRITICAL)
+## 2. Unrestricted Automerge document access (MEDIUM)
 
 **Location:** `srcdoc.ts:217–225`, `index.ts:560–567`
 
-The iframe's ephemeral Repo is connected directly to the host Repo via `MessageChannelNetworkAdapter` with no document-level filtering. The iframe repo uses `sharePolicy: () => true`. The ARCHITECTURE.md explicitly acknowledges this as an open problem (line 250).
+The iframe's ephemeral Repo is connected directly to the host Repo via `MessageChannelNetworkAdapter` with no document-level filtering. The iframe repo uses `sharePolicy: () => true` (Automerge's default: share generously with all connected peers). The host repo also uses a generous share policy, meaning it will respond to sync requests for any document.
 
-**Attack:** A malicious tool calls `repo.find(automerge:anyDocumentId)` and the host repo syncs it. The tool can:
+**Severity reassessment:** The iframe has no network access, so a tool can only sync documents whose IDs it already knows. There are four ways a tool can obtain document IDs (see DESIGN doc section 5 for full analysis):
 
-- **Read any document** the host repo knows about (private notes, credentials, other users' shared docs).
-- **Write to any document** — Automerge's CRDT merge is permissionless; once a tool has a handle, it can call `handle.change()`.
-- **Enumerate documents** — the Automerge repo protocol includes peer-to-peer discovery messages; the tool could observe sync messages to learn document IDs it wasn't given.
+1. **Provided by the host** — the document URL the tool was opened with, plus documents discovered through authorized navigation (e.g., folder children). Authorized access is acceptable; the concern is preventing leakage of unrelated document IDs.
+2. **Provided by the user** — the user inputs a URL or drags in a document. This is authorized access.
+3. **Hard-coded in tool source** — a malicious tool could embed automerge URLs to target specific documents. This is unauthorized access and an exfiltration vector (write stolen data to the hard-coded document, exfiltrate via sync).
+4. **Brute force** — guessing valid automerge URLs. Low probability given the address space.
 
-**Impact:** Full read/write access to the user's entire document store. This is the single largest vulnerability.
+**Impact:** A tool that knows a document ID can read and write it via `repo.find()` + `handle.change()`. The severity depends on how many unauthorized document IDs the tool can obtain — which is gated by other vulnerabilities (hard-coded URLs in source, `suggestedImportUrl` leaks, etc.).
 
-**Mitigation:** The `FilteredBridge` exists in the built `dist/` directory but is not wired into the live code path. Re-enable it with a strict allowlist: only the `docUrl` passed in the init message, plus documents explicitly granted via `requestDocument()` with user consent.
+**Mitigation directions:** See DESIGN doc section 5 for detailed analysis. Rather than a heavy-handed document allowlist (which would interfere with legitimate tool use), the preferred approach is to address unauthorized document ID discovery at its sources: preventing hard-coded automerge URLs in tool source, removing `suggestedImportUrl` from document content, and ensuring the host doesn't leak document IDs through the RPC channel.
 
 ## 3. ~~`AllowAllPolicy` on `loadModuleSource` / `fetchResource`~~ (MITIGATED)
 
@@ -77,7 +85,9 @@ The iframe's ephemeral Repo is connected directly to the host Repo via `MessageC
 
 Opaque `__plugin__/` URLs are resolved by `OpaqueUrlMapper.toReal()` before the policy check and bypass it entirely — this is correct, as those are the host's own mapping for tool source code.
 
-**Remaining residual risk:** The policy allows all same-origin non-automerge paths. A tool could probe for the existence of host-served static assets. This is low-severity since the assets are public to any same-origin code anyway.
+**Remaining work:** The current `RestrictivePolicy` is a blunt instrument. It needs to become more fine-grained and tool-specific — for example, some tools need access to specific external URLs (e.g., OpenRouter for LLM tools). See DESIGN doc section 7 for discussion of tool-specific resource whitelisting.
+
+**Residual risk:** The policy allows all same-origin non-automerge paths. A tool could probe for the existence of host-served static assets. This is low-severity since the assets are public to any same-origin code anyway.
 
 ## 4. ~~`onOpenDocument` has no validation~~ (MOSTLY MITIGATED)
 
@@ -97,17 +107,19 @@ Opaque `__plugin__/` URLs are resolved by `OpaqueUrlMapper.toReal()` before the 
 
 **Optional hardening:** Basic validation (is the URL a valid automerge URL? is `toolId` a known registry entry?) would address the residual risks but is no longer security-critical.
 
-## 5. Browser-initiated loads bypass ResourcePolicy (MEDIUM)
+## 5. Browser-initiated loads bypass ResourcePolicy (LOW)
 
-**Location:** ARCHITECTURE.md lines 240–244, `srcdoc.ts:362–375`
+**Location:** `srcdoc.ts:362–375`
 
 CSP allows `img-src`, `style-src`, `font-src`, `media-src` from the host origin. These are real HTTP requests that hit the host's server/service worker directly, bypassing the RPC `ResourcePolicy`.
 
-**Attack:** A tool inserts `<img src="http://host-origin/%automerge%3Axyz.../sensitive-file">` — the browser fetches it directly from the host. While the response won't be readable as text (CSP blocks `connect-src`), the tool can observe timing and `onload`/`onerror` to probe for document existence. If the host's service worker resolves automerge URLs for any request (not just JS modules), the tool could use `<img>` tags to exfiltrate data via URL-encoded query parameters to the host, then read back via a known side channel.
+**Attack:** A tool inserts `<img src="http://host-origin/%automerge%3Axyz.../sensitive-file">` — the browser fetches it directly from the host. The tool can observe `onload`/`onerror` to probe for resource existence, and observe timing.
 
-**Mitigation:** The host origin server/service worker should enforce per-session authentication on automerge URL paths, or restrict automerge URL resolution to the RPC channel only.
+**Threat model assessment:** The tool cannot read the response content as data (CSP blocks `connect-src`), only detect existence via load/error events. This is a limited information leak, not full exfiltration, and is acceptable for our threat model.
 
-## 6. `PluginRegistryCapability` leaks metadata (LOW–MEDIUM)
+**Optional hardening:** The host's service worker could restrict automerge URL resolution to the RPC channel only, or require per-session authentication on automerge URL paths.
+
+## 6. `PluginRegistryCapability` leaks metadata (LOW)
 
 **Location:** `index.ts:223–268`, `rpc-types.ts:46–76`
 
@@ -118,7 +130,9 @@ The `PluginRegistryCapability` lets the iframe call `list("patchwork:tool")` and
 - **Enumeration:** A malicious tool learns every tool and datatype installed in the user's workspace, which reveals what kinds of documents they work with.
 - **`getFallbackTool(docUrl)` / `getSupportedTools(docUrl)`** — accepts an arbitrary `docUrl`, so a tool can probe whether a document exists and what type it is, even if it wasn't authorized to access that document.
 
-**Mitigation:** Scope registry queries to the tool's own context — e.g., only allow `getFallbackTool` for the document URL the tool was initialized with and documents it was explicitly granted.
+**Threat model assessment:** This is a low-severity information disclosure. The metadata contains names, IDs, and supported datatypes, but no document content or real automerge document IDs (those are opaque in `importUrl`). This is acceptable as long as exfiltration is successfully prevented — the tool can learn what's installed but cannot send that information anywhere.
+
+**Optional hardening:** Scope registry queries to the tool's own context — e.g., only allow `getFallbackTool` for documents the tool is authorized to access.
 
 ## 7. IndexedDB: not directly vulnerable, but reachable through repo
 
@@ -126,11 +140,11 @@ The `PluginRegistryCapability` lets the iframe call `list("patchwork:tool")` and
 
 The srcdoc iframe has an opaque origin so it cannot access the host's IndexedDB directly. The iframe's ephemeral Repo is created without `IndexedDBStorageAdapter`. Good — this is safe.
 
-**However:** The host Repo connected via `MessageChannelNetworkAdapter` at `index.ts:562` is backed by IndexedDB. Since there's no document-level filtering (vulnerability #2), a tool can use the repo channel to reach documents that are only in IndexedDB (never explicitly loaded in the current session). The tool doesn't touch IndexedDB directly, but effectively has read/write access to its contents through the repo.
+**However:** The host Repo connected via `MessageChannelNetworkAdapter` at `index.ts:562` is backed by IndexedDB. A tool that knows a document ID can use `repo.find()` to sync it from IndexedDB via the host repo. The tool doesn't touch IndexedDB directly, but has read/write access to any document it can discover (see #2 for how document IDs can be obtained).
 
-**Clearing IndexedDB:** A tool cannot directly call `indexedDB.deleteDatabase()` on the host's databases (opaque origin prevents it). But via vulnerability #2, a tool could **corrupt or delete document contents** via `handle.change()` on any document, which the host repo would persist to IndexedDB. This is functionally equivalent to clearing data.
+**Clearing IndexedDB:** A tool cannot directly call `indexedDB.deleteDatabase()` on the host's databases (opaque origin prevents it). But a tool could corrupt document contents via `handle.change()` on any document it has a handle to, which the host repo would persist to IndexedDB.
 
-Note that vulnerability #1 (host-context plugin execution) makes this even worse — a malicious plugin entry module runs in the host context and *can* call `indexedDB.deleteDatabase()` directly.
+Note that vulnerability #1 (host-context plugin execution) makes this worse — a malicious plugin entry module runs in the host context and *can* call `indexedDB.deleteDatabase()` directly.
 
 ## 8. `eval` / dynamic code execution in the iframe (LOW)
 
@@ -186,10 +200,11 @@ This is a tool-on-tool attack: a malicious tool can modify the source code of ot
 
 ## Recommended priority
 
-1. **Stop executing plugin entry modules in the host context** — extract metadata from a static manifest or run discovery in a sandbox (fixes #1).
-2. **Wire up `FilteredBridge`** with a per-tool document allowlist (fixes #2, #7, and largely neutralizes #10).
-3. ~~**Implement a real `ResourcePolicy`** that blocks external origins and automerge URL paths (fixes #3).~~ **Done** — `RestrictivePolicy` is now the default.
-4. ~~**Validate `onOpenDocument` parameters** on the host side (fixes #4).~~ **Mostly done** — navigation always targets `isolated-patchwork-view`, so no privilege escalation is possible. Optional hardening for UI spoofing and unwanted navigation.
-5. **Remove `suggestedImportUrl` from document content** — stop leaking tool source code automerge URLs through CRDT state (fixes #10).
-6. **Scope `PluginRegistryCapability` queries** to authorized documents (fixes #6).
-7. **Restrict host SW automerge URL resolution** to the RPC channel (fixes #5).
+See DESIGN doc sections 12–16 for full discussion of open problems.
+
+1. **Stop executing plugin entry modules in the host context** — extract metadata from a static manifest or run discovery in a sandbox (fixes #1). Most severe gap — bypasses the entire isolation architecture.
+2. **Remove `suggestedImportUrl` from document content** — stop leaking tool source code automerge URLs through CRDT state (fixes #10). Enables tool-on-tool attacks.
+3. **Prevent hard-coded automerge URLs in tool source** — improve source rewriting or use other mechanisms to prevent tools from embedding automerge URLs that enable unauthorized document access and exfiltration-by-sync (partially addresses #2).
+4. **Make `ResourcePolicy` tool-specific** — the current `RestrictivePolicy` is a blunt instrument. Some tools need access to specific external URLs. Needs a mechanism for per-tool resource whitelisting (improves #3).
+5. ~~**Implement a real `ResourcePolicy`** that blocks external origins and automerge URL paths (fixes #3).~~ **Done** — `RestrictivePolicy` is now the default.
+6. ~~**Validate `onOpenDocument` parameters** on the host side (fixes #4).~~ **Mostly done** — navigation always targets `isolated-patchwork-view`, so no privilege escalation is possible.
