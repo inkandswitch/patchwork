@@ -309,6 +309,10 @@ At init time, the host collects all stylesheets from the page — both inline `<
 
 This is a pragmatic solution. It couples the iframe's styles to the host page's CSS build (CSS changes in the host are reflected in the iframe only after reload), but it lets existing tools render correctly without modification. Tools that bundle their own CSS or load it via `fetch()` also work — through the fetch proxy (section 7).
 
+### Fonts and CORS
+
+CSS `@font-face` with cross-origin URLs requires `Access-Control-Allow-Origin` headers. Since the iframe has an opaque origin, fonts must be served from the host origin. Self-hosting in the host's public folder avoids CORS issues.
+
 ### Security notes
 
 Injecting host CSS is a one-way, read-only operation — the iframe receives styles but cannot modify the host's stylesheets. No significant threat model impact.
@@ -356,9 +360,9 @@ A quick list of issues to address with current tools
   - self-host the assets on the site outside of the tool.
   - allow the tldraw CDN in the iframe CSP. I think we should try to avoid putting exceptions into the CSP, but I do think this one is unlikely to be a security vulnerability so this could also be a pragmatic short-term solution if we intend to move to the first option.
 - tools that use the account doc: sideboard, module-settings-manager, context-sidebar, settings, account
-  - these tools should be reworked a bit so that the account doc is never passed in to a tool directly, and then I think we should see if we can explicitly prevent that document from syncing to an iframe repo
-  - currently the tools which open in the non-sandboxed sidebars work, but I think we should sandbox the sidebars in the future so people can bring their own 3rd-party sidebar tools
-  - the tools which open in the main document area do not work properly when that area is opened in the isolated frame. These tools are module-settings-manager, settings, account. We should consider how we want to resolve this. Providers can probably help.
+  - these tools should be reworked a bit so that the account doc is never passed in to a tool directly, and then I think we should see if we can explicitly prevent that document from syncing to an iframe repo. tools opened in the non-sandboxed sidebars work, but I think we should sandbox the sidebars in the future so people can bring their own 3rd-party sidebar tools. Providers can probably help.
+  - when the module-settings-manager opens in the main document area, it does not work properly because of the package url rewriting (section 9).
+- codemirror-base: there's an issue with the styles on remount. If I open a doc, it looks right. If I open a folder then it looks wrong and stays wrong until page refresh. Claude: "When a CodeMirror document is opened, navigated away from (e.g., through a folder), and reopened, the codemirror-markdown theme styles (gutter hiding, content padding) may not re-apply correctly inside the iframe. The extensions load successfully on re-mount, but CodeMirror's internal style injection may not re-inject `<style>` tags that were removed during teardown. This does not affect the host-side patchwork-view. Investigation needed into CodeMirror's style lifecycle in sandboxed iframes."
 
 ## 14. Open Problem: integrating providers
 
