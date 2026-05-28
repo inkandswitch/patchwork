@@ -45,9 +45,16 @@ interface InitMessage {
 }
 
 // ---------------------------------------------------------------------------
-// Bootstrap function — runs inside the iframe. Must be fully self-contained:
-// no closures, no module imports. Everything it needs comes from the init
-// message or from runtime globals.
+// Bootstrap function — runs inside the iframe via boot.toString() + IIFE.
+//
+// CONSTRAINTS (violating these will silently break at runtime):
+//  - No closures over module-scope variables or imports. Everything the
+//    function needs must come from the init message or runtime globals.
+//  - No TypeScript syntax that doesn't survive tsc emit (e.g., enums,
+//    namespaces). Plain types/interfaces are fine (erased at compile time).
+//  - The build must not minify or bundle this file in a way that transforms
+//    the function body. The current build is tsc-only (target: esnext),
+//    which preserves toString() output.
 // ---------------------------------------------------------------------------
 
 async function boot() {
@@ -332,7 +339,7 @@ async function boot() {
   // 15. Expose plugin registry capability for tools inside the iframe.
   (window as any).__patchwork = { registry: registryCap };
 
-  // 17. Forward events to host via capnweb RPC
+  // 16. Forward events to host via capnweb RPC
   rootElement.addEventListener("patchwork:open-document", ((
     event: CustomEvent
   ) => {
@@ -352,7 +359,7 @@ async function boot() {
     hostStub.onMounted(detail.url, detail.toolId);
   }) as EventListener);
 
-  // 18. Forward hash changes to host (tools like folder use <a href="#doc=...">)
+  // 17. Forward hash changes to host (tools like folder use <a href="#doc=...">)
   window.addEventListener("hashchange", () => {
     log("hashchange:", window.location.hash);
     hostStub.onHashChange(window.location.hash);

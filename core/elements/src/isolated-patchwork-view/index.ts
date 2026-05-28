@@ -161,10 +161,13 @@ class PackageUrlMapper {
    * Returns the URL unchanged if no automerge segment is found.
    */
   toPackageUrl(url: string, name?: string): string {
-    // Check if we've already mapped a segment in this URL
+    // Check if we've already mapped a segment in this URL.
+    // Match with surrounding `/` delimiters to avoid substring collisions,
+    // consistent with toAutomergeUrl's trailing-slash approach.
     for (const [segment, pkg] of this.#segmentToPackage) {
-      if (url.includes(`/${segment}/`)) {
-        return url.replace(segment, `pkg:${pkg}`);
+      const from = `/${segment}/`;
+      if (url.includes(from)) {
+        return url.replace(from, `/pkg:${pkg}/`);
       }
     }
     // Not registered yet — find the automerge URL segment via URL parsing
@@ -179,7 +182,7 @@ class PackageUrlMapper {
             : `unknown-${this.#counter++}`;
           this.#segmentToPackage.set(segment, pkg);
           this.#packageToSegment.set(pkg, segment);
-          return url.replace(segment, `pkg:${pkg}`);
+          return url.replace(`/${segment}/`, `/pkg:${pkg}/`);
         }
       }
     } catch {
@@ -377,11 +380,15 @@ class HostApi extends RpcTarget implements HostRpcContract {
     // Resolve pkg: URLs back to real automerge-backed paths
     const realUrl = this.#mapper.toAutomergeUrl(url);
     if (realUrl) {
-      const source = await fetch(realUrl).then((r) => r.text());
+      const res = await fetch(realUrl);
+      if (!res.ok) throw new Error(`Failed to load module: ${url} (${res.status})`);
+      const source = await res.text();
       return this.#mapper.rewriteAutomergeUrls(source);
     }
     this.#checkPolicy(url);
-    return fetch(url).then((r) => r.text());
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load module: ${url} (${res.status})`);
+    return res.text();
   }
 
   async fetchResource(
@@ -394,6 +401,7 @@ class HostApi extends RpcTarget implements HostRpcContract {
     }
     const realUrl = resolvedUrl ?? url;
     const res = await fetch(realUrl);
+    if (!res.ok) throw new Error(`Failed to fetch resource: ${url} (${res.status})`);
     const contentType = res.headers.get("content-type") || "";
     const isBinary =
       contentType.includes("wasm") || contentType.includes("octet-stream");
@@ -482,6 +490,7 @@ export function registerIsolatedPatchworkViewElement(
       #toolId: string | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #repoChannel: MessageChannel | null = null;
+      #repoAdapter: MessageChannelNetworkAdapter | null = null;
       #rpcChannel: MessageChannel | null = null;
       #iframeStub: RpcStub<IframeRpcContract> | null = null;
       #initEpoch = 0;
@@ -597,11 +606,17 @@ export function registerIsolatedPatchworkViewElement(
         this.appendChild(iframe);
         this.#iframe = iframe;
 
-        // Wait for iframe to signal readiness
-        await new Promise<void>((resolve) => {
+        // Wait for iframe to signal readiness (with timeout)
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            window.removeEventListener("message", handler);
+            this.#readyHandler = null;
+            reject(new Error("isolated-patchwork-view: iframe ready timeout (10s)"));
+          }, 10_000);
           const handler = (e: MessageEvent) => {
             if (e.data?.type !== "isolated-patchwork-ready") return;
             if (e.source !== iframe.contentWindow) return;
+            clearTimeout(timeout);
             window.removeEventListener("message", handler);
             this.#readyHandler = null;
             resolve();
@@ -659,12 +674,13 @@ export function registerIsolatedPatchworkViewElement(
 
         // Connect iframe repo directly to host repo via MessageChannel
         const repoChannel = new MessageChannel();
-        repo.networkSubsystem.addNetworkAdapter(
-          new MessageChannelNetworkAdapter(repoChannel.port1, {
-            useWeakRef: true,
-          })
+        const repoAdapter = new MessageChannelNetworkAdapter(
+          repoChannel.port1,
+          { useWeakRef: true }
         );
+        repo.networkSubsystem.addNetworkAdapter(repoAdapter);
         this.#repoChannel = repoChannel;
+        this.#repoAdapter = repoAdapter;
 
         // Set up capnweb RPC channel with the HostApi and package URL mapper.
         const rpcChannel = new MessageChannel();
@@ -726,6 +742,11 @@ export function registerIsolatedPatchworkViewElement(
         if (this.#readyHandler) {
           window.removeEventListener("message", this.#readyHandler);
           this.#readyHandler = null;
+        }
+
+        if (this.#repoAdapter) {
+          this.#repoAdapter.disconnect();
+          this.#repoAdapter = null;
         }
 
         if (this.#repoChannel) {
