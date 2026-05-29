@@ -158,6 +158,9 @@ importers:
       '@automerge/automerge-repo-keyhive':
         specifier: 'catalog:'
         version: 0.2.0-alpha.1d
+      '@automerge/automerge-repo-storage-indexeddb':
+        specifier: 2.6.0-subduction.23
+        version: 2.6.0-subduction.23
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem

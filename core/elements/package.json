@@ -10,6 +10,7 @@
   "peerDependencies": {
     "@automerge/automerge-repo": "*",
     "@automerge/automerge-repo-network-messagechannel": "*",
+    "@automerge/automerge-repo-storage-indexeddb": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "capnweb": "^0.8.0"
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
+    "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@types/debug": "^4.1.12",

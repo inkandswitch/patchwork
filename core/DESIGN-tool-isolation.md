@@ -237,6 +237,131 @@ Documents created inside the iframe are auto-allowlisted without user approval, 
 
 The denylist is populated asynchronously, but the most critical entries (account doc URL, module settings URLs) are added synchronously before any awaits. Tool/package documents are also not on the allowlist to begin with (they live under the `@patchwork` key which is skipped by `collectAutomergeUrls`), so the denylist is defense-in-depth rather than the sole barrier. The dynamic `checkAndDenylistIfSensitive` check catches the case where a tool writes a branches or module-settings URL into document content to try to get it allowlisted.
 
+## 5c. Protecting Sensitive Documents: Sync Denylist
+
+### The problem
+
+Certain documents in the user's store are inherently sensitive — accessing or modifying them from within a tool could compromise the user's environment regardless of whether the access is "authorized" by the allowlist. These include:
+
+- **The account document.** Contains tool configuration, identities, and URLs pointing to other sensitive documents (root folder, module settings, contact doc, persistent denylist). A tool that can read the account doc can discover the user's entire document structure; a tool that can write to it can reconfigure the user's environment.
+- **Module settings documents** (system and user). Contain the list of installed tool package URLs. A tool that can modify module settings can install arbitrary tools or replace existing ones — a privilege escalation from "runs in a sandbox" to "runs in the host context" (via section 12).
+- **Tool/package source code documents.** The full chain of documents that make up installed tools: `ModuleSettingsDoc.modules[]` → `BranchesDoc` (branch targets) → `FolderDoc` (package root) → child file documents. A tool that can modify another tool's source code can inject malicious code that runs for every user who loads that tool (tool-on-tool attack).
+- **The persistent denylist document.** Contains URLs the user has previously denied. A tool that can modify this document can remove entries, re-enabling attacks the user has already blocked.
+
+The allowlist (section 5b) prevents unauthorized access to *arbitrary* documents, but it cannot protect these specific sensitive documents on its own — they could become allowlisted through legitimate-seeming paths (e.g., their URLs appearing in document content, or the user explicitly trying to open them in a tool).
+
+### The proposed approach
+
+A **sync denylist** (`SyncDenylist`) unconditionally blocks sensitive documents from syncing to the iframe. It takes precedence over the allowlist at every enforcement point: `shareConfig.access()`, `shareConfig.announce()`, auto-allowlisting of iframe-created documents, `onOpenDocument`, and `requestDocumentAccess`.
+
+#### Static population at init time
+
+The denylist is populated when the isolated view initializes:
+
+1. **Account document** — `window.accountDocHandle.url`.
+2. **Persistent denylist document** — `accountDoc.denylistDocUrl`, if present.
+3. **Module settings documents** — all URLs from `ModuleWatcher.urls` (keyed `system`, `user`).
+4. **Tool/package source code** — for each module settings doc, the full resolution chain is walked: `ModuleSettingsDoc.modules[]` → resolve `BranchesDoc` branches → `FolderDoc` → child file documents (`docs[].url`). Additionally, all plugin `importUrl`s from the registry are denylisted as a catch-all.
+
+The account doc and module settings URLs are added synchronously (before any `await`), so the most critical entries are denylisted immediately. The tool/package chain is resolved asynchronously but completes before normal tool interaction begins.
+
+#### Dynamic detection at runtime
+
+When a URL is about to be added to the allowlist (from document content or via `onOpenDocument`/`requestDocumentAccess`), it is checked by `checkAndDenylistIfSensitive()`. This reads the document and inspects its `@patchwork.type`:
+
+- `"branches"` → denylisted, along with all branch target folder docs and their children.
+- `"patchwork:module-settings"` → denylisted, along with all module entries and their transitive children.
+- `"patchwork:denylist"` → denylisted.
+
+This catches the case where a tool writes a sensitive document's URL into content it controls, attempting to launder it through the allowlist.
+
+### Security notes
+
+The denylist blocks access unconditionally — even if the user explicitly tries to open a denylisted document in a tool, the request is silently rejected. This means users cannot accidentally expose sensitive documents to malicious tools.
+
+Tool/package documents are also protected by the `@patchwork` key skip in `collectAutomergeUrls` (their URLs typically appear under `@patchwork.suggestedImportUrl`, which is skipped during content scanning). The denylist is defense-in-depth on top of this: even if a tool source URL reaches the allowlist through an unexpected path, the denylist prevents sync.
+
+The denylist is ephemeral (per-iframe session). It is recomputed on each init from the current state of the account doc and module settings. This means newly installed tools are automatically denylisted on the next iframe init without manual intervention.
+
+## 5d. Guarding Against Plugin-Global Documents: Local-Existence Check
+
+### The problem
+
+The sync denylist (section 5c) protects known sensitive documents, but a plugin can introduce *arbitrary* documents that are not inherently sensitive. A plugin author can hard-code an automerge URL in package source code or in a datatype's `init()` function for a "dead drop" document — a document the attacker created and controls. Every user who installs the plugin shares this URL. The attack proceeds as follows:
+
+1. The tool runs inside the iframe and has legitimate write access to the root document (or its children).
+2. The tool writes the dead-drop URL into the body of a document it has access to.
+3. `collectAutomergeUrls` discovers the URL in document content. It passes the denylist check (`checkAndDenylistIfSensitive`) because the dead-drop is an ordinary document, not a branches doc or module-settings doc.
+4. The URL gets auto-allowlisted.
+5. The tool calls `repo.find(deadDropUrl)` — the intermediary allows it.
+6. The tool writes stolen data into the dead-drop document.
+7. The dead-drop syncs to the sync server, where the attacker can read it.
+
+This is a covert exfiltration channel that works across all users of the plugin. The attacker never needs direct access to any victim — the sync server mediates the data flow.
+
+### Why the denylist alone is insufficient
+
+- **Source text rewriting** (`rewriteAutomergeUrls`): Only replaces automerge URLs that match known package document IDs. An arbitrary dead-drop URL passes through untouched. Even if we extended it to strip all automerge URL literals, the plugin can obfuscate the URL (split strings, encoding, runtime computation).
+- **Sync denylist** (section 5c): Only covers known sensitive document types (account doc, module settings, tool source). A dead-drop document has no distinguishing type — it looks like any ordinary document.
+- **Sync allowlist** (section 5b): Trusts URLs found in document content. This is the mechanism the plugin exploits to launder the dead-drop URL into the allowlist.
+
+### The proposed approach: local-existence check with two-step approval
+
+The key insight is that a dead-drop document will not exist in the user's local storage (IndexedDB) — it was created by the attacker on a different device and has never been synced to the victim. Legitimate documents that appear in document content (links to other notes, folders, etc.) will almost always already be present locally because the user has interacted with them before.
+
+#### Local-only repo for existence checks
+
+Create a **local-only Automerge Repo** connected to IndexedDB but with **no network adapter**. This repo can check whether a document exists in local storage without triggering a network sync. The check is: "does this documentId exist in the user's local store?"
+
+Using the host repo's `findWithProgress` is not viable for this because its sync source keeps queries in `loading` indefinitely for non-local documents. The local-only repo has only a storage source, so queries resolve quickly to either `ready` (document exists) or `unavailable` (document not found).
+
+#### Trust hierarchy for discovered URLs
+
+When a URL is discovered in document content (via `collectAutomergeUrls`) and is about to be allowlisted:
+
+1. **Check the session denylist** — if denylisted (sensitive document type), block unconditionally.
+2. **Check the persistent denylist** (see below) — if the user has previously denied this document, block.
+3. **Check if the URL is in the user's root folder** — if the document appears in the root folder's direct children (reachable from `accountDoc.rootFolderUrl`), treat it as trusted. This handles documents from collaborators that may not be in local IndexedDB yet but are part of the user's folder structure.
+4. **Check the local-only repo** — if the document exists in IndexedDB, auto-allowlist it. The user has seen it before.
+5. **If not found locally or in root folder** — the document is unknown. Prompt the user:
+   - First prompt: *"A document has been found that has never been seen on this device. This may be an attempt to access an unauthorized document. Allow syncing this document?"*
+   - If the user denies: add to persistent denylist, done.
+   - If the user approves: fetch/sync the document, then show a **preview** of its contents.
+   - Second prompt: *"Here is the document content. Allow this tool to access it?"*
+   - If the user denies after preview: add to persistent denylist, done.
+   - If the user approves after preview: allowlist the document.
+
+The two-step approval is important: the first prompt asks "should we even fetch this?", the second lets the user inspect the content before granting tool access. This gives the user informed consent rather than a blind yes/no.
+
+The same trust hierarchy is applied in `onOpenDocument` and `requestDocumentAccess`.
+
+#### Persistent denylist
+
+User denials must persist across sessions. A dedicated denylist document (with `@patchwork.type` of `"patchwork:denylist"`) stores denied URLs. Its URL is stored on the account document (`denylistDocUrl`). The persistent denylist is checked alongside the session denylist at init time and during dynamic allowlist expansion.
+
+The persistent denylist document must itself be session-denylisted (added to the `SyncDenylist` at init time alongside the account doc and module settings) so that the iframe cannot read or modify the user's denial decisions.
+
+#### Variant: datatype-global documents
+
+The same attack works through datatypes. Instead of hard-coding a dead-drop URL in tool source code, a malicious datatype's `init()` function writes the URL into every new document it creates. The attack chain:
+
+1. User installs a malicious datatype and creates a document of that type.
+2. The datatype's `init()` function writes a dead-drop URL into the new document's content.
+3. On subsequent opens, `collectAutomergeUrls` discovers the URL in the document and attempts to allowlist it.
+4. The local-existence check catches this at runtime — the dead-drop is not in the user's local storage, triggering the two-step user prompt.
+
+We can also detect this proactively at install time. When a new datatype is installed, the host can create a test document in a sandboxed context (e.g., a Worker) using the datatype's `init()` function and inspect the resulting document for automerge URLs that reference documents created before a safe time window (e.g., before the worker was started or before the datatype was installed). Any such URL is suspicious — a legitimate `init()` function would only create fresh documents via `repo.create()`, not reference pre-existing ones.
+
+This install-time check has the same limitations as source-text scanning: a sufficiently obfuscated URL (computed at runtime, fetched from a side channel) would evade it. But combined with the runtime local-existence check, it provides defense in depth — the install-time check catches the obvious case, and the runtime check catches whatever slips through.
+
+### Security notes
+
+- **First sync of a shared folder**: When a user first receives a shared folder, its child documents won't be in local IndexedDB yet. The root-folder trust check (step 3) handles this — documents reachable from the root folder are trusted even if not yet locally stored. But documents linked from *within* those children may require recursive trust propagation, which gets expensive.
+- **Obfuscated URLs**: A plugin can construct the dead-drop URL at runtime (string concatenation, base64 decoding, etc.) to bypass source-text scanning. The local-existence check catches this because it doesn't depend on finding the URL in source — it catches the URL at allowlist time regardless of how it was obtained.
+- **Plugin creates new document then shares URL out-of-band**: A plugin could `repo.create()` a new document (auto-allowlisted), write stolen data into it, and hope the attacker discovers the URL. But the plugin has no network access and can't exfiltrate the URL. The new document syncs only to the user's own sync server. Unless the attacker has access to the sync server (outside our threat model), this doesn't work.
+- **Performance**: The local-only repo check (IndexedDB lookup per URL) adds latency to allowlist population. For a root document with many links, this could be noticeable. The check could be batched or done in parallel.
+- **Attacker as collaborator**: If the dead-drop document gets synced to the user through a legitimate channel (e.g., the attacker shares a folder containing it), the document would be local and trusted. The local-existence check wouldn't catch it. This is a limitation: the mitigation assumes the dead-drop is truly foreign to the user.
+
 ## 6. Loading Tool Code Without Network Access
 
 ### The problem
@@ -471,13 +596,13 @@ These are attacks that the current architecture does not fully prevent.
 
 1. **Unauthorized access and exfiltration via tool entry module (section 12).** Because the tool's entry module executes in the host context with full privileges, a malicious tool can access any document in the host repo and exfiltrate data over the network — bypassing every isolation layer described in this document.
 
-2. **Unauthorized document access via `suggestedImportUrl` (section 13).** A tool can extract `suggestedImportUrl` values from any document it has access to, discovering other tools' source code document IDs. The sync allowlist (section 5b) blocks the iframe from syncing these documents directly, but the tool can write a discovered URL into the body of a document it controls, causing it to become allowlisted on a future open (since the allowlist includes URLs found in document content).
+2. **Information leak via `suggestedImportUrl` (section 13).** A tool can extract `suggestedImportUrl` values from any document it has access to, discovering other tools' source code document IDs. **Partially mitigated:** tool source documents are explicitly denylisted (section 5b), so even if a tool discovers these IDs it cannot sync the documents — the denylist blocks access unconditionally. This prevents the tool-on-tool attack (modifying another tool's source code). However, the information leak itself remains: the tool can still observe which tool created a given document, which may be useful for fingerprinting.
 
-3. **Exfiltration via hard-coded URLs in tool source.** A malicious tool can hard-code an automerge URL for a document controlled by the attacker. Even though the sync allowlist blocks unknown documents, the tool can write the hard-coded URL into a document it has legitimate access to. If the allowlist dynamically updates based on document content, the attacker's document becomes allowlisted immediately; otherwise, it becomes allowlisted on the next open. Once allowlisted, the tool writes stolen data into the attacker's document, which syncs to a remote peer the attacker controls — completing the exfiltration.
+3. **Exfiltration via plugin-global documents (section 5d).** A malicious plugin can hard-code an automerge URL for a "dead drop" document controlled by the attacker — either in tool source code or in a datatype's `init()` function. The plugin writes the URL into a document it has legitimate access to, attempting to get it allowlisted. **Partially mitigated:** the local-existence check (section 5d) detects that the dead-drop document has never been seen on this device and prompts the user with a two-step approval before allowlisting. User denials are persisted. See section 5d for a detailed analysis including install-time datatype inspection as an additional proactive mitigation.
 
-4. **User opens account document in a malicious tool.** Nothing prevents the user from opening the account document in a malicious tool. Once opened, the tool receives full read/write access through the normal allowlist flow (section 5b). The account document may contain sensitive configuration, identities, or references to other documents. This is technically authorized access (the user chose to open it), but the consequences could be severe. Open question: is this within our threat model, or do we consider user-initiated access to sensitive documents an accepted risk? See section 14 for related discussion.
+4. **~~User opens account document in a malicious tool.~~** **Mitigated.** The account document is now unconditionally session-denylisted (section 5b). Even if the user attempts to open it in a tool, the denylist blocks sync — the iframe cannot access the account document regardless of user action.
 
-5. **User opens module settings document in a malicious tool.** Similarly, nothing prevents the user from opening the module settings document in a malicious tool, granting it read/write access. This document contains tool configuration and metadata that could be used to manipulate the user's environment. Same open question: authorized access with dangerous consequences — do we need to protect against this? See section 14 for related discussion.
+5. **~~User opens module settings document in a malicious tool.~~** **Mitigated.** Module settings documents (both system and user) are unconditionally session-denylisted (section 5b). The persistent denylist document is also session-denylisted. These documents cannot sync to the iframe regardless of user action.
 
 ## 20. Summary of Security Layers
 
@@ -487,8 +612,10 @@ These are attacks that the current architecture does not fully prevent.
 | Content Security Policy        | Network exfiltration, Workers, nested iframes                   | `img-src`/`style-src` allow host-origin probing                                       |
 | Fetch proxy + ResourcePolicy   | Cross-origin exfiltration via RPC, automerge URL probing        | Browser-initiated loads bypass proxy                                                  |
 | Sync allowlist (intermediary)  | Unauthorized document access via repo sync                      | Only folder children auto-allowlisted; other container types need support             |
-| Sync denylist                  | Sensitive documents (account, module settings, tool source) blocked unconditionally | Dynamic check only detects `branches` and `module-settings` types; package FolderDocs without these types rely on static population |
-| Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks IDs through document content (mitigated by sync allowlist and denylist) |
+| Sync denylist                  | Sensitive documents (account, module settings, tool source, persistent denylist) blocked unconditionally | Dynamic check only detects `branches`, `module-settings`, and `denylist` types; package FolderDocs without these types rely on static population |
+| Local-existence check          | Unknown documents (not in local storage or root folder) require two-step user approval | Defeated if attacker is also a collaborator who shares the dead-drop through a legitimate channel |
+| Persistent denylist            | User-denied documents blocked across sessions                   | Stored on a dedicated document (itself session-denylisted)                            |
+| Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks IDs through document content (information leak only — tool source docs are denylisted, preventing sync) |
 | capnweb RPC + capabilities     | Scoped access — iframe can only call explicitly exposed methods | —                                                                                     |
 | Host CSS injection             | Tool rendering compatibility                                    | Coupled to host CSS build                                                             |
 | Registry pre-population        | Sync API compatibility with package URLs                        | Metadata leak (all plugins visible)                                                   |
@@ -496,11 +623,12 @@ These are attacks that the current architecture does not fully prevent.
 ### Open problems
 
 1. **Plugin discovery in host context** (section 12) — tool entry modules execute with full host privileges before any sandbox is involved. Most severe gap.
-2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping. Mitigated by the sync allowlist and denylist (section 5b) — tool source documents are explicitly denylisted, so even if a tool discovers them via `suggestedImportUrl` they cannot be synced. The information leak itself remains.
+2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping. **Mitigated for access:** tool source documents are explicitly denylisted (section 5b), preventing sync even if discovered. The information leak itself remains (a tool can observe which tool created a document), but it is no longer exploitable for tool-on-tool attacks.
 3. **Current tool compatibility** (section 14) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework; folder tool uses hash-based navigation that doesn't work in the iframe.
 4. **Provider security** (section 16) — providers can request/respond with anything; security implications not yet analyzed.
 5. **Element architecture** (section 17) — `isolated-patchwork-view` is a pragmatic starting point; migration to `patchwork-box` or `withIsolation()` is planned.
 6. **Tool-specific resource whitelisting** (section 7) — no mechanism for per-tool external URL exceptions (e.g., tldraw CDN).
-7. **Known attack vectors** (section 19) — see section 19 for attacks the architecture does not fully prevent.
+7. **Plugin-global document exfiltration** (section 5d) — hard-coded dead-drop URLs in tool source or datatype `init()` enable cross-user exfiltration via sync. Proposed mitigations: local-existence check with two-step user approval, and install-time datatype inspection.
+8. **Known attack vectors** (section 19) — see section 19 for attacks the architecture does not fully prevent.
 
 The architecture provides meaningful isolation for tool rendering code. A tool running inside the sandbox cannot access the host's DOM, storage, or service workers; cannot make network requests to external servers; cannot see other tools' source code document IDs through the module-loading path; cannot sync documents it wasn't given access to; and uses the same APIs as before without modification. Full security requires addressing the open problems — especially host-context plugin execution, which bypasses the entire isolation architecture.

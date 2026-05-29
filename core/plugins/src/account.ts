@@ -25,6 +25,7 @@ export type AccountDoc = {
   rootFolderUrl?: AutomergeUrl;
   moduleSettingsUrl?: AutomergeUrl;
   contactUrl?: AutomergeUrl;
+  denylistDocUrl?: AutomergeUrl;
 };
 
 /**

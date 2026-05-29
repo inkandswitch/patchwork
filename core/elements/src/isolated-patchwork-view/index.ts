@@ -18,8 +18,9 @@
  * postMessage bootstrap loads capnweb itself before RPC takes over.
  */
 
-import { type AutomergeUrl, type DocumentId, type PeerId, type Repo, Repo as RepoClass, isValidAutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
+import { type AutomergeUrl, type DocumentId, type DocHandle, type PeerId, type Repo, Repo as RepoClass, isValidAutomergeUrl, parseAutomergeUrl } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { RpcTarget, newMessagePortRpcSession } from "capnweb";
 import type { RpcStub } from "capnweb";
 import {
@@ -29,6 +30,7 @@ import {
   getSupportedTools,
   getSupportedToolsForType,
   type PluginDescription,
+  type AccountDoc,
 } from "@inkandswitch/patchwork-plugins";
 import {
   type HasPatchworkMetadata,
@@ -246,10 +248,14 @@ async function populateDenylist(
   repo: Repo,
   denylist: SyncDenylist
 ): Promise<void> {
-  // 1. Account document
+  // 1. Account document and its persistent denylist document
   const accountHandle = (window as any).accountDocHandle;
   if (accountHandle?.url) {
     denylist.add(accountHandle.url);
+    const denylistDocUrl = accountHandle.doc()?.denylistDocUrl;
+    if (denylistDocUrl) {
+      denylist.add(denylistDocUrl);
+    }
   }
 
   // 2. Module settings documents (from ModuleWatcher)
@@ -330,11 +336,139 @@ async function checkAndDenylistIfSensitive(
       }
       return true;
     }
+
+    if (type === "patchwork:denylist") {
+      log("dynamically denylisting denylist doc: %s", url);
+      denylist.add(url);
+      return true;
+    }
   } catch (err) {
     log("checkAndDenylistIfSensitive: failed to read %s: %o", url, err);
   }
 
   return false;
+}
+
+// ---------------------------------------------------------------------------
+// Local-existence check — detects unknown (potentially malicious) documents
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether a document exists in local IndexedDB storage using a
+ * storage-only repo (no network adapters). Returns quickly in both cases:
+ * - Document exists → storage loads it → query reaches `ready` → true
+ * - Document doesn't exist → storage reports unavailable → false
+ */
+async function isDocumentLocal(
+  localCheckRepo: RepoClass,
+  url: AutomergeUrl
+): Promise<boolean> {
+  const progress = localCheckRepo.findWithProgress(url);
+  const state = progress.peek();
+  if (state.state === "ready") return true;
+  if (state.state === "unavailable") return false;
+  return new Promise((resolve) => {
+    const unsub = progress.subscribe((s) => {
+      if (s.state === "ready") { unsub(); resolve(true); }
+      if (s.state === "unavailable" || s.state === "failed") {
+        unsub();
+        resolve(false);
+      }
+    });
+  });
+}
+
+/**
+ * Check whether a URL is a direct child of the user's root folder.
+ * Documents in the root folder are trusted even if not yet in local storage.
+ */
+async function isInRootFolder(
+  repo: Repo,
+  url: AutomergeUrl
+): Promise<boolean> {
+  const accountHandle = (window as any).accountDocHandle;
+  const rootFolderUrl = accountHandle?.doc()?.rootFolderUrl;
+  if (!rootFolderUrl) return false;
+  try {
+    const rootHandle = await repo.find<FolderDoc>(rootFolderUrl);
+    await rootHandle.whenReady();
+    const rootDoc = rootHandle.doc();
+    for (const docLink of rootDoc?.docs ?? []) {
+      if (docLink.url === url) return true;
+    }
+  } catch (err) {
+    log("isInRootFolder: failed to read root folder: %o", err);
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Persistent denylist — user-denied documents stored across sessions
+// ---------------------------------------------------------------------------
+
+type DenylistDoc = {
+  deniedDocuments: AutomergeUrl[];
+  "@patchwork": { type: "patchwork:denylist" };
+};
+
+/**
+ * Wraps a dedicated denylist document for persisting user denials across
+ * sessions. The denylist doc is lazily created on first denial and its URL
+ * is stored on the account document. The denylist doc itself is
+ * session-denylisted so the iframe cannot read it.
+ */
+class PersistentDenylist {
+  #repo: Repo;
+  #accountHandle: DocHandle<AccountDoc & HasPatchworkMetadata>;
+  #handle: DocHandle<DenylistDoc> | null = null;
+  #cache = new Set<string>();
+
+  constructor(
+    repo: Repo,
+    accountHandle: DocHandle<AccountDoc & HasPatchworkMetadata>
+  ) {
+    this.#repo = repo;
+    this.#accountHandle = accountHandle;
+  }
+
+  async init(): Promise<void> {
+    const url = (this.#accountHandle.doc() as any)?.denylistDocUrl as
+      | AutomergeUrl
+      | undefined;
+    if (url) {
+      this.#handle = await this.#repo.find<DenylistDoc>(url);
+      await this.#handle.whenReady();
+      for (const u of this.#handle.doc()?.deniedDocuments ?? []) {
+        this.#cache.add(u);
+      }
+    }
+  }
+
+  get docUrl(): AutomergeUrl | undefined {
+    return this.#handle?.url;
+  }
+
+  hasUrl(url: AutomergeUrl): boolean {
+    return this.#cache.has(url);
+  }
+
+  deny(url: AutomergeUrl): void {
+    if (this.#cache.has(url)) return;
+    this.#cache.add(url);
+    if (!this.#handle) {
+      this.#handle = this.#repo.create<DenylistDoc>();
+      this.#handle.change((doc: any) => {
+        doc["@patchwork"] = { type: "patchwork:denylist" };
+        doc.deniedDocuments = [];
+      });
+      this.#accountHandle.change((doc: any) => {
+        doc.denylistDocUrl = this.#handle!.url;
+      });
+    }
+    this.#handle.change((doc: any) => {
+      doc.deniedDocuments.push(url);
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -597,6 +731,8 @@ class HostApi extends RpcTarget implements HostRpcContract {
   #registryTarget: PluginRegistryTarget;
   #allowlist: SyncAllowlist;
   #denylist: SyncDenylist;
+  #localCheckRepo: RepoClass;
+  #persistentDenylist: PersistentDenylist | null;
 
   constructor(
     element: HTMLElement,
@@ -604,7 +740,9 @@ class HostApi extends RpcTarget implements HostRpcContract {
     repo: Repo,
     mapper: PackageUrlMapper,
     allowlist: SyncAllowlist,
-    denylist: SyncDenylist
+    denylist: SyncDenylist,
+    localCheckRepo: RepoClass,
+    persistentDenylist: PersistentDenylist | null
   ) {
     super();
     this.#element = element;
@@ -614,6 +752,8 @@ class HostApi extends RpcTarget implements HostRpcContract {
     this.#registryTarget = new PluginRegistryTarget(repo, mapper);
     this.#allowlist = allowlist;
     this.#denylist = denylist;
+    this.#localCheckRepo = localCheckRepo;
+    this.#persistentDenylist = persistentDenylist;
   }
 
   getPluginRegistry(): PluginRegistryCapability {
@@ -684,6 +824,49 @@ class HostApi extends RpcTarget implements HostRpcContract {
     );
   }
 
+  /**
+   * Shared trust hierarchy check for document access. Returns:
+   * - "allowed": document is trusted (allowlisted, local, or in root folder)
+   * - "blocked": document is denylisted or sensitive
+   * - "unknown": document has never been seen — caller must prompt the user
+   */
+  async #checkTrustHierarchy(
+    automergeUrl: AutomergeUrl
+  ): Promise<"allowed" | "blocked" | "unknown"> {
+    // 1. Session denylist
+    if (this.#denylist.hasUrl(automergeUrl)) {
+      log("trust: blocked by session denylist: %s", automergeUrl);
+      return "blocked";
+    }
+    // 2. Persistent denylist
+    if (this.#persistentDenylist?.hasUrl(automergeUrl)) {
+      log("trust: blocked by persistent denylist: %s", automergeUrl);
+      return "blocked";
+    }
+    // 3. Dynamic sensitive-type check
+    const denied = await checkAndDenylistIfSensitive(
+      this.#repo, automergeUrl, this.#denylist
+    );
+    if (denied) {
+      log("trust: dynamically denylisted: %s", automergeUrl);
+      return "blocked";
+    }
+    // 4. Already allowlisted
+    if (this.#allowlist.hasUrl(automergeUrl)) return "allowed";
+    // 5. In root folder → trusted
+    if (await isInRootFolder(this.#repo, automergeUrl)) {
+      this.#allowlist.add(automergeUrl);
+      return "allowed";
+    }
+    // 6. Exists locally → trusted
+    if (await isDocumentLocal(this.#localCheckRepo, automergeUrl)) {
+      this.#allowlist.add(automergeUrl);
+      return "allowed";
+    }
+    // 7. Unknown — needs user approval
+    return "unknown";
+  }
+
   async onOpenDocument(
     url: string,
     toolId?: string,
@@ -692,23 +875,10 @@ class HostApi extends RpcTarget implements HostRpcContract {
   ): Promise<void> {
     const automergeUrl = url as AutomergeUrl;
 
-    // Block denylisted documents unconditionally
-    if (this.#denylist.hasUrl(automergeUrl)) {
-      log("onOpenDocument: blocked denylisted document: %s", url);
-      return;
-    }
+    const trust = await this.#checkTrustHierarchy(automergeUrl);
+    if (trust === "blocked") return;
 
-    // Dynamically check if this is a sensitive document type
-    const denied = await checkAndDenylistIfSensitive(
-      this.#repo, automergeUrl, this.#denylist
-    );
-    if (denied) {
-      log("onOpenDocument: dynamically denylisted document: %s", url);
-      return;
-    }
-
-    // If already allowlisted, navigate immediately
-    if (this.#allowlist.hasUrl(automergeUrl)) {
+    if (trust === "allowed") {
       this.#element.dispatchEvent(
         new OpenDocumentEvent({
           url: automergeUrl,
@@ -720,14 +890,36 @@ class HostApi extends RpcTarget implements HostRpcContract {
       return;
     }
 
-    // Look up document info for the prompt
+    // Unknown document — two-step approval
+    const allowSync = window.confirm(
+      `Unknown Document\n\n` +
+      `A document was found that has never been seen on this device.\n` +
+      `This may be an attempt by a tool to access an unauthorized document.\n\n` +
+      `URL: ${automergeUrl}\n\n` +
+      `Allow syncing this document for preview?`
+    );
+    if (!allowSync) {
+      this.#persistentDenylist?.deny(automergeUrl);
+      return;
+    }
+
     const handle = await this.#repo.find<HasPatchworkMetadata>(automergeUrl);
+    await handle.whenReady();
     const doc = handle.doc();
     const docTitle = (doc as any)?.title ?? title ?? "Unknown document";
     const docTypeStr = doc?.["@patchwork"]?.type ?? docType ?? "unknown";
 
-    const allowed = await this.#promptUserAccess(automergeUrl, docTitle, docTypeStr);
-    if (!allowed) return;
+    const allowAccess = window.confirm(
+      `Document Preview\n\n` +
+      `Title: ${docTitle}\n` +
+      `Type: ${docTypeStr}\n` +
+      `URL: ${automergeUrl}\n\n` +
+      `Allow this tool to access this document?`
+    );
+    if (!allowAccess) {
+      this.#persistentDenylist?.deny(automergeUrl);
+      return;
+    }
 
     this.#allowlist.add(automergeUrl);
     this.#element.dispatchEvent(
@@ -743,33 +935,43 @@ class HostApi extends RpcTarget implements HostRpcContract {
   async requestDocumentAccess(url: string): Promise<boolean> {
     const automergeUrl = url as AutomergeUrl;
 
-    // Block denylisted documents unconditionally
-    if (this.#denylist.hasUrl(automergeUrl)) {
-      log("requestDocumentAccess: blocked denylisted document: %s", url);
-      return false;
-    }
+    const trust = await this.#checkTrustHierarchy(automergeUrl);
+    if (trust === "blocked") return false;
+    if (trust === "allowed") return true;
 
-    // Dynamically check if this is a sensitive document type
-    const denied = await checkAndDenylistIfSensitive(
-      this.#repo, automergeUrl, this.#denylist
+    // Unknown document — two-step approval
+    const allowSync = window.confirm(
+      `Unknown Document\n\n` +
+      `A document was found that has never been seen on this device.\n` +
+      `This may be an attempt by a tool to access an unauthorized document.\n\n` +
+      `URL: ${automergeUrl}\n\n` +
+      `Allow syncing this document for preview?`
     );
-    if (denied) {
-      log("requestDocumentAccess: dynamically denylisted document: %s", url);
+    if (!allowSync) {
+      this.#persistentDenylist?.deny(automergeUrl);
       return false;
     }
-
-    if (this.#allowlist.hasUrl(automergeUrl)) return true;
 
     const handle = await this.#repo.find<HasPatchworkMetadata>(automergeUrl);
+    await handle.whenReady();
     const doc = handle.doc();
-    const title = (doc as any)?.title ?? "Unknown document";
-    const type = doc?.["@patchwork"]?.type ?? "unknown";
+    const docTitle = (doc as any)?.title ?? "Unknown document";
+    const docTypeStr = doc?.["@patchwork"]?.type ?? "unknown";
 
-    const allowed = await this.#promptUserAccess(automergeUrl, title, type);
-    if (allowed) {
-      this.#allowlist.add(automergeUrl);
+    const allowAccess = window.confirm(
+      `Document Preview\n\n` +
+      `Title: ${docTitle}\n` +
+      `Type: ${docTypeStr}\n` +
+      `URL: ${automergeUrl}\n\n` +
+      `Allow this tool to access this document?`
+    );
+    if (!allowAccess) {
+      this.#persistentDenylist?.deny(automergeUrl);
+      return false;
     }
-    return allowed;
+
+    this.#allowlist.add(automergeUrl);
+    return true;
   }
 
 }
@@ -834,6 +1036,8 @@ export function registerIsolatedPatchworkViewElement(
       #hostChannel: MessageChannel | null = null;
       #allowlist: SyncAllowlist | null = null;
       #denylist: SyncDenylist | null = null;
+      #localCheckRepo: RepoClass | null = null;
+      #persistentDenylist: PersistentDenylist | null = null;
       #rootDocUnsub: (() => void) | null = null;
 
       get docUrl() {
@@ -1027,6 +1231,28 @@ export function registerIsolatedPatchworkViewElement(
         // within populateDenylist before any awaits.
         populateDenylist(repo, denylist);
 
+        // Storage-only repo for checking local document existence without
+        // triggering network sync. Shares the same IndexedDB as the host repo.
+        const localCheckRepo = new RepoClass({
+          peerId: `local-check-${crypto.randomUUID().slice(0, 8)}` as PeerId,
+          storage: new IndexedDBStorageAdapter(),
+          isEphemeral: false,
+        });
+        this.#localCheckRepo = localCheckRepo;
+
+        // Persistent denylist for user-denied documents (survives across sessions)
+        const accountHandle = (window as any).accountDocHandle;
+        let persistentDenylist: PersistentDenylist | null = null;
+        if (accountHandle) {
+          persistentDenylist = new PersistentDenylist(repo, accountHandle);
+          await persistentDenylist.init();
+          // Session-denylist the persistent denylist doc itself
+          if (persistentDenylist.docUrl) {
+            denylist.add(persistentDenylist.docUrl);
+          }
+        }
+        this.#persistentDenylist = persistentDenylist;
+
         const hostRepoPeerId = repo.peerId;
         const intermediaryRepo = new RepoClass({
           peerId: `intermediary-${crypto.randomUUID().slice(0, 8)}` as PeerId,
@@ -1103,9 +1329,53 @@ export function registerIsolatedPatchworkViewElement(
           const urls = new Set<AutomergeUrl>();
           collectAutomergeUrls(doc, urls);
           for (const url of urls) {
+            // 1. Session denylist
             if (denylist.hasUrl(url)) continue;
+            // 2. Persistent denylist
+            if (persistentDenylist?.hasUrl(url)) continue;
+            // 3. Dynamic sensitive-type check
             const denied = await checkAndDenylistIfSensitive(repo, url, denylist);
-            if (!denied) allowlist.add(url);
+            if (denied) continue;
+            // 4. Already allowlisted
+            if (allowlist.hasUrl(url)) continue;
+            // 5. In root folder → trusted
+            if (await isInRootFolder(repo, url)) {
+              allowlist.add(url);
+              continue;
+            }
+            // 6. Exists locally → trusted
+            if (await isDocumentLocal(localCheckRepo, url)) {
+              allowlist.add(url);
+              continue;
+            }
+            // 7. Unknown document — two-step approval
+            const allowSync = window.confirm(
+              `Unknown Document\n\n` +
+              `A document was found that has never been seen on this device.\n` +
+              `This may be an attempt by a tool to access an unauthorized document.\n\n` +
+              `URL: ${url}\n\n` +
+              `Allow syncing this document for preview?`
+            );
+            if (!allowSync) {
+              persistentDenylist?.deny(url);
+              continue;
+            }
+            // Sync via host repo and preview
+            const handle = await repo.find<HasPatchworkMetadata>(url);
+            await handle.whenReady();
+            const previewDoc = handle.doc();
+            const title = (previewDoc as any)?.title ?? "Unknown";
+            const type = previewDoc?.["@patchwork"]?.type ?? "unknown";
+            const allowAccess = window.confirm(
+              `Document Preview\n\n` +
+              `Title: ${title}\nType: ${type}\nURL: ${url}\n\n` +
+              `Allow this tool to access this document?`
+            );
+            if (!allowAccess) {
+              persistentDenylist?.deny(url);
+              continue;
+            }
+            allowlist.add(url);
           }
         };
         await addUrlsFromDoc(rootDoc);
@@ -1124,7 +1394,7 @@ export function registerIsolatedPatchworkViewElement(
         const rpcChannel = new MessageChannel();
         const policy = createPolicy(window.location.origin, allowedBootstrapUrls);
         const mapper = new PackageUrlMapper();
-        const hostApi = new HostApi(this, policy, repo, mapper, allowlist, denylist);
+        const hostApi = new HostApi(this, policy, repo, mapper, allowlist, denylist, localCheckRepo, persistentDenylist);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
           rpcChannel.port1,
           hostApi
@@ -1215,6 +1485,11 @@ export function registerIsolatedPatchworkViewElement(
         }
         this.#allowlist = null;
         this.#denylist = null;
+        if (this.#localCheckRepo) {
+          this.#localCheckRepo.shutdown();
+          this.#localCheckRepo = null;
+        }
+        this.#persistentDenylist = null;
 
         if (this.#repoChannel) {
           this.#repoChannel.port1.close();
