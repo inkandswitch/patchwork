@@ -33,7 +33,10 @@ export default defineConfig({
           DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
         },
       },
-      extraBuiltins: ["@automerge/automerge-repo-keyhive"],
+      extraBuiltins: {
+        "@automerge/automerge-repo-keyhive":
+          "/packages/@automerge/automerge-repo-keyhive/index.js",
+      },
     }),
   ],
   worker: {
