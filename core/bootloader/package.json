@@ -47,6 +47,7 @@
     "@automerge/automerge-repo-network-websocket": "catalog:",
     "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@automerge/vanillajs": "catalog:",
+    "@keyhive/keyhive": "catalog:",
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",

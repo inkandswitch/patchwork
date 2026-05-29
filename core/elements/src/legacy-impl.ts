@@ -17,7 +17,10 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import { request } from "@inkandswitch/patchwork-providers";
 import debug from "debug";
-import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
+import {
+  docIdFromAutomergeUrl,
+  type initializeAutomergeRepoKeyhive,
+} from "@automerge/automerge-repo-keyhive";
 import { MountedEvent, NoToolEvent, UnmountedEvent } from "./events.js";
 
 const log = debug("patchwork:elements:legacy");
@@ -82,6 +85,10 @@ export class LegacyImpl {
   #capturedParent: Element | null = null;
   #fallbackId: string | undefined;
   #teardowns = new Set<() => unknown | Promise<void>>();
+  #keyhiveRetrySetup = false;
+  #handlingKeyhiveSync = false;
+  #pendingKeyhiveSync = false;
+  #unableNoAccess = false;
 
   constructor(element: HTMLElement, params: LegacyImplParams = {}) {
     this.#element = element as HostElement;
@@ -162,6 +169,50 @@ export class LegacyImpl {
 
     const epoch = ++this.#initEpoch;
     this.#state = State.initializing;
+
+    if (this.#element.hive && this.#docUrl) {
+      let isKeyhiveDoc = false;
+      try {
+        docIdFromAutomergeUrl(this.#docUrl);
+        isKeyhiveDoc = true;
+      } catch {
+        // Legacy (padded-zero) doc: skip keyhive gate
+      }
+
+      if (isKeyhiveDoc) {
+        const bestAccess = await this.#element.hive.bestAccessForDoc(
+          this.#element.hive.active.individual.id,
+          this.#docUrl
+        );
+        const accessLevel = bestAccess ? bestAccess.toString() : "None";
+
+        if (accessLevel === "None") {
+          this.#state = State.unable;
+          this.#unableNoAccess = true;
+
+          if (!this.#keyhiveRetrySetup) {
+            this.#keyhiveRetrySetup = true;
+            const onKeyhiveSync = () => this.#handleKeyhiveSync();
+            (this.#element.hive.networkAdapter as any).on("ingest-remote", onKeyhiveSync);
+            this.#teardowns.add(() => {
+              (this.#element.hive!.networkAdapter as any).off("ingest-remote", onKeyhiveSync);
+            });
+          }
+          return;
+        }
+      }
+
+      if (!this.#keyhiveRetrySetup) {
+        this.#keyhiveRetrySetup = true;
+        const onKeyhiveSync = () => this.#handleKeyhiveSync();
+        (this.#element.hive.networkAdapter as any).on("ingest-remote", onKeyhiveSync);
+        this.#teardowns.add(() => {
+          (this.#element.hive!.networkAdapter as any).off("ingest-remote", onKeyhiveSync);
+        });
+      }
+    }
+
+    if (epoch !== this.#initEpoch) return;
 
     const removeAddedListener = toolRegistry.on(
       "registered",
@@ -257,6 +308,8 @@ export class LegacyImpl {
     }
 
     this.#teardowns.clear();
+    this.#keyhiveRetrySetup = false;
+    this.#unableNoAccess = false;
     this.#handle = null;
     this.#tool = null;
     this.#requestedToolImports.clear();
@@ -280,6 +333,73 @@ export class LegacyImpl {
     let node: Element | null = this.#capturedParent;
     while (node && !node.isConnected) node = node.parentElement;
     if (node) node.dispatchEvent(event);
+  }
+
+  async #clearDocCache(): Promise<void> {
+    if (!this.#docUrl || !this.#element.repo) return;
+
+    const retryingDocs = (globalThis as any).__patchwork_retrying_docs ??= new Set<string>();
+    if (retryingDocs.has(this.#docUrl)) return;
+
+    retryingDocs.add(this.#docUrl);
+    try {
+      const documentId = String(docIdFromAutomergeUrl(this.#docUrl));
+      const handle = (this.#element.repo.handles as any)[documentId];
+      if (handle && handle.state === "unavailable") {
+        this.#element.repo.delete(this.#docUrl);
+      }
+    } catch {
+      // Ignore delete errors
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    retryingDocs.delete(this.#docUrl);
+  }
+
+  async #handleKeyhiveSync(): Promise<void> {
+    if (!this.#docUrl || !this.#element.hive) return;
+
+    if (this.#handlingKeyhiveSync) {
+      this.#pendingKeyhiveSync = true;
+      return;
+    }
+    this.#handlingKeyhiveSync = true;
+    this.#pendingKeyhiveSync = false;
+
+    try {
+      let hasAccess = false;
+      let accessCheckSucceeded = false;
+      try {
+        docIdFromAutomergeUrl(this.#docUrl);
+        const bestAccess = await this.#element.hive.bestAccessForDoc(
+          this.#element.hive.active.individual.id,
+          this.#docUrl
+        );
+        hasAccess = !!bestAccess;
+        accessCheckSucceeded = true;
+      } catch {
+        return;
+      }
+
+      const isDisplayed =
+        this.#state === State.rendered || this.#state === State.fallback;
+      const isUnable = this.#state === State.unable;
+
+      if (hasAccess && isUnable && this.#unableNoAccess) {
+        await this.#clearDocCache();
+        await this.#teardown();
+        void this.#init();
+      } else if (!hasAccess && isDisplayed && accessCheckSucceeded) {
+        await this.#clearDocCache();
+        await this.#teardown();
+        void this.#init();
+      }
+    } finally {
+      this.#handlingKeyhiveSync = false;
+      if (this.#pendingKeyhiveSync) {
+        this.#handleKeyhiveSync();
+      }
+    }
   }
 
   #queueRender(): void {

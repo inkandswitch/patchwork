@@ -5,6 +5,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import { getRegistry } from "./registry/index.js";
 import type { DatatypeDescription } from "./datatypes.js";
 import { createDocOfDatatype2 } from "./datatypes.js";
@@ -43,6 +44,7 @@ export async function resolveAccountHandle<D = AccountDoc>(
   repo: Repo,
   options: {
     storageKey: string;
+    hive?: AutomergeRepoKeyhive;
     storage?: Pick<Storage, "getItem" | "setItem">;
   }
 ): Promise<DocHandle<D & HasPatchworkMetadata>> {
@@ -60,9 +62,23 @@ export async function resolveAccountHandle<D = AccountDoc>(
     }
   }
 
+  const handle = await createAccount<D>(repo, options.hive);
+  storage.setItem(options.storageKey, handle.url);
+  return handle;
+}
+
+async function createAccount<D>(
+  repo: Repo,
+  hive: AutomergeRepoKeyhive | undefined,
+): Promise<DocHandle<D & HasPatchworkMetadata>> {
   const datatypes = getRegistry<DatatypeDescription>("patchwork:datatype");
   const accountDatatype = await datatypes.loadWhenReady("account");
-  const handle = await createDocOfDatatype2<D>(accountDatatype, repo);
-  storage.setItem(options.storageKey, handle.url);
-  return handle as DocHandle<D & HasPatchworkMetadata>;
+  const handle = await createDocOfDatatype2<D>(accountDatatype, repo, undefined, hive);
+
+  if (hive) {
+    await hive.addSyncServerRelayToDoc(handle.url);
+  }
+
+  return handle;
 }
+

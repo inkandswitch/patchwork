@@ -11,6 +11,7 @@ import type {
   PluginDescription,
 } from "./registry/types.js";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 // Datatype implementation interface
 export type DatatypeImplementation<D = unknown> = {
@@ -42,9 +43,14 @@ export type LoadedDatatype<D = unknown> = LoadedPlugin<
 export const createDocOfDatatype2 = async <D>(
   datatype: LoadedDatatype<D>,
   repo: Repo,
-  change?: (doc: D) => void
+  change?: (doc: D) => void,
+  hive?: AutomergeRepoKeyhive
 ): Promise<DocHandle<D & HasPatchworkMetadata>> => {
   const handle = await repo.create2<D & HasPatchworkMetadata>();
+  // Add sync server with relay access
+  if (hive) {
+    await hive.addSyncServerRelayToDoc(handle.url);
+  }
   handle.change((doc) => {
     datatype.module.init(doc, repo);
     let importUrl = datatype.importUrl;
@@ -65,5 +71,6 @@ export const createDocOfDatatype2 = async <D>(
       change(doc);
     }
   });
+
   return handle;
 };

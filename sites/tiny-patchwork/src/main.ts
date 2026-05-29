@@ -1,7 +1,9 @@
 import "./global.css";
 
-import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
+declare const __KEYHIVE__: boolean;
+
 import type { AutomergeUrl } from "@automerge/automerge-repo";
+import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
 
 // Published tools are registered in this module-settings doc via
 // `pnpm register` from each tool's own repo (see patchwork-tools and
@@ -14,4 +16,5 @@ await bootPatchworkSite({
   defaultModulesUrl: DEFAULT_MODULES_URL,
   accountStorageKey: "tinyPatchworkAccountUrl",
   titleSuffix: "patchwork",
+  keyhive: __KEYHIVE__,
 });

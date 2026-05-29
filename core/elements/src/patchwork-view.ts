@@ -9,6 +9,7 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import { MountedEvent, UnmountedEvent } from "./events.js";
 import { LegacyImpl } from "./legacy-impl.js";
+import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
@@ -90,6 +91,10 @@ export function registerPatchworkViewElement(
       #state: State = State.none;
       #initEpoch = 0;
       #teardowns = new Set<() => unknown | Promise<void>>();
+      #keyhiveRetrySetup = false;
+      #handlingKeyhiveSync = false;
+      #pendingKeyhiveSync = false;
+      #unableNoAccess = false;
 
       // In legacy mode, the legacy view logic is hosted on *this*
       // element (not a child) so events dispatched on `<patchwork-view>`
@@ -241,6 +246,62 @@ export function registerPatchworkViewElement(
         const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
 
+        if (params.hive && this.url) {
+          let isKeyhiveDoc = false;
+          try {
+            docIdFromAutomergeUrl(this.url);
+            isKeyhiveDoc = true;
+          } catch {
+            // Legacy (padded-zero) doc: skip keyhive gate
+          }
+
+          if (isKeyhiveDoc) {
+            const bestAccess = await params.hive.bestAccessForDoc(
+              params.hive.active.individual.id,
+              this.url
+            );
+            const accessLevel = bestAccess ? bestAccess.toString() : "None";
+
+            if (accessLevel === "None") {
+              this.#state = State.unable;
+              this.#unableNoAccess = true;
+
+              if (!this.#keyhiveRetrySetup) {
+                this.#keyhiveRetrySetup = true;
+                const onKeyhiveSync = () => this.#handleKeyhiveSync();
+                (params.hive.networkAdapter as any).on(
+                  "ingest-remote",
+                  onKeyhiveSync
+                );
+                this.#teardowns.add(() => {
+                  (params.hive!.networkAdapter as any).off(
+                    "ingest-remote",
+                    onKeyhiveSync
+                  );
+                });
+              }
+              return;
+            }
+          }
+
+          if (!this.#keyhiveRetrySetup) {
+            this.#keyhiveRetrySetup = true;
+            const onKeyhiveSync = () => this.#handleKeyhiveSync();
+            (params.hive.networkAdapter as any).on(
+              "ingest-remote",
+              onKeyhiveSync
+            );
+            this.#teardowns.add(() => {
+              (params.hive!.networkAdapter as any).off(
+                "ingest-remote",
+                onKeyhiveSync
+              );
+            });
+          }
+        }
+
+        if (epoch !== this.#initEpoch) return;
+
         const removeAddedListener = registry.on("registered", async (added) => {
           if (added.id !== this.component) return;
           if (isLoadablePlugin(added)) {
@@ -295,6 +356,8 @@ export function registerPatchworkViewElement(
 
         this.#teardowns.clear();
         this.#loaded = null;
+        this.#keyhiveRetrySetup = false;
+        this.#unableNoAccess = false;
         this.#state = State.none;
 
         if (wasMounted && mountedComponentId) {
@@ -314,6 +377,49 @@ export function registerPatchworkViewElement(
         let node: Element | null = this.#capturedParent;
         while (node && !node.isConnected) node = node.parentElement;
         if (node) node.dispatchEvent(event);
+      }
+
+      async #handleKeyhiveSync() {
+        if (!this.url || !params.hive) return;
+
+        if (this.#handlingKeyhiveSync) {
+          this.#pendingKeyhiveSync = true;
+          return;
+        }
+        this.#handlingKeyhiveSync = true;
+        this.#pendingKeyhiveSync = false;
+
+        try {
+          let hasAccess = false;
+          let accessCheckSucceeded = false;
+          try {
+            docIdFromAutomergeUrl(this.url);
+            const bestAccess = await params.hive.bestAccessForDoc(
+              params.hive.active.individual.id,
+              this.url
+            );
+            hasAccess = !!bestAccess;
+            accessCheckSucceeded = true;
+          } catch {
+            return;
+          }
+
+          const isDisplayed = this.#state === State.rendered;
+          const isUnable = this.#state === State.unable;
+
+          if (hasAccess && isUnable && this.#unableNoAccess) {
+            await this.#teardown();
+            this.#sync();
+          } else if (!hasAccess && isDisplayed && accessCheckSucceeded) {
+            await this.#teardown();
+            this.#sync();
+          }
+        } finally {
+          this.#handlingKeyhiveSync = false;
+          if (this.#pendingKeyhiveSync) {
+            this.#handleKeyhiveSync();
+          }
+        }
       }
 
       #queueRender() {
