@@ -1,4 +1,4 @@
-import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import type { initializeAutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import {
   getRegistry,
@@ -58,18 +58,18 @@ export type RegisterPatchworkViewElementParams = {
   hive?: AutomergeRepoKeyhive;
 };
 
-/**
- * `<patchwork-view>` reacts to whichever attributes it carries: a
- * `component` attribute mounts a registered `patchwork:component`
- * plugin in place; the legacy `doc-url` / `tool-id` attributes (and
- * no `component`) drive tool-mounting via `LegacyImpl` hosted directly
- * on this element. `component` wins if both are set.
- */
 export type PatchworkViewElement = HTMLElement & {
   component?: string | null;
   url?: AutomergeUrl | null;
   docUrl?: AutomergeUrl | null;
   toolId?: string | null;
+};
+
+export type LegacyPatchworkViewElement = HTMLElement & {
+  docUrl?: AutomergeUrl | null;
+  toolId?: string | null;
+  repo: Repo;
+  hive?: AutomergeRepoKeyhive;
 };
 
 export function registerPatchworkViewElement(
@@ -203,8 +203,7 @@ export function registerPatchworkViewElement(
       #wantsLegacy() {
         return (
           !this.hasAttribute(ATTRS.component) &&
-          (this.hasAttribute(ATTRS.docUrl) ||
-            this.hasAttribute(ATTRS.toolId))
+          (this.hasAttribute(ATTRS.docUrl) || this.hasAttribute(ATTRS.toolId))
         );
       }
 
@@ -242,15 +241,12 @@ export function registerPatchworkViewElement(
         const epoch = ++this.#initEpoch;
         this.#state = State.initializing;
 
-        const removeAddedListener = registry.on(
-          "registered",
-          async (added) => {
-            if (added.id !== this.component) return;
-            if (isLoadablePlugin(added)) {
-              registry.load(added.id);
-            }
+        const removeAddedListener = registry.on("registered", async (added) => {
+          if (added.id !== this.component) return;
+          if (isLoadablePlugin(added)) {
+            registry.load(added.id);
           }
-        );
+        });
 
         const removeLoadedListener = registry.on("loaded", async (loaded) => {
           if (loaded.id !== this.component) return;
@@ -350,9 +346,7 @@ export function registerPatchworkViewElement(
           registry.load(this.#loaded.id);
           if (registry.isLoading(this.#loaded.id)) {
             this.#state = "unable";
-            console.info(
-              `patchwork-view: loading component "${componentId}"`
-            );
+            console.info(`patchwork-view: loading component "${componentId}"`);
           } else {
             this.#state = "unable";
             console.warn(

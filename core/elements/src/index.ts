@@ -4,37 +4,26 @@ export * from "./events.js";
 import type {} from "react";
 import type {} from "solid-js";
 
-/**
- * Attributes for the legacy mode of `<patchwork-view>`, driven by
- * `doc-url` and `tool-id`. The component-mode attributes are typed as
- * `never` so that mixing the two modes in JSX is a compile-time error.
- */
-type PatchworkViewLegacyAttrs = {
+// Discriminated on `component`: absent → legacy mode, present →
+// component mode. `url` is forbidden in legacy mode (meaningless
+// without `component`); `doc-url` / `tool-id` are allowed in component
+// mode as passthrough data for the inner component to read.
+type LegacyPatchworkViewAttrs = {
   "doc-url"?: string;
   "tool-id"?: string | null;
   component?: never;
   url?: never;
 };
 
-/**
- * Attributes for the component mode of `<patchwork-view>`: mounts a
- * registered `patchwork:component` plugin in place. The legacy-mode
- * attributes are typed as `never` for the same reason as above.
- */
 type PatchworkViewComponentAttrs = {
-  "doc-url"?: never;
-  "tool-id"?: never;
-  component?: string;
+  component: string;
   url?: string;
+  "doc-url"?: string;
+  "tool-id"?: string | null;
 };
 
-/**
- * Discriminated union of the two valid attribute sets for
- * `<patchwork-view>`. Setting attributes from both halves on the same
- * element is a type error.
- */
 type PatchworkViewAttrs =
-  | PatchworkViewLegacyAttrs
+  | LegacyPatchworkViewAttrs
   | PatchworkViewComponentAttrs;
 
 declare module "react" {
@@ -43,7 +32,8 @@ declare module "react" {
       "patchwork-view": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement>,
         HTMLElement
-      > & { class?: string } & PatchworkViewAttrs;
+      > &
+        PatchworkViewAttrs;
     }
   }
 }
@@ -51,20 +41,21 @@ declare module "react" {
 declare module "solid-js" {
   namespace JSX {
     interface IntrinsicElements {
-      "patchwork-view": PatchworkViewAttrs;
+      "patchwork-view": HTMLAttributes<HTMLElement> & PatchworkViewAttrs;
     }
   }
 }
 
-// React also likes to pollute the global JSX namespace, so mirror these
-// there too for setups that read intrinsics from `global.JSX`.
+// React also pollutes the global JSX namespace; mirror it for setups
+// that read intrinsics from `global.JSX`.
 declare global {
   namespace JSX {
     interface IntrinsicElements {
       "patchwork-view": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement>,
         HTMLElement
-      > & { class?: string } & PatchworkViewAttrs;
+      > &
+        PatchworkViewAttrs;
     }
   }
 }
