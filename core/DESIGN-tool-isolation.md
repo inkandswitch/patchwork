@@ -423,13 +423,19 @@ A quick list of issues to address with current tools
 - codemirror-base: there's an issue with the styles on remount. If I open a doc, it looks right. If I open a folder then it looks wrong and stays wrong until page refresh. Claude: "When a CodeMirror document is opened, navigated away from (e.g., through a folder), and reopened, the codemirror-markdown theme styles (gutter hiding, content padding) may not re-apply correctly inside the iframe. The extensions load successfully on re-mount, but CodeMirror's internal style injection may not re-inject `<style>` tags that were removed during teardown. This does not affect the host-side patchwork-view. Investigation needed into CodeMirror's style lifecycle in sandboxed iframes."
 - folder tool uses `<a href="#doc=...">` links for navigation rather than dispatching `patchwork:open-document` events. Inside the isolated iframe, these hash links don't work — the `onHashChange` RPC workaround has been removed because it bypassed the sync allowlist (section 5b) and accepted raw unstructured input. The folder tool should be migrated to dispatch `patchwork:open-document` events instead, which go through the structured `onOpenDocument` RPC path and its allowlist checks.
 
-## 15. Open Problem: integrating providers
+## 15. Open Problem: integrating keyhive
+
+I'm not yet clear on how Keyhive should be integrated. This work is currently based on the assumption that the isolated context will not have access to keyhive identities. Instead, the host will have the identities, handle decryption of data, and then sync decrypted data to the iframe.
+
+This needs significant discussion.
+
+## 16. Open Problem: integrating providers
 
 I got this working by adding the provider request/response to the capnweb RPC. It required some minor adjustments to this POC because of the changes to patchwork-view.
 
 One big security question to think about - providers can request/respond with anything. In the existing example providers this is mostly tied to a specific document url, but it doesn't have to be. We need to think this through carefully, which I haven't done yet.
 
-## 16. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
+## 17. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
 
 This POC was implemented by creating a drop-in replacement for patchwork-view that provides all of the isolation and mechanics described above, so it has the same element shape as the old patchwork-view. I took this approach because it was simple to test while working through the challenges above.
 
@@ -439,11 +445,11 @@ Paul has proposed moving from `<patchwork-view>` to functions like `(element: HT
 
 I think we should move to a better approach than `isolated-patchwork-view` in one of these directions, but for pragmatic reasons I propose merging the isolation work with `isolated-patchwork-view` and revisiting this afterwards as a distinct task.
 
-## 17. Open Problems: List of open problems mentioned in previous sections:
+## 18. Open Problems: List of open problems mentioned in previous sections:
 
 - tool-specific resource requests/white-listing for external URLs (section 7)
 
-## 18. Summary of Security Layers
+## 19. Summary of Security Layers
 
 | Layer                          | Addresses                                                       | Current gaps                                                                          |
 | ------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
