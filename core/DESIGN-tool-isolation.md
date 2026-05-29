@@ -173,21 +173,35 @@ By carefully scoping what is automatically allowlisted and prompting the user on
 
 ### The proposed approach
 
-An **intermediary Repo** sits between the host repo and the iframe repo, enforcing a document allowlist:
+An **intermediary Repo** sits between the host repo and the iframe repo, enforcing a document allowlist and denylist:
 
 ```
 [iframe repo] ←MessagePort→ [intermediary repo] ←MessagePort→ [host repo]
                                      │
                               shareConfig.access(peerId, documentId)
-                              → checks allowlist
+                              → checks denylist first, then allowlist
 ```
 
 The intermediary is an ephemeral, in-memory Repo (no storage) created per-iframe on the host side. It uses Automerge-repo's `shareConfig` API, which provides per-peer, per-document filtering via two policies:
 
-- **`announce(peerId, documentId)`** — controls proactive sharing. The intermediary announces allowlisted documents to both peers (so iframe-created documents flow back to the host).
-- **`access(peerId, documentId)`** — controls responses to incoming sync requests. The intermediary accepts everything from the host peer but only responds to iframe requests for allowlisted documents. Non-allowlisted requests receive `doc-unavailable`.
+- **`announce(peerId, documentId)`** — controls proactive sharing. The intermediary announces documents that are allowlisted and not denylisted to both peers (so iframe-created documents flow back to the host).
+- **`access(peerId, documentId)`** — controls responses to incoming sync requests. The intermediary accepts everything from the host peer but only responds to iframe requests for documents that are allowlisted and not denylisted. Non-allowed requests receive `doc-unavailable`.
 
-The intermediary lazily acquires documents from the host — it does not proactively fetch all allowlisted documents. When the iframe calls `repo.find(url)` for an allowlisted document, the intermediary forwards the sync request upstream, acquires the document from the host, and shares it with the iframe.
+The intermediary lazily acquires documents from the host — it does not proactively fetch all allowlisted documents. When the iframe calls `repo.find(url)` for an allowed document, the intermediary forwards the sync request upstream, acquires the document from the host, and shares it with the iframe.
+
+#### Denylist
+
+The **denylist** unconditionally blocks sensitive documents from syncing to the iframe, regardless of allowlist status. It takes precedence over the allowlist at every enforcement point: `shareConfig.access()`, `shareConfig.announce()`, auto-allowlisting of iframe-created documents, `onOpenDocument`, and `requestDocumentAccess`.
+
+**Statically denylisted at init time:**
+
+- The **account document** (`window.accountDocHandle.url`).
+- All **module settings documents** (system and user, from `ModuleWatcher.urls`).
+- All **tool/package source code documents**: the full resolution chain is walked from each module settings doc — `ModuleSettingsDoc.modules[]` → BranchesDoc (if applicable) → FolderDoc → child file documents. Additionally, all plugin `importUrl`s from the registry are denylisted as a catch-all.
+
+**Dynamically denylisted at runtime:**
+
+When a URL is about to be added to the allowlist (e.g., discovered in root document content via `collectAutomergeUrls`, or requested via `onOpenDocument`/`requestDocumentAccess`), it is first checked for sensitive document types. If the document's `@patchwork.type` is `"branches"` or `"patchwork:module-settings"`, it is denylisted along with all its transitive children (branch targets, folder children, module entries) instead of being allowlisted.
 
 #### Allowlist population
 
@@ -196,30 +210,32 @@ The allowlist is populated automatically at init time and expanded dynamically a
 **At init time:**
 
 - The root document (`docUrl`) is always allowlisted.
-- If the root document is a folder (has a `docs[]` array of `DocLink` entries), all direct children are allowlisted. This makes transitive consent work naturally — opening a folder grants access to its contents.
-- A change watcher on the root document adds newly-linked children as they appear.
+- All automerge URLs found in the root document's content are allowlisted (skipping the `@patchwork` metadata key), provided they are not on the denylist and do not dynamically resolve to sensitive document types.
+- A change watcher on the root document adds newly-linked URLs as they appear, subject to the same denylist checks.
 
 **At runtime:**
 
-- **User navigation:** When the iframe requests navigation to a non-allowlisted document via `onOpenDocument`, the host looks up the document's title and type, then prompts the user for approval. Navigation proceeds only if the user approves.
-- **Explicit access requests:** The iframe can call `requestDocumentAccess(url)` via RPC to request access to a document without navigating. The same user prompt flow applies.
-- **Iframe-created documents:** Documents created inside the iframe via `repo.create()` are automatically added to the allowlist, since `create()` always generates a new document ID and cannot be used to access existing documents.
+- **User navigation:** When the iframe requests navigation to a non-allowlisted document via `onOpenDocument`, the host first checks the denylist (blocking unconditionally if denylisted), then dynamically checks for sensitive document types, and finally looks up the document's title and type and prompts the user for approval. Navigation proceeds only if the user approves.
+- **Explicit access requests:** The iframe can call `requestDocumentAccess(url)` via RPC to request access to a document without navigating. The same denylist check and user prompt flow applies.
+- **Iframe-created documents:** Documents created inside the iframe via `repo.create()` are automatically added to the allowlist, provided they are not on the denylist. Since `create()` always generates a new document ID, it cannot collide with denylisted documents, but the check is included as defense in depth.
 
 #### How this addresses the security vectors
 
-**Vector 1 — document IDs provided by the host:** The allowlist ensures that only the root document and its direct children (for folders) are shared. Other document IDs that might leak through host→iframe channels (e.g., `suggestedImportUrl` in document content, section 13) are useless because the intermediary blocks sync requests for non-allowlisted documents. This neutralizes the tool-on-tool attack chain described in section 13 even without removing `suggestedImportUrl`.
+**Vector 1 — document IDs provided by the host:** The allowlist ensures that only the root document and its direct children (for folders) are shared. Other document IDs that might leak through host→iframe channels (e.g., `suggestedImportUrl` in document content, section 13) are useless because the intermediary blocks sync requests for non-allowlisted documents. The denylist provides an additional layer: even if a sensitive document ID somehow reaches the allowlist (e.g., written into document content by a malicious tool), the denylist prevents it from syncing. This neutralizes the tool-on-tool attack chain described in section 13 even without removing `suggestedImportUrl`.
 
-**Vector 3 — hard-coded document IDs in tool source:** A tool with a hard-coded AutomergeUrl cannot sync that document through the intermediary — it will receive `doc-unavailable`. This prevents the exfiltration-by-sync attack (write stolen data to a hard-coded document, exfiltrate via sync to a remote peer).
+**Vector 3 — hard-coded document IDs in tool source:** A tool with a hard-coded AutomergeUrl cannot sync that document through the intermediary — it will receive `doc-unavailable`. If the hard-coded URL points to a tool source document, it is also explicitly denylisted. This prevents the exfiltration-by-sync attack (write stolen data to a hard-coded document, exfiltrate via sync to a remote peer).
 
 **Vector 4 — brute force discovery:** Any `repo.find()` call for a document not on the allowlist is blocked by the intermediary. Brute force is no longer a concern regardless of throttling.
 
-**Vector 2 — documents provided by the user:** User-initiated access (navigation, future drag-and-drop) goes through the allowlist expansion flow. For navigation to non-allowlisted documents, the user is prompted. This is the only case where the allowlist adds friction, and it's appropriate — the user should know when a tool is accessing documents beyond what it was given.
+**Vector 2 — documents provided by the user:** User-initiated access (navigation, future drag-and-drop) goes through the allowlist expansion flow. For navigation to non-allowlisted documents, the user is prompted. For denylisted documents (account doc, module settings, tool source code), access is blocked unconditionally — even if the user explicitly tries to open them in a tool. This is the only case where the allowlist adds friction, and it's appropriate — the user should know when a tool is accessing documents beyond what it was given.
 
 ### Security notes
 
-The intermediary repo does not prevent the iframe from _discovering_ document IDs (e.g., from `suggestedImportUrl` fields in synced documents). It prevents the iframe from _using_ those IDs to sync documents. This is defense in depth — even if other protections (source rewriting, package URL mapping) fail to hide a document ID, the allowlist prevents unauthorized access.
+The intermediary repo does not prevent the iframe from _discovering_ document IDs (e.g., from `suggestedImportUrl` fields in synced documents). It prevents the iframe from _using_ those IDs to sync documents. This is defense in depth — even if other protections (source rewriting, package URL mapping) fail to hide a document ID, the allowlist prevents unauthorized access and the denylist prevents access to sensitive documents.
 
-Documents created inside the iframe are auto-allowlisted without user approval. This is safe because `repo.create()` generates a fresh document ID — it cannot be used to access an existing document. The auto-allowlisting ensures that tools which create documents (e.g., creating a new note in the space tool) work without interruption.
+Documents created inside the iframe are auto-allowlisted without user approval, provided they are not denylisted. This is safe because `repo.create()` generates a fresh document ID — it cannot be used to access an existing document. The auto-allowlisting ensures that tools which create documents (e.g., creating a new note in the space tool) work without interruption.
+
+The denylist is populated asynchronously, but the most critical entries (account doc URL, module settings URLs) are added synchronously before any awaits. Tool/package documents are also not on the allowlist to begin with (they live under the `@patchwork` key which is skipped by `collectAutomergeUrls`), so the denylist is defense-in-depth rather than the sole barrier. The dynamic `checkAndDenylistIfSensitive` check catches the case where a tool writes a branches or module-settings URL into document content to try to get it allowlisted.
 
 ## 6. Loading Tool Code Without Network Access
 
@@ -471,7 +487,8 @@ These are attacks that the current architecture does not fully prevent.
 | Content Security Policy        | Network exfiltration, Workers, nested iframes                   | `img-src`/`style-src` allow host-origin probing                                       |
 | Fetch proxy + ResourcePolicy   | Cross-origin exfiltration via RPC, automerge URL probing        | Browser-initiated loads bypass proxy                                                  |
 | Sync allowlist (intermediary)  | Unauthorized document access via repo sync                      | Only folder children auto-allowlisted; other container types need support             |
-| Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks IDs through document content (mitigated by sync allowlist) |
+| Sync denylist                  | Sensitive documents (account, module settings, tool source) blocked unconditionally | Dynamic check only detects `branches` and `module-settings` types; package FolderDocs without these types rely on static population |
+| Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks IDs through document content (mitigated by sync allowlist and denylist) |
 | capnweb RPC + capabilities     | Scoped access — iframe can only call explicitly exposed methods | —                                                                                     |
 | Host CSS injection             | Tool rendering compatibility                                    | Coupled to host CSS build                                                             |
 | Registry pre-population        | Sync API compatibility with package URLs                        | Metadata leak (all plugins visible)                                                   |
@@ -479,7 +496,7 @@ These are attacks that the current architecture does not fully prevent.
 ### Open problems
 
 1. **Plugin discovery in host context** (section 12) — tool entry modules execute with full host privileges before any sandbox is involved. Most severe gap.
-2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping. Mitigated by the sync allowlist (section 5b) which blocks the iframe from syncing non-allowlisted documents, but the information leak itself remains.
+2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping. Mitigated by the sync allowlist and denylist (section 5b) — tool source documents are explicitly denylisted, so even if a tool discovers them via `suggestedImportUrl` they cannot be synced. The information leak itself remains.
 3. **Current tool compatibility** (section 14) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework; folder tool uses hash-based navigation that doesn't work in the iframe.
 4. **Provider security** (section 16) — providers can request/respond with anything; security implications not yet analyzed.
 5. **Element architecture** (section 17) — `isolated-patchwork-view` is a pragmatic starting point; migration to `patchwork-box` or `withIsolation()` is planned.

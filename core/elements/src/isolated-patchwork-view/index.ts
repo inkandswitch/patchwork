@@ -30,8 +30,11 @@ import {
   getSupportedToolsForType,
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
-import { type HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import {
+  type HasPatchworkMetadata,
+  type FolderDoc,
+  type BranchesDoc,
+  type ModuleSettingsDoc,
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
@@ -119,6 +122,38 @@ class SyncAllowlist {
 }
 
 // ---------------------------------------------------------------------------
+// SyncDenylist — documents that must never sync to the iframe
+// ---------------------------------------------------------------------------
+
+/**
+ * Maintains a set of document IDs that must never be synced to the iframe,
+ * regardless of allowlist status. Takes precedence over the allowlist.
+ * Used to protect sensitive documents: account doc, module settings,
+ * tool/package source code, and branches docs.
+ */
+class SyncDenylist {
+  #denied = new Set<DocumentId>();
+
+  add(url: AutomergeUrl): void {
+    const { documentId } = parseAutomergeUrl(url);
+    this.#denied.add(documentId);
+  }
+
+  has(documentId: DocumentId): boolean {
+    return this.#denied.has(documentId);
+  }
+
+  hasUrl(url: AutomergeUrl): boolean {
+    const { documentId } = parseAutomergeUrl(url);
+    return this.#denied.has(documentId);
+  }
+
+  get size(): number {
+    return this.#denied.size;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Recursive automerge URL collection
 // ---------------------------------------------------------------------------
 
@@ -147,6 +182,159 @@ function collectAutomergeUrls(
     for (const [k, v] of Object.entries(value as Record<string, unknown>))
       collectAutomergeUrls(v, urls, k);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Denylist population — blocks sensitive documents from syncing to iframe
+// ---------------------------------------------------------------------------
+
+/**
+ * Denylist a FolderDoc and all its child documents.
+ */
+async function denylistFolderDoc(
+  repo: Repo,
+  folderUrl: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<void> {
+  denylist.add(folderUrl);
+  try {
+    const handle = await repo.find<FolderDoc>(folderUrl);
+    await handle.whenReady();
+    const doc = handle.doc();
+    for (const docLink of doc?.docs ?? []) {
+      denylist.add(docLink.url);
+    }
+  } catch (err) {
+    log("denylistFolderDoc: failed to read folder %s: %o", folderUrl, err);
+  }
+}
+
+/**
+ * Denylist a module entry (either a BranchesDoc or a direct FolderDoc)
+ * and all its transitive children.
+ */
+async function denylistModuleEntry(
+  repo: Repo,
+  moduleUrl: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<void> {
+  denylist.add(moduleUrl);
+  try {
+    const handle = await repo.find<HasPatchworkMetadata>(moduleUrl);
+    await handle.whenReady();
+    const doc = handle.doc();
+    const type = doc?.["@patchwork"]?.type;
+
+    if (type === "branches") {
+      const branchesDoc = doc as unknown as BranchesDoc;
+      for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
+        await denylistFolderDoc(repo, branchUrl, denylist);
+      }
+    } else {
+      await denylistFolderDoc(repo, moduleUrl, denylist);
+    }
+  } catch (err) {
+    log("denylistModuleEntry: failed to read module %s: %o", moduleUrl, err);
+  }
+}
+
+/**
+ * Populate the denylist with all sensitive documents: account doc,
+ * module settings docs, and all tool/package source code documents.
+ */
+async function populateDenylist(
+  repo: Repo,
+  denylist: SyncDenylist
+): Promise<void> {
+  // 1. Account document
+  const accountHandle = (window as any).accountDocHandle;
+  if (accountHandle?.url) {
+    denylist.add(accountHandle.url);
+  }
+
+  // 2. Module settings documents (from ModuleWatcher)
+  const moduleWatcher = (window as any).patchwork?.packages;
+  const moduleSettingsUrls: AutomergeUrl[] = [];
+  if (moduleWatcher?.urls) {
+    for (const url of Object.values(moduleWatcher.urls) as AutomergeUrl[]) {
+      if (isValidAutomergeUrl(url)) {
+        denylist.add(url);
+        moduleSettingsUrls.push(url);
+      }
+    }
+  }
+
+  // 3. Walk module settings → module entries → folder docs → children
+  for (const settingsUrl of moduleSettingsUrls) {
+    try {
+      const handle = await repo.find<ModuleSettingsDoc>(settingsUrl);
+      await handle.whenReady();
+      const doc = handle.doc();
+      for (const moduleUrl of doc?.modules ?? []) {
+        await denylistModuleEntry(repo, moduleUrl, denylist);
+      }
+    } catch (err) {
+      log("populateDenylist: failed to read module settings %s: %o", settingsUrl, err);
+    }
+  }
+
+  // 4. Denylist all plugin importUrls from the registry as a catch-all
+  for (const [, registry] of getAllRegistries()) {
+    for (const plugin of registry.all()) {
+      if (plugin.importUrl && isValidAutomergeUrl(plugin.importUrl as string)) {
+        await denylistModuleEntry(repo, plugin.importUrl as AutomergeUrl, denylist);
+      }
+    }
+  }
+
+  log("denylist populated with %d documents", denylist.size);
+}
+
+/**
+ * Check if a document is a sensitive type (branches doc or module settings)
+ * and dynamically add it to the denylist if so. Called when URLs are about to
+ * be added to the allowlist to prevent sensitive documents from leaking through
+ * document content.
+ *
+ * Returns true if the document was denylisted (caller should skip allowlisting).
+ */
+async function checkAndDenylistIfSensitive(
+  repo: Repo,
+  url: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<boolean> {
+  if (denylist.hasUrl(url)) return true;
+
+  try {
+    const handle = await repo.find<HasPatchworkMetadata>(url);
+    await handle.whenReady();
+    const doc = handle.doc();
+    const type = doc?.["@patchwork"]?.type;
+
+    if (type === "branches") {
+      log("dynamically denylisting branches doc: %s", url);
+      const branchesDoc = doc as unknown as BranchesDoc;
+      denylist.add(url);
+      for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
+        await denylistFolderDoc(repo, branchUrl, denylist);
+      }
+      return true;
+    }
+
+    if (type === "patchwork:module-settings") {
+      log("dynamically denylisting module settings doc: %s", url);
+      denylist.add(url);
+      const settingsDoc = doc as unknown as ModuleSettingsDoc;
+      for (const moduleUrl of settingsDoc.modules ?? []) {
+        await denylistModuleEntry(repo, moduleUrl, denylist);
+      }
+      return true;
+    }
+  } catch (err) {
+    log("checkAndDenylistIfSensitive: failed to read %s: %o", url, err);
+  }
+
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -408,13 +596,15 @@ class HostApi extends RpcTarget implements HostRpcContract {
   #mapper: PackageUrlMapper;
   #registryTarget: PluginRegistryTarget;
   #allowlist: SyncAllowlist;
+  #denylist: SyncDenylist;
 
   constructor(
     element: HTMLElement,
     policy: ResourcePolicy,
     repo: Repo,
     mapper: PackageUrlMapper,
-    allowlist: SyncAllowlist
+    allowlist: SyncAllowlist,
+    denylist: SyncDenylist
   ) {
     super();
     this.#element = element;
@@ -423,6 +613,7 @@ class HostApi extends RpcTarget implements HostRpcContract {
     this.#mapper = mapper;
     this.#registryTarget = new PluginRegistryTarget(repo, mapper);
     this.#allowlist = allowlist;
+    this.#denylist = denylist;
   }
 
   getPluginRegistry(): PluginRegistryCapability {
@@ -501,6 +692,21 @@ class HostApi extends RpcTarget implements HostRpcContract {
   ): Promise<void> {
     const automergeUrl = url as AutomergeUrl;
 
+    // Block denylisted documents unconditionally
+    if (this.#denylist.hasUrl(automergeUrl)) {
+      log("onOpenDocument: blocked denylisted document: %s", url);
+      return;
+    }
+
+    // Dynamically check if this is a sensitive document type
+    const denied = await checkAndDenylistIfSensitive(
+      this.#repo, automergeUrl, this.#denylist
+    );
+    if (denied) {
+      log("onOpenDocument: dynamically denylisted document: %s", url);
+      return;
+    }
+
     // If already allowlisted, navigate immediately
     if (this.#allowlist.hasUrl(automergeUrl)) {
       this.#element.dispatchEvent(
@@ -536,6 +742,22 @@ class HostApi extends RpcTarget implements HostRpcContract {
 
   async requestDocumentAccess(url: string): Promise<boolean> {
     const automergeUrl = url as AutomergeUrl;
+
+    // Block denylisted documents unconditionally
+    if (this.#denylist.hasUrl(automergeUrl)) {
+      log("requestDocumentAccess: blocked denylisted document: %s", url);
+      return false;
+    }
+
+    // Dynamically check if this is a sensitive document type
+    const denied = await checkAndDenylistIfSensitive(
+      this.#repo, automergeUrl, this.#denylist
+    );
+    if (denied) {
+      log("requestDocumentAccess: dynamically denylisted document: %s", url);
+      return false;
+    }
+
     if (this.#allowlist.hasUrl(automergeUrl)) return true;
 
     const handle = await this.#repo.find<HasPatchworkMetadata>(automergeUrl);
@@ -611,6 +833,7 @@ export function registerIsolatedPatchworkViewElement(
       #intermediaryIframeAdapter: MessageChannelNetworkAdapter | null = null;
       #hostChannel: MessageChannel | null = null;
       #allowlist: SyncAllowlist | null = null;
+      #denylist: SyncDenylist | null = null;
       #rootDocUnsub: (() => void) | null = null;
 
       get docUrl() {
@@ -789,12 +1012,20 @@ export function registerIsolatedPatchworkViewElement(
         bootstrapChannel.port1.start();
         this.#bootstrapChannel = bootstrapChannel;
 
-        // Set up document sync allowlist and intermediary repo.
-        // The intermediary sits between the host repo and the iframe repo,
-        // enforcing an allowlist of which documents the iframe can sync.
+        // Set up document sync denylist and allowlist with intermediary repo.
+        // The denylist blocks sensitive documents (account, module settings,
+        // tool source code) from ever syncing to the iframe. The allowlist
+        // controls which remaining documents can sync.
         const allowlist = new SyncAllowlist();
         allowlist.add(docUrl);
         this.#allowlist = allowlist;
+
+        const denylist = new SyncDenylist();
+        this.#denylist = denylist;
+        // Fire-and-forget: populates denylist asynchronously. The most critical
+        // entries (account doc, module settings URLs) are added synchronously
+        // within populateDenylist before any awaits.
+        populateDenylist(repo, denylist);
 
         const hostRepoPeerId = repo.peerId;
         const intermediaryRepo = new RepoClass({
@@ -803,13 +1034,15 @@ export function registerIsolatedPatchworkViewElement(
           shareConfig: {
             announce: async (_peerId: PeerId, documentId?: DocumentId) => {
               if (!documentId) return false;
+              if (denylist.has(documentId)) return false;
               return allowlist.has(documentId);
             },
             access: async (peerId: PeerId, documentId?: DocumentId) => {
               // Accept everything from the host repo
               if (peerId === hostRepoPeerId) return true;
-              // Gate iframe peer by allowlist
+              // Gate iframe peer by denylist then allowlist
               if (!documentId) return false;
+              if (denylist.has(documentId)) return false;
               return allowlist.has(documentId);
             },
           },
@@ -824,6 +1057,10 @@ export function registerIsolatedPatchworkViewElement(
         // generates a new document ID — it can't be used to access existing docs.
         intermediaryRepo.on("document", ({ handle }) => {
           const { documentId } = parseAutomergeUrl(handle.url);
+          if (denylist.has(documentId)) {
+            log("refusing to auto-allowlist denylisted document: %s", handle.url);
+            return;
+          }
           if (!allowlist.has(documentId)) {
             log("auto-allowlisting iframe-created document: %s", handle.url);
             allowlist.add(handle.url);
@@ -856,20 +1093,26 @@ export function registerIsolatedPatchworkViewElement(
         this.#repoChannel = repoChannel;
         this.#intermediaryIframeAdapter = intermediaryIframeAdapter;
 
-        // Populate allowlist from all automerge URLs found in the root document
+        // Populate allowlist from all automerge URLs found in the root document.
+        // Each URL is checked against the denylist and dynamically screened for
+        // sensitive document types (branches, module settings) before allowlisting.
         const rootHandle = await repo.find(docUrl);
         await rootHandle.whenReady();
         const rootDoc = rootHandle.doc();
-        const addUrlsFromDoc = (doc: unknown) => {
+        const addUrlsFromDoc = async (doc: unknown) => {
           const urls = new Set<AutomergeUrl>();
           collectAutomergeUrls(doc, urls);
-          for (const url of urls) allowlist.add(url);
+          for (const url of urls) {
+            if (denylist.hasUrl(url)) continue;
+            const denied = await checkAndDenylistIfSensitive(repo, url, denylist);
+            if (!denied) allowlist.add(url);
+          }
         };
-        addUrlsFromDoc(rootDoc);
+        await addUrlsFromDoc(rootDoc);
         log("allowlisted URLs from root document");
         // Watch for new URLs added to the root document
         const onRootChange = ({ doc }: { doc: unknown }) => {
-          addUrlsFromDoc(doc);
+          void addUrlsFromDoc(doc);
         };
         rootHandle.on("change", onRootChange);
         this.#rootDocUnsub = () => rootHandle.off("change", onRootChange);
@@ -881,7 +1124,7 @@ export function registerIsolatedPatchworkViewElement(
         const rpcChannel = new MessageChannel();
         const policy = createPolicy(window.location.origin, allowedBootstrapUrls);
         const mapper = new PackageUrlMapper();
-        const hostApi = new HostApi(this, policy, repo, mapper, allowlist);
+        const hostApi = new HostApi(this, policy, repo, mapper, allowlist, denylist);
         this.#iframeStub = newMessagePortRpcSession<IframeRpcContract>(
           rpcChannel.port1,
           hostApi
@@ -971,6 +1214,7 @@ export function registerIsolatedPatchworkViewElement(
           this.#intermediaryRepo = null;
         }
         this.#allowlist = null;
+        this.#denylist = null;
 
         if (this.#repoChannel) {
           this.#repoChannel.port1.close();
