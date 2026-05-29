@@ -6,12 +6,6 @@ settings:
 
 catalogs:
   default:
-    '@automerge/automerge-repo-keyhive':
-      specifier: 0.2.0-alpha.1d
-      version: 0.2.0-alpha.1d
-    '@keyhive/keyhive':
-      specifier: 0.0.0-alpha.56
-      version: 0.0.0-alpha.56
     '@types/react':
       specifier: 18.3.1
       version: 18.3.1
@@ -28,14 +22,16 @@ catalogs:
 overrides:
   '@automerge/automerge': 3.3.0-fragments.1
   '@automerge/automerge-repo': 2.6.0-subduction.23
+  '@automerge/automerge-repo-keyhive': 0.3.0-alpha.sub.1
   '@automerge/automerge-repo-network-messagechannel': 2.6.0-subduction.23
   '@automerge/automerge-repo-network-websocket': 2.6.0-subduction.23
   '@automerge/automerge-repo-react-hooks': 2.6.0-subduction.23
   '@automerge/automerge-repo-solid-primitives': 2.6.0-subduction.23
   '@automerge/automerge-repo-storage-indexeddb': 2.6.0-subduction.23
-  '@automerge/automerge-subduction': 0.12.1
+  '@automerge/automerge-subduction': 0.13.0
   '@automerge/react': 2.6.0-subduction.23
   '@automerge/vanillajs': 2.6.0-subduction.23
+  '@keyhive/keyhive': 0.0.0-alpha.56
 
 importers:
 
@@ -52,8 +48,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-subduction':
-        specifier: 0.12.1
-        version: 0.12.1
+        specifier: 0.13.0
+        version: 0.13.0
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.29.8(@types/node@24.9.1)
@@ -100,8 +96,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-subduction':
-        specifier: 0.12.1
-        version: 0.12.1
+        specifier: 0.13.0
+        version: 0.13.0
       '@automerge/vanillajs':
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
@@ -117,6 +113,9 @@ importers:
       '@inkandswitch/patchwork-providers':
         specifier: workspace:^
         version: link:../../packages/providers/core
+      '@keyhive/keyhive':
+        specifier: 0.0.0-alpha.56
+        version: 0.0.0-alpha.56
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -134,8 +133,8 @@ importers:
         version: 0.1.4
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.2.0-alpha.1d
+        specifier: 0.3.0-alpha.sub.1
+        version: 0.3.0-alpha.sub.1(ws@8.18.3)
       esbuild:
         specifier: ^0.23.1
         version: 0.23.1
@@ -153,8 +152,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.2.0-alpha.1d
+        specifier: 0.3.0-alpha.sub.1
+        version: 0.3.0-alpha.sub.1(ws@8.18.3)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -205,8 +204,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-subduction':
-        specifier: 0.12.1
-        version: 0.12.1
+        specifier: 0.13.0
+        version: 0.13.0
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.22)(@vitest/ui@3.2.4)(happy-dom@20.8.9)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.32.0)(terser@5.44.0)
@@ -236,8 +235,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.2.0-alpha.1d
+        specifier: 0.3.0-alpha.sub.1
+        version: 0.3.0-alpha.sub.1(ws@8.18.3)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -502,8 +501,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-subduction':
-        specifier: 0.12.1
-        version: 0.12.1
+        specifier: 0.13.0
+        version: 0.13.0
       '@automerge/vanillajs':
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
@@ -533,8 +532,8 @@ importers:
         version: 4.1.15
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.2.0-alpha.1d
+        specifier: 0.3.0-alpha.sub.1
+        version: 0.3.0-alpha.sub.1(ws@8.18.3)
       '@eslint/js':
         specifier: ^9.37.0
         version: 9.38.0
@@ -542,7 +541,7 @@ importers:
         specifier: workspace:^
         version: link:../../core/bootloader
       '@keyhive/keyhive':
-        specifier: 'catalog:'
+        specifier: 0.0.0-alpha.56
         version: 0.0.0-alpha.56
       '@tailwindcss/vite':
         specifier: ^4.1.14
@@ -587,8 +586,8 @@ importers:
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
       '@automerge/automerge-subduction':
-        specifier: 0.12.1
-        version: 0.12.1
+        specifier: 0.13.0
+        version: 0.13.0
       '@automerge/vanillajs':
         specifier: 2.6.0-subduction.23
         version: 2.6.0-subduction.23
@@ -618,8 +617,8 @@ importers:
         version: 4.1.15
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 'catalog:'
-        version: 0.2.0-alpha.1d
+        specifier: 0.3.0-alpha.sub.1
+        version: 0.3.0-alpha.sub.1(ws@8.18.3)
       '@eslint/js':
         specifier: ^9.37.0
         version: 9.38.0
@@ -627,7 +626,7 @@ importers:
         specifier: workspace:^
         version: link:../../core/bootloader
       '@keyhive/keyhive':
-        specifier: 'catalog:'
+        specifier: 0.0.0-alpha.56
         version: 0.0.0-alpha.56
       '@tailwindcss/vite':
         specifier: ^4.1.14
@@ -659,8 +658,8 @@ packages:
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
 
-  '@automerge/automerge-repo-keyhive@0.2.0-alpha.1d':
-    resolution: {integrity: sha512-p+4PnUua9vtvmdoZQXNOdl6SJGISF90JHi95zw33gUen4LHerNgXx7RVc0uDMC6WOfhKxJANqE2f+VKCQwis9w==}
+  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.1':
+    resolution: {integrity: sha512-ctbVNLketU4Z22Mc+o4MJtE4s6tIPGswO53uVweI8l5yFYYYfGORDEjwlgHHPgYT7whoRB7kNiY3X9F2bvVRjQ==}
 
   '@automerge/automerge-repo-network-broadcastchannel@2.6.0-subduction.23':
     resolution: {integrity: sha512-lCsxaauTmtd2bxwW2p5Kk6zRqjgxCOXUcMDb4T2Yb6GtT7jo6gbBZh5G9U4UPANwGICdyQGJREQh8bj5n6BMOw==}
@@ -689,8 +688,8 @@ packages:
   '@automerge/automerge-repo@2.6.0-subduction.23':
     resolution: {integrity: sha512-SziEXGS4LlKmR6DK8Zf9FM12j14E39NM9kbzLoKx6cKdjEqowUyxDSpPAFrUPjrmFQ8eLw3p8DMb18mtoZD80Q==}
 
-  '@automerge/automerge-subduction@0.12.1':
-    resolution: {integrity: sha512-s1s40RTozkqExIk1LYdogKPzpCMFfe/7KBS0ccAlwsy4JwdcUGG9NQO2Pm3kZq8vD3OPw7DcIOSPG+bnLESQFg==}
+  '@automerge/automerge-subduction@0.13.0':
+    resolution: {integrity: sha512-7XlCIS0GH3ctboE8UPmD9rfiv203Q8n5Lx63xE6xCgtlpwecDKqzLDp77e9hUEo76j17Y8bYQyfsROqaByLf5A==}
 
   '@automerge/automerge@3.3.0-fragments.1':
     resolution: {integrity: sha512-Im2n3qcYSuIsLDSjofTRo7CZyyvFn5pKLSCCO5sjWzESw+9q9G25ZIrL2mczDX43cXtyzi+w/4b9VUaiNdY56Q==}
@@ -702,33 +701,33 @@ packages:
     resolution: {integrity: sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==}
     engines: {node: '>=6.9.0'}
 
-  '@cbor-extract/cbor-extract-darwin-arm64@2.2.0':
-    resolution: {integrity: sha512-P7swiOAdF7aSi0H+tHtHtr6zrpF3aAq/W9FXx5HektRvLTM2O89xCyXF3pk7pLc7QpaY7AoaE8UowVf9QBdh3w==}
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.2':
+    resolution: {integrity: sha512-ZKZ/F8US7JR92J4DMct6cLW/Y66o2K576+zjlEN/MevH70bFIsB10wkZEQPLzl2oNh2SMGy55xpJ9JoBRl5DOA==}
     cpu: [arm64]
     os: [darwin]
 
-  '@cbor-extract/cbor-extract-darwin-x64@2.2.0':
-    resolution: {integrity: sha512-1liF6fgowph0JxBbYnAS7ZlqNYLf000Qnj4KjqPNW4GViKrEql2MgZnAsExhY9LSy8dnvA4C0qHEBgPrll0z0w==}
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.2':
+    resolution: {integrity: sha512-32b1mgc+P61Js+KW9VZv/c+xRw5EfmOcPx990JbCBSkYJFY0l25VinvyyWfl+3KjibQmAcYwmyzKF9J4DyKP/Q==}
     cpu: [x64]
     os: [darwin]
 
-  '@cbor-extract/cbor-extract-linux-arm64@2.2.0':
-    resolution: {integrity: sha512-rQvhNmDuhjTVXSPFLolmQ47/ydGOFXtbR7+wgkSY0bdOxCFept1hvg59uiLPT2fVDuJFuEy16EImo5tE2x3RsQ==}
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.2':
+    resolution: {integrity: sha512-wfqgzqCAy/Vn8i6WVIh7qZd0DdBFaWBjPdB6ma+Wihcjv0gHqD/mw3ouVv7kbbUNrab6dKEx/w3xQZEdeXIlzg==}
     cpu: [arm64]
     os: [linux]
 
-  '@cbor-extract/cbor-extract-linux-arm@2.2.0':
-    resolution: {integrity: sha512-QeBcBXk964zOytiedMPQNZr7sg0TNavZeuUCD6ON4vEOU/25+pLhNN6EDIKJ9VLTKaZ7K7EaAriyYQ1NQ05s/Q==}
+  '@cbor-extract/cbor-extract-linux-arm@2.2.2':
+    resolution: {integrity: sha512-tNg0za41TpQfkhWjptD+0gSD2fggMiDCSacuIeELyb2xZhr7PrhPe5h66Jc67B/5dmpIhI2QOUtv4SBsricyYQ==}
     cpu: [arm]
     os: [linux]
 
-  '@cbor-extract/cbor-extract-linux-x64@2.2.0':
-    resolution: {integrity: sha512-cWLAWtT3kNLHSvP4RKDzSTX9o0wvQEEAj4SKvhWuOVZxiDAeQazr9A+PSiRILK1VYMLeDml89ohxCnUNQNQNCw==}
+  '@cbor-extract/cbor-extract-linux-x64@2.2.2':
+    resolution: {integrity: sha512-rpiLnVEsqtPJ+mXTdx1rfz4RtUGYIUg2rUAZgd1KjiC1SehYUSkJN7Yh+aVfSjvCGtVP0/bfkQkXpPXKbmSUaA==}
     cpu: [x64]
     os: [linux]
 
-  '@cbor-extract/cbor-extract-win32-x64@2.2.0':
-    resolution: {integrity: sha512-l2M+Z8DO2vbvADOBNLbbh9y5ST1RY5sqkWOg/58GkUPBYou/cuNZ68SGQ644f1CvZ8kcOxyZtw06+dxWHIoN/w==}
+  '@cbor-extract/cbor-extract-win32-x64@2.2.2':
+    resolution: {integrity: sha512-dI+9P7cfWxkTQ+oE+7Aa6onEn92PHgfWXZivjNheCRmTBDBf2fx6RyTi0cmgpYLnD1KLZK9ZYrMxaPZ4oiXhGA==}
     cpu: [x64]
     os: [win32]
 
@@ -2008,12 +2007,12 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  cbor-extract@2.2.0:
-    resolution: {integrity: sha512-Ig1zM66BjLfTXpNgKpvBePq271BPOvu8MR0Jl080yG7Jsl+wAZunfrwiwA+9ruzm/WEdIV5QF/bjDZTqyAIVHA==}
+  cbor-extract@2.2.2:
+    resolution: {integrity: sha512-hlSxxI9XO2yQfe9g6msd3g4xCfDqK5T5P0fRMLuaLHhxn4ViPrm+a+MUfhrvH2W962RGxcBwEGzLQyjbDG1gng==}
     hasBin: true
 
-  cbor-x@1.6.0:
-    resolution: {integrity: sha512-0kareyRwHSkL6ws5VXHEf8uY1liitysCVJjlmhaLG+IXLqhSaOO+t63coaso7yjwEzWZzLy8fJo06gZDVQM9Qg==}
+  cbor-x@1.6.4:
+    resolution: {integrity: sha512-UGKHjp6RHC6QuZ2yy5LCKm7MojM4716DwoSaqwQpaH4DvZvbBTGcoDNTiG9Y2lByXZYFEs9WRkS5tLl96IrF1Q==}
 
   chai@5.3.3:
     resolution: {integrity: sha512-4zNhdJD/iOjSH0A05ea+Ke6MU5mmpQcbQsSOkgdaUMJ9zTlDTD/GYlwohmIE2u0gaxHYiVHEn1Fw9mZ/ktJWgw==}
@@ -3382,8 +3381,8 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
-  xstate@5.31.0:
-    resolution: {integrity: sha512-5B+0DqC0uNUrcLUEY3pn3iNy+swvK2E0ZpYp5gnV3oxMX5y87vzXkU5YXv9CAtyG5c5FOJ1SzvTWHrwE8fMZNQ==}
+  xstate@5.32.0:
+    resolution: {integrity: sha512-zsk73aWGmxn9z34P0kbiod5JwTvdYRW3+IDxITq8sd9+VWwMyW7BUzpplnYy9mIEXa6V8IMDv7Hy4m0mhT5+2Q==}
 
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
@@ -3411,17 +3410,20 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
 
-  '@automerge/automerge-repo-keyhive@0.2.0-alpha.1d':
+  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.1(ws@8.18.3)':
     dependencies:
       '@automerge/automerge-repo': 2.6.0-subduction.23
       '@automerge/automerge-repo-network-websocket': 2.6.0-subduction.23
+      '@automerge/automerge-subduction': 0.13.0
       '@keyhive/keyhive': 0.0.0-alpha.56
-      cbor-x: 1.6.0
+      cbor-x: 1.6.4
       eventemitter3: 5.0.1
+      isomorphic-ws: 5.0.0(ws@8.18.3)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
+      - ws
 
   '@automerge/automerge-repo-network-broadcastchannel@2.6.0-subduction.23':
     dependencies:
@@ -3444,7 +3446,7 @@ snapshots:
   '@automerge/automerge-repo-network-websocket@2.6.0-subduction.23':
     dependencies:
       '@automerge/automerge-repo': 2.6.0-subduction.23
-      cbor-x: 1.6.0
+      cbor-x: 1.6.4
       debug: 4.4.3
       eventemitter3: 5.0.1
       isomorphic-ws: 5.0.0(ws@8.18.3)
@@ -3488,22 +3490,22 @@ snapshots:
   '@automerge/automerge-repo@2.6.0-subduction.23':
     dependencies:
       '@automerge/automerge': 3.3.0-fragments.1
-      '@automerge/automerge-subduction': 0.12.1
+      '@automerge/automerge-subduction': 0.13.0
       bs58check: 3.0.1
-      cbor-x: 1.6.0
+      cbor-x: 1.6.4
       debug: 4.4.3
       eventemitter3: 5.0.1
       fast-sha256: 1.3.0
       isomorphic-ws: 5.0.0(ws@8.18.3)
       uuid: 9.0.1
       ws: 8.18.3
-      xstate: 5.31.0
+      xstate: 5.32.0
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
 
-  '@automerge/automerge-subduction@0.12.1': {}
+  '@automerge/automerge-subduction@0.13.0': {}
 
   '@automerge/automerge@3.3.0-fragments.1': {}
 
@@ -3521,22 +3523,22 @@ snapshots:
 
   '@babel/runtime@7.28.4': {}
 
-  '@cbor-extract/cbor-extract-darwin-arm64@2.2.0':
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.2':
     optional: true
 
-  '@cbor-extract/cbor-extract-darwin-x64@2.2.0':
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.2':
     optional: true
 
-  '@cbor-extract/cbor-extract-linux-arm64@2.2.0':
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.2':
     optional: true
 
-  '@cbor-extract/cbor-extract-linux-arm@2.2.0':
+  '@cbor-extract/cbor-extract-linux-arm@2.2.2':
     optional: true
 
-  '@cbor-extract/cbor-extract-linux-x64@2.2.0':
+  '@cbor-extract/cbor-extract-linux-x64@2.2.2':
     optional: true
 
-  '@cbor-extract/cbor-extract-win32-x64@2.2.0':
+  '@cbor-extract/cbor-extract-win32-x64@2.2.2':
     optional: true
 
   '@changesets/apply-release-plan@7.0.14':
@@ -4609,21 +4611,21 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  cbor-extract@2.2.0:
+  cbor-extract@2.2.2:
     dependencies:
       node-gyp-build-optional-packages: 5.1.1
     optionalDependencies:
-      '@cbor-extract/cbor-extract-darwin-arm64': 2.2.0
-      '@cbor-extract/cbor-extract-darwin-x64': 2.2.0
-      '@cbor-extract/cbor-extract-linux-arm': 2.2.0
-      '@cbor-extract/cbor-extract-linux-arm64': 2.2.0
-      '@cbor-extract/cbor-extract-linux-x64': 2.2.0
-      '@cbor-extract/cbor-extract-win32-x64': 2.2.0
+      '@cbor-extract/cbor-extract-darwin-arm64': 2.2.2
+      '@cbor-extract/cbor-extract-darwin-x64': 2.2.2
+      '@cbor-extract/cbor-extract-linux-arm': 2.2.2
+      '@cbor-extract/cbor-extract-linux-arm64': 2.2.2
+      '@cbor-extract/cbor-extract-linux-x64': 2.2.2
+      '@cbor-extract/cbor-extract-win32-x64': 2.2.2
     optional: true
 
-  cbor-x@1.6.0:
+  cbor-x@1.6.4:
     optionalDependencies:
-      cbor-extract: 2.2.0
+      cbor-extract: 2.2.2
 
   chai@5.3.3:
     dependencies:
@@ -6004,7 +6006,7 @@ snapshots:
 
   xmlchars@2.2.0: {}
 
-  xstate@5.31.0: {}
+  xstate@5.32.0: {}
 
   y18n@5.0.8: {}
 

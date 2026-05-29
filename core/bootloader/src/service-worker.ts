@@ -19,7 +19,7 @@ import {
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
-  type PeerId,
+  type AutomergeUrl,
 } from "@automerge/automerge-repo/slim";
 import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 
@@ -27,8 +27,17 @@ import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
+import {
+  initializeAutomergeRepoKeyhiveRust,
+  initKeyhiveWasm,
+  type AutomergeRepoKeyhiveRust,
+} from "@automerge/automerge-repo-keyhive";
+
+declare const __SITE_NAME__: string;
+declare const __KEYHIVE__: boolean;
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
+
 let cachename = "default";
 let debugging = false;
 const workerInstanceId = crypto.randomUUID();
@@ -64,6 +73,8 @@ const slog = SwLogger.open().then((logger) => {
   return logger;
 });
 
+const siteName = typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
+
 const cacheableStatuses = [200, 203, 204, 206];
 
 function log(...args: any[]) {
@@ -95,11 +106,16 @@ self.addEventListener("activate", async () => {
   clients.claim();
 });
 
-let repoPromise: Promise<Repo> | null = null;
+let repoHivePromise: Promise<{
+  repo: Repo;
+  hive?: AutomergeRepoKeyhiveRust;
+}> | null = null;
 
-function getRepo() {
-  if (!repoPromise) {
-    const p: Promise<Repo> = (async () => {
+const useKeyhive = typeof __KEYHIVE__ !== "undefined" && __KEYHIVE__;
+
+function getRepoHive() {
+  if (!repoHivePromise) {
+    repoHivePromise = (async () => {
       const logger = await slog;
       logger.info("getRepo: starting");
 
@@ -112,51 +128,130 @@ function getRepo() {
       await initializeWasm(new Uint8Array(amWasmBuf));
       logger.info("wasm initialized");
 
-      const signer = await WebCryptoSigner.setup();
+      if (!useKeyhive) {
+        const signer = await WebCryptoSigner.setup();
+
+        const repo = new Repo({
+          storage: new IndexedDBStorageAdapter(),
+          signer,
+          peerId: ("service-worker-" +
+            Math.random().toString(36).slice(2)) as import("@automerge/automerge-repo/slim").PeerId,
+          async sharePolicy(peerId) {
+            return peerId.includes("storage-server");
+          },
+          enableRemoteHeadsGossiping: true,
+          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+        });
+
+        (self as any).repo = repo;
+        logger.info("repo constructed (no keyhive), waiting for network subsystem");
+
+        repo.networkSubsystem.whenReady().then(() => {
+          logger.info("repo network subsystem ready");
+        });
+
+        return { repo };
+      }
+
+      initKeyhiveWasm();
+      const keyhiveStorage = new IndexedDBStorageAdapter(
+        `${siteName}-keyhive`
+      );
+
+      // Keyhive bootstrap needs to run before Repo creation but
+      // the adapter needs the subduction instance from the Repo.
+      // A deferred promise breaks the cycle.
+      let resolveRepoSubduction!: (s: any) => void;
+      const repoSubductionPromise = new Promise((resolve) => {
+        resolveRepoSubduction = resolve;
+      });
+
+      // We use the Rust variant of Keyhive initialization to talk
+      // to the Rust keyhive-enabled subduction sync server.
+      const hive = await initializeAutomergeRepoKeyhiveRust({
+        storage: keyhiveStorage,
+        peerIdSuffix:
+          `${siteName}-worker` + Math.random().toString(36).slice(2),
+        subduction: repoSubductionPromise as any,
+        automaticArchiveIngestion: true,
+        cachingMode: "periodic",
+      });
+
+      const signer = await hive.constructSubductionSigner();
 
       const repo = new Repo({
         storage: new IndexedDBStorageAdapter(),
         signer,
-        peerId: ("service-worker-" +
-          (Math.random() * 10000).toString(36).slice(2)) as PeerId,
-        async sharePolicy(peerId) {
-          return peerId.includes("storage-server");
-        },
-        enableRemoteHeadsGossiping: true,
         subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
-        network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
+        peerId: hive.peerId,
+        enableRemoteHeadsGossiping: true,
+        idFactory: hive.idFactory,
+        //network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
+      repo.subduction.then(resolveRepoSubduction);
+
+      hive.linkRepo(repo);
+
       (self as any).repo = repo;
+      (self as any).hive = hive;
       logger.info("repo constructed, waiting for network subsystem");
 
-      // Don't block getRepo() on whenReady() — the network subsystem starts
+      // Don't block getRepoHive() on whenReady() — the network subsystem starts
       // with only the subduction adapter, and the MessageChannel adapter is
-      // added later via connectPort (which awaits getRepo). Blocking here
+      // added later via connectPort (which awaits getRepoHive). Blocking here
       // would deadlock that path and starve the fetch handler.
       repo.networkSubsystem.whenReady().then(() => {
         logger.info("repo network subsystem ready");
       });
 
-      return repo;
+      hive.networkAdapter.whenReady().then(() => {
+        (hive.networkAdapter as any).syncKeyhive();
+      });
+
+      return { hive, repo };
     })();
     // If construction fails (e.g. wasm fetch errors out because the SW was
     // terminated mid-flight), don't permanently cache the rejection — clear
     // the slot so the next caller can retry from scratch.
-    p.catch(() => {
-      if (repoPromise === p) repoPromise = null;
+    repoHivePromise.catch(() => {
+      repoHivePromise = null;
     });
-    repoPromise = p;
   }
-  return repoPromise;
+  return repoHivePromise;
 }
 
 // Connect client MessagePorts to the repo for sync
 async function connectPort(port: MessagePort) {
-  const repo = await getRepo();
-  repo.networkSubsystem.addNetworkAdapter(
-    new MessageChannelNetworkAdapter(port, { useWeakRef: true })
-  );
+  const { hive, repo } = await getRepoHive();
+  const networkAdapter = new MessageChannelNetworkAdapter(port, { useWeakRef: true });
+
+  if (!hive) {
+    repo.networkSubsystem.addNetworkAdapter(networkAdapter);
+    return;
+  }
+
+  const onlyShareWithHardcodedServerPeerId = false;
+  const periodicallyRequestKeyhiveSync = false;
+  const keyhiveNetworkAdapter = hive.createKeyhiveNetworkAdapter(networkAdapter, onlyShareWithHardcodedServerPeerId, periodicallyRequestKeyhiveSync, 2000);
+
+  keyhiveNetworkAdapter.on("message", async (msg: any) => {
+    if ((msg.type === "sync" || msg.type === "request") && msg.documentId) {
+      const handle = repo.handles[msg.documentId];
+      if (!handle || handle.state === "unavailable") {
+        const url = `automerge:${msg.documentId}` as AutomergeUrl;
+        repo.findWithProgress(url);
+        repo.shareConfigChanged();
+      }
+    }
+  });
+
+  (keyhiveNetworkAdapter as any).on("ingest-remote", () => {
+    (hive.networkAdapter as any).syncKeyhive?.();
+    repo.shareConfigChanged();
+  });
+
+  repo.networkSubsystem.addNetworkAdapter(keyhiveNetworkAdapter);
 }
 
 self.addEventListener("message", async (event) => {
@@ -219,7 +314,7 @@ self.addEventListener("message", async (event) => {
 // ── Automerge URL resolution ───────────────────────────────────────────
 
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
-  const repo = await getRepo();
+  const { repo } = await getRepoHive();
   const href = automergeURL.href;
   const [maybeAutomergeUrl, ...path] = href.split("/");
 
@@ -362,8 +457,13 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           error instanceof Error
             ? `${error.message}\n\n${error.stack}`
             : String(error);
-        console.error(
-          `service worker error resolving ${request.url}${specialURL ? ` (for: ${specialURL})` : ""}.\n${message}`
+        const logger = await slog;
+        logger.error(
+          `service worker error resolving ${request.url}${specialURL ? ` (for: ${specialURL})` : ""}`,
+          {
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          }
         );
         if (match) return match;
 
