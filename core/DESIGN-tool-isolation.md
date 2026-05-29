@@ -449,7 +449,21 @@ I think we should move to a better approach than `isolated-patchwork-view` in on
 
 - tool-specific resource requests/white-listing for external URLs (section 7)
 
-## 19. Summary of Security Layers
+## 19. Known Attack Vectors
+
+These are attacks that the current architecture does not fully prevent.
+
+1. **Unauthorized access and exfiltration via tool entry module (section 12).** Because the tool's entry module executes in the host context with full privileges, a malicious tool can access any document in the host repo and exfiltrate data over the network — bypassing every isolation layer described in this document.
+
+2. **Unauthorized document access via `suggestedImportUrl` (section 13).** A tool can extract `suggestedImportUrl` values from any document it has access to, discovering other tools' source code document IDs. The sync allowlist (section 5b) blocks the iframe from syncing these documents directly, but the tool can write a discovered URL into the body of a document it controls, causing it to become allowlisted on a future open (since the allowlist includes URLs found in document content).
+
+3. **Exfiltration via hard-coded URLs in tool source.** A malicious tool can hard-code an automerge URL for a document controlled by the attacker. Even though the sync allowlist blocks unknown documents, the tool can write the hard-coded URL into a document it has legitimate access to. If the allowlist dynamically updates based on document content, the attacker's document becomes allowlisted immediately; otherwise, it becomes allowlisted on the next open. Once allowlisted, the tool writes stolen data into the attacker's document, which syncs to a remote peer the attacker controls — completing the exfiltration.
+
+4. **User opens account document in a malicious tool.** Nothing prevents the user from opening the account document in a malicious tool. Once opened, the tool receives full read/write access through the normal allowlist flow (section 5b). The account document may contain sensitive configuration, identities, or references to other documents. This is technically authorized access (the user chose to open it), but the consequences could be severe. Open question: is this within our threat model, or do we consider user-initiated access to sensitive documents an accepted risk? See section 14 for related discussion.
+
+5. **User opens module settings document in a malicious tool.** Similarly, nothing prevents the user from opening the module settings document in a malicious tool, granting it read/write access. This document contains tool configuration and metadata that could be used to manipulate the user's environment. Same open question: authorized access with dangerous consequences — do we need to protect against this? See section 14 for related discussion.
+
+## 20. Summary of Security Layers
 
 | Layer                          | Addresses                                                       | Current gaps                                                                          |
 | ------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -466,9 +480,10 @@ I think we should move to a better approach than `isolated-patchwork-view` in on
 
 1. **Plugin discovery in host context** (section 12) — tool entry modules execute with full host privileges before any sandbox is involved. Most severe gap.
 2. **`suggestedImportUrl` leak** (section 13) — tool source document IDs exposed through document content, bypassing package URL mapping. Mitigated by the sync allowlist (section 5b) which blocks the iframe from syncing non-allowlisted documents, but the information leak itself remains.
-3. **Current tool compatibility** (section 13) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework; folder tool uses hash-based navigation that doesn't work in the iframe.
-4. **Provider security** (section 14) — providers can request/respond with anything; security implications not yet analyzed.
-5. **Element architecture** (section 15) — `isolated-patchwork-view` is a pragmatic starting point; migration to `patchwork-box` or `withIsolation()` is planned.
+3. **Current tool compatibility** (section 14) — tldraw CDN assets blocked by CSP; account-doc-dependent tools need rework; folder tool uses hash-based navigation that doesn't work in the iframe.
+4. **Provider security** (section 16) — providers can request/respond with anything; security implications not yet analyzed.
+5. **Element architecture** (section 17) — `isolated-patchwork-view` is a pragmatic starting point; migration to `patchwork-box` or `withIsolation()` is planned.
 6. **Tool-specific resource whitelisting** (section 7) — no mechanism for per-tool external URL exceptions (e.g., tldraw CDN).
+7. **Known attack vectors** (section 19) — see section 19 for attacks the architecture does not fully prevent.
 
 The architecture provides meaningful isolation for tool rendering code. A tool running inside the sandbox cannot access the host's DOM, storage, or service workers; cannot make network requests to external servers; cannot see other tools' source code document IDs through the module-loading path; cannot sync documents it wasn't given access to; and uses the same APIs as before without modification. Full security requires addressing the open problems — especially host-context plugin execution, which bypasses the entire isolation architecture.
