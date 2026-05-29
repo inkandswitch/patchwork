@@ -38,17 +38,40 @@ HOST PAGE                                SANDBOXED IFRAME (srcdoc, opaque origin
   |  - fetchResource(url)                 |
   |  - onMounted(url, toolId)             +- sync APIs now work locally:
   |  - onOpenDocument(url, ...)           |  getFallbackTool(), getRegistry().get()
-  |                                       |  filter(), loadAll(), etc.
-  +- PackageUrlMapper:                     |
-  |  - toPackageUrl: automerge → name      +- registerPatchworkViewElement({ repo })
-  |  - toAutomergeUrl: name → automerge   |  no special callbacks needed
-  |  - rewriteAutomergeUrls in source     |
-  |                                       +- patchwork-view resolves tool via
-  +- Pushes registry updates to iframe    |  local pre-populated registry,
-  |  via iframeStub.onPluginRegistered()  |  triggers load() → importShim → RPC
-  |  when ModuleWatcher re-registers      |
-  |                                       +- tool renders, events forwarded
-  +- ResourcePolicy gates RPC methods        to host via capnweb RPC calls
+  |  - requestDocumentAccess(url)         |  filter(), loadAll(), etc.
+  |                                       |
+  +- PackageUrlMapper:                     +- registerPatchworkViewElement({ repo })
+  |  - toPackageUrl: automerge → name     |  no special callbacks needed
+  |  - toAutomergeUrl: name → automerge   |
+  |  - rewriteAutomergeUrls in source     +- patchwork-view resolves tool via
+  |                                       |  local pre-populated registry,
+  +- Pushes registry updates to iframe    |  triggers load() → importShim → RPC
+  |  via iframeStub.onPluginRegistered()  |
+  |  when ModuleWatcher re-registers      +- tool renders, events forwarded
+  |                                          to host via capnweb RPC calls
+  +- ResourcePolicy gates RPC methods
+  |
+  +- Document sync isolation:
+  |
+  |  [host repo] ←MessagePort→ [intermediary repo] ←MessagePort→ [iframe repo]
+  |                                   │
+  |                       shareConfig.access(peerId, docId)
+  |                       → denylist.has(docId) ? BLOCK
+  |                       → allowlist.has(docId) ? ALLOW
+  |                       → BLOCK
+  |
+  |  [local-check repo] (IndexedDB only, no network)
+  |   └── isDocumentLocal(url) → true/false
+  |
+  +- SyncDenylist: account doc, module settings, tool source,
+  |  persistent denylist doc (populated at init, checked dynamically)
+  |
+  +- SyncAllowlist: root doc + URLs from doc content
+  |  (gated by trust hierarchy: denylist → persistent denylist →
+  |   sensitive-type check → root folder → local existence → user prompt)
+  |
+  +- PersistentDenylist: user-denied URLs stored on a dedicated
+     document (denylistDocUrl on account doc), survives across sessions
 ```
 
 ### Key files
@@ -151,7 +174,8 @@ Host-iframe communication uses [capnweb](https://github.com/cloudflare/capnweb),
 - `loadModuleSource(url)` — resolves package URLs, handles folder URLs via re-export stubs, rewrites automerge URL strings
 - `fetchResource(url)` — resolves package URLs, returns content-type + body
 - `onMounted(url, toolId)` — iframe reports successful tool mount
-- `onOpenDocument(url, toolId?, title?, docType?)` — iframe requests navigation
+- `onOpenDocument(url, toolId?, title?, docType?)` — iframe requests navigation (gated by trust hierarchy)
+- `requestDocumentAccess(url)` — iframe requests sync access to a document without navigating (gated by trust hierarchy)
 
 **IframeRpcContract** (iframe exposes to host):
 - `onPluginRegistered(meta: PluginMetadata)` — host pushes registry updates
@@ -196,6 +220,72 @@ form-action 'none'
 2. **capnweb RPC** — gated by ResourcePolicy; `pkg:` URLs always allowed
 3. **Fetch proxy** — GET/HEAD only, no request body
 4. **CSP** — browser-enforced network isolation
+5. **Sync denylist** — blocks sensitive documents unconditionally (account, module settings, tool source, persistent denylist)
+6. **Sync allowlist** — gates document sync via intermediary repo; URLs from doc content pass through trust hierarchy
+7. **Local-existence check** — unknown documents (not in local IndexedDB or root folder) require two-step user approval
+8. **Persistent denylist** — user-denied documents blocked across sessions
+
+## Document sync isolation
+
+The iframe's ephemeral Repo cannot access the host's IndexedDB (opaque origin). Document sync flows through an **intermediary Repo** that enforces a denylist and allowlist. See DESIGN doc sections 5b, 5c, and 5d.
+
+### Repo topology
+
+Four Repo instances are involved per iframe session:
+
+1. **Host repo** — the main application Repo with IndexedDB storage and network adapters. Trusted.
+2. **Intermediary repo** — ephemeral (no storage), sits between host and iframe. Enforces `shareConfig.access()` and `shareConfig.announce()` which check the denylist then the allowlist.
+3. **Iframe repo** — ephemeral, inside the sandbox. Connected to the intermediary via MessagePort. Tools use this repo's standard `find()`/`create()` APIs.
+4. **Local-check repo** — storage-only (IndexedDB, no network adapters). Used on the host side to check whether a document exists locally without triggering network sync. Queries resolve quickly to `ready` (exists) or `unavailable` (not found).
+
+### Sync denylist (`SyncDenylist`)
+
+Unconditionally blocks sensitive documents from syncing to the iframe. Takes precedence over the allowlist.
+
+**Statically populated at init:**
+- Account document (`window.accountDocHandle.url`)
+- Persistent denylist document (`accountDoc.denylistDocUrl`)
+- Module settings documents (from `ModuleWatcher.urls`)
+- Tool/package source code: walks `ModuleSettingsDoc.modules[]` → `BranchesDoc` branches → `FolderDoc` → child file documents
+- All plugin `importUrl`s from the registry (catch-all)
+
+**Dynamically checked at runtime** via `checkAndDenylistIfSensitive()`: if a URL's document has `@patchwork.type` of `"branches"`, `"patchwork:module-settings"`, or `"patchwork:denylist"`, it is denylisted along with its transitive children.
+
+### Sync allowlist (`SyncAllowlist`)
+
+Controls which non-denylisted documents the iframe can sync.
+
+**At init:** the root document URL is always allowlisted. URLs discovered in the root document's content (via `collectAutomergeUrls`, skipping the `@patchwork` key) are added through the trust hierarchy.
+
+**At runtime:** the root document is watched for changes; new URLs go through the same trust hierarchy. Documents created inside the iframe via `repo.create()` are auto-allowlisted (they generate fresh IDs that can't collide with existing documents).
+
+**User-initiated access:** `onOpenDocument` and `requestDocumentAccess` run the trust hierarchy. If the document passes, it is allowlisted. If unknown, the user is prompted.
+
+### Trust hierarchy
+
+Every URL passes through this chain before being allowlisted, whether at init time, on document content changes, or via RPC:
+
+1. **Session denylist** → block if denylisted
+2. **Persistent denylist** → block if user previously denied
+3. **Dynamic sensitive-type check** (`checkAndDenylistIfSensitive`) → denylist and block if branches/module-settings/denylist type
+4. **Already allowlisted** → allow
+5. **Root folder membership** (`isInRootFolder`) → allowlist and allow if the URL is a direct child of `accountDoc.rootFolderUrl`
+6. **Local existence** (`isDocumentLocal`) → allowlist and allow if the document exists in IndexedDB (user has seen it before)
+7. **Unknown** → two-step user approval:
+   - First prompt: "This document has never been seen on this device. Allow syncing for preview?"
+   - If denied: add to persistent denylist
+   - If approved: sync the document, then show a preview (title, type)
+   - Second prompt: "Allow this tool to access this document?"
+   - If denied: add to persistent denylist
+   - If approved: allowlist
+
+### Persistent denylist (`PersistentDenylist`)
+
+User denials are stored in a dedicated `DenylistDoc` (`@patchwork.type: "patchwork:denylist"`) with a `deniedDocuments: AutomergeUrl[]` field. The doc URL is stored on the account document as `denylistDocUrl`. The denylist document is lazily created on first denial.
+
+The persistent denylist document is itself session-denylisted so the iframe cannot read or modify it.
+
+An in-memory `Set<string>` cache is populated from the document at init for fast lookups.
 
 ## Tool compatibility requirements
 
@@ -219,19 +309,19 @@ DevTools source map errors (`connect-src` violation) are harmless. No fix needed
 
 ## Open problems
 
-See DESIGN doc sections 12–16 for the full list and analysis of open problems. Key items relevant to this architecture:
+See DESIGN doc sections 12–17 for the full list and analysis of open problems. Key items relevant to this architecture:
 
 ### Plugin discovery in host context
 
 Plugin entry modules currently execute in the host page context (`import()` in `ModuleWatcher`), bypassing the iframe sandbox entirely. This is the most severe security gap. See DESIGN doc section 12.
 
-### Document access via repo
+### `suggestedImportUrl` information leak
 
-The iframe's ephemeral Repo uses `sharePolicy: () => true` and the host repo responds to sync requests for any document. A tool that knows a document ID can sync it. The severity depends on how the tool obtains document IDs — see DESIGN doc section 5 for detailed analysis of the four discovery vectors.
+Most documents contain a `@patchwork.suggestedImportUrl` field with the raw automerge URL of the tool that created them, bypassing the package URL mapping. **Mitigated for access:** tool source documents are denylisted, so even if a tool discovers these IDs it cannot sync them. The information leak itself remains (a tool can observe which tool created a document). See DESIGN doc section 13.
 
-### `suggestedImportUrl` leaks tool source document IDs
+### Plugin-global document exfiltration
 
-Most documents contain a `@patchwork.suggestedImportUrl` field with the raw automerge URL of the tool that created them, bypassing the package URL mapping. See DESIGN doc section 13.
+A plugin can hard-code a "dead drop" URL in source code or a datatype's `init()` function. **Partially mitigated:** the local-existence check detects that dead-drop documents have never been seen on this device and prompts the user with two-step approval. User denials are persisted. See DESIGN doc section 5d.
 
 ### Tool-specific resource whitelisting
 
@@ -239,11 +329,11 @@ The current `RestrictivePolicy` blocks all cross-origin URLs. Some tools need ex
 
 ### Integrating providers
 
-Providers have been integrated via capnweb RPC but can request/respond with anything. Security implications not yet analyzed. See DESIGN doc section 14.
+Providers have been integrated via capnweb RPC but can request/respond with anything. Security implications not yet analyzed. See DESIGN doc section 16.
 
 ### Element architecture
 
-`isolated-patchwork-view` is a pragmatic POC. Migration to `patchwork-box` or `withIsolation()` is planned. See DESIGN doc section 15.
+`isolated-patchwork-view` is a pragmatic POC. Migration to `patchwork-box` or `withIsolation()` is planned. See DESIGN doc section 17.
 
 ### CodeMirror extension styles on re-mount
 
