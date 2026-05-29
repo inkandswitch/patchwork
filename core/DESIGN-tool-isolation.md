@@ -403,11 +403,13 @@ A malicious tool can extract `suggestedImportUrl` values to discover other tools
 
 Combined with unrestricted repo access (section 5), this enables tool-on-tool attacks: a malicious tool reads `suggestedImportUrl` from documents, uses `repo.find()` to access the tool source document, and calls `handle.change()` to inject malicious code. Every user who subsequently loads the compromised tool gets attacked.
 
+Even with restricted white-listed access to the repo, since we whitelist based on the contents of the doc, even if we skip everything in `@patchwork`, the tool could read the URL and write it into the main part of the doc, thereby gaining access.
+
 ### Current state
 
-Possible directions include removing the `suggestedImportUrl` field entirely (using the plugin registry to resolve which tool handles a document type, rather than embedding the URL in document content) or restricting what documents can be synced through the repo (section 5), which would limit a tool's ability to read `suggestedImportUrl` from documents it wasn't given.
+Because a tool that can read the `suggestedImportUrl` field can always write it into the main part of the doc or into a new doc thereby gaining access either immediately or on future opens, the only solution I see is to remove it entirely (using the plugin registry to resolve which tool handles a document type, rather than embedding the URL in document content).
 
-## 13. Open Problem: issues with current tools
+## 14. Open Problem: issues with current tools
 
 A quick list of issues to address with current tools
 
@@ -421,13 +423,13 @@ A quick list of issues to address with current tools
 - codemirror-base: there's an issue with the styles on remount. If I open a doc, it looks right. If I open a folder then it looks wrong and stays wrong until page refresh. Claude: "When a CodeMirror document is opened, navigated away from (e.g., through a folder), and reopened, the codemirror-markdown theme styles (gutter hiding, content padding) may not re-apply correctly inside the iframe. The extensions load successfully on re-mount, but CodeMirror's internal style injection may not re-inject `<style>` tags that were removed during teardown. This does not affect the host-side patchwork-view. Investigation needed into CodeMirror's style lifecycle in sandboxed iframes."
 - folder tool uses `<a href="#doc=...">` links for navigation rather than dispatching `patchwork:open-document` events. Inside the isolated iframe, these hash links don't work — the `onHashChange` RPC workaround has been removed because it bypassed the sync allowlist (section 5b) and accepted raw unstructured input. The folder tool should be migrated to dispatch `patchwork:open-document` events instead, which go through the structured `onOpenDocument` RPC path and its allowlist checks.
 
-## 14. Open Problem: integrating providers
+## 15. Open Problem: integrating providers
 
 I got this working by adding the provider request/response to the capnweb RPC. It required some minor adjustments to this POC because of the changes to patchwork-view.
 
 One big security question to think about - providers can request/respond with anything. In the existing example providers this is mostly tied to a specific document url, but it doesn't have to be. We need to think this through carefully, which I haven't done yet.
 
-## 15. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
+## 16. Open Problem: from `isolated-patchwork-view` -> `patchwork-box` or `withIsolation()`
 
 This POC was implemented by creating a drop-in replacement for patchwork-view that provides all of the isolation and mechanics described above, so it has the same element shape as the old patchwork-view. I took this approach because it was simple to test while working through the challenges above.
 
@@ -437,22 +439,22 @@ Paul has proposed moving from `<patchwork-view>` to functions like `(element: HT
 
 I think we should move to a better approach than `isolated-patchwork-view` in one of these directions, but for pragmatic reasons I propose merging the isolation work with `isolated-patchwork-view` and revisiting this afterwards as a distinct task.
 
-## 16. Open Problems: List of open problems mentioned in previous sections:
+## 17. Open Problems: List of open problems mentioned in previous sections:
 
 - tool-specific resource requests/white-listing for external URLs (section 7)
 
 ## 18. Summary of Security Layers
 
-| Layer                          | Addresses                                                       | Current gaps                                        |
-| ------------------------------ | --------------------------------------------------------------- | --------------------------------------------------- |
-| Iframe sandbox (opaque origin) | Unauthorized access to DOM, storage, cookies, service workers   | None — enforced by the browser                      |
-| Content Security Policy        | Network exfiltration, Workers, nested iframes                   | `img-src`/`style-src` allow host-origin probing     |
-| Fetch proxy + ResourcePolicy   | Cross-origin exfiltration via RPC, automerge URL probing        | Browser-initiated loads bypass proxy                |
-| Sync allowlist (intermediary)  | Unauthorized document access via repo sync                      | Only folder children auto-allowlisted; other container types need support |
+| Layer                          | Addresses                                                       | Current gaps                                                                          |
+| ------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Iframe sandbox (opaque origin) | Unauthorized access to DOM, storage, cookies, service workers   | None — enforced by the browser                                                        |
+| Content Security Policy        | Network exfiltration, Workers, nested iframes                   | `img-src`/`style-src` allow host-origin probing                                       |
+| Fetch proxy + ResourcePolicy   | Cross-origin exfiltration via RPC, automerge URL probing        | Browser-initiated loads bypass proxy                                                  |
+| Sync allowlist (intermediary)  | Unauthorized document access via repo sync                      | Only folder children auto-allowlisted; other container types need support             |
 | Opaque URL mapping             | Tool source code document IDs hidden from iframe                | `suggestedImportUrl` leaks IDs through document content (mitigated by sync allowlist) |
-| capnweb RPC + capabilities     | Scoped access — iframe can only call explicitly exposed methods | —                                                   |
-| Host CSS injection             | Tool rendering compatibility                                    | Coupled to host CSS build                           |
-| Registry pre-population        | Sync API compatibility with package URLs                        | Metadata leak (all plugins visible)                 |
+| capnweb RPC + capabilities     | Scoped access — iframe can only call explicitly exposed methods | —                                                                                     |
+| Host CSS injection             | Tool rendering compatibility                                    | Coupled to host CSS build                                                             |
+| Registry pre-population        | Sync API compatibility with package URLs                        | Metadata leak (all plugins visible)                                                   |
 
 ### Open problems
 
