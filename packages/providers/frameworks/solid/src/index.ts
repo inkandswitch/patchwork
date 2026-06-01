@@ -1,7 +1,8 @@
-import { createSignal, onMount, type Accessor } from "solid-js";
+import { createSignal, onCleanup, onMount, type Accessor } from "solid-js";
 import { createDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import type { Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
+import type { EventArgs } from "@inkandswitch/patchwork-providers";
 
 /**
  * Generic reactive request. Dispatches a `patchwork:request` of `type` on
@@ -42,4 +43,28 @@ export function requestDoc<T extends object>(
   const handle = request<DocHandle<T>>(element, type, args);
   const doc = createDocumentProjection<T>(handle);
   return [doc, handle];
+}
+
+/**
+ * Generic reactive subscription. Opens a `patchwork:subscribe` of `type` on
+ * mount and returns an accessor that updates on every value the provider
+ * pushes. The subscription is torn down on cleanup. `T` is the streamed value
+ * type (e.g. plain data, a `DocHandle`).
+ */
+export function subscribe<T>(
+  element: HTMLElement,
+  type: string,
+  args?: EventArgs
+): Accessor<T | undefined> {
+  const [value, setValue] = createSignal<T | undefined>(undefined);
+  onMount(() => {
+    const unsubscribe = Providers.subscribe<T>(element, type, args ?? {}, (v) => {
+      if (v == null) return;
+      // Wrap in a thunk so Solid does not treat values with call-like
+      // methods (e.g. DocHandle, Repo) as setter functions.
+      setValue(() => v);
+    });
+    onCleanup(unsubscribe);
+  });
+  return value;
 }

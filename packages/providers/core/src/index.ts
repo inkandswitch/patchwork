@@ -12,10 +12,34 @@ export interface ResponseEventDetail<T = unknown> {
 export type RequestEvent = CustomEvent<RequestEventDetail>;
 export type ResponseEvent<T = unknown> = CustomEvent<ResponseEventDetail<T>>;
 
+export type EventArgs =
+  | string
+  | number
+  | boolean
+  | null
+  | EventArgs[]
+  | { [key: string]: EventArgs };
+
+export type SubscribeEventDetail = {
+  type: string;
+  args?: EventArgs;
+  port: MessagePort;
+};
+
+export type SubscribeEvent = CustomEvent<SubscribeEventDetail>;
+
+type Listener<T> = (value: T) => void;
+type Unsubscribe = () => void;
+type Producer<T> = (respond: Listener<T>) => Unsubscribe | void;
+
+type ChangeMessage<T> = { type: "change"; value: T };
+type UnsubscribeMessage = { type: "unsubscribe" };
+
 declare global {
   interface ElementEventMap {
     "patchwork:request": RequestEvent;
     "patchwork:response": ResponseEvent;
+    "patchwork:subscribe": SubscribeEvent;
   }
 }
 
@@ -92,6 +116,129 @@ export function provide<T>(
   } else {
     respond(value);
   }
+}
+
+/**
+ * Open a streaming subscription. Dispatches a `patchwork:subscribe` carrying
+ * a fresh `MessageChannel` port; the answering provider pushes values back
+ * over that channel for as long as the subscription is live. `listener` is
+ * invoked once per `next` message (the first delivery is always async because
+ * `MessagePort.postMessage` queues a task).
+ *
+ * Like `request`, the event is dispatched from the nearest enclosing
+ * `<patchwork-view>` so callers can pass any node inside a provider subtree.
+ * If no provider claims it, it bubbles to `<fallback-provider>` and settles
+ * with `null`.
+ *
+ * Returns an unsubscribe function. Calling it tells the provider to tear down
+ * (via an `unsubscribe` message) and closes the consumer's port; any values
+ * the provider emits after that are dropped.
+ */
+export function subscribe<T = unknown>(
+  element: HTMLElement,
+  type: string,
+  listener: Listener<T>
+): Unsubscribe;
+export function subscribe<T = unknown>(
+  element: HTMLElement,
+  type: string,
+  args: EventArgs,
+  listener: Listener<T>
+): Unsubscribe;
+export function subscribe<T = unknown>(
+  element: HTMLElement,
+  type: string,
+  argsOrListener: EventArgs | Listener<T>,
+  maybeListener?: Listener<T>
+): Unsubscribe {
+  const [args, listener] =
+    typeof argsOrListener === "function"
+      ? [undefined, argsOrListener]
+      : [argsOrListener, maybeListener!];
+
+  const view = element.closest<HTMLElement>("patchwork-view");
+  const dispatchEl = view ?? element;
+
+  const channel = new MessageChannel();
+  const port = channel.port2;
+
+  const controller = new AbortController();
+  const { signal } = controller;
+  port.addEventListener(
+    "message",
+    (event: MessageEvent<ChangeMessage<T>>) => {
+      if (event.data?.type === "change") listener(event.data.value);
+    },
+    { signal }
+  );
+  // addEventListener (unlike assigning onmessage) does not implicitly start
+  // the port, so message delivery has to be kicked off explicitly.
+  port.start();
+
+  const detail: SubscribeEventDetail = {
+    type,
+    ...(args !== undefined ? { args } : {}),
+    port: channel.port1,
+  };
+
+  dispatchEl.dispatchEvent(
+    new CustomEvent<SubscribeEventDetail>("patchwork:subscribe", {
+      detail,
+      bubbles: true,
+      composed: true,
+    })
+  );
+
+  return () => {
+    if (signal.aborted) return;
+    controller.abort();
+    try {
+      port.postMessage({ type: "unsubscribe" });
+    } catch {
+      // Port already closed; nothing to tell the provider.
+    }
+    port.close();
+  };
+}
+
+/**
+ * Answer a `patchwork:subscribe`. The `producer` receives a `respond`
+ * callback it can call any number of times to push values to the consumer,
+ * and may return a teardown that runs when the consumer unsubscribes. Stops
+ * propagation so ancestor providers don't double-answer. Values emitted after
+ * the consumer unsubscribes are dropped.
+ */
+export function accept<T>(event: SubscribeEvent, producer: Producer<T>): void {
+  event.stopPropagation();
+  const port = event.detail.port;
+
+  let alive = true;
+  const respond: Listener<T> = (value) => {
+    if (!alive) return;
+    port.postMessage({ type: "change", value });
+  };
+
+  let teardown: Unsubscribe | void;
+  try {
+    teardown = producer(respond);
+  } catch (err) {
+    console.error("[patchwork-providers] subscribe producer threw:", err);
+  }
+
+  const stop = () => {
+    if (!alive) return;
+    alive = false;
+    try {
+      teardown?.();
+    } catch (err) {
+      console.error("[patchwork-providers] subscribe teardown threw:", err);
+    }
+    port.close();
+  };
+
+  port.onmessage = (event: MessageEvent<UnsubscribeMessage>) => {
+    if (event.data?.type === "unsubscribe") stop();
+  };
 }
 
 export {
