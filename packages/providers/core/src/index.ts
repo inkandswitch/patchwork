@@ -1,10 +1,7 @@
-import { isValidAutomergeUrl, type AutomergeUrl } from "@automerge/automerge-repo";
-
 export interface RequestEventDetail {
   id: string;
   type: string;
   args?: Record<string, unknown>;
-  url?: AutomergeUrl;
 }
 
 export interface ResponseEventDetail<T = unknown> {
@@ -22,32 +19,43 @@ declare global {
   }
 }
 
+/**
+ * Dispatch a `patchwork:request` and resolve with the provider's answer.
+ *
+ * `element` only needs to be *somewhere* inside a provider subtree — the
+ * request resolves its context by walking up to the nearest
+ * `<patchwork-view>` and dispatches (and listens for the response) from
+ * there. When there is no enclosing view, it dispatches from `element`
+ * itself; the event still bubbles and settles at the
+ * `<fallback-provider>` if unanswered.
+ *
+ * Any target document url must be passed explicitly via `args.url`; this
+ * helper no longer reads `doc-url` off the enclosing view.
+ */
 export function request<T = unknown>(
   element: HTMLElement,
   type: string,
   args?: Record<string, unknown>
 ): Promise<T | null> {
   const id = crypto.randomUUID();
+  const view = element.closest<HTMLElement>("patchwork-view");
+  const dispatchEl = view ?? element;
 
   return new Promise((resolve) => {
     const onResponse = (event: ResponseEvent) => {
       if (event.detail.id !== id) return;
-      element.removeEventListener("patchwork:response", onResponse);
+      dispatchEl.removeEventListener("patchwork:response", onResponse);
       resolve(event.detail.value as T | null);
     };
-    element.addEventListener("patchwork:response", onResponse);
-
-    const rawUrl = element.getAttribute("doc-url");
-    const url = rawUrl && isValidAutomergeUrl(rawUrl) ? rawUrl : undefined;
+    dispatchEl.addEventListener("patchwork:response", onResponse);
 
     const detail: RequestEventDetail = {
       id,
       type,
       ...(args ? { args } : {}),
-      ...(url ? { url } : {}),
     };
 
-    element.dispatchEvent(
+    dispatchEl.dispatchEvent(
       new CustomEvent<RequestEventDetail>("patchwork:request", {
         detail,
         bubbles: true,

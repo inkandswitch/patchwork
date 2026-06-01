@@ -17,7 +17,7 @@ export interface RepoProviderElement extends HTMLElement {
  * types via the request/respond protocol:
  *
  * - `patchwork:repo` → resolves with the element's `.repo`
- * - `patchwork:dochandle` → resolves with `repo.find(detail.url)`
+ * - `patchwork:dochandle` → resolves with `repo.find(detail.args.url)`
  *
  * Pass a `repo` to install it as the default for all instances of the
  * element; individual instances can still override via `.repo = ...`.
@@ -39,7 +39,7 @@ export function registerRepoProviderElement(
           return;
         }
         if (type === "patchwork:dochandle") {
-          const url = event.detail.url as AutomergeUrl | undefined;
+          const url = event.detail.args?.url as AutomergeUrl | undefined;
           if (url) {
             provide<DocHandle<unknown>>(event, this.repo.find<unknown>(url));
           } else {
