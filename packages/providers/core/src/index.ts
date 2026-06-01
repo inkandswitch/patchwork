@@ -1,16 +1,4 @@
-export interface RequestEventDetail {
-  id: string;
-  type: string;
-  args?: Record<string, unknown>;
-}
-
-export interface ResponseEventDetail<T = unknown> {
-  id: string;
-  value: T | null;
-}
-
-export type RequestEvent = CustomEvent<RequestEventDetail>;
-export type ResponseEvent<T = unknown> = CustomEvent<ResponseEventDetail<T>>;
+import type { Repo } from "@automerge/automerge-repo";
 
 type JSONValue =
   | string
@@ -44,85 +32,12 @@ type UnsubscribeMessage = { type: "unsubscribe" };
 
 declare global {
   interface ElementEventMap {
-    "patchwork:request": RequestEvent;
-    "patchwork:response": ResponseEvent;
     "patchwork:subscribe": SubscribeEvent;
   }
-}
-
-/**
- * Dispatch a `patchwork:request` and resolve with the provider's answer.
- *
- * `element` only needs to be *somewhere* inside a provider subtree — the
- * request resolves its context by walking up to the nearest
- * `<patchwork-view>` and dispatches (and listens for the response) from
- * there. When there is no enclosing view, it dispatches from `element`
- * itself; the event still bubbles and settles at the
- * `<fallback-provider>` if unanswered.
- *
- * Any target document url must be passed explicitly via `args.url`; this
- * helper no longer reads `doc-url` off the enclosing view.
- */
-export function request<T = unknown>(
-  element: HTMLElement,
-  type: string,
-  args?: Record<string, unknown>
-): Promise<T | null> {
-  const id = crypto.randomUUID();
-  const view = element.closest<HTMLElement>("patchwork-view");
-  const dispatchEl = view ?? element;
-
-  return new Promise((resolve) => {
-    const onResponse = (event: ResponseEvent) => {
-      if (event.detail.id !== id) return;
-      dispatchEl.removeEventListener("patchwork:response", onResponse);
-      resolve(event.detail.value as T | null);
-    };
-    dispatchEl.addEventListener("patchwork:response", onResponse);
-
-    const detail: RequestEventDetail = {
-      id,
-      type,
-      ...(args ? { args } : {}),
-    };
-
-    dispatchEl.dispatchEvent(
-      new CustomEvent<RequestEventDetail>("patchwork:request", {
-        detail,
-        bubbles: true,
-        composed: true,
-      })
-    );
-  });
-}
-
-/**
- * Respond to a `patchwork:request`. Accepts either a value or a promise;
- * rejections are logged and treated as `null`. Stops propagation so
- * ancestor providers don't double-answer.
- */
-export function provide<T>(
-  event: RequestEvent,
-  value: T | null | Promise<T | null>
-): void {
-  event.stopPropagation();
-  const target = event.target as HTMLElement;
-  const id = event.detail.id;
-  const respond = (resolved: T | null) => {
-    target.dispatchEvent(
-      new CustomEvent<ResponseEventDetail<T>>("patchwork:response", {
-        detail: { id, value: resolved },
-      })
-    );
-  };
-  if (value instanceof Promise) {
-    value.then(respond, (err) => {
-      console.error("[patchwork-providers] async provide rejected:", err);
-      respond(null);
-    });
-  } else {
-    respond(value);
-  }
+  // Set once by the host (the bootloader) so providers and consumers can
+  // recover live `DocHandle`s without serializing them across the channel.
+  // eslint-disable-next-line no-var
+  var repo: Repo | undefined;
 }
 
 /**
@@ -132,10 +47,10 @@ export function provide<T>(
  * subscription is live. `listener` is invoked once per emission (the first
  * delivery is always async because `MessagePort.postMessage` queues a task).
  *
- * Like `request`, the event is dispatched from the nearest enclosing
- * `<patchwork-view>` so callers can pass any node inside a provider subtree.
- * Unlike `request`, an unclaimed subscription is never settled: if no provider
- * answers, `listener` simply never fires.
+ * The event is dispatched from the nearest enclosing `<patchwork-view>` so
+ * callers can pass any node inside a provider subtree. An unclaimed
+ * subscription is never settled: if no provider answers, `listener` simply
+ * never fires.
  *
  * Returns an unsubscribe function. Calling it tells the provider to tear down
  * (via an `unsubscribe` message) and closes the consumer's port; any values
@@ -181,11 +96,7 @@ export function subscribe<T = unknown>(
   return () => {
     if (signal.aborted) return;
     controller.abort();
-    try {
-      port.postMessage({ type: "unsubscribe" });
-    } catch {
-      // Port already closed; nothing to tell the provider.
-    }
+    port.postMessage({ type: "unsubscribe" });
     port.close();
   };
 }
@@ -230,12 +141,29 @@ export function accept<T>(event: SubscribeEvent, producer: Producer<T>): void {
   };
 }
 
+/**
+ * One-shot convenience wrapper over {@link subscribe}: opens a subscription
+ * for `selector`, resolves with the first value a provider emits, then
+ * immediately unsubscribes. Because there is no fallback provider, an
+ * unclaimed selector never resolves — use `subscribe` directly if you need to
+ * handle the "no provider" case.
+ */
+export function request<T = unknown>(
+  element: HTMLElement,
+  selector: Selector
+): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const unsubscribe = subscribe<T>(element, selector, (value) => {
+      // The first emission is always async (postMessage queues a task), so
+      // `unsubscribe` is assigned by the time this fires.
+      unsubscribe();
+      resolve(value);
+    });
+  });
+}
+
 export {
   registerRepoProviderElement,
   type RepoProviderElement,
 } from "./repo-provider.js";
-export {
-  registerFallbackProviderElement,
-  type FallbackProviderElement,
-} from "./fallback-provider.js";
 export type { RepoLike } from "./types.js";

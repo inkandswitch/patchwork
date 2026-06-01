@@ -1,6 +1,4 @@
-import type { AutomergeUrl, DocHandle, Repo } from "@automerge/automerge-repo";
-
-import { provide, type RequestEvent } from "./index.js";
+import type { Repo } from "@automerge/automerge-repo";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -13,14 +11,13 @@ export interface RepoProviderElement extends HTMLElement {
 }
 
 /**
- * Defines the `<repo-provider>` custom element. It answers two request
- * types via the request/respond protocol:
+ * Defines the `<repo-provider>` custom element.
  *
- * - `patchwork:repo` → resolves with the element's `.repo`
- * - `patchwork:dochandle` → resolves with `repo.find(detail.args.url)`
- *
- * Pass a `repo` to install it as the default for all instances of the
- * element; individual instances can still override via `.repo = ...`.
+ * It used to answer `patchwork:repo` / `patchwork:dochandle` requests, but the
+ * repo is now published as a global (`globalThis.repo`) and handles are
+ * recovered locally from it. The element is kept as a passive
+ * `display: contents` wrapper that carries the repo on its `.repo` property for
+ * any code that still reads it.
  */
 export function registerRepoProviderElement(
   repo: Repo,
@@ -32,30 +29,8 @@ export function registerRepoProviderElement(
     class extends HTMLElement implements RepoProviderElement {
       repo: Repo = repo;
 
-      #onRequest = (event: RequestEvent) => {
-        const { type } = event.detail;
-        if (type === "patchwork:repo") {
-          provide<Repo>(event, this.repo);
-          return;
-        }
-        if (type === "patchwork:dochandle") {
-          const url = event.detail.args?.url as AutomergeUrl | undefined;
-          if (url) {
-            provide<DocHandle<unknown>>(event, this.repo.find<unknown>(url));
-          } else {
-            provide<DocHandle<unknown>>(event, this.repo.create<unknown>());
-          }
-          return;
-        }
-      };
-
       connectedCallback() {
         if (!this.style.display) this.style.display = "contents";
-        this.addEventListener("patchwork:request", this.#onRequest);
-      }
-
-      disconnectedCallback() {
-        this.removeEventListener("patchwork:request", this.#onRequest);
       }
     }
   );

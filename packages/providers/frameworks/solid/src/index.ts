@@ -1,26 +1,22 @@
 import { createSignal, onCleanup, onMount, type Accessor } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { createDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
-import type { Doc, DocHandle } from "@automerge/automerge-repo";
+import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
 import type { Selector } from "@inkandswitch/patchwork-providers";
 
 /**
- * Generic reactive request. Dispatches a `patchwork:request` of `type` on
- * mount and returns an accessor that updates when the provider responds.
- * `T` is the actual response type (e.g. `Repo`, plain data, a `DocHandle`).
- *
- * For request types that return a `DocHandle<T>` and a reactive doc
- * projection is wanted, prefer `requestDoc` instead.
+ * Generic reactive request. Resolves the first value a provider emits for
+ * `selector` (via the one-shot `request` helper) and returns an accessor that
+ * reads `undefined` until then. `T` is the response type.
  */
 export function request<T>(
   element: HTMLElement,
-  type: string,
-  args?: Record<string, unknown>
+  selector: Selector
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(undefined);
   onMount(() => {
-    Providers.request<T>(element, type, args).then((v) => {
+    Providers.request<T>(element, selector).then((v) => {
       if (v == null) return;
       // Wrap in a thunk so Solid does not treat values with call-like
       // methods (e.g. DocHandle, Repo) as setter functions.
@@ -31,24 +27,8 @@ export function request<T>(
 }
 
 /**
- * Handle-specialized request. Use when the responding provider returns a
- * `DocHandle<T>`. Returns `[doc, handle]` matching the shape of
- * solid-primitives' `useDocument`. Both are accessors; they read `undefined`
- * until the provider responds. `T` is the doc shape inside the handle.
- */
-export function requestDoc<T extends object>(
-  element: HTMLElement,
-  type: string,
-  args?: Record<string, unknown>
-): [Accessor<Doc<T> | undefined>, Accessor<DocHandle<T> | undefined>] {
-  const handle = request<DocHandle<T>>(element, type, args);
-  const doc = createDocumentProjection<T>(handle);
-  return [doc, handle];
-}
-
-/**
- * Generic reactive subscription. Opens a `patchwork:subscribe` of `type` on
- * mount and returns an accessor that updates on every value the provider
+ * Generic reactive subscription. Opens a `patchwork:subscribe` for `selector`
+ * on mount and returns an accessor that updates on every value the provider
  * pushes. The subscription is torn down on cleanup.
  *
  * Values arrive structured-cloned over the channel, so `T` is always plain
@@ -86,4 +66,41 @@ export function subscribe<T>(
     onCleanup(unsubscribe);
   });
   return () => store.value;
+}
+
+/**
+ * Handle-specialized subscription. Use when the answering provider emits an
+ * `AutomergeUrl`. The handle is recovered locally from the global repo
+ * (`window.repo`), so it stays fully live — reads project reactively and writes go
+ * straight back to the same repo. Returns `[doc, handle]` matching the shape
+ * of solid-primitives' `useDocument`; both read `undefined` until the first
+ * url arrives. `T` is the doc shape inside the handle.
+ */
+export function subscribeDoc<T extends object>(
+  element: HTMLElement,
+  selector: Selector
+): [Accessor<Doc<T> | undefined>, Accessor<DocHandle<T> | undefined>] {
+  const [handle, setHandle] = createSignal<DocHandle<T> | undefined>(undefined);
+  onMount(() => {
+    let canceled = false;
+    const unsubscribe = Providers.subscribe<AutomergeUrl>(
+      element,
+      selector,
+      (url) => {
+        if (!url) return;
+        const repo = "repo" in window ? window.repo : undefined;
+        if (!repo) return;
+        void Promise.resolve(repo.find<T>(url)).then((h) => {
+          if (canceled) return;
+          setHandle(() => h);
+        });
+      }
+    );
+    onCleanup(() => {
+      canceled = true;
+      unsubscribe();
+    });
+  });
+  const doc = createDocumentProjection<T>(handle);
+  return [doc, handle];
 }

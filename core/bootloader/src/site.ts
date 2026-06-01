@@ -46,10 +46,7 @@ import {
   openDocument,
   registerPatchworkViewElement,
 } from "@inkandswitch/patchwork-elements";
-import {
-  registerFallbackProviderElement,
-  registerRepoProviderElement,
-} from "@inkandswitch/patchwork-providers";
+import { registerRepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   type AccountDoc,
   type DatatypeDescription,
@@ -244,7 +241,6 @@ export async function bootPatchworkSite(
   installDevConsoleGlobals(repo, hive);
 
   registerRepoProviderElement(repo);
-  registerFallbackProviderElement();
 
   const rootElement = document.getElementById(config.rootElementId ?? "root");
   if (!rootElement) {
@@ -253,9 +249,7 @@ export async function bootPatchworkSite(
     );
   }
   const repoProvider = document.createElement("repo-provider");
-  const fallbackProvider = document.createElement("fallback-provider");
-  rootElement.parentElement!.insertBefore(fallbackProvider, rootElement);
-  fallbackProvider.appendChild(repoProvider);
+  rootElement.parentElement!.insertBefore(repoProvider, rootElement);
   repoProvider.appendChild(rootElement);
 
   registerPatchworkViewElement(hive ? { hive } : {});
