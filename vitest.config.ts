@@ -7,6 +7,7 @@ export default defineConfig({
       "packages/refs",
       "packages/annotations/core",
       "packages/annotations/context",
+      "packages/edge-handles",
     ],
   },
 });
