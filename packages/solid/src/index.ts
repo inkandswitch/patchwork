@@ -12,8 +12,6 @@ import {
 import { createEffect, createRoot, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
-export { useResolvedRefs, useResolvedRefMap } from "./useResolvedRefs";
-
 export type MaybeAccessor<T> = T | (() => T);
 
 /**
@@ -99,7 +97,9 @@ export function useModules(): [string, Plugin<PluginDescription>[]][] {
  * When the last consumer unmounts, the root is disposed and the
  * entry is removed from the cache.
  */
-export function createShared<V>(factory: (key: string) => V): (key: string) => V {
+export function createShared<V>(
+  factory: (key: string) => V
+): (key: string) => V {
   const cache = new Map<
     string,
     { value: V; refCount: number; dispose: () => void }
