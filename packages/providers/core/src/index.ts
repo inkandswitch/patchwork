@@ -12,17 +12,24 @@ export interface ResponseEventDetail<T = unknown> {
 export type RequestEvent = CustomEvent<RequestEventDetail>;
 export type ResponseEvent<T = unknown> = CustomEvent<ResponseEventDetail<T>>;
 
-export type EventArgs =
+type JSONValue =
   | string
   | number
   | boolean
   | null
-  | EventArgs[]
-  | { [key: string]: EventArgs };
+  | JSONValue[]
+  | { [key: string]: JSONValue };
+
+/**
+ * What a subscription is keyed on. A plain JSON object that always carries a
+ * `type` discriminant; any other fields are subscription-specific arguments
+ * (e.g. `{ type: "patchwork:comments", url }`). Being JSON means it survives
+ * the structured clone across the `patchwork:subscribe` event boundary.
+ */
+export type Selector = { type: string } & { [key: string]: JSONValue };
 
 export type SubscribeEventDetail = {
-  type: string;
-  args?: EventArgs;
+  selector: Selector;
   port: MessagePort;
 };
 
@@ -119,16 +126,16 @@ export function provide<T>(
 }
 
 /**
- * Open a streaming subscription. Dispatches a `patchwork:subscribe` carrying
- * a fresh `MessageChannel` port; the answering provider pushes values back
- * over that channel for as long as the subscription is live. `listener` is
- * invoked once per `next` message (the first delivery is always async because
- * `MessagePort.postMessage` queues a task).
+ * Open a streaming subscription. Dispatches a `patchwork:subscribe` for the
+ * given `selector` carrying a fresh `MessageChannel` port; the answering
+ * provider pushes values back over that channel for as long as the
+ * subscription is live. `listener` is invoked once per emission (the first
+ * delivery is always async because `MessagePort.postMessage` queues a task).
  *
  * Like `request`, the event is dispatched from the nearest enclosing
  * `<patchwork-view>` so callers can pass any node inside a provider subtree.
- * If no provider claims it, it bubbles to `<fallback-provider>` and settles
- * with `null`.
+ * Unlike `request`, an unclaimed subscription is never settled: if no provider
+ * answers, `listener` simply never fires.
  *
  * Returns an unsubscribe function. Calling it tells the provider to tear down
  * (via an `unsubscribe` message) and closes the consumer's port; any values
@@ -136,26 +143,9 @@ export function provide<T>(
  */
 export function subscribe<T = unknown>(
   element: HTMLElement,
-  type: string,
+  selector: Selector,
   listener: Listener<T>
-): Unsubscribe;
-export function subscribe<T = unknown>(
-  element: HTMLElement,
-  type: string,
-  args: EventArgs,
-  listener: Listener<T>
-): Unsubscribe;
-export function subscribe<T = unknown>(
-  element: HTMLElement,
-  type: string,
-  argsOrListener: EventArgs | Listener<T>,
-  maybeListener?: Listener<T>
 ): Unsubscribe {
-  const [args, listener] =
-    typeof argsOrListener === "function"
-      ? [undefined, argsOrListener]
-      : [argsOrListener, maybeListener!];
-
   const view = element.closest<HTMLElement>("patchwork-view");
   const dispatchEl = view ?? element;
 
@@ -176,8 +166,7 @@ export function subscribe<T = unknown>(
   port.start();
 
   const detail: SubscribeEventDetail = {
-    type,
-    ...(args !== undefined ? { args } : {}),
+    selector,
     port: channel.port1,
   };
 

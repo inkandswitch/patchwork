@@ -1,9 +1,4 @@
-import {
-  accept,
-  provide,
-  type RequestEvent,
-  type SubscribeEvent,
-} from "./index.js";
+import { provide, type RequestEvent } from "./index.js";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -15,9 +10,9 @@ export interface FallbackProviderElement extends HTMLElement {}
 
 /**
  * Defines the `<fallback-provider>` custom element. It catches any
- * `patchwork:request` or `patchwork:subscribe` that bubbles up to it and
- * resolves with `null`, ensuring request-promises always settle and
- * subscriptions always receive at least one value.
+ * `patchwork:request` that bubbles up to it and resolves with `null`,
+ * ensuring request-promises always settle. Subscriptions are intentionally
+ * left unanswered: an unclaimed `patchwork:subscribe` simply never emits.
  */
 export function registerFallbackProviderElement(
   name = "fallback-provider"
@@ -30,21 +25,13 @@ export function registerFallbackProviderElement(
         provide(event, null);
       };
 
-      #onSubscribe = (event: SubscribeEvent) => {
-        accept(event, (respond) => {
-          respond(null);
-        });
-      };
-
       connectedCallback() {
         if (!this.style.display) this.style.display = "contents";
         this.addEventListener("patchwork:request", this.#onRequest);
-        this.addEventListener("patchwork:subscribe", this.#onSubscribe);
       }
 
       disconnectedCallback() {
         this.removeEventListener("patchwork:request", this.#onRequest);
-        this.removeEventListener("patchwork:subscribe", this.#onSubscribe);
       }
     }
   );
