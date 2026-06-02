@@ -35,6 +35,7 @@ import {
 
 declare const __SITE_NAME__: string;
 declare const __KEYHIVE__: boolean;
+declare const __KEYHIVE_SYNC_SERVER__: boolean;
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
 
@@ -42,7 +43,25 @@ let cachename = "default";
 let debugging = false;
 const workerInstanceId = crypto.randomUUID();
 
-const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
+// Sync server selection. Sub is the default. Build with KEYHIVE_SYNC_SERVER=true
+// to target keyhive.sync.automerge.org.
+const useKeyhiveSyncServer =
+  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
+
+// Set the correct env var for automerge_repo_keyhive if need be.
+if (useKeyhiveSyncServer) {
+  (globalThis as any).process = (globalThis as any).process ?? {};
+  (globalThis as any).process.env = {
+    ...((globalThis as any).process.env ?? {}),
+    KEYHIVE_SERVER_IDENTITY: "keyhive-sync",
+  };
+}
+
+const SUBDUCTION_ENDPOINTS = [
+  useKeyhiveSyncServer
+    ? "wss://keyhive.sync.automerge.org"
+    : "wss://subduction.sync.inkandswitch.com",
+];
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // ── Persistent logger ───────────────────────────────────────────────────
