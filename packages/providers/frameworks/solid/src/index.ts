@@ -6,17 +6,30 @@ import * as Providers from "@inkandswitch/patchwork-providers";
 import type { Selector } from "@inkandswitch/patchwork-providers";
 
 /**
+ * The dispatch target for a subscription: either an element or — more commonly
+ * — a thunk returning one. Passing `() => ref` lets the element be read lazily
+ * on mount, after Solid has assigned the `ref`, so callers can subscribe from
+ * their own (not-yet-rendered) element.
+ */
+type ElementSource = HTMLElement | (() => HTMLElement | undefined);
+
+const resolveElement = (source: ElementSource): HTMLElement | undefined =>
+  typeof source === "function" ? source() : source;
+
+/**
  * Generic reactive request. Resolves the first value a provider emits for
  * `selector` (via the one-shot `request` helper) and returns an accessor that
  * reads `undefined` until then. `T` is the response type.
  */
 export function request<T>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(undefined);
   onMount(() => {
-    Providers.request<T>(element, selector).then((v) => {
+    const el = resolveElement(element);
+    if (!el) return;
+    Providers.request<T>(el, selector).then((v) => {
       if (v == null) return;
       // Wrap in a thunk so Solid does not treat values with call-like
       // methods (e.g. DocHandle, Repo) as setter functions.
@@ -40,17 +53,17 @@ export function request<T>(
  * simply stays at the initial value.
  */
 export function subscribe<T>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue: T
 ): Accessor<T>;
 export function subscribe<T>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined>;
 export function subscribe<T>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined> {
@@ -60,7 +73,9 @@ export function subscribe<T>(
     value: initialValue,
   });
   onMount(() => {
-    const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
+    const el = resolveElement(element);
+    if (!el) return;
+    const unsubscribe = Providers.subscribe<T>(el, selector, (v) => {
       setStore(reconcile({ value: v }));
     });
     onCleanup(unsubscribe);
@@ -77,14 +92,16 @@ export function subscribe<T>(
  * url arrives. `T` is the doc shape inside the handle.
  */
 export function subscribeDoc<T extends object>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector
 ): [Accessor<Doc<T> | undefined>, Accessor<DocHandle<T> | undefined>] {
   const [handle, setHandle] = createSignal<DocHandle<T> | undefined>(undefined);
   onMount(() => {
+    const el = resolveElement(element);
+    if (!el) return;
     let canceled = false;
     const unsubscribe = Providers.subscribe<AutomergeUrl>(
-      element,
+      el,
       selector,
       (url) => {
         if (!url) return;

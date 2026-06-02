@@ -183,17 +183,17 @@ export async function bootPatchworkSite(
     // Get the initial SW port via subscribeToRepoChannel, then pass it
     // to keyhive init which wraps it in its own network adapter.
     let resolvePort!: (port: MessagePort) => void;
-    const portPromise = new Promise<MessagePort>((r) => { resolvePort = r; });
-    sw.subscribeToRepoChannel((port) => { resolvePort(port); });
+    const portPromise = new Promise<MessagePort>((r) => {
+      resolvePort = r;
+    });
+    sw.subscribeToRepoChannel((port) => {
+      resolvePort(port);
+    });
     const swPort = await portPromise;
 
     hive = await initializeAutomergeRepoKeyhive({
-      storage: new IndexedDBStorageAdapter(
-        `${siteName}-keyhive`
-      ),
-      peerIdSuffix:
-        siteName +
-        Math.random().toString(36).slice(2),
+      storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+      peerIdSuffix: siteName + Math.random().toString(36).slice(2),
       networkAdapter: new MessageChannelNetworkAdapter(swPort),
       automaticArchiveIngestion: true,
       cachingMode: "periodic",
@@ -248,11 +248,13 @@ export async function bootPatchworkSite(
       `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
     );
   }
+  // `<repo-provider>` sits above the root and answers `patchwork:dochandle`
+  // for any view outside a remapper (resolving to the requested url unchanged).
   const repoProvider = document.createElement("repo-provider");
   rootElement.parentElement!.insertBefore(repoProvider, rootElement);
   repoProvider.appendChild(rootElement);
 
-  registerPatchworkViewElement(hive ? { hive } : {});
+  registerPatchworkViewElement({ hive, repo });
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`

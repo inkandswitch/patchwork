@@ -1,4 +1,7 @@
-import type { Repo } from "@automerge/automerge-repo";
+import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+
+import { accept, type SubscribeEvent } from "./index.js";
+import type { DocHandleDescriptor } from "./overlay.js";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -13,11 +16,13 @@ export interface RepoProviderElement extends HTMLElement {
 /**
  * Defines the `<repo-provider>` custom element.
  *
- * It used to answer `patchwork:repo` / `patchwork:dochandle` requests, but the
- * repo is now published as a global (`globalThis.repo`) and handles are
- * recovered locally from it. The element is kept as a passive
- * `display: contents` wrapper that carries the repo on its `.repo` property for
- * any code that still reads it.
+ * It carries the realm-local repo on its `.repo` property and acts as the
+ * root-level fallback answerer for `patchwork:dochandle`. Sitting above every
+ * `<patchwork-view>`, it resolves a requested url to itself (no clone) so any
+ * view rendered outside a remapper (e.g. a draft overlay) still resolves and
+ * the overlay shim's `find` never hangs. A nearer remapper answers
+ * `{ url, cloneUrl? }` and `stopPropagation()`s first, so this only fires when
+ * nothing else claims the subscription.
  */
 export function registerRepoProviderElement(
   repo: Repo,
@@ -28,6 +33,21 @@ export function registerRepoProviderElement(
     name,
     class extends HTMLElement implements RepoProviderElement {
       repo: Repo = repo;
+
+      constructor() {
+        super();
+        this.addEventListener(
+          "patchwork:subscribe",
+          (event: SubscribeEvent) => {
+            if (event.detail.selector.type !== "patchwork:dochandle") return;
+            const url = event.detail?.selector?.url as AutomergeUrl | undefined;
+            if (!url) return;
+            accept<DocHandleDescriptor>(event, (respond) => {
+              respond({ url });
+            });
+          }
+        );
+      }
 
       connectedCallback() {
         if (!this.style.display) this.style.display = "contents";
