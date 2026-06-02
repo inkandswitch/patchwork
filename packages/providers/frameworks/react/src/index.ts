@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
-import { useDocument } from "@automerge/automerge-repo-react-hooks";
-import type { Doc, DocHandle } from "@automerge/automerge-repo";
+import { useDocument, useDocHandle } from "@automerge/automerge-repo-react-hooks";
+import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
+import type { Selector } from "@inkandswitch/patchwork-providers";
 
 /**
- * Generic reactive request hook. Dispatches a `patchwork:request` of `type`
- * on mount (and whenever `element`/`type` change) and returns the response
- * once the provider answers. `T` is the actual response type (e.g. `Repo`,
- * plain data, a `DocHandle`).
- *
- * For request types that return a `DocHandle<T>` and a live doc is wanted,
- * prefer `useDocRequest` instead.
+ * Generic reactive request hook. Resolves the first value a provider emits for
+ * `selector` (via the one-shot `request` helper) and returns it once it
+ * arrives (and whenever `element`/`selector` change). `T` is the response type.
  */
 export function useRequest<T>(
   element: HTMLElement,
-  type: string,
-  args?: Record<string, unknown>
+  selector: Selector
 ): T | undefined {
   const [value, setValue] = useState<T | undefined>(undefined);
+  const key = JSON.stringify(selector);
 
   useEffect(() => {
     let canceled = false;
-    Providers.request<T>(element, type, args).then((v) => {
+    Providers.request<T>(element, selector).then((v) => {
       if (canceled || v == null) return;
       setValue(() => v);
     });
@@ -29,23 +26,60 @@ export function useRequest<T>(
       canceled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [element, type]);
+  }, [element, key]);
 
   return value;
 }
 
 /**
- * Handle-specialized request hook. Use when the responding provider returns
- * a `DocHandle<T>`. Returns `[doc, handle]` matching the shape of
- * `useDocument` from `@automerge/automerge-repo-react-hooks`. `T` is the doc
- * shape inside the handle.
+ * Generic reactive subscription hook. Opens a `patchwork:subscribe` for
+ * `selector` and returns the latest value the provider pushes, re-rendering on
+ * each emission. The subscription is torn down on unmount (or when
+ * `element`/`selector` change). Pass `initialValue` to seed the state before
+ * the first emission.
  */
-export function useDocRequest<T>(
+export function useSubscribe<T>(
   element: HTMLElement,
-  type: string,
-  args?: Record<string, unknown>
+  selector: Selector,
+  initialValue: T
+): T;
+export function useSubscribe<T>(
+  element: HTMLElement,
+  selector: Selector,
+  initialValue?: T
+): T | undefined;
+export function useSubscribe<T>(
+  element: HTMLElement,
+  selector: Selector,
+  initialValue?: T
+): T | undefined {
+  const [value, setValue] = useState<T | undefined>(initialValue);
+  const key = JSON.stringify(selector);
+
+  useEffect(() => {
+    const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
+      setValue(() => v);
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [element, key]);
+
+  return value;
+}
+
+/**
+ * Handle-specialized subscription hook. Use when the answering provider emits
+ * an `AutomergeUrl`. The handle is recovered locally from the global repo, so
+ * it stays fully live. Returns `[doc, handle]` matching the shape of
+ * `useDocument`; both read `undefined` until the first url arrives. `T` is the
+ * doc shape inside the handle.
+ */
+export function useSubscribeDoc<T>(
+  element: HTMLElement,
+  selector: Selector
 ): [Doc<T> | undefined, DocHandle<T> | undefined] {
-  const handle = useRequest<DocHandle<T>>(element, type, args);
-  const [doc] = useDocument<T>(handle?.url);
+  const url = useSubscribe<AutomergeUrl>(element, selector);
+  const [doc] = useDocument<T>(url);
+  const handle = useDocHandle<T>(url);
   return [doc, handle];
 }
