@@ -15,7 +15,6 @@ import {
   type LoadedTool,
   type ToolElement,
 } from "@inkandswitch/patchwork-plugins";
-import { request } from "@inkandswitch/patchwork-providers";
 import debug from "debug";
 import {
   docIdFromAutomergeUrl,
@@ -260,12 +259,11 @@ export class LegacyImpl {
       removeLoadedListener();
     });
 
-    const repo = await request<Repo>(this.#element, "patchwork:repo");
-    if (epoch !== this.#initEpoch) return;
+    const repo = (window as { repo?: Repo }).repo;
     if (!repo) {
       this.#state = State.unable;
       this.#displayError(
-        `no \`patchwork:repo\` provider in the DOM ancestry of <${this.#hostName}>.`
+        `no global repo available for <${this.#hostName}>; ensure the host set \`globalThis.repo\`.`
       );
       return;
     }

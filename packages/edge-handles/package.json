@@ -1,0 +1,37 @@
+{
+  "name": "@inkandswitch/edge-handles",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Doc-backed reactive cells with named upstream/downstream connections.",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w --preserveWatchOutput",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./dom": {
+      "import": "./dist/dom.js",
+      "types": "./dist/dom.d.ts"
+    }
+  },
+  "peerDependencies": {
+    "@automerge/automerge-repo": "*"
+  },
+  "devDependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
