@@ -1,16 +1,21 @@
 import { createSignal, onCleanup, onMount, type Accessor } from "solid-js";
-import { createStore, reconcile } from "solid-js/store";
+import { createStore, reconcile, type Store } from "solid-js/store";
 import { createDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
-import type { Selector } from "@inkandswitch/patchwork-providers";
+import type {
+  JSONArray,
+  JSONObject,
+  JSONValue,
+  Selector,
+} from "@inkandswitch/patchwork-providers";
 
 /**
  * Generic reactive request. Resolves the first value a provider emits for
  * `selector` (via the one-shot `request` helper) and returns an accessor that
  * reads `undefined` until then. `T` is the response type.
  */
-export function request<T>(
+export function request<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector
 ): Accessor<T | undefined> {
@@ -18,8 +23,6 @@ export function request<T>(
   onMount(() => {
     Providers.request<T>(element, selector).then((v) => {
       if (v == null) return;
-      // Wrap in a thunk so Solid does not treat values with call-like
-      // methods (e.g. DocHandle, Repo) as setter functions.
       setValue(() => v);
     });
   });
@@ -35,17 +38,17 @@ export function request<T>(
  * `undefined`) until the first emission. If no provider answers, the accessor
  * simply stays at the initial value.
  */
-export function subscribe<T>(
+export function subscribe<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector,
   initialValue: T
 ): Accessor<T>;
-export function subscribe<T>(
+export function subscribe<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined>;
-export function subscribe<T>(
+export function subscribe<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector,
   initialValue?: T
@@ -53,8 +56,6 @@ export function subscribe<T>(
   const [value, setValue] = createSignal<T | undefined>(initialValue);
   onMount(() => {
     const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
-      // Wrap in a thunk so Solid does not treat values with call-like methods
-      // as setter functions.
       setValue(() => v);
     });
     onCleanup(unsubscribe);
@@ -64,39 +65,26 @@ export function subscribe<T>(
 
 /**
  * Store-backed subscription. Use this when a consumer wants Solid's
- * fine-grained nested reactivity for incoming plain data snapshots.
+ * fine-grained nested reactivity for incoming JSON object or array snapshots.
+ * Requires an initial object/array so the store has a stable root.
  *
  * `reconcile` preserves stable object/array identity where possible, so this
  * helper is not a good fit when the top-level value is used as an identity key
  * for resources or memos.
  */
-export function subscribeReconciled<T>(
+export function subscribeReconciled<T extends JSONArray | JSONObject>(
   element: HTMLElement,
   selector: Selector,
   initialValue: T
-): Accessor<T>;
-export function subscribeReconciled<T>(
-  element: HTMLElement,
-  selector: Selector,
-  initialValue?: T
-): Accessor<T | undefined>;
-export function subscribeReconciled<T>(
-  element: HTMLElement,
-  selector: Selector,
-  initialValue?: T
-): Accessor<T | undefined> {
-  // The `{ value }` wrapper gives the store an object root, so `T` may be an
-  // array or a primitive and not just an object.
-  const [store, setStore] = createStore<{ value: T | undefined }>({
-    value: initialValue,
-  });
+): Store<T> {
+  const [store, setStore] = createStore<T>(initialValue);
   onMount(() => {
     const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
-      setStore(reconcile({ value: v }));
+      setStore(reconcile(v));
     });
     onCleanup(unsubscribe);
   });
-  return () => store.value;
+  return store;
 }
 
 /**
