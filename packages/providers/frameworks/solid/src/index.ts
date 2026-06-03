@@ -55,9 +55,7 @@ export function subscribe<T extends JSONValue>(
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(initialValue);
   onMount(() => {
-    const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
-      setValue(() => v);
-    });
+    const unsubscribe = Providers.subscribe<T>(element, selector, setValue);
     onCleanup(unsubscribe);
   });
   return value;
