@@ -1,12 +1,15 @@
 import type { Repo } from "@automerge/automerge-repo";
 
-type JSONValue =
+export type JSONValue =
   | string
   | number
   | boolean
   | null
-  | JSONValue[]
-  | { [key: string]: JSONValue };
+  | JSONArray
+  | JSONObject;
+
+export type JSONArray = JSONValue[];
+export type JSONObject = { [key: string]: JSONValue };
 
 /**
  * What a subscription is keyed on. A plain JSON object that always carries a
@@ -23,11 +26,11 @@ export type SubscribeEventDetail = {
 
 export type SubscribeEvent = CustomEvent<SubscribeEventDetail>;
 
-type Listener<T> = (value: T) => void;
+type Listener<T extends JSONValue> = (value: T) => void;
 type Unsubscribe = () => void;
-type Producer<T> = (respond: Listener<T>) => Unsubscribe | void;
+type Producer<T extends JSONValue> = (respond: Listener<T>) => Unsubscribe | void;
 
-type ChangeMessage<T> = { type: "change"; value: T };
+type ChangeMessage<T extends JSONValue> = { type: "change"; value: T };
 type UnsubscribeMessage = { type: "unsubscribe" };
 
 declare global {
@@ -56,7 +59,7 @@ declare global {
  * (via an `unsubscribe` message) and closes the consumer's port; any values
  * the provider emits after that are dropped.
  */
-export function subscribe<T = unknown>(
+export function subscribe<T extends JSONValue = JSONValue>(
   element: HTMLElement,
   selector: Selector,
   listener: Listener<T>
@@ -108,7 +111,10 @@ export function subscribe<T = unknown>(
  * propagation so ancestor providers don't double-answer. Values emitted after
  * the consumer unsubscribes are dropped.
  */
-export function accept<T>(event: SubscribeEvent, producer: Producer<T>): void {
+export function accept<T extends JSONValue>(
+  event: SubscribeEvent,
+  producer: Producer<T>
+): void {
   event.stopPropagation();
   const port = event.detail.port;
 
@@ -148,7 +154,7 @@ export function accept<T>(event: SubscribeEvent, producer: Producer<T>): void {
  * unclaimed selector never resolves — use `subscribe` directly if you need to
  * handle the "no provider" case.
  */
-export function request<T = unknown>(
+export function request<T extends JSONValue = JSONValue>(
   element: HTMLElement,
   selector: Selector
 ): Promise<T> {
