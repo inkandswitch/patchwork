@@ -28,12 +28,8 @@ export function request<T>(
 
 /**
  * Generic reactive subscription. Opens a `patchwork:subscribe` for `selector`
- * on mount and returns an accessor that updates on every value the provider
- * pushes. The subscription is torn down on cleanup.
- *
- * Values arrive structured-cloned over the channel, so `T` is always plain
- * data. Backing the accessor with a store + `reconcile` means nested updates
- * are diffed and only the parts that changed trigger downstream recomputation.
+ * on mount and returns an accessor that updates as the provider pushes new
+ * values. The subscription is torn down on cleanup.
  *
  * Pass `initialValue` to seed the accessor so it reads that value (rather than
  * `undefined`) until the first emission. If no provider answers, the accessor
@@ -50,6 +46,41 @@ export function subscribe<T>(
   initialValue?: T
 ): Accessor<T | undefined>;
 export function subscribe<T>(
+  element: HTMLElement,
+  selector: Selector,
+  initialValue?: T
+): Accessor<T | undefined> {
+  const [value, setValue] = createSignal<T | undefined>(initialValue);
+  onMount(() => {
+    const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
+      // Wrap in a thunk so Solid does not treat values with call-like methods
+      // as setter functions.
+      setValue(() => v);
+    });
+    onCleanup(unsubscribe);
+  });
+  return value;
+}
+
+/**
+ * Store-backed subscription. Use this when a consumer wants Solid's
+ * fine-grained nested reactivity for incoming plain data snapshots.
+ *
+ * `reconcile` preserves stable object/array identity where possible, so this
+ * helper is not a good fit when the top-level value is used as an identity key
+ * for resources or memos.
+ */
+export function subscribeReconciled<T>(
+  element: HTMLElement,
+  selector: Selector,
+  initialValue: T
+): Accessor<T>;
+export function subscribeReconciled<T>(
+  element: HTMLElement,
+  selector: Selector,
+  initialValue?: T
+): Accessor<T | undefined>;
+export function subscribeReconciled<T>(
   element: HTMLElement,
   selector: Selector,
   initialValue?: T
