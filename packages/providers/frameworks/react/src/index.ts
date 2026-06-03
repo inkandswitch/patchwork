@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { useDocument, useDocHandle } from "@automerge/automerge-repo-react-hooks";
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
-import type { Selector } from "@inkandswitch/patchwork-providers";
+import type { JSONValue, Selector } from "@inkandswitch/patchwork-providers";
 
 /**
  * Generic reactive request hook. Resolves the first value a provider emits for
  * `selector` (via the one-shot `request` helper) and returns it once it
  * arrives (and whenever `element`/`selector` change). `T` is the response type.
  */
-export function useRequest<T>(
+export function useRequest<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector
 ): T | undefined {
@@ -38,17 +38,17 @@ export function useRequest<T>(
  * `element`/`selector` change). Pass `initialValue` to seed the state before
  * the first emission.
  */
-export function useSubscribe<T>(
+export function useSubscribe<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector,
   initialValue: T
 ): T;
-export function useSubscribe<T>(
+export function useSubscribe<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector,
   initialValue?: T
 ): T | undefined;
-export function useSubscribe<T>(
+export function useSubscribe<T extends JSONValue>(
   element: HTMLElement,
   selector: Selector,
   initialValue?: T
