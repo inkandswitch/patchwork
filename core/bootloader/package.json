@@ -33,10 +33,6 @@
     "./types": {
       "import": "./dist/types.js",
       "types": "./dist/types.d.ts"
-    },
-    "./sw-logger": {
-      "import": "./dist/sw-logger.js",
-      "types": "./dist/sw-logger.d.ts"
     }
   },
   "dependencies": {

@@ -1,7 +1,5 @@
 /// <reference types="service-worker-types" />
 
-import { SwLogger } from "./sw-logger.js";
-
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
 // type:"module" so the browser fetches these as regular network requests.
@@ -90,8 +88,7 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
       repo.networkSubsystem.addNetworkAdapter(classicSyncAdapter);
     }
     await classicSyncAdapter.whenReady();
-    const logger = await slog;
-    logger.info("classic sync connected", { server: url });
+    log("classic sync connected", { server: url });
   })();
 
   try {
@@ -101,34 +98,6 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
     throw err;
   }
 }
-
-// ── Persistent logger ───────────────────────────────────────────────────
-// Initialized eagerly so it's available for the entire SW lifetime.
-// Access from the SW inspector console via self.printLogs(), self.tailLogs(),
-// self.exportLogs(), self.clearLogs().
-const slog = SwLogger.open().then((logger) => {
-  (self as any).slog = logger;
-
-  (self as any).printLogs = async (n = 200) => {
-    const entries = await logger.tail(n);
-    for (const e of entries) {
-      const prefix = `[${e.ts}] [${e.level}]`;
-      if (e.data !== undefined) {
-        console.log(prefix, e.msg, e.data);
-      } else {
-        console.log(prefix, e.msg);
-      }
-    }
-    console.log(`--- ${entries.length} entries ---`);
-  };
-
-  (self as any).tailLogs = (n = 200) => logger.tail(n);
-  (self as any).exportLogs = () => logger.exportAll();
-  (self as any).clearLogs = () => logger.clear();
-
-  logger.info("sw-logger initialized");
-  return logger;
-});
 
 const siteName = typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
 
@@ -173,17 +142,16 @@ const useKeyhive = typeof __KEYHIVE__ !== "undefined" && __KEYHIVE__;
 function getRepoHive() {
   if (!repoHivePromise) {
     repoHivePromise = (async () => {
-      const logger = await slog;
-      logger.info("getRepo: starting");
+      log("getRepo: starting");
 
-      logger.info("fetching wasm modules");
+      log("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
         fetch("/automerge.wasm?sw").then((r) => r.arrayBuffer()),
         fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
       ]);
       initSubductionSync(new Uint8Array(sdnWasmBuf));
       await initializeWasm(new Uint8Array(amWasmBuf));
-      logger.info("wasm initialized");
+      log("wasm initialized");
 
       if (!useKeyhive) {
         const signer = await WebCryptoSigner.setup();
@@ -201,10 +169,10 @@ function getRepoHive() {
         });
 
         (self as any).repo = repo;
-        logger.info("repo constructed (no keyhive), waiting for network subsystem");
+        log("repo constructed (no keyhive), waiting for network subsystem");
 
         repo.networkSubsystem.whenReady().then(() => {
-          logger.info("repo network subsystem ready");
+          log("repo network subsystem ready");
         });
 
         return { repo };
@@ -251,14 +219,14 @@ function getRepoHive() {
 
       (self as any).repo = repo;
       (self as any).hive = hive;
-      logger.info("repo constructed, waiting for network subsystem");
+      log("repo constructed, waiting for network subsystem");
 
       // Don't block getRepoHive() on whenReady() — the network subsystem starts
       // with only the subduction adapter, and the MessageChannel adapter is
       // added later via connectPort (which awaits getRepoHive). Blocking here
       // would deadlock that path and starve the fetch handler.
       repo.networkSubsystem.whenReady().then(() => {
-        logger.info("repo network subsystem ready");
+        log("repo network subsystem ready");
       });
 
       hive.networkAdapter.whenReady().then(() => {
@@ -535,13 +503,9 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           error instanceof Error
             ? `${error.message}\n\n${error.stack}`
             : String(error);
-        const logger = await slog;
-        logger.error(
+        console.error(
           `service worker error resolving ${request.url}${specialURL ? ` (for: ${specialURL})` : ""}`,
-          {
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-          }
+          error
         );
         if (match) return match;
 
