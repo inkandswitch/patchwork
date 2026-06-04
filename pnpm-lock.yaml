@@ -22,7 +22,7 @@ catalogs:
 overrides:
   '@automerge/automerge': 3.3.0-fragments.1
   '@automerge/automerge-repo': 2.6.0-subduction.26
-  '@automerge/automerge-repo-keyhive': 0.3.0-alpha.sub.1
+  '@automerge/automerge-repo-keyhive': 0.3.0-alpha.sub.1c
   '@automerge/automerge-repo-network-messagechannel': 2.6.0-subduction.26
   '@automerge/automerge-repo-network-websocket': 2.6.0-subduction.26
   '@automerge/automerge-repo-react-hooks': 2.6.0-subduction.26
@@ -32,11 +32,6 @@ overrides:
   '@automerge/react': 2.6.0-subduction.26
   '@automerge/vanillajs': 2.6.0-subduction.26
   '@keyhive/keyhive': 0.0.0-alpha.56
-
-patchedDependencies:
-  '@automerge/automerge-repo-keyhive':
-    hash: e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab
-    path: patches/@automerge__automerge-repo-keyhive.patch
 
 importers:
 
@@ -138,8 +133,8 @@ importers:
         version: 0.1.4
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.1
-        version: 0.3.0-alpha.sub.1(patch_hash=e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab)(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.1c
+        version: 0.3.0-alpha.sub.1c(ws@8.21.0)
       esbuild:
         specifier: ^0.23.1
         version: 0.23.1
@@ -157,8 +152,8 @@ importers:
         specifier: 2.6.0-subduction.26
         version: 2.6.0-subduction.26
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.1
-        version: 0.3.0-alpha.sub.1(patch_hash=e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab)(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.1c
+        version: 0.3.0-alpha.sub.1c(ws@8.21.0)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -240,8 +235,8 @@ importers:
         specifier: 2.6.0-subduction.26
         version: 2.6.0-subduction.26
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.1
-        version: 0.3.0-alpha.sub.1(patch_hash=e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab)(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.1c
+        version: 0.3.0-alpha.sub.1c(ws@8.21.0)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -409,8 +404,8 @@ importers:
         version: 4.1.15
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.1
-        version: 0.3.0-alpha.sub.1(patch_hash=e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab)(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.1c
+        version: 0.3.0-alpha.sub.1c(ws@8.21.0)
       '@eslint/js':
         specifier: ^9.37.0
         version: 9.38.0
@@ -494,8 +489,8 @@ importers:
         version: 4.1.15
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.1
-        version: 0.3.0-alpha.sub.1(patch_hash=e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab)(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.1c
+        version: 0.3.0-alpha.sub.1c(ws@8.21.0)
       '@eslint/js':
         specifier: ^9.37.0
         version: 9.38.0
@@ -535,8 +530,8 @@ packages:
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
 
-  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.1':
-    resolution: {integrity: sha512-ctbVNLketU4Z22Mc+o4MJtE4s6tIPGswO53uVweI8l5yFYYYfGORDEjwlgHHPgYT7whoRB7kNiY3X9F2bvVRjQ==}
+  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.1c':
+    resolution: {integrity: sha512-VM1tL9G+qQZ+0s0CM7DxBFkldwv5/GwqwZsW9U33qIU4LJES4MLc8QNeTtg9EJ7n7Pv0aovghRBaro2RdQHk8g==}
 
   '@automerge/automerge-repo-network-broadcastchannel@2.6.0-subduction.26':
     resolution: {integrity: sha512-o+aa6Ey3I5ZLdi9phC0mgy4Rjll40brvh/zKk1phYKogTZHjhiF5CggD4jHSLg98772aq6cbSJHIzjXjH8EzVw==}
@@ -3049,7 +3044,7 @@ snapshots:
       lru-cache: 10.4.3
     optional: true
 
-  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.1(patch_hash=e3df0f4c016aa9f169a451cd12fe2e5964bcefd8f33e96df2f12f9c0a71fe6ab)(ws@8.21.0)':
+  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.1c(ws@8.21.0)':
     dependencies:
       '@automerge/automerge-repo': 2.6.0-subduction.26
       '@automerge/automerge-repo-network-websocket': 2.6.0-subduction.26

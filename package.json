@@ -36,9 +36,6 @@
       "@automerge/react": "catalog:",
       "@automerge/vanillajs": "catalog:",
       "@keyhive/keyhive": "catalog:"
-    },
-    "patchedDependencies": {
-      "@automerge/automerge-repo-keyhive": "patches/@automerge__automerge-repo-keyhive.patch"
     }
   },
   "keywords": [],

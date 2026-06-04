@@ -23,6 +23,11 @@ export default defineConfig({
   define: {
     __SITE_NAME__: JSON.stringify("tiny-patchwork"),
     __KEYHIVE__: JSON.stringify(process.env.KEYHIVE === "true"),
+    // Default sync server is sub. Build with KEYHIVE_SYNC_SERVER=true to
+    // target keyhive.sync.automerge.org instead.
+    __KEYHIVE_SYNC_SERVER__: JSON.stringify(
+      process.env.KEYHIVE_SYNC_SERVER === "true"
+    ),
   },
   plugins: [
     tailwindcss(),
