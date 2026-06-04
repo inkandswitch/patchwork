@@ -11,6 +11,8 @@ export type ServiceWorkerRepoChannelListener = (
 ) => void | Promise<void>;
 
 export type SetupServiceWorkerResult = {
+  /** Open a classic Automerge sync WebSocket to the service worker repo. */
+  connectClassicSync: (server?: string) => Promise<void>;
   subscribeToRepoChannel: (
     listener: ServiceWorkerRepoChannelListener
   ) => Promise<() => void>;

@@ -82,6 +82,7 @@ declare global {
         tailLogs: (n?: number) => ReturnType<typeof SwLogReader.tail>;
         exportLogs: () => Promise<string>;
         clearLogs: () => Promise<void>;
+        connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
           listener: ServiceWorkerRepoChannelListener
         ) => Promise<() => void>;
@@ -286,6 +287,7 @@ export async function bootPatchworkSite(
     accountDocHandle,
     sw: {
       ...buildSwLogApi(),
+      connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
     },
   };
@@ -417,7 +419,7 @@ function logToolRegistryWhenLoaded(moduleWatcher: ModuleWatcher): void {
 
 function buildSwLogApi(): Omit<
   Window["patchwork"]["sw"],
-  "subscribeToRepoChannel"
+  "subscribeToRepoChannel" | "connectClassicSync"
 > {
   return {
     printLogs: async (n = 200) => {

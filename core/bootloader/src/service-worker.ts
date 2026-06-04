@@ -64,6 +64,44 @@ const SUBDUCTION_ENDPOINTS = [
 ];
 const RESOLVE_TIMEOUT_MS = 30_000;
 
+const DEFAULT_CLASSIC_SYNC_SERVER = "wss://sync3.automerge.org";
+
+let classicSyncServer = DEFAULT_CLASSIC_SYNC_SERVER;
+let classicSyncAdapter: WebSocketClientAdapter | null = null;
+let classicSyncConnectPromise: Promise<void> | null = null;
+
+async function connectClassicSyncNetwork(server: string): Promise<void> {
+  const url = server.trim() || DEFAULT_CLASSIC_SYNC_SERVER;
+  if (classicSyncConnectPromise && classicSyncServer === url) {
+    return classicSyncConnectPromise;
+  }
+
+  if (classicSyncAdapter && classicSyncServer !== url) {
+    classicSyncAdapter.disconnect();
+    classicSyncAdapter = null;
+    classicSyncConnectPromise = null;
+  }
+
+  classicSyncServer = url;
+  classicSyncConnectPromise = (async () => {
+    const { repo } = await getRepoHive();
+    if (!classicSyncAdapter) {
+      classicSyncAdapter = new WebSocketClientAdapter(url);
+      repo.networkSubsystem.addNetworkAdapter(classicSyncAdapter);
+    }
+    await classicSyncAdapter.whenReady();
+    const logger = await slog;
+    logger.info("classic sync connected", { server: url });
+  })();
+
+  try {
+    await classicSyncConnectPromise;
+  } catch (err) {
+    classicSyncConnectPromise = null;
+    throw err;
+  }
+}
+
 // ── Persistent logger ───────────────────────────────────────────────────
 // Initialized eagerly so it's available for the entire SW lifetime.
 // Access from the SW inspector console via self.printLogs(), self.tailLogs(),
@@ -205,7 +243,6 @@ function getRepoHive() {
         peerId: hive.peerId,
         enableRemoteHeadsGossiping: true,
         idFactory: hive.idFactory,
-        //network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
       repo.subduction.then(resolveRepoSubduction);
@@ -327,6 +364,28 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
+  } else if (event.data.type == "connect-classic-sync") {
+    const [replyPort] = event.ports;
+    const server =
+      typeof event.data.server === "string"
+        ? event.data.server
+        : DEFAULT_CLASSIC_SYNC_SERVER;
+    (event as unknown as FetchEvent).waitUntil(
+      connectClassicSyncNetwork(server)
+        .then(() => {
+          replyPort?.postMessage({ type: "connect-classic-sync-ready" });
+          replyPort?.close();
+          log("classic sync connected on demand", { server });
+        })
+        .catch((err) => {
+          console.error("connectClassicSyncNetwork failed", err);
+          replyPort?.postMessage({
+            type: "connect-classic-sync-failed",
+            error: String(err),
+          });
+          replyPort?.close();
+        })
+    );
   }
 });
 
