@@ -51,7 +51,7 @@ export const createDocOfDatatype2 = async <D>(
   if (hive) {
     await hive.addSyncServerRelayToDoc(handle.url);
   }
-  handle.change((doc) => {
+  handle.change((doc: D & HasPatchworkMetadata) => {
     datatype.module.init(doc, repo);
     let importUrl = datatype.importUrl;
     if (isValidAutomergeUrl(importUrl)) {
