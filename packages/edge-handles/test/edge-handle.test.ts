@@ -51,11 +51,11 @@ describe("EdgeHandle", () => {
       const sink = repo.create<SinkDoc>({ html: "" });
       await Promise.all([src.whenReady(), sink.whenReady()]);
       const edge = await createEdgeHandle(repo, {
-        source: { s: src.ref("body") },
-        target: { t: sink.ref("html") },
+        source: { s: src.sub("body") },
+        target: { t: sink.sub("html") },
       });
-      expect(edge.doc.doc().source).toEqual({ s: src.ref("body").url });
-      expect(edge.doc.doc().target).toEqual({ t: sink.ref("html").url });
+      expect(edge.doc.doc().source).toEqual({ s: src.sub("body").url });
+      expect(edge.doc.doc().target).toEqual({ t: sink.sub("html").url });
       expect(Object.keys(edge.source)).toEqual(["s"]);
       expect(Object.keys(edge.target)).toEqual(["t"]);
     });
@@ -64,7 +64,7 @@ describe("EdgeHandle", () => {
       const src = repo.create<SrcDoc>({ body: "hello" });
       await src.whenReady();
       const edge = await createEdgeHandle(repo, {
-        source: { ref: src.ref("body"), url: src.ref("body").url },
+        source: { ref: src.sub("body"), url: src.sub("body").url },
       });
       expect(Object.keys(edge.source)).toEqual(["ref", "url"]);
     });
@@ -114,7 +114,7 @@ describe("EdgeHandle", () => {
       const sink = repo.create<SinkDoc>({ html: "" });
       await sink.whenReady();
       const edge = await createEdgeHandle<string>(repo, {
-        target: { sink: sink.ref("html") },
+        target: { sink: sink.sub("html") },
       });
       edge.change("<h1>hi</h1>");
       expect(sink.doc()?.html).toBe("<h1>hi</h1>");
@@ -124,7 +124,7 @@ describe("EdgeHandle", () => {
       const sink = repo.create<SinkDoc>({ html: "seed" });
       await sink.whenReady();
       const edge = await createEdgeHandle<string>(repo, {
-        target: { sink: sink.ref("html") },
+        target: { sink: sink.sub("html") },
       });
       // Ref.change(undefined) will write undefined into the doc; whether
       // that's "useful" is a transform/datatype concern. The cell itself
@@ -254,7 +254,7 @@ describe("EdgeHandle", () => {
       const src = repo.create<SrcDoc>({ body: "hello" });
       await src.whenReady();
       const edge = await createEdgeHandle(repo, {
-        source: { s: src.ref("body") },
+        source: { s: src.sub("body") },
       });
       const calls: [unknown, string][] = [];
       edge.onSourceChange((value, key) => calls.push([value, key]));
@@ -265,7 +265,7 @@ describe("EdgeHandle", () => {
       const src = repo.create<SrcDoc>({ body: "hello" });
       await src.whenReady();
       const edge = await createEdgeHandle(repo, {
-        source: { s: src.ref("body") },
+        source: { s: src.sub("body") },
       });
       const calls: [unknown, string][] = [];
       edge.onSourceChange((value, key) => calls.push([value, key]));
@@ -283,7 +283,7 @@ describe("EdgeHandle", () => {
       edge.onMembersChange(() => fires++);
       expect(fires).toBe(1); // initial
 
-      edge.setSource("s", src.ref("body"));
+      edge.setSource("s", src.sub("body"));
       await waitFor(() => fires >= 2);
 
       edge.removeSource("s");
@@ -298,7 +298,7 @@ describe("EdgeHandle", () => {
       edge.onAnyChange((value, key) => calls.push([value, key]));
       expect(calls).toEqual([[undefined, undefined]]);
 
-      edge.setSource("s", src.ref("body"));
+      edge.setSource("s", src.sub("body"));
       await waitFor(() => calls.length >= 2);
       // Membership change → (undefined, undefined)
       expect(calls[calls.length - 1]).toEqual([undefined, undefined]);
@@ -316,7 +316,7 @@ describe("EdgeHandle", () => {
       await src.whenReady();
       const edge = await createEdgeHandle(repo);
       expect(Object.keys(edge.source)).toEqual([]);
-      edge.setSource("s", src.ref("body"));
+      edge.setSource("s", src.sub("body"));
       await waitFor(() => Object.keys(edge.source).length === 1);
       expect(edge.source.s?.value()).toBe("hello");
     });
@@ -325,7 +325,7 @@ describe("EdgeHandle", () => {
       const src = repo.create<SrcDoc>({ body: "hi" });
       await src.whenReady();
       const edge = await createEdgeHandle(repo, {
-        source: { s: src.ref("body") },
+        source: { s: src.sub("body") },
       });
       edge.removeSource("s");
       await waitFor(() => Object.keys(edge.source).length === 0);
@@ -336,7 +336,7 @@ describe("EdgeHandle", () => {
       const sink = repo.create<SinkDoc>({ html: "" });
       await sink.whenReady();
       const edge = await createEdgeHandle(repo, {
-        target: { t: sink.ref("html") },
+        target: { t: sink.sub("html") },
       });
       edge.removeTarget("t");
       await waitFor(() => Object.keys(edge.target).length === 0);
@@ -347,7 +347,7 @@ describe("EdgeHandle", () => {
       const src = repo.create<SrcDoc>({ body: "hello" });
       await src.whenReady();
       const edge = await createEdgeHandle<string>(repo, {
-        source: { s: src.ref("body") },
+        source: { s: src.sub("body") },
         persist: true,
         value: "",
       });
@@ -482,7 +482,7 @@ describe("EdgeHandle", () => {
   // ─── plain doc urls ────────────────────────────────────────────────────
 
   describe("plain doc urls resolve to root refs", () => {
-    it("resolves an automerge:docId url to handle.ref()", async () => {
+    it("resolves a plain automerge:docId url to a whole-doc endpoint", async () => {
       const src = repo.create<SrcDoc>({ body: "hello" });
       await src.whenReady();
       const edge = await createEdgeHandle(repo, {
@@ -490,7 +490,8 @@ describe("EdgeHandle", () => {
       });
       const resolved = edge.source.s;
       expect(resolved).toBeDefined();
-      expect((resolved as unknown as { path: unknown[] }).path).toEqual([]);
+      // A plain doc url resolves to a whole-doc endpoint (no sub-path).
+      expect(resolved!.url).toBe(src.url);
       const v = resolved!.value() as SrcDoc;
       expect(v.body).toBe("hello");
     });
@@ -539,7 +540,7 @@ describe("EdgeHandle", () => {
       const src = repo.create<SrcDoc>({ body: "hi" });
       await src.whenReady();
       const edge = await createEdgeHandle(repo, {
-        source: { s: src.ref("body") },
+        source: { s: src.sub("body") },
       });
       const calls: [unknown, string][] = [];
       edge.onSourceChange((value, key) => calls.push([value, key]));
@@ -595,11 +596,11 @@ describe("EdgeHandle", () => {
       ]);
       const edge = await createEdgeHandle<number>(repo, {
         source: {
-          a: a.ref("value"),
-          b: b.ref("value"),
-          c: c.ref("value"),
+          a: a.sub("value"),
+          b: b.sub("value"),
+          c: c.sub("value"),
         },
-        target: { total: total.ref("value") },
+        target: { total: total.sub("value") },
       });
       edge.onAnyChange(() => {
         let n = 0;
@@ -625,7 +626,7 @@ describe("EdgeHandle", () => {
       const sink = repo.create<SinkDoc>({ html: "" });
       await sink.whenReady();
       const inner = await createEdgeHandle<string>(repo, {
-        target: { sink: sink.ref("html") },
+        target: { sink: sink.sub("html") },
       });
       const outer = await createEdgeHandle<string>(repo, {
         target: { inner },
@@ -647,10 +648,14 @@ describe("EdgeHandle", () => {
       unsub();
     });
 
-    it("Ref implements the Handle interface", async () => {
+    it("a resolved sub-handle endpoint implements the Handle interface", async () => {
       const src = repo.create<SrcDoc>({ body: "hi" });
       await src.whenReady();
-      const ref = src.ref("body");
+      const edge = await createEdgeHandle(repo, {
+        source: { s: src.sub("body") },
+      });
+      const ref = edge.source.s;
+      expect(ref).toBeDefined();
       // Compile-time conformance:
       expectTypeOf(ref).toMatchTypeOf<Handle<unknown>>();
       // Runtime shape:

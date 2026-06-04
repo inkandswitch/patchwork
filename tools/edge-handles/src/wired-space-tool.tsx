@@ -29,7 +29,6 @@
 import type {
   AutomergeUrl,
   DocHandle,
-  RefUrl,
   Repo,
 } from "@automerge/automerge-repo";
 import {
@@ -170,7 +169,7 @@ function refUrl(docUrl: AutomergeUrl, path: string): HandleUrl {
   if (!path) return docUrl;
   const id = docIdOf(docUrl);
   if (!id) return docUrl;
-  return `automerge:${id}/${path}` as RefUrl;
+  return `automerge:${id}/${path}` as AutomergeUrl;
 }
 
 function shortUrl(url: string): string {
@@ -1275,7 +1274,7 @@ function EndpointBadge(props: {
     if (!id) return setEditing(false);
     const next = draft().trim();
     const nextUrl = (next
-      ? (`automerge:${id}/${next}` as RefUrl)
+      ? (`automerge:${id}/${next}` as AutomergeUrl)
       : (`automerge:${id}` as AutomergeUrl)) as HandleUrl;
     if (nextUrl !== props.url) props.onCommit(nextUrl);
     setEditing(false);

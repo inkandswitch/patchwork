@@ -3,6 +3,7 @@ export {
   type EdgeHandleDoc,
   type HandleUrl,
   type Handle,
+  type HandleInput,
   EdgeHandle,
   createEdgeHandle,
   findEdgeHandle,
