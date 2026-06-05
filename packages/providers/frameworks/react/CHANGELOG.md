@@ -1,5 +1,13 @@
 # @inkandswitch/patchwork-providers-react
 
+## 0.2.2
+
+### Patch Changes
+
+- 5eafe78: Constrain `useRequest` and `useSubscribe` provider values to JSON-serializable data, matching the core provider subscription channel.
+- Updated dependencies [5eafe78]
+  - @inkandswitch/patchwork-providers@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
