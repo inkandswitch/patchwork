@@ -41,8 +41,8 @@
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
-    "@automerge/automerge-repo": "2.6.0-subduction.27",
-    "@automerge/automerge-subduction": "0.13.0",
+    "@automerge/automerge-repo": "2.6.0-subduction.28",
+    "@automerge/automerge-subduction": "0.14.0",
     "@changesets/cli": "^2.31.0",
     "@vitest/ui": "^3.2.6",
     "concurrently": "^9.2.1",
