@@ -1,5 +1,6 @@
 export * from "./patchwork-view.js";
 export * from "./events.js";
+export { registerPatchworkIsolationElement } from "./isolation/index.js";
 
 import type {} from "react";
 import type {} from "solid-js";
@@ -26,6 +27,11 @@ type PatchworkViewAttrs =
   | LegacyPatchworkViewAttrs
   | PatchworkViewComponentAttrs;
 
+type PatchworkIsolationAttrs = {
+  "doc-url"?: string;
+  "tool-id"?: string | null;
+};
+
 declare module "react" {
   export namespace JSX {
     interface IntrinsicElements {
@@ -34,6 +40,11 @@ declare module "react" {
         HTMLElement
       > &
         PatchworkViewAttrs;
+      "patchwork-isolation": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > &
+        PatchworkIsolationAttrs;
     }
   }
 }
@@ -42,6 +53,8 @@ declare module "solid-js" {
   namespace JSX {
     interface IntrinsicElements {
       "patchwork-view": HTMLAttributes<HTMLElement> & PatchworkViewAttrs;
+      "patchwork-isolation": HTMLAttributes<HTMLElement> &
+        PatchworkIsolationAttrs;
     }
   }
 }
@@ -56,6 +69,11 @@ declare global {
         HTMLElement
       > &
         PatchworkViewAttrs;
+      "patchwork-isolation": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > &
+        PatchworkIsolationAttrs;
     }
   }
 }

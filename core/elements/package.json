@@ -9,6 +9,7 @@
   "license": "MIT",
   "peerDependencies": {
     "@automerge/automerge-repo": "*",
+    "@automerge/automerge-repo-network-messagechannel": "*",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/patchwork-providers": "workspace:^",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
+    "@automerge/automerge-repo-network-messagechannel": "catalog:",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/patchwork-providers": "workspace:^",

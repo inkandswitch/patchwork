@@ -1,0 +1,10 @@
+export {
+  registerPatchworkIsolationElement,
+  type PatchworkIsolationElement,
+} from "./patchwork-isolation.js";
+export { createIntermediaryRepo, type IntermediaryRepo, type IntermediaryRepoOptions } from "./intermediary-repo.js";
+export { FilteringNetworkAdapter } from "./filtering-adapter.js";
+export { startModuleRpc } from "./module-rpc.js";
+export { startHostProviderBridge } from "./provider-bridge.js";
+export { startHostNavigationBridge } from "./navigation-bridge.js";
+export { generateIframeSrcdoc, type RegistryEntry } from "./iframe-bootstrap.js";

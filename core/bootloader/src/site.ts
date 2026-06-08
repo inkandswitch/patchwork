@@ -52,6 +52,7 @@ import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
   openDocument,
   registerPatchworkViewElement,
+  registerPatchworkIsolationElement,
 } from "@inkandswitch/patchwork-elements";
 import { registerRepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
@@ -280,6 +281,8 @@ export async function bootPatchworkSite(
   repoProvider.appendChild(rootElement);
 
   registerPatchworkViewElement({ hive, repo });
+
+  registerPatchworkIsolationElement();
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
