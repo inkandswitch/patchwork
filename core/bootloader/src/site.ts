@@ -219,8 +219,9 @@ export async function bootPatchworkSite(
     config.remoteStorageIds ?? [DEFAULT_REMOTE_STORAGE_ID]
   );
 
+  await repo.networkSubsystem.whenReady();
   if (hive) {
-    await repo.networkSubsystem.whenReady();
+
     (hive.networkAdapter as any).syncKeyhive?.();
   }
 
