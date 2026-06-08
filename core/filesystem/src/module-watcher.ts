@@ -182,6 +182,8 @@ export class ModuleWatcher {
           heads: handle.heads(),
         });
         importName = handle.view(handle.heads()).url;
+      } else {
+        return import(importName)
       }
 
       const mod = valid
