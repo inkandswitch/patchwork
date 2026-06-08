@@ -171,11 +171,38 @@ function getResolvedImportMap(): ImportMap {
   }
 }
 
+/**
+ * Collect all host page stylesheets (Tailwind, DaisyUI, etc.) as a single
+ * CSS string. Tools inside the iframe need these to render correctly.
+ */
+async function collectHostStyles(): Promise<string> {
+  const sheets = await Promise.all(
+    Array.from(document.styleSheets).map(async (sheet) => {
+      try {
+        return Array.from(sheet.cssRules)
+          .map((r) => r.cssText)
+          .join("\n");
+      } catch {
+        if (sheet.href) {
+          try {
+            return await fetch(sheet.href).then((r) => r.text());
+          } catch {
+            return "";
+          }
+        }
+        return "";
+      }
+    })
+  );
+  return sheets.filter(Boolean).join("\n");
+}
+
 // Cache boot assets so we only fetch them once across all instances.
 interface BootAssets {
   esmsSource: string;
   automergeWasm: ArrayBuffer;
   subductionWasm: ArrayBuffer;
+  hostStyles: string;
 }
 
 let bootAssetsPromise: Promise<BootAssets> | null = null;
@@ -195,10 +222,12 @@ function fetchBootAssets(): Promise<BootAssets> {
         if (!r.ok) throw new Error(`Failed to fetch subduction.wasm: ${r.status}`);
         return r.arrayBuffer();
       }),
-    ]).then(([esmsSource, automergeWasm, subductionWasm]) => ({
+      collectHostStyles(),
+    ]).then(([esmsSource, automergeWasm, subductionWasm, hostStyles]) => ({
       esmsSource,
       automergeWasm,
       subductionWasm,
+      hostStyles,
     }));
   }
   return bootAssetsPromise;
@@ -355,6 +384,7 @@ export function registerPatchworkIsolationElement(
               toolId,
               registryEntries,
               esmsSource: assets.esmsSource,
+              hostStyles: assets.hostStyles,
               importMap,
               automergeWasm,
               subductionWasm,

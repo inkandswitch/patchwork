@@ -35,6 +35,7 @@ interface InitMessage {
     toolId: string | null;
     registryEntries: RegistryEntry[];
     esmsSource: string;
+    hostStyles: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
     automergeWasm: ArrayBuffer;
     subductionWasm: ArrayBuffer;
@@ -170,6 +171,14 @@ async function boot() {
   );
 
   const d = init.data;
+
+  // Inject host page stylesheets so tools render with the same CSS
+  // framework (Tailwind, DaisyUI, etc.) as on the host.
+  if (d.hostStyles) {
+    const style = document.createElement("style");
+    style.textContent = d.hostStyles;
+    document.head.appendChild(style);
+  }
 
   try {
     // 4. Configure es-module-shims with source hook
