@@ -103,6 +103,8 @@ export class ModuleWatcher {
         await this.processBranchesEntry(importName);
         return;
       }
+    } else {
+      await import(importName)
     }
     this.setDocWatcher(importName);
     await this.announce(importName);
