@@ -245,13 +245,77 @@ function getRepoHive() {
   return repoHivePromise;
 }
 
+// Per-tab MessageChannel connections, keyed by the client (window) id so we can
+// tear them down when the tab goes away. `adapter` is what was registered with
+// the network subsystem (the MessageChannelNetworkAdapter, or the keyhive
+// wrapper around it); `mcAdapter` is always the underlying MessageChannel
+// adapter so we can disconnect the port itself.
+type TabConnection = {
+  adapter: { disconnect(): void };
+  mcAdapter: MessageChannelNetworkAdapter;
+  port: MessagePort;
+};
+const tabConnections = new Map<string, TabConnection>();
+
+function dropConnection(repo: Repo, conn: TabConnection) {
+  // removeNetworkAdapter pulls the adapter out of networkSubsystem.adapters and
+  // calls adapter.disconnect(), which (for the MessageChannel adapter) emits the
+  // "close"/"peer-disconnected" events that also clear #adaptersByPeer.
+  try {
+    repo.networkSubsystem.removeNetworkAdapter(conn.adapter as any);
+  } catch (err) {
+    console.error("removeNetworkAdapter failed", err);
+  }
+  // Belt and braces for the keyhive path, where the registered adapter is a
+  // wrapper: make sure the underlying port is disconnected and closed too.
+  try {
+    conn.mcAdapter.disconnect();
+  } catch {}
+  try {
+    conn.port.close();
+  } catch {}
+}
+
+// Remove network adapters for tabs that no longer exist. Service workers get no
+// reliable disconnect signal when a tab closes, and useWeakRef cleanup only
+// fires lazily on the next postMessage to a GC'd port — which never comes for an
+// idle peer. So we reconcile against the live window clients instead.
+async function reconcileConnections() {
+  if (!repoHivePromise || tabConnections.size === 0) return;
+  const { repo } = await getRepoHive();
+  const live = new Set(
+    (
+      await (self as any).clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+    ).map((c: Client) => c.id)
+  );
+  for (const [clientId, conn] of tabConnections) {
+    if (live.has(clientId)) continue;
+    tabConnections.delete(clientId);
+    log(`tab ${clientId} gone — removing its network adapter`);
+    dropConnection(repo, conn);
+  }
+}
+
 // Connect client MessagePorts to the repo for sync
-async function connectPort(port: MessagePort) {
+async function connectPort(port: MessagePort, clientId?: string) {
   const { hive, repo } = await getRepoHive();
   const networkAdapter = new MessageChannelNetworkAdapter(port, { useWeakRef: true });
 
+  // If this client already had a connection (e.g. it reconnected after the SW
+  // restarted), tear the stale one down before registering the new one.
+  const track = (adapter: { disconnect(): void }) => {
+    if (!clientId) return;
+    const stale = tabConnections.get(clientId);
+    if (stale) dropConnection(repo, stale);
+    tabConnections.set(clientId, { adapter, mcAdapter: networkAdapter, port });
+  };
+
   if (!hive) {
     repo.networkSubsystem.addNetworkAdapter(networkAdapter);
+    track(networkAdapter);
     return;
   }
 
@@ -276,6 +340,7 @@ async function connectPort(port: MessagePort) {
   });
 
   repo.networkSubsystem.addNetworkAdapter(keyhiveNetworkAdapter);
+  track(keyhiveNetworkAdapter);
 }
 
 self.addEventListener("message", async (event) => {
@@ -285,6 +350,8 @@ self.addEventListener("message", async (event) => {
     // the idle timer.
     const [pongPort] = event.ports;
     log("ping");
+    // Opportunistically reap adapters for tabs that have since closed.
+    (event as unknown as FetchEvent).waitUntil(reconcileConnections());
     if (pongPort) {
       pongPort.postMessage({ type: "pong", workerInstanceId });
       log("pong");
@@ -305,7 +372,7 @@ self.addEventListener("message", async (event) => {
     // it, the browser can terminate the SW the moment this synchronous block
     // returns, killing the in-flight wasm fetch.
     (event as unknown as FetchEvent).waitUntil(
-      connectPort(port).then(
+      connectPort(port, source?.id).then(
         () => source?.postMessage({ type: "port-ready", id, workerInstanceId }),
         (err) => {
           console.error("connectPort failed", err);
