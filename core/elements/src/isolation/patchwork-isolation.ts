@@ -228,6 +228,7 @@ export function registerPatchworkIsolationElement(
       #hostRpcPort: MessagePort | null = null;
       #cleanups: Array<() => void> = [];
       #booted = false;
+      #initEpoch = 0;
 
       static get observedAttributes() {
         return [ATTRS.docUrl, ATTRS.toolId];
@@ -272,6 +273,7 @@ export function registerPatchworkIsolationElement(
       }
 
       async #init() {
+        const epoch = ++this.#initEpoch;
         const docUrl = this.docUrl;
         const toolId = this.toolId;
 
@@ -298,8 +300,8 @@ export function registerPatchworkIsolationElement(
           return;
         }
 
-        // Check if we were torn down while fetching
-        if (!this.isConnected) return;
+        // Abort if a newer init was started or we were torn down
+        if (epoch !== this.#initEpoch) return;
 
         // ── Resolve import map ───────────────────────────────────
         const importMap = getResolvedImportMap();
@@ -336,11 +338,11 @@ export function registerPatchworkIsolationElement(
         const rpcPort2 = rpcChannel.port2;
 
         iframe.addEventListener("load", async () => {
-          if (!this.#booted) return;
+          if (!this.#booted || epoch !== this.#initEpoch) return;
           if (!iframe.contentWindow) return;
 
           const registryEntries = await collectRegistryEntries(mapper);
-          if (!this.#booted) return;
+          if (!this.#booted || epoch !== this.#initEpoch) return;
 
           // Clone WASM buffers so they can be transferred
           const automergeWasm = assets.automergeWasm.slice(0);
@@ -381,6 +383,7 @@ export function registerPatchworkIsolationElement(
       }
 
       #teardown() {
+        this.#initEpoch++;
         if (!this.#booted) return;
         this.#booted = false;
 
