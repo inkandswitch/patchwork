@@ -20,7 +20,6 @@ export interface RegistryEntry {
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
-// These are NOT imports — they describe APIs loaded dynamically at runtime.
 // ---------------------------------------------------------------------------
 
 interface ImportShim {
@@ -42,12 +41,22 @@ interface InitMessage {
   };
 }
 
+interface FetchModuleResult {
+  source: string;
+  resolvedUrl: string;
+}
+
+interface FetchResourceResult {
+  body: ArrayBuffer;
+  contentType: string;
+}
+
 // ---------------------------------------------------------------------------
 // Boot function — runs inside the iframe via boot.toString() + IIFE.
 // ---------------------------------------------------------------------------
 
 async function boot() {
-  // 1. Stub localStorage — sandboxed iframes throw SecurityError on access.
+  // 1. Stub localStorage
   try {
     void localStorage;
   } catch {
@@ -63,40 +72,60 @@ async function boot() {
     });
   }
 
-  // 2. Module fetch RPC
-  interface FetchResult {
-    source: string;
-    resolvedUrl: string;
-  }
-
+  // 2. RPC infrastructure
   let rpcPort: MessagePort;
-  const pendingFetches = new Map<
+  const pendingModuleFetches = new Map<
     number,
-    { resolve: (r: FetchResult) => void; reject: (e: Error) => void }
+    { resolve: (r: FetchModuleResult) => void; reject: (e: Error) => void }
+  >();
+  const pendingResourceFetches = new Map<
+    number,
+    { resolve: (r: FetchResourceResult) => void; reject: (e: Error) => void }
   >();
   let fetchId = 0;
 
-  function fetchModule(url: string): Promise<FetchResult> {
+  function fetchModule(url: string): Promise<FetchModuleResult> {
     return new Promise((resolve, reject) => {
       const id = ++fetchId;
-      pendingFetches.set(id, { resolve, reject });
+      pendingModuleFetches.set(id, { resolve, reject });
       rpcPort.postMessage({ type: "fetch-module", id, url });
+    });
+  }
+
+  function fetchResource(url: string): Promise<FetchResourceResult> {
+    return new Promise((resolve, reject) => {
+      const id = ++fetchId;
+      pendingResourceFetches.set(id, { resolve, reject });
+      rpcPort.postMessage({ type: "fetch-resource", id, url });
     });
   }
 
   function handleRpcMessage(event: MessageEvent) {
     const msg = event.data;
     if (!msg) return;
+
     if (msg.type === "fetch-module-response") {
-      const pending = pendingFetches.get(msg.id);
+      const pending = pendingModuleFetches.get(msg.id);
       if (pending) {
-        pendingFetches.delete(msg.id);
+        pendingModuleFetches.delete(msg.id);
         pending.resolve({ source: msg.source, resolvedUrl: msg.resolvedUrl });
       }
     } else if (msg.type === "fetch-module-error") {
-      const pending = pendingFetches.get(msg.id);
+      const pending = pendingModuleFetches.get(msg.id);
       if (pending) {
-        pendingFetches.delete(msg.id);
+        pendingModuleFetches.delete(msg.id);
+        pending.reject(new Error(msg.error));
+      }
+    } else if (msg.type === "fetch-resource-response") {
+      const pending = pendingResourceFetches.get(msg.id);
+      if (pending) {
+        pendingResourceFetches.delete(msg.id);
+        pending.resolve({ body: msg.body, contentType: msg.contentType });
+      }
+    } else if (msg.type === "fetch-resource-error") {
+      const pending = pendingResourceFetches.get(msg.id);
+      if (pending) {
+        pendingResourceFetches.delete(msg.id);
         pending.reject(new Error(msg.error));
       }
     }
@@ -153,15 +182,10 @@ async function boot() {
         _defaultSource: Function
       ) {
         const result = await fetchModule(url);
-        // Workaround: es-module-shims' lexer misidentifies class methods named
-        // `import` as dynamic import() expressions, causing parse errors.
         let source = result.source.replace(
           /^(\s+)import\s*\(([^)]*)\)\s*\{/gm,
           '$1["import"]($2) {'
         );
-        // Return the resolved URL so es-module-shims uses it as the base
-        // for relative imports. This is critical for automerge: URLs which
-        // get resolved to http:// service-worker paths on the host.
         return { source, url: result.resolvedUrl, type: "js" };
       },
     };
@@ -204,7 +228,25 @@ async function boot() {
     automergeSubduction.initSync(new Uint8Array(d.subductionWasm));
     await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
 
-    // 9. Create in-memory Repo
+    // 9. Install selective fetch proxy — only pkg: URLs are proxied.
+    // Installed after WASM init so initializeWasm/initSync aren't affected.
+    const originalFetch = self.fetch;
+    (self as any).fetch = async (
+      input: RequestInfo | URL,
+      requestInit?: RequestInit
+    ): Promise<Response> => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("pkg:")) {
+        const result = await fetchResource(url);
+        return new Response(result.body, {
+          status: 200,
+          headers: { "Content-Type": result.contentType },
+        });
+      }
+      return originalFetch(input, requestInit);
+    };
+
+    // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
       init.syncPort
     );
@@ -214,10 +256,11 @@ async function boot() {
     });
     (window as any).repo = repo;
 
-    // 10. Register patchwork-view
+    // 11. Register patchwork-view
     patchworkElements.registerPatchworkViewElement();
 
-    // 11. Register plugins with lazy loading via importShim
+    // 12. Register plugins with lazy loading via importShim
+    // Plugin importUrls are pkg: URLs (converted by host before boot)
     if (d.registryEntries) {
       for (const entry of d.registryEntries) {
         const plugin = {
@@ -244,7 +287,7 @@ async function boot() {
       }
     }
 
-    // 12. Render the tool
+    // 13. Render the tool
     const view = document.createElement("patchwork-view");
     if (d.docUrl) view.setAttribute("doc-url", d.docUrl);
     if (d.toolId) view.setAttribute("tool-id", d.toolId);

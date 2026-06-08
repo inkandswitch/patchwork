@@ -20,9 +20,14 @@
 
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
+import {
+  getImportableUrlFromAutomergeUrl,
+  resolvePackageExport,
+} from "@inkandswitch/patchwork-filesystem";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import { createIntermediaryRepo, type IntermediaryRepo } from "./intermediary-repo.js";
 import { startModuleRpc } from "./module-rpc.js";
+import { PackageUrlMapper } from "./package-url-mapper.js";
 import { startHostProviderBridge } from "./provider-bridge.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc, type RegistryEntry } from "./iframe-bootstrap.js";
@@ -42,7 +47,37 @@ export interface PatchworkIsolationElement extends HTMLElement {
  * Collect registry entries from all plugin registries for pre-populating
  * the iframe's registries.
  */
-function collectRegistryEntries(): RegistryEntry[] {
+/**
+ * Resolve a plugin's automerge importUrl to its package entry point URL
+ * and package name from package.json.
+ */
+async function resolvePluginEntryUrl(
+  importUrl: string
+): Promise<{ entryUrl: string; packageName?: string } | undefined> {
+  const folderPath = getImportableUrlFromAutomergeUrl(importUrl as AutomergeUrl);
+  const base = new URL(folderPath, window.location.origin);
+  const packageJsonUrl = new URL("package.json", base).href;
+
+  const response = await fetch(packageJsonUrl);
+  if (!response.ok) return undefined;
+
+  const pkgJson = await response.json();
+  const entryPoint = resolvePackageExport(pkgJson);
+  if (!entryPoint) return undefined;
+
+  return {
+    entryUrl: new URL(entryPoint, base).href,
+    packageName: pkgJson.name,
+  };
+}
+
+/**
+ * Collect registry entries, converting automerge importUrls to pkg: URLs
+ * via the mapper so that automerge document IDs don't leak to the iframe.
+ */
+async function collectRegistryEntries(
+  mapper: PackageUrlMapper
+): Promise<RegistryEntry[]> {
   const entries: RegistryEntry[] = [];
 
   for (const type of [
@@ -52,11 +87,25 @@ function collectRegistryEntries(): RegistryEntry[] {
   ]) {
     const registry = getRegistry(type);
     for (const plugin of registry.all()) {
+      let importUrl = (plugin as any).importUrl as string | undefined;
+
+      if (importUrl) {
+        const resolved = await resolvePluginEntryUrl(importUrl);
+        if (resolved) {
+          importUrl = mapper.toPackageUrl(
+            resolved.entryUrl,
+            resolved.packageName
+          );
+        } else {
+          importUrl = undefined;
+        }
+      }
+
       const entry: RegistryEntry = {
         type: (plugin as any).type,
         id: (plugin as any).id,
         name: (plugin as any).name,
-        importUrl: (plugin as any).importUrl,
+        importUrl,
       };
       if ("icon" in plugin) entry.icon = (plugin as any).icon;
       if ("supportedDatatypes" in plugin)
@@ -255,6 +304,9 @@ export function registerPatchworkIsolationElement(
         // ── Resolve import map ───────────────────────────────────
         const importMap = getResolvedImportMap();
 
+        // ── Package URL mapper ────────────────────────────────────
+        const mapper = new PackageUrlMapper();
+
         // ── Intermediary repo with allowlist ──────────────────────
         this.#intermediary = createIntermediaryRepo({
           rootDocUrl: docUrl,
@@ -267,7 +319,7 @@ export function registerPatchworkIsolationElement(
 
         // ── Start host-side handlers ─────────────────────────────
         this.#cleanups.push(
-          startModuleRpc({ port: this.#hostRpcPort }),
+          startModuleRpc({ port: this.#hostRpcPort, mapper }),
           startHostProviderBridge(this.#hostRpcPort, this),
           startHostNavigationBridge(this.#hostRpcPort, this)
         );
@@ -283,9 +335,12 @@ export function registerPatchworkIsolationElement(
         const intermediaryPort = this.#intermediary.iframePort;
         const rpcPort2 = rpcChannel.port2;
 
-        iframe.addEventListener("load", () => {
+        iframe.addEventListener("load", async () => {
           if (!this.#booted) return;
           if (!iframe.contentWindow) return;
+
+          const registryEntries = await collectRegistryEntries(mapper);
+          if (!this.#booted) return;
 
           // Clone WASM buffers so they can be transferred
           const automergeWasm = assets.automergeWasm.slice(0);
@@ -296,7 +351,7 @@ export function registerPatchworkIsolationElement(
               type: "boot",
               docUrl,
               toolId,
-              registryEntries: collectRegistryEntries(),
+              registryEntries,
               esmsSource: assets.esmsSource,
               importMap,
               automergeWasm,

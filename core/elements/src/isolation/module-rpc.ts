@@ -1,24 +1,15 @@
 /**
- * Host-side RPC handler for module loading.
+ * Host-side RPC handler for module and resource loading.
  *
- * The iframe's `es-module-shims` source hook sends module URL requests to
- * the host via a MessagePort. The host resolves the URL and returns the
- * source text along with the resolved URL (so es-module-shims can use it
- * as the base for relative imports).
+ * Handles two RPC types:
  *
- * For `automerge:` URLs (tool module packages), the handler:
- *  1. Converts to a service-worker-resolvable path
- *  2. Fetches `package.json` to find the entry point
- *  3. Resolves the entry point URL
- *  4. Fetches and returns the entry point source + resolved URL
+ * **`fetch-module`** — for es-module-shims source hook (JS modules).
+ *   Returns source text + resolved URL. Resolves automerge: URLs to
+ *   package entry points. Converts pkg: URLs back to real paths.
  *
- * For regular URLs, the handler fetches directly and returns the
- * response URL (which may differ from the request URL after redirects).
- *
- * Protocol:
- *   iframe → host:  { type: "fetch-module", id: number, url: string }
- *   host → iframe:  { type: "fetch-module-response", id: number, source: string, resolvedUrl: string }
- *                   | { type: "fetch-module-error", id: number, error: string }
+ * **`fetch-resource`** — for the iframe's fetch proxy (CSS, images, etc.).
+ *   Returns ArrayBuffer + content type. Binary-safe. Converts pkg: URLs
+ *   back to real paths via the PackageUrlMapper.
  */
 
 import { isValidAutomergeUrl, type AutomergeUrl } from "@automerge/automerge-repo";
@@ -26,15 +17,15 @@ import {
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
+import type { PackageUrlMapper } from "./package-url-mapper.js";
 
 export interface ModuleRpcOptions {
-  /** The MessagePort to communicate over. */
   port: MessagePort;
+  mapper: PackageUrlMapper;
 }
 
 /**
- * Resolve an automerge: URL to its package entry point URL by reading
- * the package.json via the service worker.
+ * Resolve an automerge: URL to its package entry point URL.
  */
 async function resolveAutomergeEntryUrl(
   automergeUrl: AutomergeUrl
@@ -56,53 +47,102 @@ async function resolveAutomergeEntryUrl(
 }
 
 /**
- * Start handling module fetch requests on the given port.
- * Returns a cleanup function that removes the listener.
+ * Resolve a URL for fetching:
+ *  - pkg: URLs → convert to real automerge path via mapper
+ *  - automerge: URLs → resolve to package entry point
+ *  - Other URLs → pass through
  */
+async function resolveUrl(
+  url: string,
+  mapper: PackageUrlMapper
+): Promise<string> {
+  // pkg: URL from iframe → convert back to real path
+  const realUrl = mapper.toAutomergeUrl(url);
+  if (realUrl) return realUrl;
+
+  // Raw automerge: URL → resolve to entry point
+  if (isValidAutomergeUrl(url)) {
+    return resolveAutomergeEntryUrl(url as AutomergeUrl);
+  }
+
+  return url;
+}
+
 export function startModuleRpc(options: ModuleRpcOptions): () => void {
-  const { port } = options;
+  const { port, mapper } = options;
 
   const onMessage = async (event: MessageEvent) => {
     const msg = event.data;
-    if (msg?.type !== "fetch-module") return;
+    if (!msg) return;
 
-    const { id, url } = msg as { id: number; url: string };
+    if (msg.type === "fetch-module") {
+      const { id, url } = msg as { id: number; url: string };
+      try {
+        const fetchUrl = await resolveUrl(url, mapper);
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          port.postMessage({
+            type: "fetch-module-error",
+            id,
+            error: `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`,
+          });
+          return;
+        }
 
-    try {
-      let fetchUrl: string;
-
-      if (isValidAutomergeUrl(url)) {
-        // Resolve automerge: URL to its package entry point
-        fetchUrl = await resolveAutomergeEntryUrl(url as AutomergeUrl);
-      } else {
-        fetchUrl = url;
-      }
-
-      const response = await fetch(fetchUrl);
-      if (!response.ok) {
+        const source = await response.text();
+        // Return the resolved URL as a pkg: URL so es-module-shims
+        // uses it as the base for relative imports.
+        const resolvedUrl = mapper.toPackageUrl(response.url || fetchUrl);
+        port.postMessage({
+          type: "fetch-module-response",
+          id,
+          source,
+          resolvedUrl,
+        });
+      } catch (err) {
         port.postMessage({
           type: "fetch-module-error",
           id,
-          error: `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`,
+          error: err instanceof Error ? err.message : String(err),
         });
-        return;
       }
+      return;
+    }
 
-      const source = await response.text();
-      port.postMessage({
-        type: "fetch-module-response",
-        id,
-        source,
-        // Return the resolved URL so es-module-shims uses it as the base
-        // for relative imports within the module.
-        resolvedUrl: response.url || fetchUrl,
-      });
-    } catch (err) {
-      port.postMessage({
-        type: "fetch-module-error",
-        id,
-        error: err instanceof Error ? err.message : String(err),
-      });
+    if (msg.type === "fetch-resource") {
+      const { id, url } = msg as { id: number; url: string };
+      try {
+        const fetchUrl = await resolveUrl(url, mapper);
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          port.postMessage({
+            type: "fetch-resource-error",
+            id,
+            error: `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`,
+          });
+          return;
+        }
+
+        const body = await response.arrayBuffer();
+        const contentType =
+          response.headers.get("content-type") || "application/octet-stream";
+        port.postMessage(
+          {
+            type: "fetch-resource-response",
+            id,
+            body,
+            contentType,
+          },
+          [body] // Transfer the ArrayBuffer
+        );
+      } catch (err) {
+        port.postMessage({
+          type: "fetch-resource-error",
+          id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      return;
     }
   };
 
