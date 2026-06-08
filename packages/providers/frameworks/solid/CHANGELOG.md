@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-providers-solid
 
+## 0.2.3
+
+### Patch Changes
+
+- 78723b6: Allow Solid provider helpers to accept lazily resolved elements, so components can pass accessors that are evaluated on mount instead of requiring an `HTMLElement` up front.
+
 ## 0.2.2
 
 ### Patch Changes
