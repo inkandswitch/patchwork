@@ -114,7 +114,12 @@ function log(...args: any[]) {
   );
 }
 
-self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("install", (event) => {
+  // waitUntil keeps the worker alive until skipWaiting resolves, so a freshly
+  // installed SW reliably jumps the "waiting" queue instead of stalling until
+  // every old tab closes.
+  (event as ExtendableEvent).waitUntil(self.skipWaiting());
+});
 
 async function clearOldCaches() {
   const cacheWhitelist = [cachename];
@@ -127,9 +132,16 @@ async function clearOldCaches() {
   await Promise.all(deletePromises);
 }
 
-self.addEventListener("activate", async () => {
-  await clearOldCaches();
-  clients.claim();
+self.addEventListener("activate", (event) => {
+  // Without waitUntil the activate event settles immediately and clients.claim()
+  // runs detached — the new worker can be killed before it takes control, so
+  // existing tabs keep talking to the old SW. Extend the event instead.
+  (event as ExtendableEvent).waitUntil(
+    (async () => {
+      await clearOldCaches();
+      await self.clients.claim();
+    })()
+  );
 });
 
 let repoHivePromise: Promise<{
