@@ -3,12 +3,13 @@
  * Repo and an isolated iframe's Repo. It enforces an allowlist of document
  * URLs — only documents the user has authorized can sync to the iframe.
  *
- * Architecture: The intermediary repo connects to the host repo on one side
- * and provides a MessagePort for the iframe repo on the other. A filtering
- * network adapter on the iframe-facing side intercepts all sync messages and
- * only forwards those for allowlisted documents.
+ * Access control uses `shareConfig` on the intermediary Repo with `access()`
+ * and `announce()` callbacks that gate per-document sync:
+ *  - `access`: gates ALL peers (including host) by allowlist — the intermediary
+ *    never holds non-allowlisted documents in memory
+ *  - `announce`: only announces allowlisted documents
  *
- * The intermediary has no persistent storage.
+ * The intermediary has no persistent storage (`isEphemeral: true`).
  */
 import {
   Repo,
@@ -18,7 +19,6 @@ import {
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import { FilteringNetworkAdapter } from "./filtering-adapter.js";
 
 export interface IntermediaryRepoOptions {
   /** The root document URL the tool is authorized to access. */
@@ -45,11 +45,11 @@ export interface IntermediaryRepo {
  *
  * Two MessageChannels are created:
  *  1. hostChannel — connects intermediary ↔ host repo
- *  2. iframeChannel — connects intermediary ↔ iframe repo (filtered)
+ *  2. iframeChannel — connects intermediary ↔ iframe repo
  *
- * The filtering adapter on the iframe-facing side of the intermediary drops
- * sync/request messages for documents not in the allowlist. The host side
- * shares freely with the intermediary (the intermediary is a trusted peer).
+ * The intermediary's `shareConfig` gates document sync:
+ *  - Only allowlisted documents are accepted from any peer (including the host)
+ *  - Only allowlisted documents are announced to the iframe peer
  */
 export function createIntermediaryRepo(
   options: IntermediaryRepoOptions
@@ -64,36 +64,62 @@ export function createIntermediaryRepo(
     try {
       const { documentId } = parseAutomergeUrl(url);
       allowedDocIds.add(documentId);
+      console.warn("[intermediary] allowlisted", documentId, url);
     } catch {
       // If the URL can't be parsed, still track it by URL
+      console.warn("[intermediary] allowlisted (unparseable)", url);
     }
   };
 
   addToAllowlist(rootDocUrl);
 
-  const isDocAllowed = (docId: DocumentId): boolean => {
-    return allowedDocIds.has(docId);
-  };
-
   // Channel connecting intermediary ↔ host repo
   const hostChannel = new MessageChannel();
-  const hostAdapter = new MessageChannelNetworkAdapter(hostChannel.port1);
+  const hostAdapter = new MessageChannelNetworkAdapter(hostChannel.port1, {
+    useWeakRef: true,
+  });
 
-  // Channel connecting intermediary ↔ iframe repo, with filtering
+  // Channel connecting intermediary ↔ iframe repo
   const iframeChannel = new MessageChannel();
-  const iframeAdapter = new FilteringNetworkAdapter(
-    iframeChannel.port1,
-    isDocAllowed
-  );
+  const iframeAdapter = new MessageChannelNetworkAdapter(iframeChannel.port1, {
+    useWeakRef: true,
+  });
 
   const repo = new Repo({
     peerId: `intermediary-${crypto.randomUUID().slice(0, 8)}` as PeerId,
     network: [hostAdapter, iframeAdapter],
-    // No storage — ephemeral
+    isEphemeral: true,
+    shareConfig: {
+      announce: async (_peerId: PeerId, documentId?: DocumentId) => {
+        // Peer-level call (no documentId): allow general communication
+        if (!documentId) return true;
+        const allowed = allowedDocIds.has(documentId);
+        console.warn(
+          "[intermediary] announce",
+          documentId,
+          allowed ? "ALLOWED" : "BLOCKED"
+        );
+        return allowed;
+      },
+      access: async (_peerId: PeerId, documentId?: DocumentId) => {
+        // Gate ALL peers (including host) by allowlist so the intermediary
+        // never holds non-allowlisted documents in memory.
+        if (!documentId) return false;
+        const allowed = allowedDocIds.has(documentId);
+        console.warn(
+          "[intermediary] access",
+          documentId,
+          allowed ? "ALLOWED" : "BLOCKED"
+        );
+        return allowed;
+      },
+    },
   });
 
   // Connect the host repo to the other end of the host channel
-  const hostSideAdapter = new MessageChannelNetworkAdapter(hostChannel.port2);
+  const hostSideAdapter = new MessageChannelNetworkAdapter(hostChannel.port2, {
+    useWeakRef: true,
+  });
   hostRepo.networkSubsystem.addNetworkAdapter(hostSideAdapter);
 
   return {
