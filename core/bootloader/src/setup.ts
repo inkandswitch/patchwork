@@ -71,6 +71,7 @@ export function connectClassicSync(
     );
   }
 
+
   const { port1, port2 } = new MessageChannel();
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -263,9 +264,24 @@ export default async function setupServiceWorker(
   // which tears down the in-memory Repo and forces a cold restart on the next
   // fetch. Ping through a MessageChannel so we can detect when a restarted SW
   // has a new in-memory Repo and reconnect all repo channels.
+  //
+  // 10s (not 20s) leaves a comfortable margin under the ~30s idle limit: a
+  // single delayed tick (main-thread jank, GC, a slow pong) won't let the SW
+  // slip past the deadline while the tab is focused.
   setInterval(() => {
     void pingServiceWorker();
-  }, 20_000);
+  }, 10_000);
+
+  // Background tabs throttle setInterval to ~once/minute, so the SW idles out
+  // while hidden no matter how short the interval is — that's by design in the
+  // browser. We can't prevent it, but we can recover instantly: ping the moment
+  // the tab regains focus/visibility so a restarted SW is detected (and its repo
+  // channels reconnected) right away instead of after the next throttled tick.
+  const pingIfVisible = () => {
+    if (document.visibilityState === "visible") void pingServiceWorker();
+  };
+  document.addEventListener("visibilitychange", pingIfVisible);
+  window.addEventListener("focus", pingIfVisible);
 
   // Reconnect on future SW updates (added after setup so the initial
   // activation doesn't notify before callers subscribe).
