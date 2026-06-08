@@ -109,6 +109,7 @@ export function createIntermediaryRepo(
     },
 
     shutdown() {
+      hostSideAdapter.disconnect();
       hostChannel.port1.close();
       hostChannel.port2.close();
       iframeChannel.port1.close();
