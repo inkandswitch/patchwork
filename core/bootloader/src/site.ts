@@ -179,13 +179,11 @@ export async function bootPatchworkSite(
     const portPromise = new Promise<MessagePort>((r) => {
       resolvePort = r;
     });
-    sw.subscribeToRepoChannel(resolvePort);
+    await sw.subscribeToRepoChannel(resolvePort);
     const swPort = await portPromise;
 
   if (config.keyhive) {
     initKeyhiveWasm();
-
-
 
     hive = await initializeAutomergeRepoKeyhive({
       storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
@@ -227,7 +225,7 @@ export async function bootPatchworkSite(
 
   installDevConsoleGlobals(repo, hive);
 
-  registerRepoProviderElement(repo);
+  registerRepoProviderElement(repo as any);
 
   const rootElement = document.getElementById(config.rootElementId ?? "root");
   if (!rootElement) {
