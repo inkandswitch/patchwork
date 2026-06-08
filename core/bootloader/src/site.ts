@@ -173,19 +173,19 @@ export async function bootPatchworkSite(
   if (!sw) throw new Error("Failed to set up service worker");
 
   let hive: AutomergeRepoKeyhive | undefined;
-  if (config.keyhive) {
-    initKeyhiveWasm();
-
-    // Get the initial SW port via subscribeToRepoChannel, then pass it
+      // Get the initial SW port via subscribeToRepoChannel, then pass it
     // to keyhive init which wraps it in its own network adapter.
     let resolvePort!: (port: MessagePort) => void;
     const portPromise = new Promise<MessagePort>((r) => {
       resolvePort = r;
     });
-    sw.subscribeToRepoChannel((port) => {
-      resolvePort(port);
-    });
+    sw.subscribeToRepoChannel(resolvePort);
     const swPort = await portPromise;
+
+  if (config.keyhive) {
+    initKeyhiveWasm();
+
+
 
     hive = await initializeAutomergeRepoKeyhive({
       storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
@@ -206,6 +206,7 @@ export async function bootPatchworkSite(
         idFactory: hive.idFactory,
       })
     : new Repo({
+        network: [new MessageChannelNetworkAdapter(swPort)],
         storage: new IndexedDBStorageAdapter(),
         async sharePolicy(peerId) {
           return peerId.includes("service-worker");
@@ -221,17 +222,6 @@ export async function bootPatchworkSite(
   if (hive) {
     await repo.networkSubsystem.whenReady();
     (hive.networkAdapter as any).syncKeyhive?.();
-  } else {
-    let activeServiceWorkerPort: MessagePort | undefined;
-    const connectServiceWorkerPort = async (port: MessagePort) => {
-      const previousPort = activeServiceWorkerPort;
-      activeServiceWorkerPort = port;
-      const net = new MessageChannelNetworkAdapter(port);
-      repo.networkSubsystem.addNetworkAdapter(net);
-      await net.whenReady();
-      previousPort?.close();
-    };
-    await sw.subscribeToRepoChannel(connectServiceWorkerPort);
   }
 
   installDevConsoleGlobals(repo, hive);
