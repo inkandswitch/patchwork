@@ -10,18 +10,26 @@ import type {
   Selector,
 } from "@inkandswitch/patchwork-providers";
 
+export type ElementSource = HTMLElement | (() => HTMLElement | undefined);
+
+function resolveElement(source: ElementSource): HTMLElement | undefined {
+  return typeof source === "function" ? source() : source;
+}
+
 /**
  * Generic reactive request. Resolves the first value a provider emits for
  * `selector` (via the one-shot `request` helper) and returns an accessor that
  * reads `undefined` until then. `T` is the response type.
  */
 export function request<T extends JSONValue>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(undefined);
   onMount(() => {
-    Providers.request<T>(element, selector).then((v) => {
+    const target = resolveElement(element);
+    if (!target) return;
+    Providers.request<T>(target, selector).then((v) => {
       if (v == null) return;
       setValue(() => v);
     });
@@ -39,23 +47,25 @@ export function request<T extends JSONValue>(
  * simply stays at the initial value.
  */
 export function subscribe<T extends JSONValue>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue: T
 ): Accessor<T>;
 export function subscribe<T extends JSONValue>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined>;
 export function subscribe<T extends JSONValue>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(initialValue);
   onMount(() => {
-    const unsubscribe = Providers.subscribe<T>(element, selector, setValue);
+    const target = resolveElement(element);
+    if (!target) return;
+    const unsubscribe = Providers.subscribe<T>(target, selector, setValue);
     onCleanup(unsubscribe);
   });
   return value;
@@ -71,13 +81,15 @@ export function subscribe<T extends JSONValue>(
  * for resources or memos.
  */
 export function subscribeReconciled<T extends JSONArray | JSONObject>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector,
   initialValue: T
 ): Store<T> {
   const [store, setStore] = createStore<T>(initialValue);
   onMount(() => {
-    const unsubscribe = Providers.subscribe<T>(element, selector, (v) => {
+    const target = resolveElement(element);
+    if (!target) return;
+    const unsubscribe = Providers.subscribe<T>(target, selector, (v) => {
       setStore(reconcile(v));
     });
     onCleanup(unsubscribe);
@@ -94,14 +106,16 @@ export function subscribeReconciled<T extends JSONArray | JSONObject>(
  * url arrives. `T` is the doc shape inside the handle.
  */
 export function subscribeDoc<T extends object>(
-  element: HTMLElement,
+  element: ElementSource,
   selector: Selector
 ): [Accessor<Doc<T> | undefined>, Accessor<DocHandle<T> | undefined>] {
   const [handle, setHandle] = createSignal<DocHandle<T> | undefined>(undefined);
   onMount(() => {
+    const target = resolveElement(element);
+    if (!target) return;
     let canceled = false;
     const unsubscribe = Providers.subscribe<AutomergeUrl>(
-      element,
+      target,
       selector,
       (url) => {
         if (!url) return;
