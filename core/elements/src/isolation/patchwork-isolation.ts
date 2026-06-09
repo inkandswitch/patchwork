@@ -18,14 +18,14 @@
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
 
-import type { AutomergeUrl } from "@automerge/automerge-repo";
+import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import { getRegistry } from "@inkandswitch/patchwork-plugins";
 import {
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
-import { createIntermediaryRepo, type IntermediaryRepo } from "./intermediary-repo.js";
+import { createIntermediaryRepo, collectAutomergeUrls, type IntermediaryRepo } from "./intermediary-repo.js";
 import { startModuleRpc } from "./module-rpc.js";
 import { PackageUrlMapper } from "./package-url-mapper.js";
 import { startHostProviderBridge } from "./provider-bridge.js";
@@ -344,6 +344,13 @@ export function registerPatchworkIsolationElement(
           hostRepo: repo,
         });
 
+        // ── Transitive allowlist (if enabled) ────────────────────
+        if (
+          localStorage.getItem("patchwork:transitive-allowlist") === "true"
+        ) {
+          this.#setupTransitiveAllowlist(repo, docUrl, epoch);
+        }
+
         // ── RPC channel ──────────────────────────────────────────
         const rpcChannel = new MessageChannel();
         this.#hostRpcPort = rpcChannel.port1;
@@ -414,6 +421,51 @@ export function registerPatchworkIsolationElement(
 
         this.appendChild(iframe);
         this.#booted = true;
+      }
+
+      /**
+       * Scan a document for automerge URLs and add them to the allowlist.
+       * Also watches for changes to dynamically expand the allowlist.
+       */
+      async #setupTransitiveAllowlist(
+        repo: Repo,
+        docUrl: AutomergeUrl,
+        epoch: number
+      ) {
+        const intermediary = this.#intermediary;
+        if (!intermediary) return;
+
+        const allowUrlsFromDoc = (doc: unknown) => {
+          const urls = new Set<AutomergeUrl>();
+          collectAutomergeUrls(doc, urls);
+          for (const url of urls) {
+            if (!intermediary.isAllowed(url)) {
+              intermediary.allow(url);
+            }
+          }
+        };
+
+        try {
+          const handle = await repo.find(docUrl);
+          if (epoch !== this.#initEpoch) return;
+
+          await handle.whenReady();
+          if (epoch !== this.#initEpoch) return;
+
+          const doc = handle.doc();
+          if (doc) allowUrlsFromDoc(doc);
+
+          const onChange = ({ doc }: { doc: unknown }) => {
+            allowUrlsFromDoc(doc);
+          };
+          handle.on("change", onChange);
+          this.#cleanups.push(() => handle.off("change", onChange));
+        } catch (err) {
+          console.warn(
+            "[patchwork-isolation] transitive allowlist scan failed:",
+            err
+          );
+        }
       }
 
       #teardown() {

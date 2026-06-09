@@ -17,8 +17,30 @@ import {
   type PeerId,
   type DocumentId,
   parseAutomergeUrl,
+  isValidAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+
+/**
+ * Recursively walks a value and collects all valid automerge URLs found.
+ */
+export function collectAutomergeUrls(
+  value: unknown,
+  urls: Set<AutomergeUrl>
+): void {
+  if (typeof value === "string") {
+    if (isValidAutomergeUrl(value)) urls.add(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectAutomergeUrls(item, urls);
+    return;
+  }
+  if (value !== null && typeof value === "object") {
+    for (const v of Object.values(value as Record<string, unknown>))
+      collectAutomergeUrls(v, urls);
+  }
+}
 
 export interface IntermediaryRepoOptions {
   /** The root document URL the tool is authorized to access. */
