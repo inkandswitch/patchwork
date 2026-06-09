@@ -267,15 +267,16 @@ export function registerPatchworkIsolationElement(
 
         allowlist.add(docUrl);
         log(`allowlisted ${docUrl}`);
-        populateAllowlist(
+
+        const allowlistCleanup = await populateAllowlist(
           repo,
           docUrl,
           allowlist,
           denylist,
           () => epoch !== this.#initEpoch
-        ).then((cleanup) => {
-          if (cleanup) this.#cleanups.push(cleanup);
-        });
+        );
+        if (allowlistCleanup) this.#cleanups.push(allowlistCleanup);
+        if (epoch !== this.#initEpoch) return;
 
         this.#intermediary = createIntermediaryRepo({
           allowlist,
