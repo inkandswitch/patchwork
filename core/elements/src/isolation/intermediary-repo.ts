@@ -17,33 +17,11 @@ import {
   type PeerId,
   type DocumentId,
   parseAutomergeUrl,
-  isValidAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import debug from "debug";
 
 const log = debug("patchwork:elements:isolation");
-
-/**
- * Recursively walks a value and collects all valid automerge URLs found.
- */
-export function collectAutomergeUrls(
-  value: unknown,
-  urls: Set<AutomergeUrl>
-): void {
-  if (typeof value === "string") {
-    if (isValidAutomergeUrl(value)) urls.add(value);
-    return;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectAutomergeUrls(item, urls);
-    return;
-  }
-  if (value !== null && typeof value === "object") {
-    for (const v of Object.values(value as Record<string, unknown>))
-      collectAutomergeUrls(v, urls);
-  }
-}
 
 /**
  * Maintains a set of document IDs that must never be synced to the iframe,
@@ -73,9 +51,35 @@ export class SyncDenylist {
   }
 }
 
+/**
+ * Maintains a set of document IDs that the iframe is allowed to sync.
+ * Used by the intermediary repo's shareConfig to gate document access.
+ */
+export class SyncAllowlist {
+  #allowed = new Set<DocumentId>();
+
+  add(url: AutomergeUrl): void {
+    const { documentId } = parseAutomergeUrl(url);
+    this.#allowed.add(documentId);
+  }
+
+  has(documentId: DocumentId): boolean {
+    return this.#allowed.has(documentId);
+  }
+
+  hasUrl(url: AutomergeUrl): boolean {
+    const { documentId } = parseAutomergeUrl(url);
+    return this.#allowed.has(documentId);
+  }
+
+  get size(): number {
+    return this.#allowed.size;
+  }
+}
+
 export interface IntermediaryRepoOptions {
-  /** The root document URL the tool is authorized to access. */
-  rootDocUrl: AutomergeUrl;
+  /** The allowlist controlling which documents can sync to the iframe. */
+  allowlist: SyncAllowlist;
   /** The host Repo to sync allowed documents from. */
   hostRepo: Repo;
   /** Optional denylist — denylisted documents are blocked regardless of allowlist. */
@@ -87,10 +91,6 @@ export interface IntermediaryRepo {
   repo: Repo;
   /** Port to hand to the iframe's Repo via MessageChannelNetworkAdapter. */
   iframePort: MessagePort;
-  /** Add a document URL to the allowlist. */
-  allow(url: AutomergeUrl): void;
-  /** Check whether a URL is currently allowed. */
-  isAllowed(url: AutomergeUrl): boolean;
   /** Tear down the intermediary repo and close all channels. */
   shutdown(): void;
 }
@@ -109,24 +109,7 @@ export interface IntermediaryRepo {
 export function createIntermediaryRepo(
   options: IntermediaryRepoOptions
 ): IntermediaryRepo {
-  const { rootDocUrl, hostRepo, denylist } = options;
-
-  const allowedDocIds = new Set<DocumentId>();
-  const allowedUrls = new Set<AutomergeUrl>();
-
-  const addToAllowlist = (url: AutomergeUrl) => {
-    allowedUrls.add(url);
-    try {
-      const { documentId } = parseAutomergeUrl(url);
-      allowedDocIds.add(documentId);
-      log(`allowlisted ${documentId} ${url}`);
-    } catch {
-      // If the URL can't be parsed, still track it by URL
-      log(`allowlisted (unparseable) ${url}`);
-    }
-  };
-
-  addToAllowlist(rootDocUrl);
+  const { allowlist, hostRepo, denylist } = options;
 
   const hostRepoPeerId = hostRepo.peerId;
 
@@ -150,19 +133,17 @@ export function createIntermediaryRepo(
       announce: async (_peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return true;
         if (denylist?.has(documentId)) return false;
-        return allowedDocIds.has(documentId);
+        return allowlist.has(documentId);
       },
       access: async (peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return false;
         if (denylist?.has(documentId)) {
-          // Only log iframe access attempts, not host-side
           if (peerId !== hostRepoPeerId) {
             log(`access ${documentId} DENIED`);
           }
           return false;
         }
-        const allowed = allowedDocIds.has(documentId);
-        // Only log iframe access attempts
+        const allowed = allowlist.has(documentId);
         if (peerId !== hostRepoPeerId) {
           log(`access ${documentId} ${allowed ? "ALLOWED" : "BLOCKED"}`);
         }
@@ -171,26 +152,21 @@ export function createIntermediaryRepo(
     },
   });
 
-  // Connect the host repo to the other end of the host channel
-  const hostSideAdapter = new MessageChannelNetworkAdapter(hostChannel.port2, {
-    useWeakRef: true,
-  });
-  hostRepo.networkSubsystem.addNetworkAdapter(hostSideAdapter);
+  // Connect the host repo to the other end of the isolation host channel
+  const isolationHostAdapter = new MessageChannelNetworkAdapter(
+    hostChannel.port2,
+    {
+      useWeakRef: true,
+    }
+  );
+  hostRepo.networkSubsystem.addNetworkAdapter(isolationHostAdapter);
 
   return {
     repo,
     iframePort: iframeChannel.port2,
 
-    allow(url: AutomergeUrl) {
-      addToAllowlist(url);
-    },
-
-    isAllowed(url: AutomergeUrl) {
-      return allowedUrls.has(url);
-    },
-
     shutdown() {
-      hostSideAdapter.disconnect();
+      isolationHostAdapter.disconnect();
       hostChannel.port1.close();
       hostChannel.port2.close();
       iframeChannel.port1.close();

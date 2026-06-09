@@ -33,7 +33,7 @@ import {
   type ModuleSettingsDoc,
 } from "@inkandswitch/patchwork-filesystem";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
-import { createIntermediaryRepo, collectAutomergeUrls, SyncDenylist, type IntermediaryRepo } from "./intermediary-repo.js";
+import { createIntermediaryRepo, SyncAllowlist, SyncDenylist, type IntermediaryRepo } from "./intermediary-repo.js";
 import { startModuleRpc } from "./module-rpc.js";
 import { PackageUrlMapper } from "./package-url-mapper.js";
 import { startHostProviderBridge } from "./provider-bridge.js";
@@ -193,6 +193,27 @@ async function checkAndDenylistIfSensitive(
   }
 
   return false;
+}
+
+/**
+ * Recursively walks a value and collects all valid automerge URLs found.
+ */
+function collectAutomergeUrls(
+  value: unknown,
+  urls: Set<AutomergeUrl>
+): void {
+  if (typeof value === "string") {
+    if (isValidAutomergeUrl(value)) urls.add(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectAutomergeUrls(item, urls);
+    return;
+  }
+  if (value !== null && typeof value === "object") {
+    for (const v of Object.values(value as Record<string, unknown>))
+      collectAutomergeUrls(v, urls);
+  }
 }
 
 declare global {
@@ -411,6 +432,7 @@ export function registerPatchworkIsolationElement(
   customElements.define(
     name,
     class extends HTMLElement implements PatchworkIsolationElement {
+      #allowlist: SyncAllowlist | null = null;
       #intermediary: IntermediaryRepo | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #hostRpcPort: MessagePort | null = null;
@@ -497,14 +519,19 @@ export function registerPatchworkIsolationElement(
         // ── Package URL mapper ────────────────────────────────────
         const mapper = new PackageUrlMapper();
 
-        // ── Denylist — block sensitive documents ──────────────────
+        // ── Allowlist + denylist ─────────────────────────────────
+        const allowlist = new SyncAllowlist();
+        allowlist.add(docUrl);
+        log(`allowlisted ${docUrl}`);
+        this.#allowlist = allowlist;
+
         const denylist = new SyncDenylist();
         // Fire-and-forget: populates denylist asynchronously.
         populateDenylist(repo, denylist);
 
-        // ── Intermediary repo with allowlist + denylist ───────────
+        // ── Intermediary repo ────────────────────────────────────
         this.#intermediary = createIntermediaryRepo({
-          rootDocUrl: docUrl,
+          allowlist,
           hostRepo: repo,
           denylist,
         });
@@ -529,7 +556,7 @@ export function registerPatchworkIsolationElement(
           startHostNavigationBridge(
             this.#hostRpcPort,
             this,
-            (url) => this.#intermediary?.isAllowed(url) ?? false
+            (url) => this.#allowlist?.hasUrl(url) ?? false
           )
         );
 
@@ -603,19 +630,20 @@ export function registerPatchworkIsolationElement(
         epoch: number,
         denylist?: SyncDenylist
       ) {
-        const intermediary = this.#intermediary;
-        if (!intermediary) return;
+        const allowlist = this.#allowlist;
+        if (!allowlist) return;
 
         const allowUrlsFromDoc = async (doc: unknown) => {
           const urls = new Set<AutomergeUrl>();
           collectAutomergeUrls(doc, urls);
           for (const url of urls) {
-            if (intermediary.isAllowed(url)) continue;
+            if (allowlist.hasUrl(url)) continue;
             if (denylist) {
               const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
               if (sensitive) continue;
             }
-            intermediary.allow(url);
+            allowlist.add(url);
+            log(`allowlisted ${url}`);
           }
         };
 
@@ -652,6 +680,7 @@ export function registerPatchworkIsolationElement(
         this.#hostRpcPort?.close();
         this.#hostRpcPort = null;
 
+        this.#allowlist = null;
         this.#intermediary?.shutdown();
         this.#intermediary = null;
 
