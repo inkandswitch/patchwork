@@ -19,9 +19,7 @@ import {
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import debug from "debug";
-
-const log = debug("patchwork:elements:isolation");
+import { log } from "./patchwork-isolation.js";
 
 /**
  * Maintains a set of document IDs that must never be synced to the iframe,

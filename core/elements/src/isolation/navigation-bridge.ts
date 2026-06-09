@@ -11,9 +11,7 @@
 
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "../events.js";
-import debug from "debug";
-
-const log = debug("patchwork:elements:isolation");
+import { log } from "./patchwork-isolation.js";
 
 /**
  * Host-side navigation bridge.

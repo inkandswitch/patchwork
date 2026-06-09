@@ -33,7 +33,7 @@ import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
 
-const log = debug("patchwork:elements:isolation");
+export const log = debug("patchwork:elements:isolation");
 
 // ---------------------------------------------------------------------------
 // Types

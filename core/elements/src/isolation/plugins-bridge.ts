@@ -21,9 +21,7 @@ import {
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
 import type { RegistryEntry } from "./iframe-bootstrap.js";
-import debug from "debug";
-
-const log = debug("patchwork:elements:isolation");
+import { log } from "./patchwork-isolation.js";
 
 // ---------------------------------------------------------------------------
 // PluginsUrlMapper
