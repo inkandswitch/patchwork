@@ -6,6 +6,7 @@
  *   iframe → host:  { type: "open-document", detail: OpenDocumentEventDetail }
  */
 
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "../events.js";
 
 /**
@@ -14,16 +15,34 @@ import type { OpenDocumentEventDetail } from "../events.js";
  * Listens on the RPC port for `open-document` messages from the iframe
  * and re-dispatches them as `patchwork:open-document` CustomEvents on
  * the host element.
+ *
+ * Navigation is gated by an `isAllowed` callback that checks the
+ * intermediary repo's allowlist. Allowlisted documents navigate
+ * immediately; non-allowlisted documents require user confirmation.
  */
 export function startHostNavigationBridge(
   rpcPort: MessagePort,
-  hostElement: HTMLElement
+  hostElement: HTMLElement,
+  isAllowed: (url: AutomergeUrl) => boolean
 ): () => void {
   const onMessage = (event: MessageEvent) => {
     const msg = event.data;
     if (msg?.type !== "open-document") return;
 
     const detail = msg.detail as OpenDocumentEventDetail;
+
+    if (!isAllowed(detail.url)) {
+      const title = detail.title ?? "Unknown";
+      const type = detail.type ?? "unknown";
+      const allowed = window.confirm(
+        `A tool wants to open a document:\n\n` +
+          `Title: ${title}\n` +
+          `Type: ${type}\n` +
+          `URL: ${detail.url}\n\n` +
+          `Allow navigation?`
+      );
+      if (!allowed) return;
+    }
 
     hostElement.dispatchEvent(
       new CustomEvent("patchwork:open-document", {

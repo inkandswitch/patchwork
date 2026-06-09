@@ -352,7 +352,11 @@ export function registerPatchworkIsolationElement(
         this.#cleanups.push(
           startModuleRpc({ port: this.#hostRpcPort, mapper }),
           startHostProviderBridge(this.#hostRpcPort, this),
-          startHostNavigationBridge(this.#hostRpcPort, this)
+          startHostNavigationBridge(
+            this.#hostRpcPort,
+            this,
+            (url) => this.#intermediary?.isAllowed(url) ?? false
+          )
         );
 
         // ── Create sandboxed iframe ──────────────────────────────
