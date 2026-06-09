@@ -38,8 +38,10 @@ import { log } from "./patchwork-isolation.js";
  */
 export class PluginsUrlMapper {
   #counter = 0;
-  #segmentToPackage = new Map<string, string>();
-  #packageToSegment = new Map<string, string>();
+  // Raw automerge URL → package name (e.g., "automerge:3Dz..." → "@patchwork--folder")
+  #automergeToPackage = new Map<string, string>();
+  // Package name → raw automerge URL
+  #packageToAutomerge = new Map<string, string>();
 
   /**
    * Sanitize a package name for use as a URL path segment.
@@ -55,25 +57,26 @@ export class PluginsUrlMapper {
    * Returns the URL unchanged if no automerge segment is found.
    */
   toPackageUrl(url: string, name?: string): string {
-    for (const [segment, pkg] of this.#segmentToPackage) {
-      const from = `/${segment}/`;
-      if (url.includes(from)) {
-        return url.replace(from, `/pkg:${pkg}/`);
-      }
-    }
     try {
       const parsed = new URL(url);
       const segments = parsed.pathname.split("/").filter(Boolean);
       for (const segment of segments) {
         const decoded = decodeURIComponent(segment);
-        if (isValidAutomergeUrl(decoded)) {
-          const pkg = name
-            ? this.#sanitizeName(name)
-            : `unknown-${this.#counter++}`;
-          this.#segmentToPackage.set(segment, pkg);
-          this.#packageToSegment.set(pkg, segment);
-          return url.replace(`/${segment}/`, `/pkg:${pkg}/`);
+        if (!isValidAutomergeUrl(decoded)) continue;
+
+        // Use existing mapping if we've seen this automerge URL before
+        const existing = this.#automergeToPackage.get(decoded);
+        if (existing) {
+          return url.replace(`/${segment}/`, `/pkg:${existing}/`);
         }
+
+        // Register a new mapping
+        const pkg = name
+          ? this.#sanitizeName(name)
+          : `unknown-${this.#counter++}`;
+        this.#automergeToPackage.set(decoded, pkg);
+        this.#packageToAutomerge.set(pkg, decoded);
+        return url.replace(`/${segment}/`, `/pkg:${pkg}/`);
       }
     } catch {
       // not a valid URL, return as-is
@@ -82,14 +85,17 @@ export class PluginsUrlMapper {
   }
 
   /**
-   * Replace the package name in a URL with the real automerge URL segment.
-   * Returns null if no package name segment is found.
+   * Replace the package name in a URL with the real automerge URL segment
+   * (URL-encoded). Returns null if no package name segment is found.
    */
   toAutomergeUrl(url: string): string | null {
-    for (const [pkg, segment] of this.#packageToSegment) {
+    for (const [pkg, automergeUrl] of this.#packageToAutomerge) {
       const packageSegment = `pkg:${pkg}/`;
       if (url.includes(packageSegment)) {
-        return url.replace(packageSegment, `${segment}/`);
+        return url.replace(
+          packageSegment,
+          `${encodeURIComponent(automergeUrl)}/`
+        );
       }
     }
     return null;
