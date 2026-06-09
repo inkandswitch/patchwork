@@ -2,6 +2,9 @@
  * Navigation bridge — forwards `patchwork:open-document` events from the
  * iframe to the host element so that tools can trigger navigation.
  *
+ * Navigation is gated by the intermediary's allowlist: allowlisted
+ * documents navigate immediately, others require user confirmation.
+ *
  * Protocol:
  *   iframe → host:  { type: "open-document", detail: OpenDocumentEventDetail }
  */

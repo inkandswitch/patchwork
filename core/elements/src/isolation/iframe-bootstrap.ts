@@ -6,10 +6,6 @@
  * srcdoc's <script> tag as an IIFE.
  */
 
-// Provider and navigation bridge event listeners are set up inside boot()
-// rather than as separate injected code, so they can reference the local
-// rpcPort variable.
-
 export interface RegistryEntry {
   type: string;
   id: string;

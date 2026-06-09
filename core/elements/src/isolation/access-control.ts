@@ -1,11 +1,13 @@
 /**
- * Access control — denylist population and URL collection utilities
- * for the isolation boundary.
+ * Access control for the isolation boundary.
  *
- * The denylist blocks sensitive documents (account doc, module settings,
- * tool source code) from ever syncing to the iframe, regardless of
- * allowlist status. These functions populate the denylist at init time
- * and dynamically check documents before allowlisting.
+ *  - Allowlist population: scans a document's content for automerge URLs
+ *    and adds them to the allowlist (unless denylisted). Watches for
+ *    document changes to expand the allowlist dynamically.
+ *  - Denylist: a shared singleton (`getDenylist`) that blocks sensitive
+ *    documents (account doc, module settings, tool source code) from
+ *    ever syncing to the iframe. Watches plugin registries for new
+ *    registrations and denylists their source code automatically.
  */
 
 import {

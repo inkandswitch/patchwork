@@ -7,10 +7,11 @@
  *
  * Lifecycle:
  *  1. Fetch boot assets (es-module-shims, WASM, host styles) — cached
- *  2. Create allowlist (seeded with doc-url) and denylist
- *  3. Create intermediary repo gated by allowlist + denylist
- *  4. Create sandboxed iframe and send boot message with registry entries
+ *  2. Create allowlist (seeded with doc-url, populated from doc content)
+ *  3. Get shared denylist (singleton, populated once from sensitive docs)
+ *  4. Create intermediary repo gated by allowlist + denylist
  *  5. Start host-side RPC for plugin loading and navigation
+ *  6. Create sandboxed iframe and send boot message with registry entries
  *
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
