@@ -39,6 +39,9 @@ import { PackageUrlMapper } from "./package-url-mapper.js";
 import { startHostProviderBridge } from "./provider-bridge.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc, type RegistryEntry } from "./iframe-bootstrap.js";
+import debug from "debug";
+
+const log = debug("patchwork:elements:isolation");
 
 // ---------------------------------------------------------------------------
 // Denylist population — blocks sensitive documents from syncing to iframe
@@ -59,7 +62,7 @@ async function denylistFolderDoc(
       denylist.add(docLink.url);
     }
   } catch (err) {
-    console.warn("[isolation] denylistFolderDoc: failed to read folder", folderUrl, err);
+    log(`denylistFolderDoc: failed to read folder ${folderUrl}`, err);
   }
 }
 
@@ -88,7 +91,7 @@ async function denylistModuleEntry(
       await denylistFolderDoc(repo, moduleUrl, denylist);
     }
   } catch (err) {
-    console.warn("[isolation] denylistModuleEntry: failed to read module", moduleUrl, err);
+    log(`denylistModuleEntry: failed to read module ${moduleUrl}`, err);
   }
 }
 
@@ -128,7 +131,7 @@ async function populateDenylist(
         await denylistModuleEntry(repo, moduleUrl, denylist);
       }
     } catch (err) {
-      console.warn("[isolation] populateDenylist: failed to read module settings", settingsUrl, err);
+      log(`populateDenylist: failed to read module settings ${settingsUrl}`, err);
     }
   }
 
@@ -142,7 +145,7 @@ async function populateDenylist(
     }
   }
 
-  console.warn("[isolation] denylist populated with", denylist.size, "documents");
+  log(`denylist populated with ${denylist.size} documents`);
 }
 
 /**
@@ -167,7 +170,7 @@ async function checkAndDenylistIfSensitive(
     const type = doc?.["@patchwork"]?.type;
 
     if (type === "branches") {
-      console.warn("[isolation] dynamically denylisting branches doc:", url);
+      log(`dynamically denylisting branches doc: ${url}`);
       const branchesDoc = doc as unknown as BranchesDoc;
       denylist.add(url);
       for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
@@ -177,7 +180,7 @@ async function checkAndDenylistIfSensitive(
     }
 
     if (type === "patchwork:module-settings") {
-      console.warn("[isolation] dynamically denylisting module settings doc:", url);
+      log(`dynamically denylisting module settings doc: ${url}`);
       denylist.add(url);
       const settingsDoc = doc as unknown as ModuleSettingsDoc;
       for (const moduleUrl of settingsDoc.modules ?? []) {
@@ -186,7 +189,7 @@ async function checkAndDenylistIfSensitive(
       return true;
     }
   } catch (err) {
-    console.warn("[isolation] checkAndDenylistIfSensitive: failed to read", url, err);
+    log(`checkAndDenylistIfSensitive: failed to read ${url}`, err);
   }
 
   return false;
@@ -263,7 +266,7 @@ async function collectRegistryEntries(
       try {
         entry = structuredClone(rest);
       } catch (err) {
-        console.warn("[patchwork-isolation] skipping non-cloneable plugin:", rest.id, err);
+        log(`skipping non-cloneable plugin: ${rest.id}`, err);
         continue;
       }
       entry.importUrl = importUrl;
@@ -462,17 +465,17 @@ export function registerPatchworkIsolationElement(
         const docUrl = this.docUrl;
         const toolId = this.toolId;
 
+        log(`init ${docUrl} tool=${toolId}`);
+
         if (!docUrl) {
-          console.warn("[patchwork-isolation] no doc-url attribute");
+          log("no doc-url attribute");
           return;
         }
 
         const repoProvider = this.closest<RepoProviderElement>("repo-provider");
         const repo = repoProvider?.repo;
         if (!repo) {
-          console.warn(
-            "[patchwork-isolation] no <repo-provider> ancestor found"
-          );
+          log("no <repo-provider> ancestor found");
           return;
         }
 
@@ -513,6 +516,8 @@ export function registerPatchworkIsolationElement(
           this.#setupTransitiveAllowlist(repo, docUrl, epoch, denylist);
         }
 
+        log("intermediary repo and allowlist ready");
+
         // ── RPC channel ──────────────────────────────────────────
         const rpcChannel = new MessageChannel();
         this.#hostRpcPort = rpcChannel.port1;
@@ -542,6 +547,7 @@ export function registerPatchworkIsolationElement(
         iframe.addEventListener("load", async () => {
           if (!this.#booted || epoch !== this.#initEpoch) return;
           if (!iframe.contentWindow) return;
+          log("iframe ready");
 
           const registryEntries = await collectRegistryEntries(mapper);
           if (!this.#booted || epoch !== this.#initEpoch) return;
@@ -550,6 +556,7 @@ export function registerPatchworkIsolationElement(
           const automergeWasm = assets.automergeWasm.slice(0);
           const subductionWasm = assets.subductionWasm.slice(0);
 
+          log(`sending boot message with ${registryEntries.length} registry entries`);
           iframe.contentWindow.postMessage(
             {
               type: "boot",
@@ -621,6 +628,7 @@ export function registerPatchworkIsolationElement(
 
           const doc = handle.doc();
           if (doc) await allowUrlsFromDoc(doc);
+          log("allowlisted URLs from root document");
 
           const onChange = ({ doc }: { doc: unknown }) => {
             void allowUrlsFromDoc(doc);
@@ -628,14 +636,12 @@ export function registerPatchworkIsolationElement(
           handle.on("change", onChange);
           this.#cleanups.push(() => handle.off("change", onChange));
         } catch (err) {
-          console.warn(
-            "[patchwork-isolation] transitive allowlist scan failed:",
-            err
-          );
+          log("transitive allowlist scan failed:", err);
         }
       }
 
       #teardown() {
+        log("teardown");
         this.#initEpoch++;
         if (!this.#booted) return;
         this.#booted = false;

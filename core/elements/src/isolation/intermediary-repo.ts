@@ -20,6 +20,9 @@ import {
   isValidAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
+import debug from "debug";
+
+const log = debug("patchwork:elements:isolation");
 
 /**
  * Recursively walks a value and collects all valid automerge URLs found.
@@ -116,14 +119,16 @@ export function createIntermediaryRepo(
     try {
       const { documentId } = parseAutomergeUrl(url);
       allowedDocIds.add(documentId);
-      console.warn("[intermediary] allowlisted", documentId, url);
+      log(`allowlisted ${documentId} ${url}`);
     } catch {
       // If the URL can't be parsed, still track it by URL
-      console.warn("[intermediary] allowlisted (unparseable)", url);
+      log(`allowlisted (unparseable) ${url}`);
     }
   };
 
   addToAllowlist(rootDocUrl);
+
+  const hostRepoPeerId = hostRepo.peerId;
 
   // Channel connecting intermediary ↔ host repo
   const hostChannel = new MessageChannel();
@@ -143,33 +148,24 @@ export function createIntermediaryRepo(
     isEphemeral: true,
     shareConfig: {
       announce: async (_peerId: PeerId, documentId?: DocumentId) => {
-        // Peer-level call (no documentId): allow general communication
         if (!documentId) return true;
-        if (denylist?.has(documentId)) {
-          console.warn("[intermediary] announce", documentId, "DENIED");
-          return false;
-        }
-        const allowed = allowedDocIds.has(documentId);
-        console.warn(
-          "[intermediary] announce",
-          documentId,
-          allowed ? "ALLOWED" : "BLOCKED"
-        );
-        return allowed;
+        if (denylist?.has(documentId)) return false;
+        return allowedDocIds.has(documentId);
       },
-      access: async (_peerId: PeerId, documentId?: DocumentId) => {
-        // Gate ALL peers (including host) by denylist then allowlist.
+      access: async (peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return false;
         if (denylist?.has(documentId)) {
-          console.warn("[intermediary] access", documentId, "DENIED");
+          // Only log iframe access attempts, not host-side
+          if (peerId !== hostRepoPeerId) {
+            log(`access ${documentId} DENIED`);
+          }
           return false;
         }
         const allowed = allowedDocIds.has(documentId);
-        console.warn(
-          "[intermediary] access",
-          documentId,
-          allowed ? "ALLOWED" : "BLOCKED"
-        );
+        // Only log iframe access attempts
+        if (peerId !== hostRepoPeerId) {
+          log(`access ${documentId} ${allowed ? "ALLOWED" : "BLOCKED"}`);
+        }
         return allowed;
       },
     },

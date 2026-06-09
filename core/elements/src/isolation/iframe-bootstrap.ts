@@ -57,13 +57,24 @@ interface FetchResourceResult {
 // ---------------------------------------------------------------------------
 
 async function boot() {
+  // Minimal debug-compatible logger. The real `debug` package isn't available
+  // until modules load, but we need logging during bootstrap.
+  // Respects the same localStorage("debug") namespace convention.
+  const NAMESPACE = "patchwork:elements:isolation:iframe";
+  const peerId = "isolation-" + crypto.randomUUID().slice(0, 8);
+  let debugEnabled = false;
+  const log = (...args: unknown[]) => {
+    if (!debugEnabled) return;
+    console.debug(`%c${NAMESPACE}`, "color: #7c3aed", ...args);
+  };
+
   // 1. Stub localStorage
   try {
     void localStorage;
   } catch {
     Object.defineProperty(window, "localStorage", {
       value: {
-        getItem: () => null,
+        getItem: (key: string) => (key === "debug" ? "patchwork:*" : null),
         setItem: () => {},
         removeItem: () => {},
         clear: () => {},
@@ -72,6 +83,31 @@ async function boot() {
       },
     });
   }
+
+  // Evaluate debug flag now that localStorage is available.
+  {
+    const pattern = localStorage.getItem("debug") || "";
+    if (pattern) {
+      const re = new RegExp(
+        "^" +
+          pattern
+            .split(",")
+            .map((p: string) => p.trim().replace(/\*/g, ".*?"))
+            .join("$|^") +
+          "$"
+      );
+      debugEnabled = re.test(NAMESPACE);
+    }
+  }
+
+  // Tag all debug-package output from inside the iframe
+  const _originalConsoleDebug = console.debug;
+  console.debug = (...args: any[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith("%c")) {
+      args[0] = `[${peerId}] ` + args[0];
+    }
+    _originalConsoleDebug.apply(console, args);
+  };
 
   // 2. RPC infrastructure
   let rpcPort: MessagePort;
@@ -171,6 +207,7 @@ async function boot() {
   );
 
   const d = init.data;
+  log("init", { docUrl: d.docUrl, toolId: d.toolId });
 
   // Inject host page stylesheets so tools render with the same CSS
   // framework (Tailwind, DaisyUI, etc.) as on the host.
@@ -190,6 +227,7 @@ async function boot() {
         _parent: string,
         _defaultSource: Function
       ) {
+        log("source hook:", url);
         const result = await fetchModule(url);
         let source = result.source.replace(
           /^(\s+)import\s*\(([^)]*)\)\s*\{/gm,
@@ -215,6 +253,7 @@ async function boot() {
     if (d.importMap) {
       importShim.addImportMap(d.importMap);
     }
+    log("importmap configured");
 
     // 7. Import core runtime modules
     const [
@@ -233,9 +272,12 @@ async function boot() {
       importShim("@inkandswitch/patchwork-plugins"),
     ]);
 
+    log("modules loaded");
+
     // 8. Initialize WASM from transferred ArrayBuffers
     automergeSubduction.initSync(new Uint8Array(d.subductionWasm));
     await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
+    log("wasm initialized");
 
     // 9. Install selective fetch proxy — only pkg: URLs are proxied.
     // Installed after WASM init so initializeWasm/initSync aren't affected.
@@ -254,16 +296,18 @@ async function boot() {
       }
       return originalFetch(input, requestInit);
     };
+    log("fetch proxy installed");
 
     // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
       init.syncPort
     );
     const repo = new automergeRepo.Repo({
-      peerId: "iframe-" + crypto.randomUUID().slice(0, 8),
+      peerId: peerId,
       network: [syncAdapter],
     });
     (window as any).repo = repo;
+    log("repo connected");
 
     // 11. Register patchwork-view
     patchworkElements.registerPatchworkViewElement();
@@ -289,11 +333,9 @@ async function boot() {
               }
             : undefined,
         };
-        patchworkPlugins.registerPlugins(
-          [plugin],
-          entry.importUrl || ""
-        );
+        patchworkPlugins.registerPlugins([plugin], entry.importUrl || "");
       }
+      log("plugins registered:", d.registryEntries.length);
     }
 
     // 13. Render the tool
@@ -302,11 +344,11 @@ async function boot() {
     if (d.toolId) view.setAttribute("tool-id", d.toolId);
     document.body.appendChild(view);
 
+    log("boot complete");
     rpcPort.postMessage({ type: "boot-complete" });
   } catch (err: any) {
     console.error("[iframe] boot failed:", err);
-    document.body.textContent =
-      "Failed to load tool: " + (err.message || err);
+    document.body.textContent = "Failed to load tool: " + (err.message || err);
     rpcPort.postMessage({ type: "boot-error", error: String(err) });
   }
 }

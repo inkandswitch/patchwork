@@ -18,6 +18,9 @@ import {
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
 import type { PackageUrlMapper } from "./package-url-mapper.js";
+import debug from "debug";
+
+const log = debug("patchwork:elements:isolation");
 
 export interface ModuleRpcOptions {
   port: MessagePort;
@@ -79,13 +82,16 @@ export function startModuleRpc(options: ModuleRpcOptions): () => void {
       const { id, url } = msg as { id: number; url: string };
       try {
         const fetchUrl = await resolveUrl(url, mapper);
+        if (fetchUrl !== url) {
+          log(`fetch-module ${url} → ${fetchUrl}`);
+        } else {
+          log(`fetch-module ${url}`);
+        }
         const response = await fetch(fetchUrl);
         if (!response.ok) {
-          port.postMessage({
-            type: "fetch-module-error",
-            id,
-            error: `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`,
-          });
+          const error = `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`;
+          log(`fetch-module error ${url}: ${error}`);
+          port.postMessage({ type: "fetch-module-error", id, error });
           return;
         }
 
@@ -100,11 +106,9 @@ export function startModuleRpc(options: ModuleRpcOptions): () => void {
           resolvedUrl,
         });
       } catch (err) {
-        port.postMessage({
-          type: "fetch-module-error",
-          id,
-          error: err instanceof Error ? err.message : String(err),
-        });
+        const error = err instanceof Error ? err.message : String(err);
+        log(`fetch-module error ${url}: ${error}`);
+        port.postMessage({ type: "fetch-module-error", id, error });
       }
       return;
     }
@@ -115,17 +119,16 @@ export function startModuleRpc(options: ModuleRpcOptions): () => void {
         const fetchUrl = await resolveUrl(url, mapper);
         const response = await fetch(fetchUrl);
         if (!response.ok) {
-          port.postMessage({
-            type: "fetch-resource-error",
-            id,
-            error: `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`,
-          });
+          const error = `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`;
+          log(`fetch-resource error ${url}: ${error}`);
+          port.postMessage({ type: "fetch-resource-error", id, error });
           return;
         }
 
         const body = await response.arrayBuffer();
         const contentType =
           response.headers.get("content-type") || "application/octet-stream";
+        log(`fetch-resource ${url} → ${fetchUrl} (${contentType})`);
         port.postMessage(
           {
             type: "fetch-resource-response",
@@ -136,11 +139,9 @@ export function startModuleRpc(options: ModuleRpcOptions): () => void {
           [body] // Transfer the ArrayBuffer
         );
       } catch (err) {
-        port.postMessage({
-          type: "fetch-resource-error",
-          id,
-          error: err instanceof Error ? err.message : String(err),
-        });
+        const error = err instanceof Error ? err.message : String(err);
+        log(`fetch-resource error ${url}: ${error}`);
+        port.postMessage({ type: "fetch-resource-error", id, error });
       }
       return;
     }

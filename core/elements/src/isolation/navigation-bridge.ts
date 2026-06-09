@@ -8,6 +8,9 @@
 
 import type { AutomergeUrl } from "@automerge/automerge-repo";
 import type { OpenDocumentEventDetail } from "../events.js";
+import debug from "debug";
+
+const log = debug("patchwork:elements:isolation");
 
 /**
  * Host-side navigation bridge.
@@ -32,6 +35,7 @@ export function startHostNavigationBridge(
     const detail = msg.detail as OpenDocumentEventDetail;
 
     if (!isAllowed(detail.url)) {
+      log(`navigation prompted: ${detail.url}`);
       const title = detail.title ?? "Unknown";
       const type = detail.type ?? "unknown";
       const allowed = window.confirm(
@@ -41,7 +45,12 @@ export function startHostNavigationBridge(
           `URL: ${detail.url}\n\n` +
           `Allow navigation?`
       );
-      if (!allowed) return;
+      if (!allowed) {
+        log(`navigation denied: ${detail.url}`);
+        return;
+      }
+    } else {
+      log(`navigation allowed: ${detail.url}`);
     }
 
     hostElement.dispatchEvent(
