@@ -28,7 +28,7 @@ import {
   getRegistries,
   startPluginsRpc,
 } from "./plugins-bridge.js";
-import { populateAllowlist, getDenylist } from "./access-control.js";
+import { populateAllowlist, refreshAllowlist, getDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
@@ -283,13 +283,17 @@ export function registerPatchworkIsolationElement(
           hostRepo: repo,
           denylist,
           onAccessRequest: async (documentId: DocumentId) => {
+            // Re-scan the root document — the URL may have been added
+            // since the initial scan (e.g., the user typed a new reference)
+            await refreshAllowlist(repo, docUrl, allowlist, denylist);
+            if (allowlist.has(documentId)) return true;
+
             const approved = window.confirm(
               `A tool wants to access a document:\n\n` +
                 `Document ID: ${documentId}\n\n` +
                 `Allow access?`
             );
             if (approved) {
-              // Construct the automerge URL from the document ID and add to allowlist
               allowlist.addDocumentId(documentId);
             }
             return approved;

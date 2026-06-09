@@ -86,6 +86,38 @@ export async function populateAllowlist(
 }
 
 /**
+ * Re-scan the root document and add any new automerge URLs to the allowlist.
+ * Called lazily (e.g., when a document access is requested) instead of on
+ * every keystroke.
+ */
+export async function refreshAllowlist(
+  repo: Repo,
+  docUrl: AutomergeUrl,
+  allowlist: SyncAllowlist,
+  denylist: SyncDenylist | undefined
+): Promise<void> {
+  try {
+    const handle = await repo.find(docUrl);
+    const doc = handle.doc();
+    if (!doc) return;
+
+    const urls = new Set<AutomergeUrl>();
+    collectAutomergeUrls(doc, urls);
+    for (const url of urls) {
+      if (allowlist.hasUrl(url)) continue;
+      if (denylist) {
+        const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
+        if (sensitive) continue;
+      }
+      allowlist.add(url);
+      log(`allowlisted ${url}`);
+    }
+  } catch (err) {
+    log(`refreshAllowlist: failed to scan ${docUrl}`, err);
+  }
+}
+
+/**
  * Recursively walks a value and collects all valid automerge URLs found.
  */
 function collectAutomergeUrls(value: unknown, urls: Set<AutomergeUrl>): void {
