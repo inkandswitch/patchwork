@@ -26,6 +26,83 @@ import debug from "debug";
 const log = debug("patchwork:elements:isolation");
 
 // ---------------------------------------------------------------------------
+// Transitive allowlist
+// ---------------------------------------------------------------------------
+
+/**
+ * Scan a document for automerge URLs and add them to the allowlist.
+ * Watches for document changes to dynamically expand the allowlist.
+ * Each URL is checked against the denylist before allowlisting.
+ *
+ * Returns a cleanup function that removes the change listener.
+ *
+ * @param isStale - callback that returns true if the caller has been
+ *   torn down (e.g. a newer init epoch started). Checked after each
+ *   async boundary to avoid stale updates.
+ */
+export async function setupTransitiveAllowlist(
+  repo: Repo,
+  docUrl: AutomergeUrl,
+  allowlist: SyncAllowlist,
+  denylist: SyncDenylist | undefined,
+  isStale: () => boolean
+): Promise<(() => void) | undefined> {
+  const allowUrlsFromDoc = async (doc: unknown) => {
+    const urls = new Set<AutomergeUrl>();
+    collectAutomergeUrls(doc, urls);
+    for (const url of urls) {
+      if (allowlist.hasUrl(url)) continue;
+      if (denylist) {
+        const sensitive = await checkAndDenylistIfSensitive(
+          repo,
+          url,
+          denylist
+        );
+        if (sensitive) continue;
+      }
+      allowlist.add(url);
+      log(`allowlisted ${url}`);
+    }
+  };
+
+  try {
+    const handle = await repo.find(docUrl);
+    if (isStale()) return;
+
+    const doc = handle.doc();
+    if (doc) await allowUrlsFromDoc(doc);
+    log("allowlisted URLs from root document");
+
+    const onChange = ({ doc }: { doc: unknown }) => {
+      void allowUrlsFromDoc(doc);
+    };
+    handle.on("change", onChange);
+    return () => handle.off("change", onChange);
+  } catch (err) {
+    log("transitive allowlist scan failed:", err);
+    return undefined;
+  }
+}
+
+/**
+ * Recursively walks a value and collects all valid automerge URLs found.
+ */
+function collectAutomergeUrls(value: unknown, urls: Set<AutomergeUrl>): void {
+  if (typeof value === "string") {
+    if (isValidAutomergeUrl(value)) urls.add(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectAutomergeUrls(item, urls);
+    return;
+  }
+  if (value !== null && typeof value === "object") {
+    for (const v of Object.values(value as Record<string, unknown>))
+      collectAutomergeUrls(v, urls);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Denylist population
 // ---------------------------------------------------------------------------
 
@@ -141,7 +218,7 @@ export async function populateDenylist(
  *
  * Returns true if the document was denylisted (caller should skip allowlisting).
  */
-export async function checkAndDenylistIfSensitive(
+async function checkAndDenylistIfSensitive(
   repo: Repo,
   url: AutomergeUrl,
   denylist: SyncDenylist
@@ -178,84 +255,4 @@ export async function checkAndDenylistIfSensitive(
   }
 
   return false;
-}
-
-// ---------------------------------------------------------------------------
-// URL collection
-// ---------------------------------------------------------------------------
-
-/**
- * Recursively walks a value and collects all valid automerge URLs found.
- */
-export function collectAutomergeUrls(
-  value: unknown,
-  urls: Set<AutomergeUrl>
-): void {
-  if (typeof value === "string") {
-    if (isValidAutomergeUrl(value)) urls.add(value);
-    return;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectAutomergeUrls(item, urls);
-    return;
-  }
-  if (value !== null && typeof value === "object") {
-    for (const v of Object.values(value as Record<string, unknown>))
-      collectAutomergeUrls(v, urls);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Transitive allowlist
-// ---------------------------------------------------------------------------
-
-/**
- * Scan a document for automerge URLs and add them to the allowlist.
- * Watches for document changes to dynamically expand the allowlist.
- * Each URL is checked against the denylist before allowlisting.
- *
- * Returns a cleanup function that removes the change listener.
- *
- * @param isStale - callback that returns true if the caller has been
- *   torn down (e.g. a newer init epoch started). Checked after each
- *   async boundary to avoid stale updates.
- */
-export async function setupTransitiveAllowlist(
-  repo: Repo,
-  docUrl: AutomergeUrl,
-  allowlist: SyncAllowlist,
-  denylist: SyncDenylist | undefined,
-  isStale: () => boolean
-): Promise<(() => void) | undefined> {
-  const allowUrlsFromDoc = async (doc: unknown) => {
-    const urls = new Set<AutomergeUrl>();
-    collectAutomergeUrls(doc, urls);
-    for (const url of urls) {
-      if (allowlist.hasUrl(url)) continue;
-      if (denylist) {
-        const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
-        if (sensitive) continue;
-      }
-      allowlist.add(url);
-      log(`allowlisted ${url}`);
-    }
-  };
-
-  try {
-    const handle = await repo.find(docUrl);
-    if (isStale()) return;
-
-    const doc = handle.doc();
-    if (doc) await allowUrlsFromDoc(doc);
-    log("allowlisted URLs from root document");
-
-    const onChange = ({ doc }: { doc: unknown }) => {
-      void allowUrlsFromDoc(doc);
-    };
-    handle.on("change", onChange);
-    return () => handle.off("change", onChange);
-  } catch (err) {
-    log("transitive allowlist scan failed:", err);
-    return undefined;
-  }
 }

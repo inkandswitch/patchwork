@@ -27,9 +27,9 @@ import {
   type IntermediaryRepo,
 } from "./repo-bridge.js";
 import {
-  PackageUrlMapper,
-  collectRegistryEntries,
-  startModuleRpc,
+  PluginsUrlMapper,
+  getRegistries,
+  startPluginsRpc,
 } from "./plugins-bridge.js";
 import {
   populateDenylist,
@@ -277,7 +277,7 @@ export function registerPatchworkIsolationElement(
         const importMap = getResolvedImportMap();
 
         // ── Package URL mapper ────────────────────────────────────
-        const mapper = new PackageUrlMapper();
+        const mapper = new PluginsUrlMapper();
 
         // ── Allowlist + denylist ─────────────────────────────────
         const allowlist = new SyncAllowlist();
@@ -318,7 +318,7 @@ export function registerPatchworkIsolationElement(
 
         // ── Start host-side handlers ─────────────────────────────
         this.#cleanups.push(
-          startModuleRpc({ port: this.#hostRpcPort, mapper }),
+          startPluginsRpc({ port: this.#hostRpcPort, mapper }),
           startHostNavigationBridge(
             this.#hostRpcPort,
             this,
@@ -342,7 +342,7 @@ export function registerPatchworkIsolationElement(
           if (!iframe.contentWindow) return;
           log("iframe ready");
 
-          const registryEntries = await collectRegistryEntries(mapper);
+          const registryEntries = await getRegistries(mapper);
           if (!this.#booted || epoch !== this.#initEpoch) return;
 
           // Clone WASM buffers so they can be transferred

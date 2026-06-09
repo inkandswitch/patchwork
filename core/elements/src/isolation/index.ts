@@ -10,9 +10,9 @@ export {
   type IntermediaryRepoOptions,
 } from "./repo-bridge.js";
 export {
-  PackageUrlMapper,
-  collectRegistryEntries,
-  startModuleRpc,
+  PluginsUrlMapper,
+  getRegistries,
+  startPluginsRpc,
 } from "./plugins-bridge.js";
 export { startHostNavigationBridge } from "./navigation-bridge.js";
 export {

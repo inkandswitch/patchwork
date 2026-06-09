@@ -4,11 +4,11 @@
  * RPC requests from the iframe for module and resource loading.
  *
  * This module consolidates:
- *  - PackageUrlMapper: bidirectional mapping between automerge URL segments
+ *  - PluginsUrlMapper: bidirectional mapping between automerge URL segments
  *    and opaque `pkg:` URLs
- *  - collectRegistryEntries: walks all host registries and produces
+ *  - getRegistries: walks all host registries and produces
  *    serializable RegistryEntry objects for the iframe
- *  - startModuleRpc: host-side RPC handler for fetch-package / fetch-resource
+ *  - startPluginsRpc: host-side RPC handler for fetch-package / fetch-resource
  */
 
 import {
@@ -26,7 +26,7 @@ import debug from "debug";
 const log = debug("patchwork:elements:isolation");
 
 // ---------------------------------------------------------------------------
-// PackageUrlMapper
+// PluginsUrlMapper
 // ---------------------------------------------------------------------------
 
 /**
@@ -38,7 +38,7 @@ const log = debug("patchwork:elements:isolation");
  *  - Provides a hierarchical URL scheme for relative import resolution
  *  - Makes fetch proxy rules simple: only `pkg:` URLs get proxied
  */
-export class PackageUrlMapper {
+export class PluginsUrlMapper {
   #counter = 0;
   #segmentToPackage = new Map<string, string>();
   #packageToSegment = new Map<string, string>();
@@ -136,7 +136,7 @@ async function resolvePluginEntryUrl(
  */
 async function resolveUrl(
   url: string,
-  mapper: PackageUrlMapper
+  mapper: PluginsUrlMapper
 ): Promise<string> {
   const realUrl = mapper.toAutomergeUrl(url);
   if (realUrl) return realUrl;
@@ -159,8 +159,8 @@ async function resolveUrl(
  * importUrls to pkg: URLs via the mapper so that automerge document IDs
  * don't leak to the iframe.
  */
-export async function collectRegistryEntries(
-  mapper: PackageUrlMapper
+export async function getRegistries(
+  mapper: PluginsUrlMapper
 ): Promise<RegistryEntry[]> {
   const entries: RegistryEntry[] = [];
 
@@ -199,22 +199,22 @@ export async function collectRegistryEntries(
 }
 
 // ---------------------------------------------------------------------------
-// Module RPC — host-side handler for iframe module/resource loading
+// Plugins RPC — host-side handler for iframe module/resource loading
 // ---------------------------------------------------------------------------
 
-export interface ModuleRpcOptions {
+export interface PluginsRpcOptions {
   port: MessagePort;
-  mapper: PackageUrlMapper;
+  mapper: PluginsUrlMapper;
 }
 
 /**
- * Start the host-side RPC handler for module and resource loading.
+ * Start the host-side RPC handler for plugins and resource loading.
  *
  * Handles two message types:
  *  - `fetch-package`: returns source text + resolved URL (for es-module-shims)
  *  - `fetch-resource`: returns ArrayBuffer + content type (for fetch proxy)
  */
-export function startModuleRpc(options: ModuleRpcOptions): () => void {
+export function startPluginsRpc(options: PluginsRpcOptions): () => void {
   const { port, mapper } = options;
 
   const onMessage = async (event: MessageEvent) => {
