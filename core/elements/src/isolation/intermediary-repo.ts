@@ -42,11 +42,41 @@ export function collectAutomergeUrls(
   }
 }
 
+/**
+ * Maintains a set of document IDs that must never be synced to the iframe,
+ * regardless of allowlist status. Takes precedence over the allowlist.
+ * Used to protect sensitive documents: account doc, module settings,
+ * tool/package source code, and branches docs.
+ */
+export class SyncDenylist {
+  #denied = new Set<DocumentId>();
+
+  add(url: AutomergeUrl): void {
+    const { documentId } = parseAutomergeUrl(url);
+    this.#denied.add(documentId);
+  }
+
+  has(documentId: DocumentId): boolean {
+    return this.#denied.has(documentId);
+  }
+
+  hasUrl(url: AutomergeUrl): boolean {
+    const { documentId } = parseAutomergeUrl(url);
+    return this.#denied.has(documentId);
+  }
+
+  get size(): number {
+    return this.#denied.size;
+  }
+}
+
 export interface IntermediaryRepoOptions {
   /** The root document URL the tool is authorized to access. */
   rootDocUrl: AutomergeUrl;
   /** The host Repo to sync allowed documents from. */
   hostRepo: Repo;
+  /** Optional denylist — denylisted documents are blocked regardless of allowlist. */
+  denylist?: SyncDenylist;
 }
 
 export interface IntermediaryRepo {
@@ -76,7 +106,7 @@ export interface IntermediaryRepo {
 export function createIntermediaryRepo(
   options: IntermediaryRepoOptions
 ): IntermediaryRepo {
-  const { rootDocUrl, hostRepo } = options;
+  const { rootDocUrl, hostRepo, denylist } = options;
 
   const allowedDocIds = new Set<DocumentId>();
   const allowedUrls = new Set<AutomergeUrl>();
@@ -115,6 +145,10 @@ export function createIntermediaryRepo(
       announce: async (_peerId: PeerId, documentId?: DocumentId) => {
         // Peer-level call (no documentId): allow general communication
         if (!documentId) return true;
+        if (denylist?.has(documentId)) {
+          console.warn("[intermediary] announce", documentId, "DENIED");
+          return false;
+        }
         const allowed = allowedDocIds.has(documentId);
         console.warn(
           "[intermediary] announce",
@@ -124,9 +158,12 @@ export function createIntermediaryRepo(
         return allowed;
       },
       access: async (_peerId: PeerId, documentId?: DocumentId) => {
-        // Gate ALL peers (including host) by allowlist so the intermediary
-        // never holds non-allowlisted documents in memory.
+        // Gate ALL peers (including host) by denylist then allowlist.
         if (!documentId) return false;
+        if (denylist?.has(documentId)) {
+          console.warn("[intermediary] access", documentId, "DENIED");
+          return false;
+        }
         const allowed = allowedDocIds.has(documentId);
         console.warn(
           "[intermediary] access",

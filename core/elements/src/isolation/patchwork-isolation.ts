@@ -18,19 +18,179 @@
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
 
-import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
-import { getRegistry } from "@inkandswitch/patchwork-plugins";
+import {
+  type AutomergeUrl,
+  type Repo,
+  isValidAutomergeUrl,
+} from "@automerge/automerge-repo";
+import { getRegistry, getAllRegistries } from "@inkandswitch/patchwork-plugins";
 import {
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
+  type FolderDoc,
+  type BranchesDoc,
+  type HasPatchworkMetadata,
+  type ModuleSettingsDoc,
 } from "@inkandswitch/patchwork-filesystem";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
-import { createIntermediaryRepo, collectAutomergeUrls, type IntermediaryRepo } from "./intermediary-repo.js";
+import { createIntermediaryRepo, collectAutomergeUrls, SyncDenylist, type IntermediaryRepo } from "./intermediary-repo.js";
 import { startModuleRpc } from "./module-rpc.js";
 import { PackageUrlMapper } from "./package-url-mapper.js";
 import { startHostProviderBridge } from "./provider-bridge.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc, type RegistryEntry } from "./iframe-bootstrap.js";
+
+// ---------------------------------------------------------------------------
+// Denylist population — blocks sensitive documents from syncing to iframe
+// ---------------------------------------------------------------------------
+
+/** Denylist a FolderDoc and all its child documents. */
+async function denylistFolderDoc(
+  repo: Repo,
+  folderUrl: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<void> {
+  denylist.add(folderUrl);
+  try {
+    const handle = await repo.find<FolderDoc>(folderUrl);
+    await handle.whenReady();
+    const doc = handle.doc();
+    for (const docLink of doc?.docs ?? []) {
+      denylist.add(docLink.url);
+    }
+  } catch (err) {
+    console.warn("[isolation] denylistFolderDoc: failed to read folder", folderUrl, err);
+  }
+}
+
+/**
+ * Denylist a module entry (either a BranchesDoc or a direct FolderDoc)
+ * and all its transitive children.
+ */
+async function denylistModuleEntry(
+  repo: Repo,
+  moduleUrl: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<void> {
+  denylist.add(moduleUrl);
+  try {
+    const handle = await repo.find<HasPatchworkMetadata>(moduleUrl);
+    await handle.whenReady();
+    const doc = handle.doc();
+    const type = doc?.["@patchwork"]?.type;
+
+    if (type === "branches") {
+      const branchesDoc = doc as unknown as BranchesDoc;
+      for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
+        await denylistFolderDoc(repo, branchUrl, denylist);
+      }
+    } else {
+      await denylistFolderDoc(repo, moduleUrl, denylist);
+    }
+  } catch (err) {
+    console.warn("[isolation] denylistModuleEntry: failed to read module", moduleUrl, err);
+  }
+}
+
+/**
+ * Populate the denylist with all sensitive documents: account doc,
+ * module settings docs, and all tool/package source code documents.
+ */
+async function populateDenylist(
+  repo: Repo,
+  denylist: SyncDenylist
+): Promise<void> {
+  // 1. Account document
+  const accountHandle = (window as any).accountDocHandle;
+  if (accountHandle?.url) {
+    denylist.add(accountHandle.url);
+  }
+
+  // 2. Module settings documents (from ModuleWatcher)
+  const moduleWatcher = (window as any).patchwork?.packages;
+  const moduleSettingsUrls: AutomergeUrl[] = [];
+  if (moduleWatcher?.urls) {
+    for (const url of Object.values(moduleWatcher.urls) as AutomergeUrl[]) {
+      if (isValidAutomergeUrl(url)) {
+        denylist.add(url);
+        moduleSettingsUrls.push(url);
+      }
+    }
+  }
+
+  // 3. Walk module settings → module entries → folder docs → children
+  for (const settingsUrl of moduleSettingsUrls) {
+    try {
+      const handle = await repo.find<ModuleSettingsDoc>(settingsUrl);
+      await handle.whenReady();
+      const doc = handle.doc();
+      for (const moduleUrl of doc?.modules ?? []) {
+        await denylistModuleEntry(repo, moduleUrl, denylist);
+      }
+    } catch (err) {
+      console.warn("[isolation] populateDenylist: failed to read module settings", settingsUrl, err);
+    }
+  }
+
+  // 4. Denylist all plugin importUrls from the registry as a catch-all
+  for (const [, registry] of getAllRegistries()) {
+    for (const plugin of registry.all()) {
+      const importUrl = (plugin as any).importUrl as string | undefined;
+      if (importUrl && isValidAutomergeUrl(importUrl)) {
+        await denylistModuleEntry(repo, importUrl as AutomergeUrl, denylist);
+      }
+    }
+  }
+
+  console.warn("[isolation] denylist populated with", denylist.size, "documents");
+}
+
+/**
+ * Check if a document is a sensitive type (branches doc, module settings, etc.)
+ * and dynamically add it to the denylist if so. Called when URLs are about to
+ * be added to the allowlist to prevent sensitive documents from leaking through
+ * document content.
+ *
+ * Returns true if the document was denylisted (caller should skip allowlisting).
+ */
+async function checkAndDenylistIfSensitive(
+  repo: Repo,
+  url: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<boolean> {
+  if (denylist.hasUrl(url)) return true;
+
+  try {
+    const handle = await repo.find<HasPatchworkMetadata>(url);
+    await handle.whenReady();
+    const doc = handle.doc();
+    const type = doc?.["@patchwork"]?.type;
+
+    if (type === "branches") {
+      console.warn("[isolation] dynamically denylisting branches doc:", url);
+      const branchesDoc = doc as unknown as BranchesDoc;
+      denylist.add(url);
+      for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
+        await denylistFolderDoc(repo, branchUrl, denylist);
+      }
+      return true;
+    }
+
+    if (type === "patchwork:module-settings") {
+      console.warn("[isolation] dynamically denylisting module settings doc:", url);
+      denylist.add(url);
+      const settingsDoc = doc as unknown as ModuleSettingsDoc;
+      for (const moduleUrl of settingsDoc.modules ?? []) {
+        await denylistModuleEntry(repo, moduleUrl, denylist);
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn("[isolation] checkAndDenylistIfSensitive: failed to read", url, err);
+  }
+
+  return false;
+}
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -338,17 +498,23 @@ export function registerPatchworkIsolationElement(
         // ── Package URL mapper ────────────────────────────────────
         const mapper = new PackageUrlMapper();
 
-        // ── Intermediary repo with allowlist ──────────────────────
+        // ── Denylist — block sensitive documents ──────────────────
+        const denylist = new SyncDenylist();
+        // Fire-and-forget: populates denylist asynchronously.
+        populateDenylist(repo, denylist);
+
+        // ── Intermediary repo with allowlist + denylist ───────────
         this.#intermediary = createIntermediaryRepo({
           rootDocUrl: docUrl,
           hostRepo: repo,
+          denylist,
         });
 
         // ── Transitive allowlist (if enabled) ────────────────────
         if (
           localStorage.getItem("patchwork:transitive-allowlist") === "true"
         ) {
-          this.#setupTransitiveAllowlist(repo, docUrl, epoch);
+          this.#setupTransitiveAllowlist(repo, docUrl, epoch, denylist);
         }
 
         // ── RPC channel ──────────────────────────────────────────
@@ -426,22 +592,27 @@ export function registerPatchworkIsolationElement(
       /**
        * Scan a document for automerge URLs and add them to the allowlist.
        * Also watches for changes to dynamically expand the allowlist.
+       * Each URL is checked against the denylist before allowlisting.
        */
       async #setupTransitiveAllowlist(
         repo: Repo,
         docUrl: AutomergeUrl,
-        epoch: number
+        epoch: number,
+        denylist?: SyncDenylist
       ) {
         const intermediary = this.#intermediary;
         if (!intermediary) return;
 
-        const allowUrlsFromDoc = (doc: unknown) => {
+        const allowUrlsFromDoc = async (doc: unknown) => {
           const urls = new Set<AutomergeUrl>();
           collectAutomergeUrls(doc, urls);
           for (const url of urls) {
-            if (!intermediary.isAllowed(url)) {
-              intermediary.allow(url);
+            if (intermediary.isAllowed(url)) continue;
+            if (denylist) {
+              const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
+              if (sensitive) continue;
             }
+            intermediary.allow(url);
           }
         };
 
@@ -453,10 +624,10 @@ export function registerPatchworkIsolationElement(
           if (epoch !== this.#initEpoch) return;
 
           const doc = handle.doc();
-          if (doc) allowUrlsFromDoc(doc);
+          if (doc) await allowUrlsFromDoc(doc);
 
           const onChange = ({ doc }: { doc: unknown }) => {
-            allowUrlsFromDoc(doc);
+            void allowUrlsFromDoc(doc);
           };
           handle.on("change", onChange);
           this.#cleanups.push(() => handle.off("change", onChange));
