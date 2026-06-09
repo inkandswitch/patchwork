@@ -150,6 +150,7 @@ async function denylistModuleEntry(
     } else {
       await denylistFolderDoc(repo, moduleUrl, denylist);
     }
+    log(`denylisted module with entry ${moduleUrl}`);
   } catch (err) {
     log(`denylistModuleEntry: failed to read module ${moduleUrl}`, err);
   }
@@ -159,7 +160,7 @@ async function denylistModuleEntry(
  * Populate the denylist with all sensitive documents: account doc,
  * module settings docs, and all tool/package source code documents.
  */
-export async function populateDenylist(
+async function populateDenylist(
   repo: Repo,
   denylist: SyncDenylist
 ): Promise<void> {
@@ -238,6 +239,7 @@ async function checkAndDenylistIfSensitive(
       denylist.add(url);
       for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
         await denylistFolderDoc(repo, branchUrl, denylist);
+        log(`denylisted ${branchUrl} for branches doc: ${url}`);
       }
       return true;
     }
@@ -256,4 +258,34 @@ async function checkAndDenylistIfSensitive(
   }
 
   return false;
+}
+
+// ---------------------------------------------------------------------------
+// Shared denylist singleton
+// ---------------------------------------------------------------------------
+
+let sharedDenylist: SyncDenylist | null = null;
+
+/**
+ * Get the shared denylist, creating and populating it on first call.
+ * Watches all plugin registries for new registrations and dynamically
+ * denylists their source code documents.
+ */
+export function getDenylist(repo: Repo): SyncDenylist {
+  if (sharedDenylist) return sharedDenylist;
+
+  sharedDenylist = new SyncDenylist();
+  populateDenylist(repo, sharedDenylist);
+
+  // Watch for new plugin registrations and denylist their source code
+  for (const [, registry] of getAllRegistries()) {
+    registry.on("registered", (plugin: any) => {
+      const importUrl = plugin.importUrl as string | undefined;
+      if (importUrl && isValidAutomergeUrl(importUrl)) {
+        denylistModuleEntry(repo, importUrl as AutomergeUrl, sharedDenylist!);
+      }
+    });
+  }
+
+  return sharedDenylist;
 }

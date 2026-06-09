@@ -20,7 +20,6 @@ import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   createIntermediaryRepo,
   SyncAllowlist,
-  SyncDenylist,
   type IntermediaryRepo,
 } from "./repo-bridge.js";
 import {
@@ -28,7 +27,7 @@ import {
   getRegistries,
   startPluginsRpc,
 } from "./plugins-bridge.js";
-import { populateAllowlist, populateDenylist } from "./access-control.js";
+import { populateAllowlist, getDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
@@ -260,8 +259,7 @@ export function registerPatchworkIsolationElement(
         const mapper = new PluginsUrlMapper();
 
         // ── Access control ──────────────────────────────────────
-        const denylist = new SyncDenylist();
-        populateDenylist(repo, denylist);
+        const denylist = getDenylist(repo);
 
         const allowlist = new SyncAllowlist();
         this.#allowlist = allowlist;
