@@ -240,12 +240,7 @@ async function collectRegistryEntries(
 ): Promise<RegistryEntry[]> {
   const entries: RegistryEntry[] = [];
 
-  for (const type of [
-    "patchwork:tool",
-    "patchwork:component",
-    "patchwork:datatype",
-  ]) {
-    const registry = getRegistry(type);
+  for (const [, registry] of getAllRegistries()) {
     for (const plugin of registry.all()) {
       let importUrl = (plugin as any).importUrl as string | undefined;
 
@@ -261,16 +256,17 @@ async function collectRegistryEntries(
         }
       }
 
-      const entry: RegistryEntry = {
-        type: (plugin as any).type,
-        id: (plugin as any).id,
-        name: (plugin as any).name,
-        importUrl,
-      };
-      if ("icon" in plugin) entry.icon = (plugin as any).icon;
-      if ("supportedDatatypes" in plugin)
-        entry.supportedDatatypes = (plugin as any).supportedDatatypes;
-      if ("tags" in plugin) entry.tags = (plugin as any).tags;
+      // Strip non-cloneable properties (functions, loaded implementations)
+      // and deep-copy everything else so it can be sent via postMessage.
+      const { load, module, ...rest } = plugin as any;
+      let entry: RegistryEntry;
+      try {
+        entry = structuredClone(rest);
+      } catch (err) {
+        console.warn("[patchwork-isolation] skipping non-cloneable plugin:", rest.id, err);
+        continue;
+      }
+      entry.importUrl = importUrl;
       entries.push(entry);
     }
   }
