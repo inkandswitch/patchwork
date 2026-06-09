@@ -376,6 +376,7 @@ export function registerPatchworkIsolationElement(
               esmsSource: assets.esmsSource,
               hostStyles: assets.hostStyles,
               importMap: config.importMap,
+              hostOrigin: window.location.origin,
               automergeWasm,
               subductionWasm,
             },

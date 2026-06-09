@@ -100,6 +100,7 @@ export class PluginsUrlMapper {
     }
     return null;
   }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -229,6 +230,7 @@ export function startPluginsRpc(options: PluginsRpcOptions): () => void {
       const { id, url } = msg as { id: number; url: string };
       try {
         const fetchUrl = await resolveUrl(url, mapper);
+
         if (fetchUrl !== url) {
           log(`fetch-package ${url} → ${fetchUrl}`);
         } else {

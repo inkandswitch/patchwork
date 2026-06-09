@@ -33,6 +33,7 @@ interface InitMessage {
     esmsSource: string;
     hostStyles: string;
     importMap: { imports?: Record<string, string>; scopes?: any };
+    hostOrigin: string;
     automergeWasm: ArrayBuffer;
     subductionWasm: ArrayBuffer;
   };
@@ -264,15 +265,18 @@ async function boot() {
     await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
     log("wasm initialized");
 
-    // 9. Install selective fetch proxy — only pkg: URLs are proxied.
+    // 9. Install fetch proxy — intercepts all host-origin fetches.
+    // The sandboxed iframe can't reach the host's service worker, so
+    // package resources (including CSS @imports) must go through RPC.
     // Installed after WASM init so initializeWasm/initSync aren't affected.
+    const hostOrigin = d.hostOrigin;
     const originalFetch = self.fetch;
     (self as any).fetch = async (
       input: RequestInfo | URL,
       requestInit?: RequestInit
     ): Promise<Response> => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("pkg:")) {
+      if (url.startsWith(hostOrigin)) {
         const result = await fetchResource(url);
         return new Response(result.body, {
           status: 200,
