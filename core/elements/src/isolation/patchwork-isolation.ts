@@ -1,19 +1,16 @@
 /**
- * `<patchwork-isolation>` custom element — renders a patchwork tool inside
- * a sandboxed iframe with data access mediated by an intermediary repo and
- * allowlist.
+ * `<patchwork-isolation>` — renders a patchwork tool inside a sandboxed
+ * iframe with data access mediated by an intermediary repo and allowlist.
  *
  * Usage:
  *   <patchwork-isolation doc-url="automerge:..." tool-id="my-tool" />
  *
- * The element:
- *  1. Obtains the host repo from the nearest `<repo-provider>` ancestor
- *  2. Creates an intermediary repo with allowlist seeded from `doc-url`
- *  3. Creates a sandboxed iframe (`sandbox="allow-scripts"`)
- *  4. Sends es-module-shims source + resolved import map to the iframe
- *  5. Sets up RPC channel for module loading via es-module-shims source hook
- *  6. Sets up provider and navigation bridges
- *  7. Inside the iframe, a normal `<patchwork-view>` renders in legacy mode
+ * Lifecycle:
+ *  1. Fetch boot assets (es-module-shims, WASM, host styles) — cached
+ *  2. Create allowlist (seeded with doc-url) and denylist
+ *  3. Create intermediary repo gated by allowlist + denylist
+ *  4. Create sandboxed iframe and send boot message with registry entries
+ *  5. Start host-side RPC for plugin loading and navigation
  *
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
@@ -41,6 +38,10 @@ import debug from "debug";
 
 const log = debug("patchwork:elements:isolation");
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 declare global {
   interface HTMLElementTagNameMap {
     "patchwork-isolation": PatchworkIsolationElement;
@@ -52,14 +53,82 @@ export interface PatchworkIsolationElement extends HTMLElement {
   toolId: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// Boot assets — fetched once and shared across all isolation instances
+// ---------------------------------------------------------------------------
+
+interface BootAssets {
+  esmsSource: string;
+  automergeWasm: ArrayBuffer;
+  subductionWasm: ArrayBuffer;
+  hostStyles: string;
+}
+
+let bootAssetsPromise: Promise<BootAssets> | null = null;
+
+function fetchBootAssets(): Promise<BootAssets> {
+  if (bootAssetsPromise) return bootAssetsPromise;
+
+  bootAssetsPromise = Promise.all([
+    fetch("/es-module-shims.js").then((r) => {
+      if (!r.ok)
+        throw new Error(`Failed to fetch es-module-shims: ${r.status}`);
+      return r.text();
+    }),
+    fetch("/automerge.wasm?main").then((r) => {
+      if (!r.ok)
+        throw new Error(`Failed to fetch automerge.wasm: ${r.status}`);
+      return r.arrayBuffer();
+    }),
+    fetch("/subduction.wasm").then((r) => {
+      if (!r.ok)
+        throw new Error(`Failed to fetch subduction.wasm: ${r.status}`);
+      return r.arrayBuffer();
+    }),
+    collectHostStyles(),
+  ]).then(([esmsSource, automergeWasm, subductionWasm, hostStyles]) => ({
+    esmsSource,
+    automergeWasm,
+    subductionWasm,
+    hostStyles,
+  }));
+
+  return bootAssetsPromise;
+}
+
+/** Collect all host page stylesheets as a single CSS string. */
+async function collectHostStyles(): Promise<string> {
+  const sheets = await Promise.all(
+    Array.from(document.styleSheets).map(async (sheet) => {
+      try {
+        return Array.from(sheet.cssRules)
+          .map((r) => r.cssText)
+          .join("\n");
+      } catch {
+        if (sheet.href) {
+          try {
+            return await fetch(sheet.href).then((r) => r.text());
+          } catch {
+            return "";
+          }
+        }
+        return "";
+      }
+    })
+  );
+  return sheets.filter(Boolean).join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Host import map resolution
+// ---------------------------------------------------------------------------
+
 interface ImportMap {
   imports?: Record<string, string>;
   scopes?: Record<string, Record<string, string>>;
 }
 
-/**
- * Read the host page's import map and resolve all URLs to absolute.
- */
+/** Read the host page's import map and resolve all URLs to absolute. */
 function getResolvedImportMap(): ImportMap {
   const script = document.querySelector('script[type="importmap"]');
   if (!script?.textContent) return {};
@@ -105,70 +174,9 @@ function getResolvedImportMap(): ImportMap {
   }
 }
 
-/**
- * Collect all host page stylesheets (Tailwind, DaisyUI, etc.) as a single
- * CSS string. Tools inside the iframe need these to render correctly.
- */
-async function collectHostStyles(): Promise<string> {
-  const sheets = await Promise.all(
-    Array.from(document.styleSheets).map(async (sheet) => {
-      try {
-        return Array.from(sheet.cssRules)
-          .map((r) => r.cssText)
-          .join("\n");
-      } catch {
-        if (sheet.href) {
-          try {
-            return await fetch(sheet.href).then((r) => r.text());
-          } catch {
-            return "";
-          }
-        }
-        return "";
-      }
-    })
-  );
-  return sheets.filter(Boolean).join("\n");
-}
-
-// Cache boot assets so we only fetch them once across all instances.
-interface BootAssets {
-  esmsSource: string;
-  automergeWasm: ArrayBuffer;
-  subductionWasm: ArrayBuffer;
-  hostStyles: string;
-}
-
-let bootAssetsPromise: Promise<BootAssets> | null = null;
-
-function fetchBootAssets(): Promise<BootAssets> {
-  if (!bootAssetsPromise) {
-    bootAssetsPromise = Promise.all([
-      fetch("/es-module-shims.js").then((r) => {
-        if (!r.ok)
-          throw new Error(`Failed to fetch es-module-shims: ${r.status}`);
-        return r.text();
-      }),
-      fetch("/automerge.wasm?main").then((r) => {
-        if (!r.ok)
-          throw new Error(`Failed to fetch automerge.wasm: ${r.status}`);
-        return r.arrayBuffer();
-      }),
-      fetch("/subduction.wasm").then((r) => {
-        if (!r.ok)
-          throw new Error(`Failed to fetch subduction.wasm: ${r.status}`);
-        return r.arrayBuffer();
-      }),
-      collectHostStyles(),
-    ]).then(([esmsSource, automergeWasm, subductionWasm, hostStyles]) => ({
-      esmsSource,
-      automergeWasm,
-      subductionWasm,
-      hostStyles,
-    }));
-  }
-  return bootAssetsPromise;
-}
+// ---------------------------------------------------------------------------
+// Custom element
+// ---------------------------------------------------------------------------
 
 const ATTRS = {
   docUrl: "doc-url",
@@ -177,9 +185,7 @@ const ATTRS = {
 
 /**
  * Defines the `<patchwork-isolation>` custom element.
- *
- * Call once at boot time. The element obtains the host repo from the
- * nearest `<repo-provider>` ancestor in the DOM.
+ * Call once at boot time.
  */
 export function registerPatchworkIsolationElement(
   name = "patchwork-isolation"
@@ -204,7 +210,6 @@ export function registerPatchworkIsolationElement(
       get docUrl(): AutomergeUrl | null {
         return this.getAttribute(ATTRS.docUrl) as AutomergeUrl | null;
       }
-
       set docUrl(url: AutomergeUrl | null) {
         if (url) this.setAttribute(ATTRS.docUrl, url);
         else this.removeAttribute(ATTRS.docUrl);
@@ -213,7 +218,6 @@ export function registerPatchworkIsolationElement(
       get toolId(): string | null {
         return this.getAttribute(ATTRS.toolId);
       }
-
       set toolId(id: string | null) {
         if (id) this.setAttribute(ATTRS.toolId, id);
         else this.removeAttribute(ATTRS.toolId);
@@ -222,11 +226,9 @@ export function registerPatchworkIsolationElement(
       connectedCallback() {
         this.#init();
       }
-
       disconnectedCallback() {
         this.#teardown();
       }
-
       attributeChangedCallback(
         _name: string,
         old: string | null,
@@ -239,11 +241,12 @@ export function registerPatchworkIsolationElement(
         }
       }
 
+      // ── Init ────────────────────────────────────────────────────
+
       async #init() {
         const epoch = ++this.#initEpoch;
         const docUrl = this.docUrl;
         const toolId = this.toolId;
-
         log(`init ${docUrl} tool=${toolId}`);
 
         if (!docUrl) {
@@ -251,52 +254,30 @@ export function registerPatchworkIsolationElement(
           return;
         }
 
-        const repoProvider = this.closest<RepoProviderElement>("repo-provider");
-        const repo = repoProvider?.repo;
-        if (!repo) {
-          log("no <repo-provider> ancestor found");
-          return;
-        }
+        const repo = this.#getRepo();
+        if (!repo) return;
 
-        // ── Fetch boot assets (cached) ─────────────────────────
-        let assets: BootAssets;
-        try {
-          assets = await fetchBootAssets();
-        } catch (err) {
-          console.error(
-            "[patchwork-isolation] failed to load boot assets:",
-            err
-          );
-          return;
-        }
+        const assets = await this.#loadAssets(epoch);
+        if (!assets) return;
 
-        // Abort if a newer init was started or we were torn down
-        if (epoch !== this.#initEpoch) return;
-
-        // ── Resolve import map ───────────────────────────────────
         const importMap = getResolvedImportMap();
-
-        // ── Package URL mapper ────────────────────────────────────
         const mapper = new PluginsUrlMapper();
 
-        // ── Allowlist + denylist ─────────────────────────────────
+        // ── Access control ──────────────────────────────────────
         const allowlist = new SyncAllowlist();
         allowlist.add(docUrl);
         log(`allowlisted ${docUrl}`);
         this.#allowlist = allowlist;
 
         const denylist = new SyncDenylist();
-        // Fire-and-forget: populates denylist asynchronously.
         populateDenylist(repo, denylist);
 
-        // ── Intermediary repo ────────────────────────────────────
         this.#intermediary = createIntermediaryRepo({
           allowlist,
           hostRepo: repo,
           denylist,
         });
 
-        // ── Transitive allowlist (if enabled) ────────────────────
         if (localStorage.getItem("patchwork:transitive-allowlist") === "true") {
           const currentEpoch = epoch;
           setupTransitiveAllowlist(
@@ -312,11 +293,10 @@ export function registerPatchworkIsolationElement(
 
         log("intermediary repo and allowlist ready");
 
-        // ── RPC channel ──────────────────────────────────────────
+        // ── Host-side RPC ───────────────────────────────────────
         const rpcChannel = new MessageChannel();
         this.#hostRpcPort = rpcChannel.port1;
 
-        // ── Start host-side handlers ─────────────────────────────
         this.#cleanups.push(
           startPluginsRpc({ port: this.#hostRpcPort, mapper }),
           startHostNavigationBridge(
@@ -326,16 +306,61 @@ export function registerPatchworkIsolationElement(
           )
         );
 
-        // ── Create sandboxed iframe ──────────────────────────────
+        // ── Iframe ──────────────────────────────────────────────
+        this.#createIframe(
+          epoch,
+          rpcChannel.port2,
+          this.#intermediary.iframePort,
+          mapper,
+          assets,
+          { docUrl, toolId, importMap }
+        );
+
+        this.#booted = true;
+      }
+
+      // ── Helpers ─────────────────────────────────────────────────
+
+      #getRepo(): Repo | undefined {
+        const repoProvider =
+          this.closest<RepoProviderElement>("repo-provider");
+        const repo = repoProvider?.repo;
+        if (!repo) log("no <repo-provider> ancestor found");
+        return repo;
+      }
+
+      async #loadAssets(epoch: number): Promise<BootAssets | undefined> {
+        try {
+          const assets = await fetchBootAssets();
+          if (epoch !== this.#initEpoch) return undefined;
+          return assets;
+        } catch (err) {
+          console.error(
+            "[patchwork-isolation] failed to load boot assets:",
+            err
+          );
+          return undefined;
+        }
+      }
+
+      #createIframe(
+        epoch: number,
+        rpcPort: MessagePort,
+        syncPort: MessagePort,
+        mapper: PluginsUrlMapper,
+        assets: BootAssets,
+        config: {
+          docUrl: AutomergeUrl;
+          toolId: string | null;
+          importMap: ImportMap;
+        }
+      ) {
         const iframe = document.createElement("iframe");
         iframe.sandbox.add("allow-scripts");
         iframe.style.cssText =
           "border: none; width: 100%; height: 100%; display: block;";
         iframe.srcdoc = generateIframeSrcdoc();
         this.#iframe = iframe;
-
-        const intermediaryPort = this.#intermediary.iframePort;
-        const rpcPort2 = rpcChannel.port2;
 
         iframe.addEventListener("load", async () => {
           if (!this.#booted || epoch !== this.#initEpoch) return;
@@ -345,7 +370,6 @@ export function registerPatchworkIsolationElement(
           const registryEntries = await getRegistries(mapper);
           if (!this.#booted || epoch !== this.#initEpoch) return;
 
-          // Clone WASM buffers so they can be transferred
           const automergeWasm = assets.automergeWasm.slice(0);
           const subductionWasm = assets.subductionWasm.slice(0);
 
@@ -355,21 +379,20 @@ export function registerPatchworkIsolationElement(
           iframe.contentWindow.postMessage(
             {
               type: "boot",
-              docUrl,
-              toolId,
+              docUrl: config.docUrl,
+              toolId: config.toolId,
               registryEntries,
               esmsSource: assets.esmsSource,
               hostStyles: assets.hostStyles,
-              importMap,
+              importMap: config.importMap,
               automergeWasm,
               subductionWasm,
             },
             "*",
-            [rpcPort2, intermediaryPort, automergeWasm, subductionWasm]
+            [rpcPort, syncPort, automergeWasm, subductionWasm]
           );
         });
 
-        // Listen for boot errors
         const onBootMessage = (event: MessageEvent) => {
           if (event.data?.type === "boot-error") {
             console.error(
@@ -378,14 +401,15 @@ export function registerPatchworkIsolationElement(
             );
           }
         };
-        this.#hostRpcPort.addEventListener("message", onBootMessage);
+        this.#hostRpcPort!.addEventListener("message", onBootMessage);
         this.#cleanups.push(() =>
           this.#hostRpcPort?.removeEventListener("message", onBootMessage)
         );
 
         this.appendChild(iframe);
-        this.#booted = true;
       }
+
+      // ── Teardown ────────────────────────────────────────────────
 
       #teardown() {
         log("teardown");
