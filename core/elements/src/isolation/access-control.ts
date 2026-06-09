@@ -26,13 +26,13 @@ import debug from "debug";
 const log = debug("patchwork:elements:isolation");
 
 // ---------------------------------------------------------------------------
-// Transitive allowlist
+// Allowlist population
 // ---------------------------------------------------------------------------
 
 /**
- * Scan a document for automerge URLs and add them to the allowlist.
+ * Populate the allowlist from a document's content. Scans for all automerge
+ * URLs in the document and adds them to the allowlist (unless denylisted).
  * Watches for document changes to dynamically expand the allowlist.
- * Each URL is checked against the denylist before allowlisting.
  *
  * Returns a cleanup function that removes the change listener.
  *
@@ -40,7 +40,7 @@ const log = debug("patchwork:elements:isolation");
  *   torn down (e.g. a newer init epoch started). Checked after each
  *   async boundary to avoid stale updates.
  */
-export async function setupTransitiveAllowlist(
+export async function populateAllowlist(
   repo: Repo,
   docUrl: AutomergeUrl,
   allowlist: SyncAllowlist,
@@ -71,15 +71,16 @@ export async function setupTransitiveAllowlist(
 
     const doc = handle.doc();
     if (doc) await allowUrlsFromDoc(doc);
-    log("allowlisted URLs from root document");
+    log(`allowlist populated from ${docUrl}`);
 
-    const onChange = ({ doc }: { doc: unknown }) => {
-      void allowUrlsFromDoc(doc);
-    };
-    handle.on("change", onChange);
-    return () => handle.off("change", onChange);
+    // TODO: ideally update the allowlist dynamically as the doc changes, but not on every keystroke.
+    // const onChange = ({ doc }: { doc: unknown }) => {
+    //   void allowUrlsFromDoc(doc);
+    // };
+    // handle.on("change", onChange);
+    // return () => handle.off("change", onChange);
   } catch (err) {
-    log("transitive allowlist scan failed:", err);
+    log(`populateAllowlist: failed to scan ${docUrl}`, err);
     return undefined;
   }
 }

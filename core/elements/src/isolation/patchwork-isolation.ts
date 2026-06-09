@@ -28,10 +28,7 @@ import {
   getRegistries,
   startPluginsRpc,
 } from "./plugins-bridge.js";
-import {
-  populateDenylist,
-  setupTransitiveAllowlist,
-} from "./access-control.js";
+import { populateAllowlist, populateDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
@@ -76,8 +73,7 @@ function fetchBootAssets(): Promise<BootAssets> {
       return r.text();
     }),
     fetch("/automerge.wasm?main").then((r) => {
-      if (!r.ok)
-        throw new Error(`Failed to fetch automerge.wasm: ${r.status}`);
+      if (!r.ok) throw new Error(`Failed to fetch automerge.wasm: ${r.status}`);
       return r.arrayBuffer();
     }),
     fetch("/subduction.wasm").then((r) => {
@@ -264,32 +260,29 @@ export function registerPatchworkIsolationElement(
         const mapper = new PluginsUrlMapper();
 
         // ── Access control ──────────────────────────────────────
-        const allowlist = new SyncAllowlist();
-        allowlist.add(docUrl);
-        log(`allowlisted ${docUrl}`);
-        this.#allowlist = allowlist;
-
         const denylist = new SyncDenylist();
         populateDenylist(repo, denylist);
+
+        const allowlist = new SyncAllowlist();
+        this.#allowlist = allowlist;
+
+        allowlist.add(docUrl);
+        log(`allowlisted ${docUrl}`);
+        populateAllowlist(
+          repo,
+          docUrl,
+          allowlist,
+          denylist,
+          () => epoch !== this.#initEpoch
+        ).then((cleanup) => {
+          if (cleanup) this.#cleanups.push(cleanup);
+        });
 
         this.#intermediary = createIntermediaryRepo({
           allowlist,
           hostRepo: repo,
           denylist,
         });
-
-        if (localStorage.getItem("patchwork:transitive-allowlist") === "true") {
-          const currentEpoch = epoch;
-          setupTransitiveAllowlist(
-            repo,
-            docUrl,
-            allowlist,
-            denylist,
-            () => currentEpoch !== this.#initEpoch
-          ).then((cleanup) => {
-            if (cleanup) this.#cleanups.push(cleanup);
-          });
-        }
 
         log("intermediary repo and allowlist ready");
 
@@ -322,8 +315,7 @@ export function registerPatchworkIsolationElement(
       // ── Helpers ─────────────────────────────────────────────────
 
       #getRepo(): Repo | undefined {
-        const repoProvider =
-          this.closest<RepoProviderElement>("repo-provider");
+        const repoProvider = this.closest<RepoProviderElement>("repo-provider");
         const repo = repoProvider?.repo;
         if (!repo) log("no <repo-provider> ancestor found");
         return repo;
