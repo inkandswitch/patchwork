@@ -9,11 +9,11 @@ import {
 } from "./sync-config.js";
 import debug from "debug";
 
-const debugging = debug.enabled("patchwork:serviceworker");
+const serviceWorkerDebugging = debug.enabled("patchwork:serviceworker");
+const workerDebugging = debug.enabled("patchwork:automergeworker");
 
 const key = "patchworkServiceWorkerCacheVersion";
 let nextRepoChannelId = 0;
-let serviceWorkerInstanceId: string | undefined;
 
 function bumpServiceWorkerCacheVersion() {
   const version = new Date().valueOf().toString(36);
@@ -52,18 +52,38 @@ export function bumpServiceWorkerCache(
 
 function configureServiceWorker(sw: ServiceWorker | null) {
   if (!sw) return;
-  sw.postMessage({ type: "debug", debug: debugging });
+  sw.postMessage({ type: "debug", debug: serviceWorkerDebugging });
   const cachename = getServiceWorkerCacheVersion();
   if (cachename) sw.postMessage({ type: "cachename", cachename });
+}
+
+// ── The automerge worker ───────────────────────────────────────────────
+// The automerge repo lives in a SharedWorker (not the service worker). One
+// instance is shared by every tab and lives exactly as long as any tab
+// does, so there's no keepalive ping and no restart detection: if we're
+// alive, it's alive. Repo sync ports are passed to it over its connect
+// port; it talks to the service worker over a BroadcastChannel.
+
+let automergeWorkerPath = "/automerge-worker.js";
+let automergeWorker: SharedWorker | undefined;
+
+function getAutomergeWorker(): SharedWorker {
+  if (!automergeWorker) {
+    automergeWorker = new SharedWorker(automergeWorkerPath, {
+      name: "patchwork-automerge",
+      type: "module",
+    });
+    // Control replies (port-ready &c) come back on this port, so it needs
+    // start() — we listen with addEventListener, not onmessage.
+    automergeWorker.port.start();
+    automergeWorker.port.postMessage({ type: "debug", debug: workerDebugging });
+  }
+  return automergeWorker;
 }
 
 export function connectClassicSync(
   server: string = readClassicSyncServer()
 ): Promise<void> {
-  const controller = navigator.serviceWorker.controller;
-  if (!controller) {
-    return Promise.reject(new Error("no service worker controller"));
-  }
   const url = server.trim() || DEFAULT_CLASSIC_SYNC_SERVER;
   if (!/^wss?:\/\//.test(url)) {
     return Promise.reject(
@@ -71,7 +91,7 @@ export function connectClassicSync(
     );
   }
 
-
+  const worker = getAutomergeWorker();
   const { port1, port2 } = new MessageChannel();
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -91,18 +111,10 @@ export function connectClassicSync(
         );
       }
     };
-    controller.postMessage({ type: "connect-classic-sync", server: url }, [
+    worker.port.postMessage({ type: "connect-classic-sync", server: url }, [
       port2,
     ]);
   });
-}
-
-function updateServiceWorkerInstanceId(next: unknown) {
-  if (typeof next !== "string") return false;
-  const changed =
-    serviceWorkerInstanceId != null && serviceWorkerInstanceId !== next;
-  serviceWorkerInstanceId = next;
-  return changed;
 }
 
 /** Wait for a registration to have an active worker */
@@ -118,122 +130,69 @@ function waitForActive(reg: ServiceWorkerRegistration): Promise<ServiceWorker> {
   });
 }
 
-async function openRepoChannel(): Promise<{
-  port: MessagePort;
-  workerInstanceChanged: boolean;
-}> {
-  const controller = navigator.serviceWorker.controller;
-  if (!controller) {
-    throw new Error("no service worker controller");
-  }
+async function openRepoChannel(): Promise<MessagePort> {
+  const worker = getAutomergeWorker();
 
-  // Send a MessagePort so the SW's repo can sync with clients, and wait for
-  // the SW to confirm its repo is constructed before returning. The
+  // Send a MessagePort so the worker's repo can sync with this tab, and wait
+  // for the worker to confirm its repo is constructed before returning. The
   // MessageChannel adapter's whenReady() force-resolves after 100ms regardless
   // of the other end's state, so it can't be used as a real readiness signal
-  // on first install (when the SW still has to fetch wasm and build its repo).
+  // on first boot (when the worker still has to fetch wasm and build its repo).
   const id = ++nextRepoChannelId;
-  let workerInstanceChanged = false;
   const { port1, port2 } = new MessageChannel();
-  const swReady = new Promise<void>((resolve, reject) => {
+  const workerReady = new Promise<void>((resolve, reject) => {
     let timeout: ReturnType<typeof setTimeout>;
     const cleanup = () => {
       clearTimeout(timeout);
-      navigator.serviceWorker.removeEventListener("message", listener);
+      worker.port.removeEventListener("message", listener);
     };
     const listener = (event: MessageEvent) => {
-      if (event.data?.id != null && event.data.id !== id) return;
+      if (event.data?.id !== id) return;
       if (event.data?.type === "port-ready") {
-        workerInstanceChanged = updateServiceWorkerInstanceId(
-          event.data.workerInstanceId
-        );
         cleanup();
         resolve();
       } else if (event.data?.type === "port-failed") {
-        workerInstanceChanged = updateServiceWorkerInstanceId(
-          event.data.workerInstanceId
-        );
         cleanup();
-        reject(new Error(`service worker init failed: ${event.data.error}`));
+        reject(new Error(`automerge worker init failed: ${event.data.error}`));
       }
     };
-    navigator.serviceWorker.addEventListener("message", listener);
-    // Failsafe: don't block boot forever if the SW never replies. Surface the
-    // issue and let the rest of the site come up rather than hanging on a
+    worker.port.addEventListener("message", listener);
+    // Failsafe: don't block boot forever if the worker never replies. Surface
+    // the issue and let the rest of the site come up rather than hanging on a
     // blank page.
     timeout = setTimeout(() => {
       cleanup();
-      reject(new Error("service worker port-ready timeout"));
+      reject(new Error("automerge worker port-ready timeout"));
     }, 30_000);
   });
-  controller.postMessage({ type: "port", id }, [port2]);
+  worker.port.postMessage({ type: "port", id }, [port2]);
   try {
-    await swReady;
+    await workerReady;
   } catch (err) {
     console.warn(
-      "proceeding without SW ready ack:",
+      "proceeding without worker ready ack:",
       err instanceof Error ? err.message : err
     );
   }
-  return { port: port1, workerInstanceChanged };
+  return port1;
+}
+
+/** Open a fresh repo sync port to the automerge worker (dev console). */
+function getRepoChannel(): MessagePort {
+  const worker = getAutomergeWorker();
+  const { port1, port2 } = new MessageChannel();
+  worker.port.postMessage({ type: "port", id: ++nextRepoChannelId }, [port2]);
+  return port1;
 }
 
 export default async function setupServiceWorker(
   options?: SetupServiceWorkerOptions
 ): Promise<SetupServiceWorkerResult> {
-  const repoChannelListeners = new Set<ServiceWorkerRepoChannelListener>();
-  let reconnectPromise: Promise<void> | null = null;
+  if (options?.workerPath) automergeWorkerPath = options.workerPath;
 
-  const reconnectRepoChannels = (reason: string) => {
-    if (reconnectPromise) return reconnectPromise;
-    reconnectPromise = (async () => {
-      console.info(
-        `%cservice worker ${reason}, reconnecting repo channels...`,
-        "color: pink; font-weight: bold"
-      );
-      configureServiceWorker(navigator.serviceWorker.controller);
-      for (const listener of repoChannelListeners) {
-        try {
-          const { port } = await openRepoChannel();
-          await listener(port);
-        } catch (err) {
-          console.error("service worker repo channel listener failed", err);
-        }
-      }
-    })().finally(() => {
-      reconnectPromise = null;
-    });
-    return reconnectPromise;
-  };
-
-  const pingServiceWorker = async () => {
-    const controller = navigator.serviceWorker.controller;
-    if (!controller) return;
-    const { port1, port2 } = new MessageChannel();
-    const pong = new Promise<unknown>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        port1.close();
-        reject(new Error("service worker pong timeout"));
-      }, 5_000);
-      port1.onmessage = (event) => {
-        clearTimeout(timeout);
-        port1.close();
-        resolve(event.data?.workerInstanceId);
-      };
-    });
-    controller.postMessage({ type: "ping" }, [port2]);
-    try {
-      const restarted = updateServiceWorkerInstanceId(await pong);
-      if (restarted) {
-        await reconnectRepoChannels("restarted");
-      }
-    } catch (err) {
-      console.warn(
-        "service worker ping failed:",
-        err instanceof Error ? err.message : err
-      );
-    }
-  };
+  // Start the automerge worker right away so it boots (wasm, repo) while the
+  // service worker installs.
+  getAutomergeWorker();
 
   const path = options?.path ?? "/service-worker.js";
   // No controller at this point means the page loaded without a service
@@ -260,35 +219,10 @@ export default async function setupServiceWorker(
     });
   }
 
-  // Keepalive — Chromium idles out service workers after ~30s of inactivity,
-  // which tears down the in-memory Repo and forces a cold restart on the next
-  // fetch. Ping through a MessageChannel so we can detect when a restarted SW
-  // has a new in-memory Repo and reconnect all repo channels.
-  //
-  // 10s (not 20s) leaves a comfortable margin under the ~30s idle limit: a
-  // single delayed tick (main-thread jank, GC, a slow pong) won't let the SW
-  // slip past the deadline while the tab is focused.
-  setInterval(() => {
-    void pingServiceWorker();
-  }, 10_000);
-
-  // Background tabs throttle setInterval to ~once/minute, so the SW idles out
-  // while hidden no matter how short the interval is — that's by design in the
-  // browser. We can't prevent it, but we can recover instantly: ping the moment
-  // the tab regains focus/visibility so a restarted SW is detected (and its repo
-  // channels reconnected) right away instead of after the next throttled tick.
-  const pingIfVisible = () => {
-    if (document.visibilityState === "visible") void pingServiceWorker();
-  };
-  document.addEventListener("visibilitychange", pingIfVisible);
-  window.addEventListener("focus", pingIfVisible);
-
-  // Reconnect on future SW updates (added after setup so the initial
-  // activation doesn't notify before callers subscribe).
-  navigator.serviceWorker.addEventListener("controllerchange", function () {
-    void reconnectRepoChannels("took control").catch((err) => {
-      console.error("service worker reconnect failed", err);
-    });
+  // A replacement service worker boots with the default cache name — re-send
+  // its configuration whenever a new one takes control.
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    configureServiceWorker(navigator.serviceWorker.controller);
   });
 
   console.log(
@@ -298,19 +232,12 @@ export default async function setupServiceWorker(
 
   return {
     connectClassicSync,
-    async subscribeToRepoChannel(listener) {
-      const { port, workerInstanceChanged } = await openRepoChannel();
-      if (workerInstanceChanged) {
-        await reconnectRepoChannels("restarted");
-      }
-      repoChannelListeners.add(listener);
-      try {
-        await listener(port);
-      } catch (err) {
-        repoChannelListeners.delete(listener);
-        throw err;
-      }
-      return () => repoChannelListeners.delete(listener);
+    getRepoChannel,
+    async subscribeToRepoChannel(listener: ServiceWorkerRepoChannelListener) {
+      // The automerge worker outlives the page, so unlike the old in-service-
+      // worker repo there's nothing to reconnect: one port, handed over once.
+      await listener(await openRepoChannel());
+      return () => {};
     },
   };
 }
