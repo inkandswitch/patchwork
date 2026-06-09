@@ -72,13 +72,6 @@ export async function populateAllowlist(
     const doc = handle.doc();
     if (doc) await allowUrlsFromDoc(doc);
     log(`allowlist populated from ${docUrl}`);
-
-    // TODO: ideally update the allowlist dynamically as the doc changes, but not on every keystroke.
-    // const onChange = ({ doc }: { doc: unknown }) => {
-    //   void allowUrlsFromDoc(doc);
-    // };
-    // handle.on("change", onChange);
-    // return () => handle.off("change", onChange);
   } catch (err) {
     log(`populateAllowlist: failed to scan ${docUrl}`, err);
     return undefined;
@@ -106,7 +99,11 @@ export async function refreshAllowlist(
     for (const url of urls) {
       if (allowlist.hasUrl(url)) continue;
       if (denylist) {
-        const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
+        const sensitive = await checkAndDenylistIfSensitive(
+          repo,
+          url,
+          denylist
+        );
         if (sensitive) continue;
       }
       allowlist.add(url);

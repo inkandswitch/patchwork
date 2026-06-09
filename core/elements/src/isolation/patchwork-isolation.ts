@@ -283,6 +283,21 @@ export function registerPatchworkIsolationElement(
           hostRepo: repo,
           denylist,
           onAccessRequest: async (documentId: DocumentId) => {
+            // If the host repo doesn't have this document yet, allow it
+            // without prompting — it could be a new document created by
+            // the iframe, a URL added by a collaborator, or something
+            // embedded in the tool.
+            // TODO: ideally document creation should be proxied to the
+            // host so we can track which documents the iframe created.
+            // Then we wouldn't need to allow unknown URLs by default —
+            // only explicitly created or allowlisted documents would
+            // be permitted.
+            if (!repo.handles[documentId]) {
+              log(`auto-allowlisting unknown document: ${documentId}`);
+              allowlist.addDocumentId(documentId);
+              return true;
+            }
+
             // Re-scan the root document — the URL may have been added
             // since the initial scan (e.g., the user typed a new reference)
             await refreshAllowlist(repo, docUrl, allowlist, denylist);
