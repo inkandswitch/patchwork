@@ -36,7 +36,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "@automerge/automerge-repo": "2.6.0-subduction.27",
+    "@automerge/automerge-repo": "2.6.0-subduction.29",
     "@automerge/automerge-repo-keyhive": "0.3.0-alpha.sub.1c",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",

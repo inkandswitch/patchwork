@@ -20,8 +20,8 @@
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "@automerge/automerge-repo-react-hooks": "2.6.0-subduction.27",
-    "@automerge/vanillajs": "2.6.0-subduction.27",
+    "@automerge/automerge-repo-react-hooks": "2.6.0-subduction.29",
+    "@automerge/vanillajs": "2.6.0-subduction.29",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
