@@ -28,9 +28,9 @@
     "@automerge/automerge-repo": "*"
   },
   "devDependencies": {
-    "@automerge/automerge": "3.3.0-fragments.1",
-    "@automerge/automerge-repo": "2.6.0-subduction.29",
-    "@automerge/automerge-subduction": "0.15.0",
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
     "typescript": "^5.9.3",
     "vitest": "^3.2.6"
   }
