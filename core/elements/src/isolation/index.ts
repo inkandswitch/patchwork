@@ -2,8 +2,20 @@ export {
   registerPatchworkIsolationElement,
   type PatchworkIsolationElement,
 } from "./patchwork-isolation.js";
-export { createIntermediaryRepo, SyncAllowlist, SyncDenylist, type IntermediaryRepo, type IntermediaryRepoOptions } from "./intermediary-repo.js";
-export { startModuleRpc } from "./module-rpc.js";
-export { startHostProviderBridge } from "./provider-bridge.js";
+export {
+  createIntermediaryRepo,
+  SyncAllowlist,
+  SyncDenylist,
+  type IntermediaryRepo,
+  type IntermediaryRepoOptions,
+} from "./repo-bridge.js";
+export {
+  PackageUrlMapper,
+  collectRegistryEntries,
+  startModuleRpc,
+} from "./plugins-bridge.js";
 export { startHostNavigationBridge } from "./navigation-bridge.js";
-export { generateIframeSrcdoc, type RegistryEntry } from "./iframe-bootstrap.js";
+export {
+  generateIframeSrcdoc,
+  type RegistryEntry,
+} from "./iframe-bootstrap.js";

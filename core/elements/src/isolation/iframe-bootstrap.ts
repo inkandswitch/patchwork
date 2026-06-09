@@ -125,7 +125,7 @@ async function boot() {
     return new Promise((resolve, reject) => {
       const id = ++fetchId;
       pendingModuleFetches.set(id, { resolve, reject });
-      rpcPort.postMessage({ type: "fetch-module", id, url });
+      rpcPort.postMessage({ type: "fetch-package", id, url });
     });
   }
 
@@ -141,13 +141,13 @@ async function boot() {
     const msg = event.data;
     if (!msg) return;
 
-    if (msg.type === "fetch-module-response") {
+    if (msg.type === "fetch-package-response") {
       const pending = pendingModuleFetches.get(msg.id);
       if (pending) {
         pendingModuleFetches.delete(msg.id);
         pending.resolve({ source: msg.source, resolvedUrl: msg.resolvedUrl });
       }
-    } else if (msg.type === "fetch-module-error") {
+    } else if (msg.type === "fetch-package-error") {
       const pending = pendingModuleFetches.get(msg.id);
       if (pending) {
         pendingModuleFetches.delete(msg.id);
@@ -184,17 +184,6 @@ async function boot() {
   rpcPort = init.rpcPort;
   rpcPort.addEventListener("message", handleRpcMessage);
   rpcPort.start();
-
-  // Provider bridge: forward patchwork:subscribe events to host
-  document.addEventListener(
-    "patchwork:subscribe",
-    ((event: CustomEvent) => {
-      const { selector, port } = event.detail;
-      event.stopPropagation();
-      rpcPort.postMessage({ type: "provider-subscribe", selector }, [port]);
-    }) as EventListener,
-    true
-  );
 
   // Navigation bridge: forward patchwork:open-document events to host
   document.addEventListener(

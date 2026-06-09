@@ -23,22 +23,27 @@ import {
   type Repo,
   isValidAutomergeUrl,
 } from "@automerge/automerge-repo";
-import { getRegistry, getAllRegistries } from "@inkandswitch/patchwork-plugins";
+import { getAllRegistries } from "@inkandswitch/patchwork-plugins";
 import {
-  getImportableUrlFromAutomergeUrl,
-  resolvePackageExport,
   type FolderDoc,
   type BranchesDoc,
   type HasPatchworkMetadata,
   type ModuleSettingsDoc,
 } from "@inkandswitch/patchwork-filesystem";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
-import { createIntermediaryRepo, SyncAllowlist, SyncDenylist, type IntermediaryRepo } from "./intermediary-repo.js";
-import { startModuleRpc } from "./module-rpc.js";
-import { PackageUrlMapper } from "./package-url-mapper.js";
-import { startHostProviderBridge } from "./provider-bridge.js";
+import {
+  createIntermediaryRepo,
+  SyncAllowlist,
+  SyncDenylist,
+  type IntermediaryRepo,
+} from "./repo-bridge.js";
+import {
+  PackageUrlMapper,
+  collectRegistryEntries,
+  startModuleRpc,
+} from "./plugins-bridge.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
-import { generateIframeSrcdoc, type RegistryEntry } from "./iframe-bootstrap.js";
+import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
 
 const log = debug("patchwork:elements:isolation");
@@ -131,7 +136,10 @@ async function populateDenylist(
         await denylistModuleEntry(repo, moduleUrl, denylist);
       }
     } catch (err) {
-      log(`populateDenylist: failed to read module settings ${settingsUrl}`, err);
+      log(
+        `populateDenylist: failed to read module settings ${settingsUrl}`,
+        err
+      );
     }
   }
 
@@ -198,10 +206,7 @@ async function checkAndDenylistIfSensitive(
 /**
  * Recursively walks a value and collects all valid automerge URLs found.
  */
-function collectAutomergeUrls(
-  value: unknown,
-  urls: Set<AutomergeUrl>
-): void {
+function collectAutomergeUrls(value: unknown, urls: Set<AutomergeUrl>): void {
   if (typeof value === "string") {
     if (isValidAutomergeUrl(value)) urls.add(value);
     return;
@@ -225,77 +230,6 @@ declare global {
 export interface PatchworkIsolationElement extends HTMLElement {
   docUrl: AutomergeUrl | null;
   toolId: string | null;
-}
-
-/**
- * Collect registry entries from all plugin registries for pre-populating
- * the iframe's registries.
- */
-/**
- * Resolve a plugin's automerge importUrl to its package entry point URL
- * and package name from package.json.
- */
-async function resolvePluginEntryUrl(
-  importUrl: string
-): Promise<{ entryUrl: string; packageName?: string } | undefined> {
-  const folderPath = getImportableUrlFromAutomergeUrl(importUrl as AutomergeUrl);
-  const base = new URL(folderPath, window.location.origin);
-  const packageJsonUrl = new URL("package.json", base).href;
-
-  const response = await fetch(packageJsonUrl);
-  if (!response.ok) return undefined;
-
-  const pkgJson = await response.json();
-  const entryPoint = resolvePackageExport(pkgJson);
-  if (!entryPoint) return undefined;
-
-  return {
-    entryUrl: new URL(entryPoint, base).href,
-    packageName: pkgJson.name,
-  };
-}
-
-/**
- * Collect registry entries, converting automerge importUrls to pkg: URLs
- * via the mapper so that automerge document IDs don't leak to the iframe.
- */
-async function collectRegistryEntries(
-  mapper: PackageUrlMapper
-): Promise<RegistryEntry[]> {
-  const entries: RegistryEntry[] = [];
-
-  for (const [, registry] of getAllRegistries()) {
-    for (const plugin of registry.all()) {
-      let importUrl = (plugin as any).importUrl as string | undefined;
-
-      if (importUrl) {
-        const resolved = await resolvePluginEntryUrl(importUrl);
-        if (resolved) {
-          importUrl = mapper.toPackageUrl(
-            resolved.entryUrl,
-            resolved.packageName
-          );
-        } else {
-          importUrl = undefined;
-        }
-      }
-
-      // Strip non-cloneable properties (functions, loaded implementations)
-      // and deep-copy everything else so it can be sent via postMessage.
-      const { load, module, ...rest } = plugin as any;
-      let entry: RegistryEntry;
-      try {
-        entry = structuredClone(rest);
-      } catch (err) {
-        log(`skipping non-cloneable plugin: ${rest.id}`, err);
-        continue;
-      }
-      entry.importUrl = importUrl;
-      entries.push(entry);
-    }
-  }
-
-  return entries;
 }
 
 interface ImportMap {
@@ -391,15 +325,18 @@ function fetchBootAssets(): Promise<BootAssets> {
   if (!bootAssetsPromise) {
     bootAssetsPromise = Promise.all([
       fetch("/es-module-shims.js").then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch es-module-shims: ${r.status}`);
+        if (!r.ok)
+          throw new Error(`Failed to fetch es-module-shims: ${r.status}`);
         return r.text();
       }),
       fetch("/automerge.wasm?main").then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch automerge.wasm: ${r.status}`);
+        if (!r.ok)
+          throw new Error(`Failed to fetch automerge.wasm: ${r.status}`);
         return r.arrayBuffer();
       }),
       fetch("/subduction.wasm").then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch subduction.wasm: ${r.status}`);
+        if (!r.ok)
+          throw new Error(`Failed to fetch subduction.wasm: ${r.status}`);
         return r.arrayBuffer();
       }),
       collectHostStyles(),
@@ -506,7 +443,10 @@ export function registerPatchworkIsolationElement(
         try {
           assets = await fetchBootAssets();
         } catch (err) {
-          console.error("[patchwork-isolation] failed to load boot assets:", err);
+          console.error(
+            "[patchwork-isolation] failed to load boot assets:",
+            err
+          );
           return;
         }
 
@@ -537,9 +477,7 @@ export function registerPatchworkIsolationElement(
         });
 
         // ── Transitive allowlist (if enabled) ────────────────────
-        if (
-          localStorage.getItem("patchwork:transitive-allowlist") === "true"
-        ) {
+        if (localStorage.getItem("patchwork:transitive-allowlist") === "true") {
           this.#setupTransitiveAllowlist(repo, docUrl, epoch, denylist);
         }
 
@@ -552,7 +490,6 @@ export function registerPatchworkIsolationElement(
         // ── Start host-side handlers ─────────────────────────────
         this.#cleanups.push(
           startModuleRpc({ port: this.#hostRpcPort, mapper }),
-          startHostProviderBridge(this.#hostRpcPort, this),
           startHostNavigationBridge(
             this.#hostRpcPort,
             this,
@@ -583,7 +520,9 @@ export function registerPatchworkIsolationElement(
           const automergeWasm = assets.automergeWasm.slice(0);
           const subductionWasm = assets.subductionWasm.slice(0);
 
-          log(`sending boot message with ${registryEntries.length} registry entries`);
+          log(
+            `sending boot message with ${registryEntries.length} registry entries`
+          );
           iframe.contentWindow.postMessage(
             {
               type: "boot",
@@ -639,7 +578,11 @@ export function registerPatchworkIsolationElement(
           for (const url of urls) {
             if (allowlist.hasUrl(url)) continue;
             if (denylist) {
-              const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
+              const sensitive = await checkAndDenylistIfSensitive(
+                repo,
+                url,
+                denylist
+              );
               if (sensitive) continue;
             }
             allowlist.add(url);
