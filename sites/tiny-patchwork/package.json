@@ -6,7 +6,7 @@
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@eslint/js": "^9.39.4",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
-    "@keyhive/keyhive": "0.0.0-alpha.56",
+    "@keyhive/keyhive": "catalog:",
     "@tailwindcss/vite": "^4.3.0",
     "daisyui": "^5.5.20",
     "eslint": "^9.39.4",

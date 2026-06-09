@@ -361,19 +361,19 @@ self.addEventListener("message", async (event) => {
     // Reply via the provided port if any; the message event itself also resets
     // the idle timer.
     const [pongPort] = event.ports;
-    log("ping");
+    log("ping!");
     // Opportunistically reap adapters for tabs that have since closed.
     (event as unknown as FetchEvent).waitUntil(reconcileConnections());
     if (pongPort) {
       pongPort.postMessage({ type: "pong", workerInstanceId });
-      log("pong");
+      log("pong!");
       pongPort.close();
     } else if (event.source) {
       (event.source as unknown as Client).postMessage({
         type: "pong",
         workerInstanceId,
       });
-      log("pong");
+      log("pong!!");
     }
   } else if (event.data.type == "port") {
     log("received messagechannel");

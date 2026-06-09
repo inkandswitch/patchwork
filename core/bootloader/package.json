@@ -47,7 +47,7 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/patchwork-providers": "workspace:^",
-    "@keyhive/keyhive": "0.0.0-alpha.56",
+    "@keyhive/keyhive": "catalog:",
     "@types/debug": "^4.1.13",
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",
