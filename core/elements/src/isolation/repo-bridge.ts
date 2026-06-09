@@ -61,6 +61,10 @@ export class SyncAllowlist {
     this.#allowed.add(documentId);
   }
 
+  addDocumentId(documentId: DocumentId): void {
+    this.#allowed.add(documentId);
+  }
+
   has(documentId: DocumentId): boolean {
     return this.#allowed.has(documentId);
   }
@@ -82,6 +86,11 @@ export interface IntermediaryRepoOptions {
   hostRepo: Repo;
   /** Optional denylist — denylisted documents are blocked regardless of allowlist. */
   denylist?: SyncDenylist;
+  /**
+   * Called when the iframe requests a document that's not on the allowlist
+   * or denylist. If it returns true, the document is added to the allowlist.
+   */
+  onAccessRequest?: (documentId: DocumentId) => Promise<boolean>;
 }
 
 export interface IntermediaryRepo {
@@ -107,7 +116,7 @@ export interface IntermediaryRepo {
 export function createIntermediaryRepo(
   options: IntermediaryRepoOptions
 ): IntermediaryRepo {
-  const { allowlist, hostRepo, denylist } = options;
+  const { allowlist, hostRepo, denylist, onAccessRequest } = options;
 
   const hostRepoPeerId = hostRepo.peerId;
 
@@ -141,11 +150,28 @@ export function createIntermediaryRepo(
           }
           return false;
         }
-        const allowed = allowlist.has(documentId);
-        if (peerId !== hostRepoPeerId) {
-          log(`access ${documentId} ${allowed ? "ALLOWED" : "BLOCKED"}`);
+        if (allowlist.has(documentId)) return true;
+
+        // Not allowlisted, not denylisted — prompt the user if this
+        // is an iframe request and we have a callback
+        if (peerId !== hostRepoPeerId && onAccessRequest) {
+          log(`access ${documentId} prompting user`);
+          const approved = await onAccessRequest(documentId);
+          if (approved) {
+            log(`access ${documentId} APPROVED by user`);
+            // Re-evaluate share config so previously-denied peers
+            // pick up the new allowlist entry
+            repo.shareConfigChanged();
+            return true;
+          }
+          log(`access ${documentId} REJECTED by user`);
+          return false;
         }
-        return allowed;
+
+        if (peerId !== hostRepoPeerId) {
+          log(`access ${documentId} BLOCKED`);
+        }
+        return false;
       },
     },
   });

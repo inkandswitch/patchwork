@@ -16,7 +16,7 @@
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
 
-import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
+import type { AutomergeUrl, DocumentId, Repo } from "@automerge/automerge-repo";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   createIntermediaryRepo,
@@ -281,6 +281,18 @@ export function registerPatchworkIsolationElement(
           allowlist,
           hostRepo: repo,
           denylist,
+          onAccessRequest: async (documentId: DocumentId) => {
+            const approved = window.confirm(
+              `A tool wants to access a document:\n\n` +
+                `Document ID: ${documentId}\n\n` +
+                `Allow access?`
+            );
+            if (approved) {
+              // Construct the automerge URL from the document ID and add to allowlist
+              allowlist.addDocumentId(documentId);
+            }
+            return approved;
+          },
         });
 
         log("intermediary repo and allowlist ready");
