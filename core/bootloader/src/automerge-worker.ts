@@ -25,6 +25,7 @@ import {
   parseAutomergeUrl,
   stringifyAutomergeUrl,
   type AutomergeUrl,
+  type DocHandle,
 } from "@automerge/automerge-repo/slim";
 import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 
@@ -397,6 +398,40 @@ self.addEventListener("connect", (event) => {
 
 // ── Automerge URL resolution ───────────────────────────────────────────
 
+/**
+ * Wait for the requested heads to appear in the handle's local history —
+ * they may still be syncing toward us when the request lands. Resolves
+ * false if the signal aborts before they arrive.
+ */
+function waitForHeads(
+  handle: DocHandle<unknown>,
+  hexHeads: string[],
+  signal: AbortSignal
+): Promise<boolean> {
+  if (hasHeads(handle.doc(), hexHeads)) return Promise.resolve(true);
+  if (signal.aborted) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const check = () => {
+      if (!hasHeads(handle.doc(), hexHeads)) return;
+      cleanup();
+      resolve(true);
+    };
+    const onAbort = () => {
+      cleanup();
+      resolve(false);
+    };
+    const cleanup = () => {
+      handle.off("heads-changed", check);
+      signal.removeEventListener("abort", onAbort);
+    };
+    handle.on("heads-changed", check);
+    signal.addEventListener("abort", onAbort);
+    // The heads may have landed between the synchronous check above and
+    // subscribing.
+    check();
+  });
+}
+
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const { repo } = await getRepoHive();
   const href = automergeURL.href;
@@ -427,7 +462,9 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const baseHandle = await repo.find(stringifyAutomergeUrl({ documentId }), {
     signal,
   });
-  if (!hasHeads(baseHandle.doc(), hexHeads ?? [])) {
+  // The heads may not have synced to us yet — give them the rest of the
+  // resolve window to arrive before giving up.
+  if (!(await waitForHeads(baseHandle, hexHeads ?? [], signal))) {
     return new Response("heads not found", { status: 404 });
   }
   const rootHandle = baseHandle.view(heads);
