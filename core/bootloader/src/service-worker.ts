@@ -55,6 +55,12 @@ if (useKeyhiveSyncServer) {
   };
 }
 
+// keyhive.sync.automerge.org's keyhive identity (issuer d7f41e6f…).
+const KEYHIVE_SYNC_SERVER_PEER_ID =
+  "1/Qebw9O69oH8T/ejYMhFup0tNBh69I3ytGqsmIl358=";
+const KEYHIVE_SYNC_SERVER_CONTACT_CARD_JSON =
+  '{"Rotate":{"payload":{"old":[73,163,230,244,111,233,153,119,133,211,134,237,111,36,52,131,22,50,54,144,150,45,227,235,128,36,33,217,190,198,55,75],"new":[109,115,204,144,178,114,182,238,113,124,4,139,249,76,220,44,128,104,194,68,187,184,82,241,94,145,104,198,159,122,186,43]},"issuer":[215,244,30,111,15,78,235,218,7,241,63,222,141,131,33,22,234,116,180,208,97,235,210,55,202,209,170,178,98,37,223,159],"signature":[178,64,85,76,51,199,196,151,129,14,191,53,127,191,34,223,97,238,95,109,118,179,152,17,205,188,204,177,116,166,147,231,192,201,48,137,19,214,180,45,108,104,34,8,14,63,115,139,215,142,4,179,233,89,150,218,174,168,107,23,8,109,228,6]}}';
+
 const SUBDUCTION_ENDPOINTS = [
   useKeyhiveSyncServer
     ? "wss://keyhive.sync.automerge.org"
@@ -212,6 +218,12 @@ function getRepoHive() {
         subduction: repoSubductionPromise as any,
         automaticArchiveIngestion: true,
         cachingMode: "periodic",
+        ...(useKeyhiveSyncServer
+          ? {
+              serverPeerId: KEYHIVE_SYNC_SERVER_PEER_ID as any,
+              serverContactCardJson: KEYHIVE_SYNC_SERVER_CONTACT_CARD_JSON,
+            }
+          : {}),
       });
 
       const signer = await hive.constructSubductionSigner();
