@@ -27,6 +27,7 @@ import {
   PluginsUrlMapper,
   getRegistries,
   startPluginsRpc,
+  watchRegistries,
 } from "./plugins-bridge.js";
 import { populateAllowlist, refreshAllowlist, getDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
@@ -327,7 +328,8 @@ export function registerPatchworkIsolationElement(
             this.#hostRpcPort,
             this,
             (url) => this.#allowlist?.hasUrl(url) ?? false
-          )
+          ),
+          watchRegistries(this.#hostRpcPort, mapper)
         );
 
         // ── Iframe ──────────────────────────────────────────────

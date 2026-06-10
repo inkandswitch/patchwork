@@ -203,6 +203,56 @@ export async function getRegistries(
   return entries;
 }
 
+/**
+ * Watch all host registries for new plugin registrations and push updates
+ * to the iframe via the RPC port. Also updates the mapper with new package
+ * URL mappings.
+ *
+ * Returns a cleanup function that unsubscribes from all registries.
+ */
+export function watchRegistries(
+  port: MessagePort,
+  mapper: PluginsUrlMapper
+): () => void {
+  const unsubs: Array<() => void> = [];
+
+  for (const [, registry] of getAllRegistries()) {
+    const unsub = registry.on("registered", async (plugin: any) => {
+      let importUrl = plugin.importUrl as string | undefined;
+
+      if (importUrl) {
+        const resolved = await resolvePluginEntryUrl(importUrl);
+        if (resolved) {
+          importUrl = mapper.toPackageUrl(
+            resolved.entryUrl,
+            resolved.packageName ?? plugin.id
+          );
+        } else {
+          importUrl = undefined;
+        }
+      }
+
+      const { load, module, ...rest } = plugin;
+      let entry: RegistryEntry;
+      try {
+        entry = structuredClone(rest);
+      } catch (err) {
+        log(`skipping non-cloneable plugin update: ${rest.id}`, err);
+        return;
+      }
+      entry.importUrl = importUrl;
+
+      log(`pushing registry update: ${entry.id}`);
+      port.postMessage({ type: "plugin-registered", entry });
+    });
+    unsubs.push(unsub);
+  }
+
+  return () => {
+    for (const unsub of unsubs) unsub();
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Plugins RPC — host-side handler for iframe module/resource loading
 // ---------------------------------------------------------------------------

@@ -117,6 +117,7 @@ async function boot() {
     { resolve: (r: FetchResourceResult) => void; reject: (e: Error) => void }
   >();
   let fetchId = 0;
+  const pendingPluginUpdates: any[] = [];
 
   function fetchModule(url: string): Promise<FetchModuleResult> {
     return new Promise((resolve, reject) => {
@@ -162,6 +163,10 @@ async function boot() {
         pendingResourceFetches.delete(msg.id);
         pending.reject(new Error(msg.error));
       }
+    } else if (msg.type === "plugin-registered") {
+      // Live registry update from host — register the plugin in the
+      // iframe's registry so new tools/datatypes are available.
+      pendingPluginUpdates.push(msg.entry);
     }
   }
 
@@ -339,29 +344,47 @@ async function boot() {
 
     // 12. Register plugins with lazy loading via importShim
     // Plugin importUrls are pkg: URLs (converted by host before boot)
+    function registerEntry(entry: RegistryEntry) {
+      const plugin = {
+        ...entry,
+        load: entry.importUrl
+          ? async () => {
+              const mod = await importShim(entry.importUrl!);
+              if (Array.isArray(mod.plugins)) {
+                const match = mod.plugins.find(
+                  (p: any) => p.id === entry.id && p.type === entry.type
+                );
+                if (match && typeof match.load === "function") {
+                  return match.load();
+                }
+              }
+              return mod.default || mod;
+            }
+          : undefined,
+      };
+      patchworkPlugins.registerPlugins([plugin], entry.importUrl || "");
+    }
+
     if (d.registryEntries) {
       for (const entry of d.registryEntries) {
-        const plugin = {
-          ...entry,
-          load: entry.importUrl
-            ? async () => {
-                const mod = await importShim(entry.importUrl!);
-                if (Array.isArray(mod.plugins)) {
-                  const match = mod.plugins.find(
-                    (p: any) => p.id === entry.id && p.type === entry.type
-                  );
-                  if (match && typeof match.load === "function") {
-                    return match.load();
-                  }
-                }
-                return mod.default || mod;
-              }
-            : undefined,
-        };
-        patchworkPlugins.registerPlugins([plugin], entry.importUrl || "");
+        registerEntry(entry);
       }
       log("plugins registered:", d.registryEntries.length);
     }
+
+    // Process any plugin updates that arrived during boot
+    for (const entry of pendingPluginUpdates) {
+      log("registering deferred plugin update:", entry.id);
+      registerEntry(entry);
+    }
+    pendingPluginUpdates.length = 0;
+
+    // Switch to live registration for future updates
+    pendingPluginUpdates.push = function (entry: any) {
+      log("registering live plugin update:", entry.id);
+      registerEntry(entry);
+      return 0;
+    };
 
     // 13. Render the tool
     const view = document.createElement("patchwork-view");
