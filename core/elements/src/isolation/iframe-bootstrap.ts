@@ -287,6 +287,42 @@ async function boot() {
     };
     log("fetch proxy installed");
 
+    // 9b. Intercept <link rel="stylesheet"> additions to <head>.
+    // Native <link> elements make direct browser requests that bypass the
+    // fetch proxy. For host-origin stylesheets, replace with <style> tags
+    // whose content is fetched through the proxy.
+    const linkObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (
+            node instanceof HTMLLinkElement &&
+            node.rel === "stylesheet" &&
+            node.href &&
+            node.href.startsWith(hostOrigin)
+          ) {
+            const href = node.href;
+            node.remove();
+            fetch(href)
+              .then((r) => r.text())
+              .then((css) => {
+                const style = document.createElement("style");
+                style.textContent = css;
+                for (const attr of Array.from(node.attributes)) {
+                  if (attr.name.startsWith("data-")) {
+                    style.setAttribute(attr.name, attr.value);
+                  }
+                }
+                document.head.appendChild(style);
+              })
+              .catch((err) =>
+                log("failed to load stylesheet:", href, err)
+              );
+          }
+        }
+      }
+    });
+    linkObserver.observe(document.head, { childList: true });
+
     // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
       init.syncPort
