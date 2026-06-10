@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "isolatedModules": true
   },
-  "include": ["src", "../../sites/tiny-patchwork/shared-worker.ts"]
+  "include": ["src"]
 }
