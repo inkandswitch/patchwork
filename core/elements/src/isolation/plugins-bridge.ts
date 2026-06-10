@@ -178,7 +178,7 @@ export async function getRegistries(
         if (resolved) {
           importUrl = mapper.toPackageUrl(
             resolved.entryUrl,
-            resolved.packageName
+            resolved.packageName ?? (plugin as any).id
           );
         } else {
           importUrl = undefined;
