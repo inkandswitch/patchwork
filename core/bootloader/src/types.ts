@@ -7,11 +7,18 @@
 export const HANDOFF_CHANNEL = "@patchwork/handoff";
 
 /**
- * Enough of a {@link Request} that the automerge worker can construct one
- * that `cache.match`es the request the service worker is holding.
+ * The special URL to resolve, plus enough of the {@link Request} the service
+ * worker is holding that the automerge worker can construct one that
+ * `cache.match`es it.
  */
 export interface HandoffRequest {
+  /** the decoded special URL, e.g. `automerge:abc/some/path` */
   url: string;
+  /**
+   * The URL of the request the service worker is holding (the encoded
+   * `https://…/automerge%3Aabc/…` form) — the cache key.
+   */
+  cacheKey: string;
   headers: Record<string, string>;
   method: string;
   destination: RequestDestination;

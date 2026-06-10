@@ -465,11 +465,15 @@ async function handleHandoffRequest(message: HandoffRequestMessage) {
 
   let response: Response;
   try {
-    // The handoff carries the request the service worker is holding; the
-    // automerge URL is URI-encoded in its pathname.
-    const specialURL = new URL(
-      decodeURIComponent(new URL(request.url).pathname.slice(1))
-    );
+    // The service worker already decoded the special URL out of the request
+    // it's holding; request.url is the special URL itself.
+    // TODO(backcompat): a not-yet-updated service worker sends no cacheKey,
+    // and its request.url is the http URL it's holding, special URL still
+    // URI-encoded in the pathname. Remove once deployed service workers all
+    // send the decoded form.
+    const specialURL = request.cacheKey
+      ? new URL(request.url)
+      : new URL(decodeURIComponent(new URL(request.url).pathname.slice(1)));
     log(`resolving handoff ${id} for ${specialURL}`);
     response = await Promise.race([
       resolveAutomergeUrl(specialURL),
@@ -503,15 +507,16 @@ async function handleHandoffRequest(message: HandoffRequestMessage) {
     if (cacheableStatuses.includes(response.status)) {
       // Reconstruct the request the service worker is holding so the entry
       // matches on its cache.match. (destination isn't constructible, but it
-      // doesn't participate in cache matching.)
-      const cacheKey = new Request(request.url, {
+      // doesn't participate in cache matching.) An old-shape handoff has no
+      // cacheKey, but there request.url is the http URL the SW is holding.
+      const cacheKey = new Request(request.cacheKey ?? request.url, {
         method: request.method,
         headers: request.headers,
         referrer: request.referrer,
       });
       const cache = await caches.open(cachename);
       await cache.put(cacheKey, response);
-      log(`cached ${request.url} in ${cachename}`);
+      log(`cached ${cacheKey.url} in ${cachename}`);
       handoffChannel.postMessage({
         id,
         type: "cached",

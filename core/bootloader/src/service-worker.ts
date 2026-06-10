@@ -109,7 +109,10 @@ handoffChannel.addEventListener("message", (event) => {
   }
 });
 
-function handoff(request: Request): Promise<HandoffReplyMessage> {
+function handoff(
+  request: Request,
+  specialURL: URL
+): Promise<HandoffReplyMessage> {
   const id = crypto.randomUUID();
   const resolvers = Promise.withResolvers<HandoffReplyMessage>();
   const message: HandoffRequestMessage = {
@@ -117,7 +120,8 @@ function handoff(request: Request): Promise<HandoffReplyMessage> {
     type: "request",
     cachename,
     request: {
-      url: request.url,
+      url: specialURL.href,
+      cacheKey: request.url,
       headers: Object.fromEntries(request.headers.entries()),
       method: request.method,
       destination: request.destination,
@@ -188,7 +192,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           }
 
           log(`handing ${specialURL} off to the automerge worker`);
-          const replyPromise = handoff(request);
+          const replyPromise = handoff(request, specialURL);
           fetchEvent.waitUntil(replyPromise.catch(() => {}));
           const reply = await replyPromise;
 
