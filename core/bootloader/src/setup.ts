@@ -3,6 +3,10 @@ import type {
   SetupServiceWorkerOptions,
   SetupServiceWorkerResult,
 } from "./types.js";
+import {
+  readClassicSyncServer,
+  DEFAULT_CLASSIC_SYNC_SERVER,
+} from "./sync-config.js";
 import debug from "debug";
 
 const debugging = debug.enabled("patchwork:serviceworker");
@@ -51,6 +55,45 @@ function configureServiceWorker(sw: ServiceWorker | null) {
   sw.postMessage({ type: "debug", debug: debugging });
   const cachename = getServiceWorkerCacheVersion();
   if (cachename) sw.postMessage({ type: "cachename", cachename });
+}
+
+export function connectClassicSync(
+  server: string = readClassicSyncServer()
+): Promise<void> {
+  const controller = navigator.serviceWorker.controller;
+  if (!controller) {
+    return Promise.reject(new Error("no service worker controller"));
+  }
+  const url = server.trim() || DEFAULT_CLASSIC_SYNC_SERVER;
+  if (!/^wss?:\/\//.test(url)) {
+    return Promise.reject(
+      new Error(`invalid classic sync server URL: ${server}`)
+    );
+  }
+
+  const { port1, port2 } = new MessageChannel();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      port1.close();
+      reject(new Error("connect-classic-sync timeout"));
+    }, 30_000);
+    port1.onmessage = (event) => {
+      clearTimeout(timeout);
+      port1.close();
+      if (event.data?.type === "connect-classic-sync-ready") {
+        resolve();
+      } else {
+        reject(
+          new Error(
+            event.data?.error ?? "connect-classic-sync failed"
+          )
+        );
+      }
+    };
+    controller.postMessage({ type: "connect-classic-sync", server: url }, [
+      port2,
+    ]);
+  });
 }
 
 function updateServiceWorkerInstanceId(next: unknown) {
@@ -238,6 +281,7 @@ export default async function setupServiceWorker(
   );
 
   return {
+    connectClassicSync,
     async subscribeToRepoChannel(listener) {
       const { port, workerInstanceChanged } = await openRepoChannel();
       if (workerInstanceChanged) {

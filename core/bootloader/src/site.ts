@@ -60,7 +60,6 @@ import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
-import { SwLogReader } from "./sw-logger.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
 
@@ -78,10 +77,7 @@ declare global {
       plugins: typeof plugins;
       accountDocHandle: DocHandle<AccountDoc>;
       sw: {
-        printLogs: (n?: number) => Promise<void>;
-        tailLogs: (n?: number) => ReturnType<typeof SwLogReader.tail>;
-        exportLogs: () => Promise<string>;
-        clearLogs: () => Promise<void>;
+        connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
           listener: ServiceWorkerRepoChannelListener
         ) => Promise<() => void>;
@@ -267,10 +263,12 @@ export async function bootPatchworkSite(
     unregisterPlugins
   );
 
-  const accountDocHandle = await resolveAccountHandle(repo, {
+  const accountDocHandle = (await resolveAccountHandle(repo, {
     storageKey: config.accountStorageKey,
     hive,
-  });
+  })) as DocHandle<AccountDoc>;
+  // TODO: something we (Orion & pvh) changed in the types made this necessary
+  //       fix this before merging to main!
 
   window.accountDocHandle = accountDocHandle;
 
@@ -285,7 +283,7 @@ export async function bootPatchworkSite(
     plugins,
     accountDocHandle,
     sw: {
-      ...buildSwLogApi(),
+      connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
     },
   };
@@ -413,26 +411,6 @@ function logToolRegistryWhenLoaded(moduleWatcher: ModuleWatcher): void {
     .catch((err: unknown) => {
       console.error("doneLoading rejected:", err);
     });
-}
-
-function buildSwLogApi(): Omit<
-  Window["patchwork"]["sw"],
-  "subscribeToRepoChannel"
-> {
-  return {
-    printLogs: async (n = 200) => {
-      const entries = await SwLogReader.tail(n);
-      for (const e of entries) {
-        const prefix = `[${e.ts}] [${e.level}]`;
-        if (e.data !== undefined) log(prefix, e.msg, e.data);
-        else log(prefix, e.msg);
-      }
-      log(`--- ${entries.length} entries ---`);
-    },
-    tailLogs: (n = 200) => SwLogReader.tail(n),
-    exportLogs: () => SwLogReader.exportAll(),
-    clearLogs: () => SwLogReader.clear(),
-  };
 }
 
 const LOADING_STYLE_ID = "pw-bootloader-loading-styles";

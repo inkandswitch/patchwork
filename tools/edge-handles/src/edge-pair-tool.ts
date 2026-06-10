@@ -153,8 +153,8 @@ function renderEdgePair(
       status.textContent = "edge: pick a source + sink";
       return;
     }
-    const sourceRef = sourceState.handle.ref(sourceState.field);
-    const targetRef = sinkState.handle.ref(sinkState.field);
+    const sourceRef = sourceState.handle.sub(sourceState.field);
+    const targetRef = sinkState.handle.sub(sinkState.field);
     try {
       const persistedUrl = handle.doc()?.edgePair?.edgeUrl;
       let next: EdgeHandle<unknown>;

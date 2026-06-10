@@ -1,7 +1,7 @@
 {
   "name": "@inkandswitch/patchwork-providers",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.2.2",
   "description": "DOM-event based request/respond protocol for Patchwork providers.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -24,7 +24,7 @@
     "@automerge/automerge-repo": "*"
   },
   "devDependencies": {
-    "@automerge/automerge-repo": "catalog:",
-    "typescript": "^5.9.2"
+    "@automerge/automerge-repo": "2.6.0-subduction.27",
+    "typescript": "^5.9.3"
   }
 }

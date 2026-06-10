@@ -1,7 +1,5 @@
 /// <reference types="service-worker-types" />
 
-import { SwLogger } from "./sw-logger.js";
-
 // Heavy imports — marked external by the service-worker vite plugin,
 // resolved to /packages/... URLs at build time. The SW is registered with
 // type:"module" so the browser fetches these as regular network requests.
@@ -35,6 +33,7 @@ import {
 
 declare const __SITE_NAME__: string;
 declare const __KEYHIVE__: boolean;
+declare const __KEYHIVE_SYNC_SERVER__: boolean;
 
 // TEMPORARY: enable debug npm module in SW context (no localStorage available)
 
@@ -42,36 +41,63 @@ let cachename = "default";
 let debugging = false;
 const workerInstanceId = crypto.randomUUID();
 
-const SUBDUCTION_ENDPOINTS = ["wss://subduction.sync.inkandswitch.com"];
+// Sync server selection. Sub is the default. Build with KEYHIVE_SYNC_SERVER=true
+// to target keyhive.sync.automerge.org.
+const useKeyhiveSyncServer =
+  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
+
+// Set the correct env var for automerge_repo_keyhive if need be.
+if (useKeyhiveSyncServer) {
+  (globalThis as any).process = (globalThis as any).process ?? {};
+  (globalThis as any).process.env = {
+    ...((globalThis as any).process.env ?? {}),
+    KEYHIVE_SERVER_IDENTITY: "keyhive-sync",
+  };
+}
+
+const SUBDUCTION_ENDPOINTS = [
+  useKeyhiveSyncServer
+    ? "wss://keyhive.sync.automerge.org"
+    : "wss://subduction.sync.inkandswitch.com",
+];
 const RESOLVE_TIMEOUT_MS = 30_000;
 
-// ── Persistent logger ───────────────────────────────────────────────────
-// Initialized eagerly so it's available for the entire SW lifetime.
-// Access from the SW inspector console via self.printLogs(), self.tailLogs(),
-// self.exportLogs(), self.clearLogs().
-const slog = SwLogger.open().then((logger) => {
-  (self as any).slog = logger;
+const DEFAULT_CLASSIC_SYNC_SERVER = "wss://sync3.automerge.org";
 
-  (self as any).printLogs = async (n = 200) => {
-    const entries = await logger.tail(n);
-    for (const e of entries) {
-      const prefix = `[${e.ts}] [${e.level}]`;
-      if (e.data !== undefined) {
-        console.log(prefix, e.msg, e.data);
-      } else {
-        console.log(prefix, e.msg);
-      }
+let classicSyncServer = DEFAULT_CLASSIC_SYNC_SERVER;
+let classicSyncAdapter: WebSocketClientAdapter | null = null;
+let classicSyncConnectPromise: Promise<void> | null = null;
+
+async function connectClassicSyncNetwork(server: string): Promise<void> {
+  const url = server.trim() || DEFAULT_CLASSIC_SYNC_SERVER;
+  if (classicSyncConnectPromise && classicSyncServer === url) {
+    return classicSyncConnectPromise;
+  }
+
+  if (classicSyncAdapter && classicSyncServer !== url) {
+    classicSyncAdapter.disconnect();
+    classicSyncAdapter = null;
+    classicSyncConnectPromise = null;
+  }
+
+  classicSyncServer = url;
+  classicSyncConnectPromise = (async () => {
+    const { repo } = await getRepoHive();
+    if (!classicSyncAdapter) {
+      classicSyncAdapter = new WebSocketClientAdapter(url);
+      repo.networkSubsystem.addNetworkAdapter(classicSyncAdapter);
     }
-    console.log(`--- ${entries.length} entries ---`);
-  };
+    await classicSyncAdapter.whenReady();
+    log("classic sync connected", { server: url });
+  })();
 
-  (self as any).tailLogs = (n = 200) => logger.tail(n);
-  (self as any).exportLogs = () => logger.exportAll();
-  (self as any).clearLogs = () => logger.clear();
-
-  logger.info("sw-logger initialized");
-  return logger;
-});
+  try {
+    await classicSyncConnectPromise;
+  } catch (err) {
+    classicSyncConnectPromise = null;
+    throw err;
+  }
+}
 
 const siteName = typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
 
@@ -116,17 +142,16 @@ const useKeyhive = typeof __KEYHIVE__ !== "undefined" && __KEYHIVE__;
 function getRepoHive() {
   if (!repoHivePromise) {
     repoHivePromise = (async () => {
-      const logger = await slog;
-      logger.info("getRepo: starting");
+      log("getRepo: starting");
 
-      logger.info("fetching wasm modules");
+      log("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
         fetch("/automerge.wasm?sw").then((r) => r.arrayBuffer()),
         fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
       ]);
       initSubductionSync(new Uint8Array(sdnWasmBuf));
       await initializeWasm(new Uint8Array(amWasmBuf));
-      logger.info("wasm initialized");
+      log("wasm initialized");
 
       if (!useKeyhive) {
         const signer = await WebCryptoSigner.setup();
@@ -144,10 +169,10 @@ function getRepoHive() {
         });
 
         (self as any).repo = repo;
-        logger.info("repo constructed (no keyhive), waiting for network subsystem");
+        log("repo constructed (no keyhive), waiting for network subsystem");
 
         repo.networkSubsystem.whenReady().then(() => {
-          logger.info("repo network subsystem ready");
+          log("repo network subsystem ready");
         });
 
         return { repo };
@@ -186,7 +211,6 @@ function getRepoHive() {
         peerId: hive.peerId,
         enableRemoteHeadsGossiping: true,
         idFactory: hive.idFactory,
-        //network: [new WebSocketClientAdapter("wss://sync3.automerge.org")],
       });
 
       repo.subduction.then(resolveRepoSubduction);
@@ -195,14 +219,14 @@ function getRepoHive() {
 
       (self as any).repo = repo;
       (self as any).hive = hive;
-      logger.info("repo constructed, waiting for network subsystem");
+      log("repo constructed, waiting for network subsystem");
 
       // Don't block getRepoHive() on whenReady() — the network subsystem starts
       // with only the subduction adapter, and the MessageChannel adapter is
       // added later via connectPort (which awaits getRepoHive). Blocking here
       // would deadlock that path and starve the fetch handler.
       repo.networkSubsystem.whenReady().then(() => {
-        logger.info("repo network subsystem ready");
+        log("repo network subsystem ready");
       });
 
       hive.networkAdapter.whenReady().then(() => {
@@ -308,6 +332,28 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
+  } else if (event.data.type == "connect-classic-sync") {
+    const [replyPort] = event.ports;
+    const server =
+      typeof event.data.server === "string"
+        ? event.data.server
+        : DEFAULT_CLASSIC_SYNC_SERVER;
+    (event as unknown as FetchEvent).waitUntil(
+      connectClassicSyncNetwork(server)
+        .then(() => {
+          replyPort?.postMessage({ type: "connect-classic-sync-ready" });
+          replyPort?.close();
+          log("classic sync connected on demand", { server });
+        })
+        .catch((err) => {
+          console.error("connectClassicSyncNetwork failed", err);
+          replyPort?.postMessage({
+            type: "connect-classic-sync-failed",
+            error: String(err),
+          });
+          replyPort?.close();
+        })
+    );
   }
 });
 
@@ -457,13 +503,9 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           error instanceof Error
             ? `${error.message}\n\n${error.stack}`
             : String(error);
-        const logger = await slog;
-        logger.error(
+        console.error(
           `service worker error resolving ${request.url}${specialURL ? ` (for: ${specialURL})` : ""}`,
-          {
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-          }
+          error
         );
         if (match) return match;
 

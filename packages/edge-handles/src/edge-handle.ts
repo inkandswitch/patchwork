@@ -34,15 +34,12 @@
  */
 
 import {
-  findRef,
   isValidAutomergeUrl,
   parseAutomergeUrl,
   type AutomergeUrl,
-  type ChangeFn,
   type DocHandle,
-  type Ref,
-  type RefUrl,
   type Repo,
+  type SubChangeFn,
 } from "@automerge/automerge-repo";
 
 // ─── subscriber set ────────────────────────────────────────────────────────
@@ -65,8 +62,12 @@ class SubscriberSet<T = unknown> {
 /** `@patchwork.type` value used by EdgeHandle docs. */
 export const EDGE_HANDLE_DATATYPE = "edge-handle";
 
-/** Serialized URL of a `Handle` — `AutomergeUrl` for docs/edges, `RefUrl` for refs. */
-export type HandleUrl = AutomergeUrl | RefUrl;
+/**
+ * Serialized URL of a `Handle`. A plain `automerge:<docId>` addresses a whole
+ * doc/edge; an `automerge:<docId>/<path>` addresses a sub-tree (what used to
+ * be a `Ref`). Both are `AutomergeUrl` now that sub-handles are `DocHandle`s.
+ */
+export type HandleUrl = AutomergeUrl;
 
 /**
  * On-disk shape of an EdgeHandle doc.
@@ -91,17 +92,42 @@ export interface EdgeHandleDoc {
 
 /**
  * What can sit at either end of an edge in memory: anything with a URL, a
- * value getter, and a change subscription. `Ref` already implements this;
- * `EdgeHandle` implements it too, so edges can chain into edges.
+ * value getter, and a change subscription. `EdgeHandle` implements it, so
+ * edges can chain into edges; {@link DocHandleEndpoint} adapts a plain
+ * `DocHandle` (doc or sub-tree) to the same shape.
  */
 export interface Handle<T = unknown> {
   readonly url: HandleUrl;
   value(): T;
+  change(fnOrValue: SubChangeFn<T> | T): void;
   onChange(cb: (value: T) => void): () => void;
 }
 
-function isEdgeHandle(h: Handle): h is EdgeHandle<any> {
-  return h instanceof EdgeHandle;
+/**
+ * Adapts a `DocHandle` (a whole doc or a `.sub()` sub-tree) to the {@link Handle}
+ * interface. Sub-handles replace the old `Ref` concept: reads (`doc()`),
+ * writes (`change()`) and `change` events are all scoped to the handle's path.
+ */
+class DocHandleEndpoint<T = unknown> implements Handle<T> {
+  constructor(private readonly handle: DocHandle<T>) {}
+
+  get url(): HandleUrl {
+    return this.handle.url;
+  }
+
+  value(): T {
+    return this.handle.doc() as T;
+  }
+
+  change(fnOrValue: SubChangeFn<T> | T): void {
+    this.handle.change(fnOrValue as never);
+  }
+
+  onChange(cb: (value: T) => void): () => void {
+    const listener = () => cb(this.handle.doc() as T);
+    this.handle.on("change", listener);
+    return () => this.handle.off("change", listener);
+  }
 }
 
 // ─── url validation ────────────────────────────────────────────────────────
@@ -142,7 +168,14 @@ function assertValidHandleUrl(url: string): asserts url is HandleUrl {
   }
 }
 
-function toHandleUrl(h: Handle | HandleUrl): HandleUrl {
+/**
+ * Anything that can be handed in as an edge endpoint: a {@link Handle}
+ * (`EdgeHandle` or a {@link DocHandleEndpoint}), a raw `DocHandle` /
+ * sub-handle (addressed by its `url`), or a serialized {@link HandleUrl}.
+ */
+export type HandleInput = Handle | DocHandle<unknown> | HandleUrl;
+
+function toHandleUrl(h: HandleInput): HandleUrl {
   return typeof h === "string" ? h : (h.url as HandleUrl);
 }
 
@@ -283,7 +316,7 @@ export class EdgeHandle<TValue = unknown>
    * a clear is their concern, not the cell's). Re-entrant calls during
    * fan-out (cycles) are dropped.
    */
-  change(fnOrValue: ChangeFn<TValue> | TValue): void {
+  change(fnOrValue: SubChangeFn<TValue | undefined> | TValue | undefined): void {
     if (this.#destroyed) return;
     if (this.#writing) {
       console.warn(
@@ -377,7 +410,7 @@ export class EdgeHandle<TValue = unknown>
   }
 
   /** Set or replace a source handle. Throws if the URL is malformed. */
-  setSource(name: string, handle: Handle | HandleUrl): void {
+  setSource(name: string, handle: HandleInput): void {
     const url = toHandleUrl(handle);
     assertValidHandleUrl(url);
     this.doc.change((d) => {
@@ -393,7 +426,7 @@ export class EdgeHandle<TValue = unknown>
   }
 
   /** Set or replace a target handle. Throws if the URL is malformed. */
-  setTarget(name: string, handle: Handle | HandleUrl): void {
+  setTarget(name: string, handle: HandleInput): void {
     const url = toHandleUrl(handle);
     assertValidHandleUrl(url);
     this.doc.change((d) => {
@@ -550,11 +583,7 @@ export class EdgeHandle<TValue = unknown>
     const writeErrors: Record<string, Error> = {};
     for (const [name, handle] of Object.entries(this.target)) {
       try {
-        if (isEdgeHandle(handle)) {
-          handle.change(value as never);
-        } else {
-          (handle as Ref<any>).change(value as never);
-        }
+        handle.change(value as never);
       } catch (err) {
         writeErrors[name] = err as Error;
         console.error(
@@ -612,8 +641,12 @@ async function resolveHandleUrl(
   if (kind === "invalid") return new Error(`invalid handle URL: ${url}`);
 
   if (kind === "ref") {
+    // A path URL (`automerge:<docId>/<path>`) resolves to a scoped sub-handle:
+    // `repo.find` applies the path suffix and hands back a `DocHandle` whose
+    // reads/writes are scoped to that sub-tree (the old `Ref`).
     try {
-      return await findRef(repo, url as RefUrl);
+      const handle = await repo.find(url as AutomergeUrl);
+      return new DocHandleEndpoint(handle);
     } catch (err) {
       return err instanceof Error ? err : new Error(String(err));
     }
@@ -657,13 +690,8 @@ async function resolveHandleUrl(
     }
   }
 
-  try {
-    return handle.ref();
-  } catch (err) {
-    return err instanceof Error
-      ? err
-      : new Error(`handle.ref() failed for ${url}`);
-  }
+  // A plain doc URL: the `DocHandle` itself is the endpoint (no sub-path).
+  return new DocHandleEndpoint(handle);
 }
 
 interface ResolveMapResult {
@@ -734,8 +762,8 @@ function getResolved(repo: Repo): Map<string, WeakRef<EdgeHandle<any>>> {
 
 /** Initial values for a freshly created EdgeHandle doc. */
 export interface CreateEdgeHandleInit<TValue = unknown> {
-  source?: { [name: string]: Handle | HandleUrl };
-  target?: { [name: string]: Handle | HandleUrl };
+  source?: { [name: string]: HandleInput };
+  target?: { [name: string]: HandleInput };
   /** Enable persisting the value to the doc (mirrors every `change()`). */
   persist?: boolean;
   /** Initial value; only written to the doc when `persist` is true. */

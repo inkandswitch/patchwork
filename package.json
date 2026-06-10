@@ -36,25 +36,22 @@
       "@automerge/react": "catalog:",
       "@automerge/vanillajs": "catalog:",
       "@keyhive/keyhive": "catalog:"
-    },
-    "patchedDependencies": {
-      "@automerge/automerge-repo-keyhive": "patches/@automerge__automerge-repo-keyhive.patch"
     }
   },
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
-    "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-subduction": "catalog:",
-    "@changesets/cli": "^2.29.8",
-    "@vitest/ui": "^3.2.4",
-    "concurrently": "^9.1.2",
+    "@automerge/automerge-repo": "2.6.0-subduction.28",
+    "@automerge/automerge-subduction": "0.14.0",
+    "@changesets/cli": "^2.31.0",
+    "@vitest/ui": "^3.2.6",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "prettier": "^3.7.3",
+    "prettier": "^3.8.3",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6",
+    "vite": "^7.3.5",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.6"
   },
   "volta": {
     "node": "24.11.1"

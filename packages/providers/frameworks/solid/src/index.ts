@@ -1,9 +1,14 @@
 import { createSignal, onCleanup, onMount, type Accessor } from "solid-js";
-import { createStore, reconcile } from "solid-js/store";
+import { createStore, reconcile, type Store } from "solid-js/store";
 import { createDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
-import type { Selector } from "@inkandswitch/patchwork-providers";
+import type {
+  JSONArray,
+  JSONObject,
+  JSONValue,
+  Selector,
+} from "@inkandswitch/patchwork-providers";
 
 /**
  * The dispatch target for a subscription: either an element or — more commonly
@@ -21,7 +26,7 @@ const resolveElement = (source: ElementSource): HTMLElement | undefined =>
  * `selector` (via the one-shot `request` helper) and returns an accessor that
  * reads `undefined` until then. `T` is the response type.
  */
-export function request<T>(
+export function request<T extends JSONValue>(
   element: ElementSource,
   selector: Selector
 ): Accessor<T | undefined> {
@@ -31,8 +36,6 @@ export function request<T>(
     if (!el) return;
     Providers.request<T>(el, selector).then((v) => {
       if (v == null) return;
-      // Wrap in a thunk so Solid does not treat values with call-like
-      // methods (e.g. DocHandle, Repo) as setter functions.
       setValue(() => v);
     });
   });
@@ -41,46 +44,62 @@ export function request<T>(
 
 /**
  * Generic reactive subscription. Opens a `patchwork:subscribe` for `selector`
- * on mount and returns an accessor that updates on every value the provider
- * pushes. The subscription is torn down on cleanup.
- *
- * Values arrive structured-cloned over the channel, so `T` is always plain
- * data. Backing the accessor with a store + `reconcile` means nested updates
- * are diffed and only the parts that changed trigger downstream recomputation.
+ * on mount and returns an accessor that updates as the provider pushes new
+ * values. The subscription is torn down on cleanup.
  *
  * Pass `initialValue` to seed the accessor so it reads that value (rather than
  * `undefined`) until the first emission. If no provider answers, the accessor
  * simply stays at the initial value.
  */
-export function subscribe<T>(
+export function subscribe<T extends JSONValue>(
   element: ElementSource,
   selector: Selector,
   initialValue: T
 ): Accessor<T>;
-export function subscribe<T>(
+export function subscribe<T extends JSONValue>(
   element: ElementSource,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined>;
-export function subscribe<T>(
+export function subscribe<T extends JSONValue>(
   element: ElementSource,
   selector: Selector,
   initialValue?: T
 ): Accessor<T | undefined> {
-  // The `{ value }` wrapper gives the store an object root, so `T` may be an
-  // array or a primitive and not just an object.
-  const [store, setStore] = createStore<{ value: T | undefined }>({
-    value: initialValue,
+  const [value, setValue] = createSignal<T | undefined>(initialValue);
+  onMount(() => {
+    const el = resolveElement(element);
+    if (!el) return;
+    const unsubscribe = Providers.subscribe<T>(el, selector, setValue);
+    onCleanup(unsubscribe);
   });
+  return value;
+}
+
+/**
+ * Store-backed subscription. Use this when a consumer wants Solid's
+ * fine-grained nested reactivity for incoming JSON object or array snapshots.
+ * Requires an initial object/array so the store has a stable root.
+ *
+ * `reconcile` preserves stable object/array identity where possible, so this
+ * helper is not a good fit when the top-level value is used as an identity key
+ * for resources or memos.
+ */
+export function subscribeReconciled<T extends JSONArray | JSONObject>(
+  element: ElementSource,
+  selector: Selector,
+  initialValue: T
+): Store<T> {
+  const [store, setStore] = createStore<T>(initialValue);
   onMount(() => {
     const el = resolveElement(element);
     if (!el) return;
     const unsubscribe = Providers.subscribe<T>(el, selector, (v) => {
-      setStore(reconcile({ value: v }));
+      setStore(reconcile(v));
     });
     onCleanup(unsubscribe);
   });
-  return () => store.value;
+  return store;
 }
 
 /**
