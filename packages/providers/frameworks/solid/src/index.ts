@@ -32,9 +32,9 @@ export function request<T extends JSONValue>(
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(undefined);
   onMount(() => {
-    const el = resolveElement(element);
-    if (!el) return;
-    Providers.request<T>(el, selector).then((v) => {
+    const target = resolveElement(element);
+    if (!target) return;
+    Providers.request<T>(target, selector).then((v) => {
       if (v == null) return;
       setValue(() => v);
     });
@@ -68,9 +68,9 @@ export function subscribe<T extends JSONValue>(
 ): Accessor<T | undefined> {
   const [value, setValue] = createSignal<T | undefined>(initialValue);
   onMount(() => {
-    const el = resolveElement(element);
-    if (!el) return;
-    const unsubscribe = Providers.subscribe<T>(el, selector, setValue);
+    const target = resolveElement(element);
+    if (!target) return;
+    const unsubscribe = Providers.subscribe<T>(target, selector, setValue);
     onCleanup(unsubscribe);
   });
   return value;
@@ -92,9 +92,9 @@ export function subscribeReconciled<T extends JSONArray | JSONObject>(
 ): Store<T> {
   const [store, setStore] = createStore<T>(initialValue);
   onMount(() => {
-    const el = resolveElement(element);
-    if (!el) return;
-    const unsubscribe = Providers.subscribe<T>(el, selector, (v) => {
+    const target = resolveElement(element);
+    if (!target) return;
+    const unsubscribe = Providers.subscribe<T>(target, selector, (v) => {
       setStore(reconcile(v));
     });
     onCleanup(unsubscribe);
@@ -116,11 +116,11 @@ export function subscribeDoc<T extends object>(
 ): [Accessor<Doc<T> | undefined>, Accessor<DocHandle<T> | undefined>] {
   const [handle, setHandle] = createSignal<DocHandle<T> | undefined>(undefined);
   onMount(() => {
-    const el = resolveElement(element);
-    if (!el) return;
+    const target = resolveElement(element);
+    if (!target) return;
     let canceled = false;
     const unsubscribe = Providers.subscribe<AutomergeUrl>(
-      el,
+      target,
       selector,
       (url) => {
         if (!url) return;

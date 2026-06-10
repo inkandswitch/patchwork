@@ -1,7 +1,7 @@
 {
   "name": "@inkandswitch/patchwork-providers-solid",
   "type": "module",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Solid bindings for the Patchwork providers request/respond protocol.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,8 +29,8 @@
     "solid-js": "^1.9.0"
   },
   "devDependencies": {
-    "@automerge/automerge-repo": "2.6.0-subduction.27",
-    "@automerge/automerge-repo-solid-primitives": "2.6.0-subduction.27",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-solid-primitives": "catalog:",
     "solid-js": "^1.9.13",
     "typescript": "^5.9.3"
   }

@@ -103,6 +103,8 @@ export class ModuleWatcher {
         await this.processBranchesEntry(importName);
         return;
       }
+    } else {
+      await import(importName)
     }
     this.setDocWatcher(importName);
     await this.announce(importName);
@@ -180,6 +182,8 @@ export class ModuleWatcher {
           heads: handle.heads(),
         });
         importName = handle.view(handle.heads()).url;
+      } else {
+        return import(importName)
       }
 
       const mod = valid

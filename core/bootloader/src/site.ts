@@ -2,14 +2,14 @@
  * High-level browser-app boot sequence for a Patchwork site.
  *
  * Layers on top of {@link setupServiceWorker} (the package default export) to
- * construct the Repo, wire up the service-worker port, load plugins via the
+ * construct the Repo, wire up the automerge-worker port, load plugins via the
  * ModuleWatcher, resolve the user's account document, and hand control to the
  * configured root tool.
  *
  * This entry point pulls in DOM- and plugin-layer dependencies (patchwork
  * elements, plugins, filesystem) and is intended for use only from a browser
  * site's `main.ts`. Non-UI consumers should import the package default (which
- * only does SW registration and port handoff).
+ * only does SW registration and the automerge-worker handoff).
  */
 import {
   type DocHandle,
@@ -173,24 +173,22 @@ export async function bootPatchworkSite(
   if (!sw) throw new Error("Failed to set up service worker");
 
   let hive: AutomergeRepoKeyhive | undefined;
-  if (config.keyhive) {
-    initKeyhiveWasm();
-
-    // Get the initial SW port via subscribeToRepoChannel, then pass it
-    // to keyhive init which wraps it in its own network adapter.
+      // Get the initial automerge-worker port via subscribeToRepoChannel,
+    // then pass it to keyhive init which wraps it in its own network adapter.
     let resolvePort!: (port: MessagePort) => void;
     const portPromise = new Promise<MessagePort>((r) => {
       resolvePort = r;
     });
-    sw.subscribeToRepoChannel((port) => {
-      resolvePort(port);
-    });
-    const swPort = await portPromise;
+    await sw.subscribeToRepoChannel(resolvePort);
+    const workerPort = await portPromise;
+
+  if (config.keyhive) {
+    initKeyhiveWasm();
 
     hive = await initializeAutomergeRepoKeyhive({
       storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
       peerIdSuffix: siteName + Math.random().toString(36).slice(2),
-      networkAdapter: new MessageChannelNetworkAdapter(swPort),
+      networkAdapter: new MessageChannelNetworkAdapter(workerPort),
       automaticArchiveIngestion: true,
       cachingMode: "periodic",
       onlyShareWithHardcodedServerPeerId: false,
@@ -206,9 +204,10 @@ export async function bootPatchworkSite(
         idFactory: hive.idFactory,
       })
     : new Repo({
+        network: [new MessageChannelNetworkAdapter(workerPort)],
         storage: new IndexedDBStorageAdapter(),
         async sharePolicy(peerId) {
-          return peerId.includes("service-worker");
+          return peerId.includes("automerge-worker");
         },
         enableRemoteHeadsGossiping: true,
         peerId:
@@ -218,25 +217,15 @@ export async function bootPatchworkSite(
     config.remoteStorageIds ?? [DEFAULT_REMOTE_STORAGE_ID]
   );
 
+  await repo.networkSubsystem.whenReady();
   if (hive) {
-    await repo.networkSubsystem.whenReady();
+
     (hive.networkAdapter as any).syncKeyhive?.();
-  } else {
-    let activeServiceWorkerPort: MessagePort | undefined;
-    const connectServiceWorkerPort = async (port: MessagePort) => {
-      const previousPort = activeServiceWorkerPort;
-      activeServiceWorkerPort = port;
-      const net = new MessageChannelNetworkAdapter(port);
-      repo.networkSubsystem.addNetworkAdapter(net);
-      await net.whenReady();
-      previousPort?.close();
-    };
-    await sw.subscribeToRepoChannel(connectServiceWorkerPort);
   }
 
-  installDevConsoleGlobals(repo, hive);
+  installDevConsoleGlobals(repo, hive, sw.getRepoChannel);
 
-  registerRepoProviderElement(repo);
+  registerRepoProviderElement(repo as any);
 
   const rootElement = document.getElementById(config.rootElementId ?? "root");
   if (!rootElement) {
@@ -321,7 +310,8 @@ function resolveDefaultModulesUrl(builtin: AutomergeUrl): AutomergeUrl {
 
 function installDevConsoleGlobals(
   repo: Repo,
-  hive: AutomergeRepoKeyhive | undefined
+  hive: AutomergeRepoKeyhive | undefined,
+  getRepoChannel: () => MessagePort
 ): void {
   window.repo = repo;
   window.Automerge = Automerge;
@@ -329,11 +319,7 @@ function installDevConsoleGlobals(
   if (hive) {
     window.hive = hive;
   }
-  window.getRepoChannel = () => {
-    const { port1, port2 } = new MessageChannel();
-    navigator.serviceWorker.controller!.postMessage({ type: "port" }, [port2]);
-    return port1;
-  };
+  window.getRepoChannel = getRepoChannel;
 }
 
 function onModuleLoaded(name: string, mod: any): void {

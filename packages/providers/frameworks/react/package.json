@@ -29,8 +29,8 @@
     "react": "^18.0.0"
   },
   "devDependencies": {
-    "@automerge/automerge-repo": "2.6.0-subduction.27",
-    "@automerge/automerge-repo-react-hooks": "2.6.0-subduction.27",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-react-hooks": "catalog:",
     "@types/react": "catalog:",
     "react": "catalog:",
     "typescript": "^5.9.3"
