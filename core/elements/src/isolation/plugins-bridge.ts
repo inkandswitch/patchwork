@@ -62,21 +62,26 @@ export class PluginsUrlMapper {
       const segments = parsed.pathname.split("/").filter(Boolean);
       for (const segment of segments) {
         const decoded = decodeURIComponent(segment);
-        if (!isValidAutomergeUrl(decoded)) continue;
+        // Strip heads suffix (e.g., "automerge:...#headshash") for lookup.
+        // isValidAutomergeUrl doesn't recognize URLs with heads appended.
+        const hashIdx = decoded.indexOf("#");
+        const base = hashIdx >= 0 ? decoded.slice(0, hashIdx) : decoded;
+        const heads = hashIdx >= 0 ? decoded.slice(hashIdx + 1) : "";
+        if (!isValidAutomergeUrl(base)) continue;
 
-        // Use existing mapping if we've seen this automerge URL before
-        const existing = this.#automergeToPackage.get(decoded);
-        if (existing) {
-          return url.replace(`/${segment}/`, `/pkg:${existing}/`);
+        // Use existing mapping or register a new one
+        let pkg = this.#automergeToPackage.get(base);
+        if (!pkg) {
+          pkg = name
+            ? this.#sanitizeName(name)
+            : `unknown-${this.#counter++}`;
+          this.#automergeToPackage.set(base, pkg);
+          this.#packageToAutomerge.set(pkg, base);
         }
 
-        // Register a new mapping
-        const pkg = name
-          ? this.#sanitizeName(name)
-          : `unknown-${this.#counter++}`;
-        this.#automergeToPackage.set(decoded, pkg);
-        this.#packageToAutomerge.set(pkg, decoded);
-        return url.replace(`/${segment}/`, `/pkg:${pkg}/`);
+        // Preserve heads as a version suffix on the pkg: URL
+        const pkgSegment = heads ? `pkg:${pkg}%23${heads}` : `pkg:${pkg}`;
+        return url.replace(`/${segment}/`, `/${pkgSegment}/`);
       }
     } catch {
       // not a valid URL, return as-is
@@ -86,17 +91,35 @@ export class PluginsUrlMapper {
 
   /**
    * Replace the package name in a URL with the real automerge URL segment
-   * (URL-encoded). Returns null if no package name segment is found.
+   * (URL-encoded). Restores heads from the pkg: URL version suffix.
+   * Returns null if no package name segment is found.
    */
   toAutomergeUrl(url: string): string | null {
     for (const [pkg, automergeUrl] of this.#packageToAutomerge) {
-      const packageSegment = `pkg:${pkg}/`;
-      if (url.includes(packageSegment)) {
-        return url.replace(
-          packageSegment,
-          `${encodeURIComponent(automergeUrl)}/`
-        );
-      }
+      // Match pkg:name/ or pkg:name%23heads/
+      const pkgPrefix = `pkg:${pkg}`;
+      const idx = url.indexOf(pkgPrefix);
+      if (idx < 0) continue;
+
+      // Find the end of the pkg segment (next /)
+      const afterPkg = idx + pkgPrefix.length;
+      const slashIdx = url.indexOf("/", afterPkg);
+      if (slashIdx < 0) continue;
+
+      // Extract heads from %23... between pkg name and /
+      const suffix = url.slice(afterPkg, slashIdx);
+      const heads = suffix.startsWith("%23")
+        ? decodeURIComponent(suffix)
+        : "";
+      const fullAutomerge = heads
+        ? `${automergeUrl}${heads}`
+        : automergeUrl;
+
+      const pkgSegment = url.slice(idx, slashIdx + 1);
+      return url.replace(
+        pkgSegment,
+        `${encodeURIComponent(fullAutomerge)}/`
+      );
     }
     return null;
   }
