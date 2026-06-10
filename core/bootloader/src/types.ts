@@ -10,15 +10,25 @@ export const HANDOFF_CHANNEL = "@patchwork/handoff";
  * The special URL to resolve, plus enough of the {@link Request} the service
  * worker is holding that the automerge worker can construct one that
  * `cache.match`es it.
+ *
+ * Stale workers on either side of the channel can outlive a deploy, so the
+ * shape can only ever change additively: `url` must stay the http request
+ * URL old automerge workers decode the special URL out of, and new meaning
+ * goes in new fields old receivers ignore.
  */
 export interface HandoffRequest {
-  /** the decoded special URL, e.g. `automerge:abc/some/path` */
-  url: string;
   /**
    * The URL of the request the service worker is holding (the encoded
    * `https://…/automerge%3Aabc/…` form) — the cache key.
    */
-  cacheKey: string;
+  url: string;
+  /** the decoded special URL, e.g. `automerge:abc/some/path` */
+  handoffURL: string;
+  /**
+   * @deprecated A briefly-deployed shape put the special URL in `url` and
+   * the cache key here. Only read, never sent.
+   */
+  cacheKey?: string;
   headers: Record<string, string>;
   method: string;
   destination: RequestDestination;

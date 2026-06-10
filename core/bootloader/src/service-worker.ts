@@ -111,7 +111,7 @@ handoffChannel.addEventListener("message", (event) => {
 
 function handoff(
   request: Request,
-  specialURL: URL
+  handoffURL: URL
 ): Promise<HandoffReplyMessage> {
   const id = crypto.randomUUID();
   const resolvers = Promise.withResolvers<HandoffReplyMessage>();
@@ -120,8 +120,8 @@ function handoff(
     type: "request",
     cachename,
     request: {
-      url: specialURL.href,
-      cacheKey: request.url,
+      url: request.url,
+      handoffURL: handoffURL.href,
       headers: Object.fromEntries(request.headers.entries()),
       method: request.method,
       destination: request.destination,
@@ -166,7 +166,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
   if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
   const url = new URL(fetchEvent.request.url);
 
-  let specialURL: URL | undefined;
+  let handoffURL: URL | undefined;
 
   if (
     url.hostname == self.location.hostname &&
@@ -174,8 +174,8 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
     url.protocol == self.location.protocol
   ) {
     try {
-      specialURL = new URL(decodeURIComponent(url.pathname.slice(1)));
-      log(`received special request ${specialURL}`);
+      handoffURL = new URL(decodeURIComponent(url.pathname.slice(1)));
+      log(`received special request ${handoffURL}`);
     } catch {}
   }
 
@@ -185,20 +185,20 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
       const match = await cache.match(request);
 
       try {
-        if (specialURL) {
+        if (handoffURL) {
           if (match) {
-            log(`serving ${specialURL} from cache ${cachename}`);
+            log(`serving ${handoffURL} from cache ${cachename}`);
             return withSpecialHeaders(match);
           }
 
-          log(`handing ${specialURL} off to the automerge worker`);
-          const replyPromise = handoff(request, specialURL);
+          log(`handing ${handoffURL} off to the automerge worker`);
+          const replyPromise = handoff(request, handoffURL);
           fetchEvent.waitUntil(replyPromise.catch(() => {}));
           const reply = await replyPromise;
 
           if (reply.type === "response") {
             // errors, redirects and other things that shouldn't be cached
-            log(`serving handed-off response for ${specialURL}`, reply);
+            log(`serving handed-off response for ${handoffURL}`, reply);
             return withSpecialHeaders(reply.response);
           }
 
@@ -207,11 +207,11 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           const cached = await cache.match(request);
           if (!cached) {
             return new Response(
-              `the automerge worker reported ${specialURL} cached, but it has no match in ${cachename}`,
+              `the automerge worker reported ${handoffURL} cached, but it has no match in ${cachename}`,
               { status: 500 }
             );
           }
-          log(`serving ${specialURL} from cache ${cachename} after handoff`);
+          log(`serving ${handoffURL} from cache ${cachename} after handoff`);
           return withSpecialHeaders(cached);
         } else {
           const response = await fetch(request).catch(() => null);
@@ -237,7 +237,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             ? `${error.message}\n\n${error.stack}`
             : String(error);
         console.error(
-          `service worker error resolving ${request.url}${specialURL ? ` (for: ${specialURL})` : ""}`,
+          `service worker error resolving ${request.url}${handoffURL ? ` (for: ${handoffURL})` : ""}`,
           error
         );
         if (match) return match;

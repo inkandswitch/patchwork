@@ -43,6 +43,7 @@ import {
   HANDOFF_CHANNEL,
   type HandoffCachedMessage,
   type HandoffOnlineMessage,
+  type HandoffRequest,
   type HandoffRequestMessage,
   type HandoffResponseMessage,
 } from "./types.js";
@@ -117,7 +118,8 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
   }
 }
 
-const siteName = typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
+const siteName =
+  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
 
 const cacheableStatuses = [200, 203, 204, 206];
 
@@ -160,7 +162,9 @@ function getRepoHive() {
           storage: new IndexedDBStorageAdapter(),
           signer,
           peerId: ("automerge-worker-" +
-            Math.random().toString(36).slice(2)) as import("@automerge/automerge-repo/slim").PeerId,
+            Math.random()
+              .toString(36)
+              .slice(2)) as import("@automerge/automerge-repo/slim").PeerId,
           async sharePolicy(peerId) {
             return peerId.includes("storage-server");
           },
@@ -179,9 +183,7 @@ function getRepoHive() {
       }
 
       initKeyhiveWasm();
-      const keyhiveStorage = new IndexedDBStorageAdapter(
-        `${siteName}-keyhive`
-      );
+      const keyhiveStorage = new IndexedDBStorageAdapter(`${siteName}-keyhive`);
 
       // Keyhive bootstrap needs to run before Repo creation but
       // the adapter needs the subduction instance from the Repo.
@@ -299,7 +301,9 @@ async function dropConnection(connection: Connection) {
 // Connect client MessagePorts to the repo for sync
 async function connectPort(port: MessagePort, connection: Connection) {
   const { hive, repo } = await getRepoHive();
-  const networkAdapter = new MessageChannelNetworkAdapter(port, { useWeakRef: true });
+  const networkAdapter = new MessageChannelNetworkAdapter(port, {
+    useWeakRef: true,
+  });
 
   const track = (adapter: { disconnect(): void }) => {
     connection.channels.add({ adapter, mcAdapter: networkAdapter, port });
@@ -313,7 +317,12 @@ async function connectPort(port: MessagePort, connection: Connection) {
 
   const onlyShareWithHardcodedServerPeerId = false;
   const periodicallyRequestKeyhiveSync = false;
-  const keyhiveNetworkAdapter = hive.createKeyhiveNetworkAdapter(networkAdapter, onlyShareWithHardcodedServerPeerId, periodicallyRequestKeyhiveSync, 2000);
+  const keyhiveNetworkAdapter = hive.createKeyhiveNetworkAdapter(
+    networkAdapter,
+    onlyShareWithHardcodedServerPeerId,
+    periodicallyRequestKeyhiveSync,
+    2000
+  );
 
   keyhiveNetworkAdapter.on("message", async (msg: any) => {
     if ((msg.type === "sync" || msg.type === "request") && msg.documentId) {
@@ -350,7 +359,11 @@ function handleControlMessage(
       (err) => {
         console.error("connectPort failed", err);
         // Tell the client we failed so it doesn't hang forever.
-        controlPort.postMessage({ type: "port-failed", id, error: String(err) });
+        controlPort.postMessage({
+          type: "port-failed",
+          id,
+          error: String(err),
+        });
       }
     );
   } else if (data?.type === "debug") {
@@ -497,23 +510,60 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
 
 const handoffChannel = new BroadcastChannel(HANDOFF_CHANNEL);
 
+/**
+ * Pull the special URL out of a handoff request, whichever generation of
+ * service worker sent it. Returns null rather than throwing — a stale
+ * worker on the other end of the channel can send us anything.
+ */
+function parseHandoffhandoffURL(request: HandoffRequest): URL | null {
+  try {
+    // The service worker already decoded the special URL out of the
+    // request it's holding and sends it alongside.
+    if (request.handoffURL) return new URL(request.handoffURL);
+    // TODO(backcompat): a briefly-deployed shape sent the special URL in
+    // request.url and the http URL in cacheKey.
+    if (request.cacheKey) return new URL(request.url);
+    // TODO(backcompat): older service workers send only the http URL,
+    // special URL still URI-encoded in its pathname.
+    return new URL(decodeURIComponent(new URL(request.url).pathname.slice(1)));
+  } catch {
+    return null;
+  }
+}
+
 async function handleHandoffRequest(message: HandoffRequestMessage) {
   const { id, cachename, request } = message;
 
+  const handoffURL = parseHandoffhandoffURL(request);
+  if (!handoffURL) {
+    console.error(
+      `automerge worker couldn't parse a special url out of handoff request`,
+      request
+    );
+    handoffChannel.postMessage({
+      id,
+      type: "response",
+      response: {
+        status: 400,
+        body: `couldn't parse a special url out of ${request.url}`,
+        headers: { "content-type": "text/plain" },
+      },
+    } satisfies HandoffResponseMessage);
+    return;
+  }
+
+  if (handoffURL.protocol != "automerge:") {
+    // This worker only resolves automerge: URLs. Other handlers may be
+    // listening on the channel for other schemes — stay quiet rather than
+    // clobbering their reply with an error.
+    return log(`ignoring handoff ${id} for non-automerge url ${handoffURL}`);
+  }
+
   let response: Response;
   try {
-    // The service worker already decoded the special URL out of the request
-    // it's holding; request.url is the special URL itself.
-    // TODO(backcompat): a not-yet-updated service worker sends no cacheKey,
-    // and its request.url is the http URL it's holding, special URL still
-    // URI-encoded in the pathname. Remove once deployed service workers all
-    // send the decoded form.
-    const specialURL = request.cacheKey
-      ? new URL(request.url)
-      : new URL(decodeURIComponent(new URL(request.url).pathname.slice(1)));
-    log(`resolving handoff ${id} for ${specialURL}`);
+    log(`resolving handoff ${id} for ${handoffURL}`);
     response = await Promise.race([
-      resolveAutomergeUrl(specialURL),
+      resolveAutomergeUrl(handoffURL),
       new Promise<never>((_, reject) =>
         setTimeout(
           () =>
@@ -544,8 +594,8 @@ async function handleHandoffRequest(message: HandoffRequestMessage) {
     if (cacheableStatuses.includes(response.status)) {
       // Reconstruct the request the service worker is holding so the entry
       // matches on its cache.match. (destination isn't constructible, but it
-      // doesn't participate in cache matching.) An old-shape handoff has no
-      // cacheKey, but there request.url is the http URL the SW is holding.
+      // doesn't participate in cache matching.) request.url is the http URL
+      // the SW is holding except in the briefly-deployed cacheKey shape.
       const cacheKey = new Request(request.cacheKey ?? request.url, {
         method: request.method,
         headers: request.headers,
