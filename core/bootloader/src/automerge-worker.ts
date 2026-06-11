@@ -34,7 +34,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import {
-  initializeAutomergeRepoKeyhiveRust,
+  initializeAutomergeRepoKeyhiveRustWithRepo,
   initKeyhiveWasm,
   type AutomergeRepoKeyhiveRust,
 } from "@automerge/automerge-repo-keyhive";
@@ -67,12 +67,6 @@ if (useKeyhiveSyncServer) {
     KEYHIVE_SERVER_IDENTITY: "keyhive-sync",
   };
 }
-
-// keyhive.sync.automerge.org's keyhive identity (issuer d7f41e6f…).
-const KEYHIVE_SYNC_SERVER_PEER_ID =
-  "1/Qebw9O69oH8T/ejYMhFup0tNBh69I3ytGqsmIl358=";
-const KEYHIVE_SYNC_SERVER_CONTACT_CARD_JSON =
-  '{"Rotate":{"payload":{"old":[73,163,230,244,111,233,153,119,133,211,134,237,111,36,52,131,22,50,54,144,150,45,227,235,128,36,33,217,190,198,55,75],"new":[109,115,204,144,178,114,182,238,113,124,4,139,249,76,220,44,128,104,194,68,187,184,82,241,94,145,104,198,159,122,186,43]},"issuer":[215,244,30,111,15,78,235,218,7,241,63,222,141,131,33,22,234,116,180,208,97,235,210,55,202,209,170,178,98,37,223,159],"signature":[178,64,85,76,51,199,196,151,129,14,191,53,127,191,34,223,97,238,95,109,118,179,152,17,205,188,204,177,116,166,147,231,192,201,48,137,19,214,180,45,108,104,34,8,14,63,115,139,215,142,4,179,233,89,150,218,174,168,107,23,8,109,228,6]}}';
 
 const SUBDUCTION_ENDPOINTS = [
   useKeyhiveSyncServer
@@ -183,47 +177,25 @@ function getRepoHive() {
       }
 
       initKeyhiveWasm();
-      const keyhiveStorage = new IndexedDBStorageAdapter(`${siteName}-keyhive`);
 
-      // Keyhive bootstrap needs to run before Repo creation but
-      // the adapter needs the subduction instance from the Repo.
-      // A deferred promise breaks the cycle.
-      let resolveRepoSubduction!: (s: any) => void;
-      const repoSubductionPromise = new Promise((resolve) => {
-        resolveRepoSubduction = resolve;
-      });
-
-      // We use the Rust variant of Keyhive initialization to talk
-      // to the Rust keyhive-enabled subduction sync server.
-      const hive = await initializeAutomergeRepoKeyhiveRust({
-        storage: keyhiveStorage,
+      // ARK variant for talking to the keyhive-enabled subduction sync server.
+      const { hive, repo } = await initializeAutomergeRepoKeyhiveRustWithRepo({
+        createRepo: (config) => new Repo(config),
+        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix:
           `${siteName}-worker` + Math.random().toString(36).slice(2),
-        subduction: repoSubductionPromise as any,
         automaticArchiveIngestion: true,
         cachingMode: "periodic",
-        ...(useKeyhiveSyncServer
-          ? {
-              serverPeerId: KEYHIVE_SYNC_SERVER_PEER_ID as any,
-              serverContactCardJson: KEYHIVE_SYNC_SERVER_CONTACT_CARD_JSON,
-            }
-          : {}),
+        // ARK selects the relay via `syncServer` ("keyhive" | "subduction"),
+        // which pairs the contact card with the matching peer id. Omitting it
+        // defaults to "subduction".
+        ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+        repo: {
+          storage: new IndexedDBStorageAdapter(),
+          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          enableRemoteHeadsGossiping: true,
+        },
       });
-
-      const signer = await hive.constructSubductionSigner();
-
-      const repo = new Repo({
-        storage: new IndexedDBStorageAdapter(),
-        signer,
-        subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
-        peerId: hive.peerId,
-        enableRemoteHeadsGossiping: true,
-        idFactory: hive.idFactory,
-      });
-
-      repo.subduction.then(resolveRepoSubduction);
-
-      hive.linkRepo(repo);
 
       (self as any).repo = repo;
       (self as any).hive = hive;
@@ -336,6 +308,7 @@ async function connectPort(port: MessagePort, connection: Connection) {
   });
 
   (keyhiveNetworkAdapter as any).on("ingest-remote", () => {
+    hive.notifySameAgentKeyhiveChange();
     (hive.networkAdapter as any).syncKeyhive?.();
     repo.shareConfigChanged();
   });

@@ -117,6 +117,8 @@ export function registerPatchworkViewElement(
       #keyhiveRetrySetup = false;
       #handlingKeyhiveSync = false;
       #pendingKeyhiveSync = false;
+      // True when `unable` because access hasn't synced yet.
+      // Receiving a keyhive op can recover this.
       #unableNoAccess = false;
 
       // Realm-local remapping shim, created lazily on first render. Exposed as
@@ -182,6 +184,7 @@ export function registerPatchworkViewElement(
 
       connectedCallback() {
         this.#capturedParent = this.parentElement;
+        (this as { hive?: AutomergeRepoKeyhive }).hive = params.hive;
         this.#component = this.getAttribute(ATTRS.component);
         this.#url = this.getAttribute(ATTRS.url) as AutomergeUrl | null;
         this.#sync();
@@ -337,6 +340,27 @@ export function registerPatchworkViewElement(
               );
             });
           }
+
+          if (isKeyhiveDoc) {
+            // Access is confirmed, but the doc's content may not have synced
+            // yet.
+            const progress = params.repo.findWithProgress(
+              this.url as AutomergeUrl
+            );
+            if (progress.peek().state !== "ready") {
+              this.#state = State.unable;
+              const unsubscribe = progress.subscribe((queryState) => {
+                if (
+                  queryState.state === "ready" &&
+                  epoch === this.#initEpoch
+                ) {
+                  void this.#teardown().then(() => this.#sync());
+                }
+              });
+              this.#teardowns.add(unsubscribe);
+              return;
+            }
+          }
         }
 
         if (epoch !== this.#initEpoch) return;
@@ -447,6 +471,7 @@ export function registerPatchworkViewElement(
           const isUnable = this.#state === State.unable;
 
           if (hasAccess && isUnable && this.#unableNoAccess) {
+            // Was unable because access hadn't synced, but it just did. Re-sync.
             await this.#teardown();
             this.#sync();
           } else if (!hasAccess && isDisplayed && accessCheckSucceeded) {

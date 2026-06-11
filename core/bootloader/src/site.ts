@@ -30,7 +30,7 @@ import * as Automerge from "@automerge/automerge/slim";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim";
 import {
   initKeyhiveWasm,
-  initializeAutomergeRepoKeyhive,
+  initializeAutomergeRepoKeyhiveWithRepo,
   type AutomergeRepoKeyhive,
 } from "@automerge/automerge-repo-keyhive";
 // eslint-disable-next-line
@@ -40,6 +40,14 @@ import { initSync as initSubductionSync } from "@automerge/automerge-subduction/
 declare const __SITE_NAME__: string;
 const siteName =
   typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
+
+// Sync-server selection for keyhive. Defaults to "subduction". Build with
+// KEYHIVE_SYNC_SERVER=true to target keyhive.sync.automerge.org. This must match
+// the automerge-worker (SharedWorker) selection so the tab and the SW grant relay
+// access to the same server.
+declare const __KEYHIVE_SYNC_SERVER__: boolean;
+const useKeyhiveSyncServer =
+  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -182,37 +190,38 @@ export async function bootPatchworkSite(
   await sw.subscribeToRepoChannel(resolvePort);
   const workerPort = await portPromise;
 
+  let repo: Repo;
   if (config.keyhive) {
     initKeyhiveWasm();
 
-    hive = await initializeAutomergeRepoKeyhive({
+    ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
+      createRepo: (config) => new Repo(config),
       storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
       peerIdSuffix: siteName + Math.random().toString(36).slice(2),
       networkAdapter: new MessageChannelNetworkAdapter(workerPort),
       automaticArchiveIngestion: true,
       cachingMode: "periodic",
       onlyShareWithHardcodedServerPeerId: false,
+      // ARK selects the relay via `syncServer` ("keyhive" | "subduction").
+      // Defaults to "subduction".
+      ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+      repo: {
+        storage: new IndexedDBStorageAdapter(),
+        enableRemoteHeadsGossiping: true,
+      },
+    }));
+  } else {
+    repo = new Repo({
+      network: [new MessageChannelNetworkAdapter(workerPort)],
+      storage: new IndexedDBStorageAdapter(),
+      async sharePolicy(peerId) {
+        return peerId.includes("automerge-worker");
+      },
+      enableRemoteHeadsGossiping: true,
+      peerId:
+        `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
     });
   }
-
-  const repo = hive
-    ? new Repo({
-        storage: new IndexedDBStorageAdapter(),
-        enableRemoteHeadsGossiping: true,
-        network: [hive.networkAdapter],
-        peerId: hive.peerId,
-        idFactory: hive.idFactory,
-      })
-    : new Repo({
-        network: [new MessageChannelNetworkAdapter(workerPort)],
-        storage: new IndexedDBStorageAdapter(),
-        async sharePolicy(peerId) {
-          return peerId.includes("automerge-worker");
-        },
-        enableRemoteHeadsGossiping: true,
-        peerId:
-          `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
-      });
   repo.subscribeToRemotes(
     config.remoteStorageIds ?? [DEFAULT_REMOTE_STORAGE_ID]
   );
