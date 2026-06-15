@@ -233,11 +233,13 @@ export async function bootPatchworkSite(
       `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
     );
   }
+  // `<repo-provider>` sits above the root and answers `patchwork:dochandle`
+  // for any view outside a remapper (resolving to the requested url unchanged).
   const repoProvider = document.createElement("repo-provider");
   rootElement.parentElement!.insertBefore(repoProvider, rootElement);
   repoProvider.appendChild(rootElement);
 
-  registerPatchworkViewElement(hive ? { hive } : {});
+  registerPatchworkViewElement({ hive, repo });
 
   // The watcher is started with the site's default-tools bundle alone so that
   // `resolveAccountHandle` below has something to await on (the `account`
