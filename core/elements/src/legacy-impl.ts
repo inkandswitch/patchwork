@@ -45,12 +45,16 @@ const ATTRS = {
   toolId: "tool-id",
 } as const;
 
-export const LEGACY_OBSERVED_ATTRIBUTES = [
-  ATTRS.docUrl,
-  ATTRS.toolId,
-] as const;
+export const LEGACY_OBSERVED_ATTRIBUTES = [ATTRS.docUrl, ATTRS.toolId] as const;
 
 export type LegacyImplParams = {
+  /**
+   * Repo used to resolve the primary doc handle. This is the
+   * `<patchwork-view>`'s overlay shim, so the handle the tool receives is
+   * remapped (e.g. to a draft clone) when a remapper answers
+   * `patchwork:dochandle`.
+   */
+  repo: Repo;
   hive?: AutomergeRepoKeyhive;
   /** Element name used in error messages */
   hostName?: string;
@@ -73,7 +77,7 @@ type HostElement = HTMLElement & {
  */
 export class LegacyImpl {
   #element: HostElement;
-  #hostName: string;
+  #repo: Repo;
   #docUrl: AutomergeUrl | null = null;
   #toolId: string | null = null;
   #handle: DocHandle<HasPatchworkMetadata> | null = null;
@@ -89,9 +93,9 @@ export class LegacyImpl {
   #pendingKeyhiveSync = false;
   #unableNoAccess = false;
 
-  constructor(element: HTMLElement, params: LegacyImplParams = {}) {
+  constructor(element: HTMLElement, params: LegacyImplParams) {
     this.#element = element as HostElement;
-    this.#hostName = params.hostName ?? element.tagName.toLowerCase();
+    this.#repo = params.repo;
     this.#element.hive = params.hive;
   }
 
@@ -259,14 +263,7 @@ export class LegacyImpl {
       removeLoadedListener();
     });
 
-    const repo = (window as { repo?: Repo }).repo;
-    if (!repo) {
-      this.#state = State.unable;
-      this.#displayError(
-        `no global repo available for <${this.#hostName}>; ensure the host set \`globalThis.repo\`.`
-      );
-      return;
-    }
+    const repo = this.#repo;
     this.#element.repo = repo;
 
     let handle: DocHandle<HasPatchworkMetadata>;
@@ -429,9 +426,7 @@ export class LegacyImpl {
       this.#state = "unable";
       const hasPatchworkMetadata = doc && "@patchwork" in doc;
       if (!hasPatchworkMetadata) {
-        console.warn(
-          `Document ${this.#docUrl} is missing @patchwork metadata`
-        );
+        console.warn(`Document ${this.#docUrl} is missing @patchwork metadata`);
         this.#displayError(
           `This document is missing @patchwork metadata and cannot be opened.`
         );
@@ -442,8 +437,7 @@ export class LegacyImpl {
       return;
     }
 
-    this.#tool =
-      getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
+    this.#tool = getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
     if (!this.#tool) {
       this.#notool();

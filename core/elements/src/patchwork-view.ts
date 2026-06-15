@@ -7,6 +7,7 @@ import {
   type LoadedPlugin,
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
+import { OverlayRepo } from "@inkandswitch/patchwork-providers";
 import { MountedEvent, UnmountedEvent } from "./events.js";
 import { LegacyImpl } from "./legacy-impl.js";
 import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
@@ -15,7 +16,13 @@ type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
 >;
 
-export type ComponentRender = (element: HTMLElement) => () => void;
+/**
+ * A component receives the element it is mounted on plus the realm-local base
+ * `Repo`. The base repo (not the overlay shim) is handed to components so
+ * providers that answer `patchwork:dochandle` can clone/create against the
+ * real repo without re-entering their own remapping.
+ */
+export type ComponentRender = (element: HTMLElement, repo: Repo) => () => void;
 
 export type ComponentDescription = PluginDescription & {
   id: string;
@@ -53,6 +60,13 @@ const ATTRS = {
 export type RegisterPatchworkViewElementParams = {
   name?: string;
   /**
+   * The realm-local base `Repo`. Each `<patchwork-view>` wraps it in an
+   * {@link OverlayRepo} (exposed as `element.repo`) so legacy-mode tools
+   * resolve their primary handle through the remapping shim, while components
+   * receive the base repo directly.
+   */
+  repo: Repo;
+  /**
    * Threaded into the `LegacyImpl` so legacy-mode tools get access to a
    * Keyhive instance via `element.hive`.
    */
@@ -74,7 +88,7 @@ export type LegacyPatchworkViewElement = HTMLElement & {
 };
 
 export function registerPatchworkViewElement(
-  params: RegisterPatchworkViewElementParams = {}
+  params: RegisterPatchworkViewElementParams
 ) {
   const name = params.name ?? "patchwork-view";
 
@@ -95,6 +109,11 @@ export function registerPatchworkViewElement(
       #handlingKeyhiveSync = false;
       #pendingKeyhiveSync = false;
       #unableNoAccess = false;
+
+      // Realm-local remapping shim, created lazily on first render. Exposed as
+      // `element.repo` so tools resolve their primary handle through it.
+      #overlayRepo: OverlayRepo | null = null;
+      repo!: Repo;
 
       // In legacy mode, the legacy view logic is hosted on *this*
       // element (not a child) so events dispatched on `<patchwork-view>`
@@ -229,10 +248,21 @@ export function registerPatchworkViewElement(
       #renderLegacy() {
         if (this.#legacyImpl) return;
         this.#legacyImpl = new LegacyImpl(this, {
+          repo: this.#ensureOverlayRepo(),
           hive: params.hive,
           hostName: name,
         });
         this.#legacyImpl.connectedCallback();
+      }
+
+      // The overlay shim is per-element (it dispatches `patchwork:dochandle`
+      // from `this`) but wraps the single shared base repo.
+      #ensureOverlayRepo(): Repo {
+        if (!this.#overlayRepo) {
+          this.#overlayRepo = new OverlayRepo(params.repo, this);
+          this.repo = this.#overlayRepo as unknown as Repo;
+        }
+        return this.repo;
       }
 
       #initComponent = async () => {
@@ -463,7 +493,7 @@ export function registerPatchworkViewElement(
         }
 
         try {
-          const cleanup = this.#loaded.module(this);
+          const cleanup = this.#loaded.module(this, params.repo);
           if (typeof cleanup === "function") {
             this.#teardowns.add(cleanup);
           } else {
