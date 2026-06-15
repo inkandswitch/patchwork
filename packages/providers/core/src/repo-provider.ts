@@ -1,7 +1,7 @@
 import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 
 import { accept, type SubscribeEvent } from "./index.js";
-import type { DocHandleDescriptor } from "./overlay.js";
+import type { DocHandleDescriptor } from "./overlay-repo.js";
 
 declare global {
   interface HTMLElementTagNameMap {
