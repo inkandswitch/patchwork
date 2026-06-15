@@ -173,9 +173,5 @@ export {
   type RepoProviderElement,
 } from "./repo-provider.js";
 export type { RepoLike } from "./types.js";
-export {
-  OverlayHandle,
-  OverlayRepo,
-  type DocHandleDescriptor,
-  type OverlayHandleOpts,
-} from "./overlay.js";
+export { OverlayHandle, type OverlayHandleOpts } from "./overlay-handle.js";
+export { OverlayRepo, type DocHandleDescriptor } from "./overlay-repo.js";
