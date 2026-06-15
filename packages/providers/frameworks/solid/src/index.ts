@@ -1,6 +1,11 @@
-import { createSignal, onCleanup, onMount, type Accessor } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  type Accessor,
+} from "solid-js";
 import { createStore, reconcile, type Store } from "solid-js/store";
-import { createDocumentProjection } from "@automerge/automerge-repo-solid-primitives";
 import type { AutomergeUrl, Doc, DocHandle } from "@automerge/automerge-repo";
 import * as Providers from "@inkandswitch/patchwork-providers";
 import type {
@@ -132,6 +137,37 @@ export function subscribeDoc<T extends object>(
       unsubscribe();
     });
   });
-  const doc = createDocumentProjection<T>(handle);
+
+  // Mirror the doc into a store by `reconcile`-ing against the *materialized*
+  // snapshot (`handle.doc()`) on every change, rather than replaying the
+  // change's incremental patches (as solid-primitives' `createDocumentProjection`
+  // / `autoproduce` does).
+  //
+  // A whole-value write such as `doc.list = [...]` is lowered by Automerge to
+  // `putObjectFromHydrate`, whose patch stream is a `put` that materializes the
+  // new container *plus* per-element `insert` patches. Replaying that delta with
+  // `applyPatches` double-applies the contents — the `put` seeds `[a, b]`, then
+  // the inserts splice `a, b` in again, yielding `[a, b, a, b]` — even though the
+  // document itself is correct. The materialized snapshot is always
+  // authoritative, so reconciling against it is robust to any valid change,
+  // whole-array reassignment included.
+  const [store, setStore] = createStore<T>({} as T);
+  const [ready, setReady] = createSignal(false);
+  createEffect(() => {
+    const h = handle();
+    if (!h) {
+      setReady(false);
+      return;
+    }
+    const sync = () => {
+      setStore(reconcile((h.doc() ?? {}) as T));
+      setReady(true);
+    };
+    sync();
+    h.on("change", sync);
+    onCleanup(() => h.off("change", sync));
+  });
+
+  const doc = () => (ready() ? (store as Doc<T>) : undefined);
   return [doc, handle];
 }
