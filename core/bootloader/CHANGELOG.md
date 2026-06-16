@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.2.7
+
+### Patch Changes
+
+- 14bd0e2: Don't externalize @automerge/automerge-repo-react-hooks
+
 ## 0.2.6
 
 ### Patch Changes
