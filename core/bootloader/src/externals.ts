@@ -9,7 +9,6 @@ const externals = [
   "@automerge/automerge-repo-network-messagechannel",
   "@automerge/automerge-repo-storage-indexeddb",
   "@automerge/automerge-repo-keyhive",
-  "@automerge/automerge-repo-react-hooks",
   "@automerge/automerge-repo-network-messagechannel",
   "@automerge/automerge-repo-storage-indexeddb",
   "@automerge/automerge-subduction",
