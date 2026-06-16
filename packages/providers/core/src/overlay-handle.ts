@@ -1,5 +1,6 @@
 import {
   parseAutomergeUrl,
+  stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocHandle,
   type DocumentId,
@@ -10,14 +11,16 @@ import { forwardingProxy } from "./forwarding-proxy.js";
 type Listener = (...args: unknown[]) => void;
 
 // The only members whose behavior an overlay handle changes: the presented
-// identity, the argument-unwrapping handle comparisons (`merge`/`overlaps`/
-// `contains`/`isChildOf`/`equals`), and the re-stamping EventEmitter surface.
-// Everything else (doc/change/heads/ref/view/diff/...) forwards to the backing
-// handle.
+// identity, the identity-preserving `sub` (so sub-handle urls stay in the
+// presented space), the argument-unwrapping handle comparisons
+// (`merge`/`overlaps`/`contains`/`isChildOf`/`equals`), and the re-stamping
+// EventEmitter surface. Everything else (doc/change/heads/ref/view/diff/...)
+// forwards to the backing handle.
 const OVERLAY_HANDLE_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
   "url",
   "documentId",
   "backingHandle",
+  "sub",
   "merge",
   "overlaps",
   "contains",
@@ -55,6 +58,9 @@ export class OverlayHandle<T> {
   readonly #handle: DocHandle<T>;
   readonly #listeners = new Map<string, Set<Listener>>();
   readonly #forwarded = new Set<string>();
+  // Sub-handle wrappers keyed by their backing (canonicalised) url, so repeated
+  // `sub(...)` of the same path return the same wrapper instance.
+  readonly #subCache = new Map<AutomergeUrl, OverlayHandle<unknown>>();
   // The Proxy returned from the constructor — the object consumers actually
   // hold. Re-stamped onto forwarded events so identity stays consistent.
   #self: OverlayHandle<T>;
@@ -104,6 +110,30 @@ export class OverlayHandle<T> {
 
   equals(other: DocHandle<unknown>): boolean {
     return this.#handle.equals(unwrapHandle(other));
+  }
+
+  // Sub-handles must keep reporting urls in the *presented* space; otherwise a
+  // ref or cursor produced here (a comment target, a selection cursor, ...)
+  // would leak the backing (clone) documentId and break identity for consumers
+  // that resolve it back through the overlay. We scope `sub` to the backing
+  // handle (reads/writes still hit the clone) but wrap the result in another
+  // OverlayHandle whose presented url swaps the documentId back to ours. The
+  // backing sub-handle is canonicalised by the repo, so caching by its url
+  // keeps our wrappers referentially stable too.
+  sub(...segments: unknown[]): DocHandle<unknown> {
+    const backingSub = (
+      this.#handle as unknown as {
+        sub: (...s: unknown[]) => DocHandle<unknown>;
+      }
+    ).sub(...segments);
+    const cached = this.#subCache.get(backingSub.url);
+    if (cached) return cached as unknown as DocHandle<unknown>;
+    const wrapped = new OverlayHandle<unknown>({
+      presentedUrl: restampUrl(this.#originalUrl, backingSub.url),
+      backing: backingSub,
+    });
+    this.#subCache.set(backingSub.url, wrapped);
+    return wrapped as unknown as DocHandle<unknown>;
   }
 
   on(ev: string, fn: Listener): OverlayHandle<T> {
@@ -181,4 +211,16 @@ function unwrapHandle<T>(handle: DocHandle<T>): DocHandle<T> {
   return handle instanceof OverlayHandle
     ? (handle.backingHandle as DocHandle<T>)
     : handle;
+}
+
+// Re-stamp a backing (clone) handle url into the presented space: keep the
+// path segments and any pinned heads, but swap the documentId back to the
+// presented root's. Mirrors the original->clone mapping in OverlayRepo#resolve.
+function restampUrl(
+  presentedRoot: AutomergeUrl,
+  backingUrl: AutomergeUrl
+): AutomergeUrl {
+  const { documentId } = parseAutomergeUrl(presentedRoot);
+  const { segments, heads } = parseAutomergeUrl(backingUrl);
+  return stringifyAutomergeUrl({ documentId, segments, heads });
 }
