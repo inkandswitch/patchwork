@@ -62,8 +62,9 @@ export type RegisterPatchworkViewElementParams = {
   /**
    * The realm-local base `Repo`. Each `<patchwork-view>` wraps it in an
    * {@link OverlayRepo} (exposed as `element.repo`) so legacy-mode tools
-   * resolve their primary handle through the remapping shim, while components
-   * receive the base repo directly.
+   * resolve their primary handle through the remapping shim. Components also
+   * get `element.repo`, but the base repo is passed to the component render fn
+   * directly so `patchwork:dochandle`-answering providers don't re-enter.
    */
   repo: Repo;
   /**
@@ -73,17 +74,22 @@ export type RegisterPatchworkViewElementParams = {
   hive?: AutomergeRepoKeyhive;
 };
 
-export type PatchworkViewElement = HTMLElement & {
-  component?: string | null;
-  url?: AutomergeUrl | null;
+// Shared shape for every `<patchwork-view>` instance, regardless of whether it
+// renders a component or a legacy tool. `repo` (the per-element overlay shim)
+// is always provisioned before the mounted code runs - see `#ensureOverlayRepo`,
+// called on both the legacy and component render paths - so it is non-optional.
+export type PatchworkViewElementBase = HTMLElement & {
+  repo: Repo;
   docUrl?: AutomergeUrl | null;
   toolId?: string | null;
 };
 
-export type LegacyPatchworkViewElement = HTMLElement & {
-  docUrl?: AutomergeUrl | null;
-  toolId?: string | null;
-  repo: Repo;
+export type PatchworkViewElement = PatchworkViewElementBase & {
+  component?: string | null;
+  url?: AutomergeUrl | null;
+};
+
+export type LegacyPatchworkViewElement = PatchworkViewElementBase & {
   hive?: AutomergeRepoKeyhive;
 };
 
@@ -493,6 +499,10 @@ export function registerPatchworkViewElement(
         }
 
         try {
+          // Expose `element.repo` (the overlay shim) so components that want
+          // ancestor-remapped resolution can opt in; the render fn still
+          // receives the base repo (see ComponentRender docs).
+          this.#ensureOverlayRepo();
           const cleanup = this.#loaded.module(this, params.repo);
           if (typeof cleanup === "function") {
             this.#teardowns.add(cleanup);
