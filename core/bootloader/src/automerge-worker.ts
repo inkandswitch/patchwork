@@ -121,7 +121,7 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
 const siteName =
   typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
 
-const cacheableStatuses = [200, 203, 204, 206];
+const cacheableStatuses = [200, 203, 204];
 
 function log(...args: any[]) {
   if (!debugging) return;
