@@ -18,7 +18,7 @@ import { OverlayHandle } from "./overlay-handle.js";
 import type { RepoLike } from "./types.js";
 
 /**
- * Cloneable answer to a `patchwork:dochandle` subscription.
+ * Cloneable answer to a `repo:handle-descriptor` subscription.
  *
  * - `url` is the *presented* identity the consumer asked for; the resolved
  *   handle reports this url back even when it is backed by a clone.
@@ -56,7 +56,7 @@ const OVERLAY_REPO_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
  * remappable across provider scopes (including iframes) without sending a live
  * `Repo`/`DocHandle` over the wire.
  *
- * `find`/`findWithProgress` dispatch a `patchwork:dochandle` subscription for
+ * `find`/`findWithProgress` dispatch a `repo:handle-descriptor` subscription for
  * the requested url and resolve the returned `cloneUrl ?? url` against the
  * realm-local `baseRepo`, then hand back an {@link OverlayHandle} that keeps
  * reporting the *original* url. Every other method (`create`, `create2`,
@@ -216,7 +216,7 @@ export class OverlayRepo implements RepoLike {
       const { documentId, segments, heads } = parseAutomergeUrl(presented);
       const rootUrl = stringifyAutomergeUrl({ documentId });
       const descriptor = await request<DocHandleDescriptor>(this.#element, {
-        type: "patchwork:dochandle",
+        type: "repo:handle-descriptor",
         url: rootUrl,
       });
       const backingRoot = descriptor.cloneUrl ?? descriptor.url;

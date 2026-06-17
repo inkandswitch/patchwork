@@ -52,7 +52,7 @@ export type LegacyImplParams = {
    * Repo used to resolve the primary doc handle. This is the
    * `<patchwork-view>`'s overlay shim, so the handle the tool receives is
    * remapped (e.g. to a draft clone) when a remapper answers
-   * `patchwork:dochandle`.
+   * `repo:handle-descriptor`.
    */
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
@@ -196,9 +196,15 @@ export class LegacyImpl {
           if (!this.#keyhiveRetrySetup) {
             this.#keyhiveRetrySetup = true;
             const onKeyhiveSync = () => this.#handleKeyhiveSync();
-            (this.#element.hive.networkAdapter as any).on("ingest-remote", onKeyhiveSync);
+            (this.#element.hive.networkAdapter as any).on(
+              "ingest-remote",
+              onKeyhiveSync
+            );
             this.#teardowns.add(() => {
-              (this.#element.hive!.networkAdapter as any).off("ingest-remote", onKeyhiveSync);
+              (this.#element.hive!.networkAdapter as any).off(
+                "ingest-remote",
+                onKeyhiveSync
+              );
             });
           }
           return;
@@ -208,9 +214,15 @@ export class LegacyImpl {
       if (!this.#keyhiveRetrySetup) {
         this.#keyhiveRetrySetup = true;
         const onKeyhiveSync = () => this.#handleKeyhiveSync();
-        (this.#element.hive.networkAdapter as any).on("ingest-remote", onKeyhiveSync);
+        (this.#element.hive.networkAdapter as any).on(
+          "ingest-remote",
+          onKeyhiveSync
+        );
         this.#teardowns.add(() => {
-          (this.#element.hive!.networkAdapter as any).off("ingest-remote", onKeyhiveSync);
+          (this.#element.hive!.networkAdapter as any).off(
+            "ingest-remote",
+            onKeyhiveSync
+          );
         });
       }
     }
@@ -333,7 +345,8 @@ export class LegacyImpl {
   async #clearDocCache(): Promise<void> {
     if (!this.#docUrl || !this.#element.repo) return;
 
-    const retryingDocs = (globalThis as any).__patchwork_retrying_docs ??= new Set<string>();
+    const retryingDocs = ((globalThis as any).__patchwork_retrying_docs ??=
+      new Set<string>());
     if (retryingDocs.has(this.#docUrl)) return;
 
     retryingDocs.add(this.#docUrl);
@@ -347,7 +360,7 @@ export class LegacyImpl {
       // Ignore delete errors
     }
 
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     retryingDocs.delete(this.#docUrl);
   }
 
