@@ -19,10 +19,13 @@ type AutomergeRepoKeyhive = Awaited<
 /**
  * A component receives the element it is mounted on plus the realm-local base
  * `Repo`. The base repo (not the overlay shim) is handed to components so
- * providers that answer `patchwork:dochandle` can clone/create against the
+ * providers that answer `repo:handle-descriptor` can clone/create against the
  * real repo without re-entering their own remapping.
  */
-export type ComponentRender = (element: HTMLElement, repo: Repo) => () => void;
+export type ComponentRender = (
+  element: PatchworkViewElement,
+  repo: Repo
+) => () => void;
 
 export type ComponentDescription = PluginDescription & {
   id: string;
@@ -64,7 +67,7 @@ export type RegisterPatchworkViewElementParams = {
    * {@link OverlayRepo} (exposed as `element.repo`) so legacy-mode tools
    * resolve their primary handle through the remapping shim. Components also
    * get `element.repo`, but the base repo is passed to the component render fn
-   * directly so `patchwork:dochandle`-answering providers don't re-enter.
+   * directly so `repo:handle-descriptor`-answering providers don't re-enter.
    */
   repo: Repo;
   /**
@@ -261,7 +264,7 @@ export function registerPatchworkViewElement(
         this.#legacyImpl.connectedCallback();
       }
 
-      // The overlay shim is per-element (it dispatches `patchwork:dochandle`
+      // The overlay shim is per-element (it dispatches `repo:handle-descriptor`
       // from `this`) but wraps the single shared base repo.
       #ensureOverlayRepo(): Repo {
         if (!this.#overlayRepo) {

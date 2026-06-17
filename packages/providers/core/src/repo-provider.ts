@@ -17,7 +17,7 @@ export interface RepoProviderElement extends HTMLElement {
  * Defines the `<repo-provider>` custom element.
  *
  * It carries the realm-local repo on its `.repo` property and acts as the
- * root-level fallback answerer for `patchwork:dochandle`. Sitting above every
+ * root-level fallback answerer for `repo:handle-descriptor`. Sitting above every
  * `<patchwork-view>`, it resolves a requested url to itself (no clone) so any
  * view rendered outside a remapper (e.g. a draft overlay) still resolves and
  * the overlay shim's `find` never hangs. A nearer remapper answers
@@ -39,7 +39,7 @@ export function registerRepoProviderElement(
         this.addEventListener(
           "patchwork:subscribe",
           (event: SubscribeEvent) => {
-            if (event.detail.selector.type !== "patchwork:dochandle") return;
+            if (event.detail.selector.type !== "repo:handle-descriptor") return;
             const url = event.detail?.selector?.url as AutomergeUrl | undefined;
             if (!url) return;
             accept<DocHandleDescriptor>(event, (respond) => {

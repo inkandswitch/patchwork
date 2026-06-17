@@ -173,14 +173,14 @@ export async function bootPatchworkSite(
   if (!sw) throw new Error("Failed to set up service worker");
 
   let hive: AutomergeRepoKeyhive | undefined;
-      // Get the initial automerge-worker port via subscribeToRepoChannel,
-    // then pass it to keyhive init which wraps it in its own network adapter.
-    let resolvePort!: (port: MessagePort) => void;
-    const portPromise = new Promise<MessagePort>((r) => {
-      resolvePort = r;
-    });
-    await sw.subscribeToRepoChannel(resolvePort);
-    const workerPort = await portPromise;
+  // Get the initial automerge-worker port via subscribeToRepoChannel,
+  // then pass it to keyhive init which wraps it in its own network adapter.
+  let resolvePort!: (port: MessagePort) => void;
+  const portPromise = new Promise<MessagePort>((r) => {
+    resolvePort = r;
+  });
+  await sw.subscribeToRepoChannel(resolvePort);
+  const workerPort = await portPromise;
 
   if (config.keyhive) {
     initKeyhiveWasm();
@@ -219,7 +219,6 @@ export async function bootPatchworkSite(
 
   await repo.networkSubsystem.whenReady();
   if (hive) {
-
     (hive.networkAdapter as any).syncKeyhive?.();
   }
 
@@ -233,7 +232,7 @@ export async function bootPatchworkSite(
       `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
     );
   }
-  // `<repo-provider>` sits above the root and answers `patchwork:dochandle`
+  // `<repo-provider>` sits above the root and answers `repo:handle-descriptor`
   // for any view outside a remapper (resolving to the requested url unchanged).
   const repoProvider = document.createElement("repo-provider");
   rootElement.parentElement!.insertBefore(repoProvider, rootElement);
