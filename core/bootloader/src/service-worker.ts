@@ -220,7 +220,9 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
               cacheableStatuses.includes(response.status) &&
               response.url.match(/^https?\:/)
             ) {
-              await cache.put(request, response.clone());
+              await cache.put(request, response.clone()).catch((error) => {
+                log(`error caching ${request.url} in ${cachename}`, error);
+              });
             } else {
               log(
                 `skipping uncacheable response code from cache: ${response.status} for ${response.url}`
