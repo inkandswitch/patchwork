@@ -1,5 +1,17 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.2.8
+
+### Patch Changes
+
+- 48e4391: Pass the realm-local `repo` to `<patchwork-view>` registration so booted views
+  resolve their document handles through it — via the per-view `OverlayRepo` and
+  the root `<repo-provider>` fallback for `repo:handle-descriptor`.
+- Updated dependencies [48e4391]
+- Updated dependencies [48e4391]
+  - @inkandswitch/patchwork-elements@2.0.0
+  - @inkandswitch/patchwork-providers@0.3.0
+
 ## 0.2.7
 
 ### Patch Changes
