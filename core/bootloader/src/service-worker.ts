@@ -16,7 +16,7 @@ import {
 let cachename = "default";
 let debugging = false;
 
-const cacheableStatuses = [200, 203, 204, 206];
+const cacheableStatuses = [200, 203, 204];
 
 // The automerge worker times its own resolution out after 30s and replies
 // with an error, so this only fires when nobody is listening at all.
