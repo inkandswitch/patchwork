@@ -115,6 +115,42 @@ export async function refreshAllowlist(
 }
 
 /**
+ * Populate the allowlist from multiple root documents. Scans each root for
+ * automerge URLs and adds them to the allowlist (unless denylisted).
+ *
+ * Returns an array of cleanup functions.
+ */
+export async function populateAllowlistFromRoots(
+  repo: Repo,
+  rootUrls: AutomergeUrl[],
+  allowlist: SyncAllowlist,
+  denylist: SyncDenylist | undefined,
+  isStale: () => boolean
+): Promise<Array<() => void>> {
+  const cleanups: Array<() => void> = [];
+  for (const url of rootUrls) {
+    const cleanup = await populateAllowlist(repo, url, allowlist, denylist, isStale);
+    if (isStale()) return cleanups;
+    if (cleanup) cleanups.push(cleanup);
+  }
+  return cleanups;
+}
+
+/**
+ * Re-scan all root documents and add any new automerge URLs to the allowlist.
+ */
+export async function refreshAllowlistFromRoots(
+  repo: Repo,
+  rootUrls: AutomergeUrl[],
+  allowlist: SyncAllowlist,
+  denylist: SyncDenylist | undefined
+): Promise<void> {
+  for (const url of rootUrls) {
+    await refreshAllowlist(repo, url, allowlist, denylist);
+  }
+}
+
+/**
  * Recursively walks a value and collects all valid automerge URLs found.
  */
 function collectAutomergeUrls(value: unknown, urls: Set<AutomergeUrl>): void {

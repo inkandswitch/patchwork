@@ -14,6 +14,12 @@ export interface RegistryEntry {
   [key: string]: unknown;
 }
 
+export interface SerializedView {
+  tagName: string;
+  attributes: Record<string, string>;
+  children: SerializedView[];
+}
+
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
 // ---------------------------------------------------------------------------
@@ -27,8 +33,7 @@ interface InitMessage {
   rpcPort: MessagePort;
   syncPort: MessagePort;
   data: {
-    docUrl: string;
-    toolId: string | null;
+    views: SerializedView[];
     registryEntries: RegistryEntry[];
     esmsSource: string;
     hostStyles: string;
@@ -187,18 +192,21 @@ async function boot() {
   rpcPort.addEventListener("message", handleRpcMessage);
   rpcPort.start();
 
-  // Navigation bridge: forward patchwork:open-document events to host
+  // Navigation bridge: forward patchwork:open-document events to host.
+  // We do NOT stopPropagation — the event still bubbles within the iframe
+  // so that providers (e.g. SelectedDocProvider) inside the iframe can
+  // observe it. The host's SelectedDocProvider deduplicates by URL, so
+  // forwarding the same selection back is a no-op.
   document.addEventListener(
     "patchwork:open-document",
     ((event: CustomEvent) => {
-      event.stopPropagation();
       rpcPort.postMessage({ type: "open-document", detail: event.detail });
     }) as EventListener,
     true
   );
 
   const d = init.data;
-  log("init", { docUrl: d.docUrl, toolId: d.toolId });
+  log("init", { views: d.views?.length ?? 0 });
 
   // Inject host page stylesheets so tools render with the same CSS
   // framework (Tailwind, DaisyUI, etc.) as on the host.
@@ -340,7 +348,7 @@ async function boot() {
     log("repo connected");
 
     // 11. Register patchwork-view
-    patchworkElements.registerPatchworkViewElement();
+    patchworkElements.registerPatchworkViewElement({ repo });
 
     // 12. Register plugins with lazy loading via importShim
     // Plugin importUrls are pkg: URLs (converted by host before boot)
@@ -386,13 +394,56 @@ async function boot() {
       return 0;
     };
 
-    // 13. Render the tool
-    const view = document.createElement("patchwork-view");
-    if (d.docUrl) view.setAttribute("doc-url", d.docUrl);
-    if (d.toolId) view.setAttribute("tool-id", d.toolId);
-    document.body.appendChild(view);
+    // 13. Reconstruct the serialized element tree from the host.
+    // The host serializes its children (including provider wrappers,
+    // layout divs, and tool views) as a recursive tree. We rebuild
+    // the same DOM structure inside the iframe.
+    function reconstructTree(
+      specs: SerializedView[],
+      parent: HTMLElement
+    ) {
+      for (const spec of specs) {
+        const el = document.createElement(spec.tagName);
+        for (const [key, value] of Object.entries(spec.attributes)) {
+          el.setAttribute(key, value);
+        }
+        if (spec.children.length > 0) {
+          reconstructTree(spec.children, el);
+        }
+        parent.appendChild(el);
+      }
+    }
 
-    log("boot complete");
+    const views = d.views ?? [];
+    reconstructTree(views, document.body);
+
+    // 14. Initialize the inner SelectedDocProvider by dispatching
+    // a patchwork:open-document event with the first doc-url found
+    // in the serialized tree. Without this, the inner provider would
+    // have no initial selection (the iframe has no URL hash).
+    function findFirstDocUrl(specs: SerializedView[]): string | null {
+      for (const spec of specs) {
+        const url = spec.attributes["doc-url"];
+        if (url) return url;
+        const found = findFirstDocUrl(spec.children);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    const initialDocUrl = findFirstDocUrl(views);
+    if (initialDocUrl) {
+      log("dispatching initial open-document:", initialDocUrl);
+      document.dispatchEvent(
+        new CustomEvent("patchwork:open-document", {
+          bubbles: true,
+          composed: true,
+          detail: { url: initialDocUrl },
+        })
+      );
+    }
+
+    log(`boot complete — ${views.length} top-level views`);
     rpcPort.postMessage({ type: "boot-complete" });
   } catch (err: any) {
     console.error("[iframe] boot failed:", err);
@@ -418,11 +469,8 @@ export function generateIframeSrcdoc(): string {
       width: 100%;
       height: 100%;
       overflow: hidden;
-    }
-    patchwork-view {
-      display: block;
-      width: 100%;
-      height: 100%;
+      display: flex;
+      flex-direction: row;
     }
   </style>
 </head>

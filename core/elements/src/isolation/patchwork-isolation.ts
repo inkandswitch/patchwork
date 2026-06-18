@@ -1,22 +1,31 @@
 /**
- * `<patchwork-isolation>` — renders a patchwork tool inside a sandboxed
+ * `<patchwork-isolation>` — renders patchwork components inside a sandboxed
  * iframe with data access mediated by an intermediary repo and allowlist.
  *
  * Usage:
- *   <patchwork-isolation doc-url="automerge:..." tool-id="my-tool" />
+ *   <patchwork-isolation>
+ *     <patchwork-view doc-url="automerge:..." tool-id="my-tool" />
+ *     <patchwork-view doc-url="automerge:..." tool-id="sidebar" />
+ *   </patchwork-isolation>
+ *
+ * Child elements are serialized (tag name + attributes) and reconstructed
+ * inside the iframe. All `doc-url` attributes found on children are used
+ * as root URLs for the document allowlist.
  *
  * Lifecycle:
  *  1. Fetch boot assets (es-module-shims, WASM, host styles) — cached
- *  2. Create allowlist (seeded with doc-url, populated from doc content)
- *  3. Get shared denylist (singleton, populated once from sensitive docs)
- *  4. Create intermediary repo gated by allowlist + denylist
- *  5. Start host-side RPC for plugin loading and navigation
- *  6. Create sandboxed iframe and send boot message with registry entries
+ *  2. Serialize children and collect doc-url roots
+ *  3. Create allowlist (seeded with all root URLs, populated from doc content)
+ *  4. Get shared denylist (singleton, populated once from sensitive docs)
+ *  5. Create intermediary repo gated by allowlist + denylist
+ *  6. Start host-side RPC for plugin loading and navigation
+ *  7. Create sandboxed iframe and send boot message with registry entries
  *
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
 
 import type { AutomergeUrl, DocumentId, Repo } from "@automerge/automerge-repo";
+import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   createIntermediaryRepo,
@@ -29,7 +38,7 @@ import {
   startPluginsRpc,
   watchRegistries,
 } from "./plugins-bridge.js";
-import { populateAllowlist, refreshAllowlist, getDenylist } from "./access-control.js";
+import { populateAllowlistFromRoots, refreshAllowlistFromRoots, getDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
@@ -46,9 +55,59 @@ declare global {
   }
 }
 
-export interface PatchworkIsolationElement extends HTMLElement {
-  docUrl: AutomergeUrl | null;
-  toolId: string | null;
+export interface PatchworkIsolationElement extends HTMLElement {}
+
+/**
+ * A serialized element: tag name, attributes, and children.
+ * Reconstructed inside the iframe to build the isolated view tree.
+ */
+export interface SerializedView {
+  tagName: string;
+  attributes: Record<string, string>;
+  children: SerializedView[];
+}
+
+/**
+ * Recursively serialize an element and its descendants into a
+ * transferable descriptor.
+ */
+function serializeElement(el: Element): SerializedView {
+  const attrs: Record<string, string> = {};
+  for (const attr of Array.from(el.attributes)) {
+    attrs[attr.name] = attr.value;
+  }
+  const children: SerializedView[] = [];
+  for (const child of Array.from(el.children)) {
+    children.push(serializeElement(child));
+  }
+  return { tagName: el.tagName.toLowerCase(), attributes: attrs, children };
+}
+
+/**
+ * Serialize the direct children of the isolation element into a
+ * transferable descriptor, recursing into their subtrees.
+ */
+function serializeChildren(host: HTMLElement): SerializedView[] {
+  return Array.from(host.children).map(serializeElement);
+}
+
+/**
+ * Recursively collect all `doc-url` attribute values from serialized views
+ * that are valid automerge URLs. These become roots for the allowlist.
+ */
+function collectRootUrls(views: SerializedView[]): AutomergeUrl[] {
+  const urls: AutomergeUrl[] = [];
+  function walk(nodes: SerializedView[]) {
+    for (const view of nodes) {
+      const docUrl = view.attributes["doc-url"];
+      if (docUrl && isValidAutomergeUrl(docUrl)) {
+        urls.push(docUrl);
+      }
+      walk(view.children);
+    }
+  }
+  walk(views);
+  return urls;
 }
 
 // ---------------------------------------------------------------------------
@@ -175,11 +234,6 @@ function getResolvedImportMap(): ImportMap {
 // Custom element
 // ---------------------------------------------------------------------------
 
-const ATTRS = {
-  docUrl: "doc-url",
-  toolId: "tool-id",
-} as const;
-
 /**
  * Defines the `<patchwork-isolation>` custom element.
  * Call once at boot time.
@@ -200,54 +254,25 @@ export function registerPatchworkIsolationElement(
       #booted = false;
       #initEpoch = 0;
 
-      static get observedAttributes() {
-        return [ATTRS.docUrl, ATTRS.toolId];
-      }
-
-      get docUrl(): AutomergeUrl | null {
-        return this.getAttribute(ATTRS.docUrl) as AutomergeUrl | null;
-      }
-      set docUrl(url: AutomergeUrl | null) {
-        if (url) this.setAttribute(ATTRS.docUrl, url);
-        else this.removeAttribute(ATTRS.docUrl);
-      }
-
-      get toolId(): string | null {
-        return this.getAttribute(ATTRS.toolId);
-      }
-      set toolId(id: string | null) {
-        if (id) this.setAttribute(ATTRS.toolId, id);
-        else this.removeAttribute(ATTRS.toolId);
-      }
-
       connectedCallback() {
         this.#init();
       }
       disconnectedCallback() {
         this.#teardown();
       }
-      attributeChangedCallback(
-        _name: string,
-        old: string | null,
-        val: string | null
-      ) {
-        if (old === val) return;
-        if (this.#booted) {
-          this.#teardown();
-          this.#init();
-        }
-      }
 
       // ── Init ────────────────────────────────────────────────────
 
       async #init() {
         const epoch = ++this.#initEpoch;
-        const docUrl = this.docUrl;
-        const toolId = this.toolId;
-        log(`init ${docUrl} tool=${toolId}`);
 
-        if (!docUrl) {
-          log("no doc-url attribute");
+        // Serialize children before replacing them with the iframe
+        const views = serializeChildren(this);
+        const rootUrls = collectRootUrls(views);
+        log(`init with ${views.length} views, ${rootUrls.length} root URLs`);
+
+        if (views.length === 0) {
+          log("no children to isolate");
           return;
         }
 
@@ -266,17 +291,21 @@ export function registerPatchworkIsolationElement(
         const allowlist = new SyncAllowlist();
         this.#allowlist = allowlist;
 
-        allowlist.add(docUrl);
-        log(`allowlisted ${docUrl}`);
+        for (const url of rootUrls) {
+          allowlist.add(url);
+          log(`allowlisted root ${url}`);
+        }
 
-        const allowlistCleanup = await populateAllowlist(
+        const allowlistCleanups = await populateAllowlistFromRoots(
           repo,
-          docUrl,
+          rootUrls,
           allowlist,
           denylist,
           () => epoch !== this.#initEpoch
         );
-        if (allowlistCleanup) this.#cleanups.push(allowlistCleanup);
+        for (const cleanup of allowlistCleanups) {
+          this.#cleanups.push(cleanup);
+        }
         if (epoch !== this.#initEpoch) return;
 
         this.#intermediary = createIntermediaryRepo({
@@ -299,9 +328,14 @@ export function registerPatchworkIsolationElement(
               return true;
             }
 
-            // Re-scan the root document — the URL may have been added
+            // Re-scan all root documents — the URL may have been added
             // since the initial scan (e.g., the user typed a new reference)
-            await refreshAllowlist(repo, docUrl, allowlist, denylist);
+            await refreshAllowlistFromRoots(
+              repo,
+              rootUrls,
+              allowlist,
+              denylist
+            );
             if (allowlist.has(documentId)) return true;
 
             const approved = window.confirm(
@@ -333,14 +367,10 @@ export function registerPatchworkIsolationElement(
         );
 
         // ── Iframe ──────────────────────────────────────────────
-        this.#createIframe(
-          epoch,
-          rpcChannel.port2,
-          this.#intermediary.iframePort,
-          mapper,
-          assets,
-          { docUrl, toolId, importMap }
-        );
+        this.#createIframe(epoch, rpcChannel.port2, this.#intermediary.iframePort, mapper, assets, {
+          views,
+          importMap,
+        });
 
         this.#booted = true;
       }
@@ -375,8 +405,7 @@ export function registerPatchworkIsolationElement(
         mapper: PluginsUrlMapper,
         assets: BootAssets,
         config: {
-          docUrl: AutomergeUrl;
-          toolId: string | null;
+          views: SerializedView[];
           importMap: ImportMap;
         }
       ) {
@@ -399,13 +428,12 @@ export function registerPatchworkIsolationElement(
           const subductionWasm = assets.subductionWasm.slice(0);
 
           log(
-            `sending boot message with ${registryEntries.length} registry entries`
+            `sending boot message with ${registryEntries.length} registry entries, ${config.views.length} views`
           );
           iframe.contentWindow.postMessage(
             {
               type: "boot",
-              docUrl: config.docUrl,
-              toolId: config.toolId,
+              views: config.views,
               registryEntries,
               esmsSource: assets.esmsSource,
               hostStyles: assets.hostStyles,
