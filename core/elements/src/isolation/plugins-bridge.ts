@@ -158,21 +158,35 @@ async function resolvePluginEntryUrl(
 
 /**
  * Resolve a URL for fetching:
- *  - pkg: URLs → convert to real automerge path via mapper
+ *  - host-origin-prefixed pkg: URLs → strip prefix, then convert via mapper
+ *  - bare pkg: URLs → convert to real automerge path via mapper
  *  - automerge: URLs → resolve to package entry point
  *  - Other URLs → pass through
+ *
+ * Chunk URLs from code-split packages arrive as host-origin-prefixed pkg: URLs
+ * (e.g., `https://host/pkg:@scope--name/dist/assets/chunk.js`) because the
+ * resolved module URL returned to es-module-shims is host-origin-prefixed to
+ * enable relative URL resolution against pkg: paths.
  */
 async function resolveUrl(
   url: string,
   mapper: PluginsUrlMapper
 ): Promise<string> {
-  const realUrl = mapper.toAutomergeUrl(url);
+  // Strip host origin prefix if present — chunk URLs arrive this way
+  // because resolved module URLs are prefixed for relative URL resolution.
+  const origin = window.location.origin;
+  let lookupUrl = url;
+  if (url.startsWith(origin + "/pkg:")) {
+    lookupUrl = url.slice(origin.length + 1);
+  }
+
+  const realUrl = mapper.toAutomergeUrl(lookupUrl);
   if (realUrl) return realUrl;
 
-  if (isValidAutomergeUrl(url)) {
-    const resolved = await resolvePluginEntryUrl(url);
+  if (isValidAutomergeUrl(lookupUrl)) {
+    const resolved = await resolvePluginEntryUrl(lookupUrl);
     if (resolved) return resolved.entryUrl;
-    throw new Error(`Failed to resolve automerge URL: ${url}`);
+    throw new Error(`Failed to resolve automerge URL: ${lookupUrl}`);
   }
 
   return url;
@@ -318,7 +332,15 @@ export function startPluginsRpc(options: PluginsRpcOptions): () => void {
         }
 
         const source = await response.text();
-        const resolvedUrl = mapper.toPackageUrl(response.url || fetchUrl);
+        // Convert the resolved URL back to a pkg: URL (hiding automerge IDs).
+        // If it IS a pkg: URL, prefix with host origin so es-module-shims can
+        // resolve relative imports (code-split chunks) against it — bare `pkg:`
+        // URLs aren't valid hierarchical URLs. Already-absolute URLs (e.g.
+        // host-origin asset paths) are returned as-is to avoid double-prefixing.
+        const pkgUrl = mapper.toPackageUrl(response.url || fetchUrl);
+        const resolvedUrl = pkgUrl.startsWith("pkg:")
+          ? `${window.location.origin}/${pkgUrl}`
+          : pkgUrl;
         port.postMessage({
           type: "fetch-package-response",
           id,
