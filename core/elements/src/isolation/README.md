@@ -10,15 +10,14 @@ We want to prevent one attack:
 
 1. **Unauthorized data access.** A tool must not access data that wasn't handed to it by the user. This includes documents belonging to other tools — accessing those could allow a malicious tool to damage the user's environment (for example, by modifying another tool's source code).
 
-**Trust boundary.** The Patchwork host application and its built-in code are trusted. Third-party tool code is untrusted. Currently, only the main document view runs in the isolated context. Sidebar and toolbar tools are assumed trusted — isolating them is future work.
+**Trust boundary.** The Patchwork host application and its built-in code are trusted. Third-party tool code is untrusted. The `<patchwork-isolation>` element wraps an arbitrary subtree of the host DOM and runs it inside a sandboxed iframe. In the default frame layout, the isolation boundary wraps the main document view, context sidebar, and their providers (comments, focus). The document toolbar runs outside the isolation boundary in the host.
 
 **No server enforcement.** Patchwork is local-first. There is no server mediating tool access to documents. All isolation must happen in the browser, using the browser's own security primitives.
 
 ## Out of scope
 
-- preventing data exfiltration (sending data to external servers).
-- supporting patchwork `providers` requests across the isolation boundary.
-- granular capability-based or tool-specific access control. In this architecture, we are aiming for a simple implementation that can handle a small number of critical guarantees with minimal disruption to the existing system.
+- Preventing data exfiltration (sending data to external servers).
+- Granular capability-based or tool-specific access control. In this architecture, we are aiming for a simple implementation that can handle a small number of critical guarantees with minimal disruption to the existing system.
 
 ## Architecture overview
 
@@ -26,48 +25,58 @@ We want to prevent one attack:
  HOST (trusted)                           IFRAME (untrusted, opaque origin)
 ┌──────────────────────────────────────┐  ┌────────────────────────────────────┐
 │                                      │  │                                    │
-│  Isolation Element (frame tool)      │  │   Tool Code                        │
-│  ┌────────────────────────────────┐  │  │                                    │
-│  │ Wraps main document area,      │  │  │   ┌──────────────────────────────┐ │
-│  │ manages iframe lifecycle       │  │  │   │ In-memory Repo               │ │
-│  └────────────────────────────────┘  │  │   │ (no keyhive, no storage)     │ │
-│                                      │  │   │ - author ID configured       │ │
-│  ┌────────────────────────────────┐  │  │   │ - unsigned edits only        │ │
-│  │ Intermediary Repo (ephemeral)  │  │  │   └──────────┬───────────────────┘ │
-│  │                                │  │  │              │                     │
-│  │ ┌──────────────────────────┐   │  │  │   ┌──────────┴───────────────────┐ │
-│  │ │ Allowlist                │   │  │  │   │ Module Loader                │ │
-│  │ │ - root doc + transitive  │   │  │  │   │ (es-module-shims source hook)│ │
-│  │ │ - auto-allow unknown *   │   │  │  │   │ - all imports via RPC        │ │
-│  │ │ - user-approved          │   │  │  │   │ - sees pkg: URLs only        │ │
-│  │ ├──────────────────────────┤   │  │  │   └──────────────────────────────┘ │
-│  │ │ Denylist                 │   │  │  │                                    │
-│  │ │ - account doc            │   │  │  │   ┌──────────────────────────────┐ │
-│  │ │ - module settings        │   │  │  │   │ Fetch Proxy                  │ │
-│  │ │ - tool source code       │   │  │  │   │ - host-origin fetch() → RPC  │ │
-│  │ │ - plugin import URLs     │   │  │  │   │ - <link> interception        │ │
-│  │ │ (takes precedence)       │   │  │  │   └──────────────────────────────┘ │
-│  │ └──────────────────────────┘   │  │  │                                    │
-│  │                                │  │  │   ┌──────────────────────────────┐ │
-│  │ Signs "signable" commits       │  │  │   │ Package Registry             │ │
-│  │ with isolation identity        │  │  │   │ - pre-populated (pkg: URLs)  │ │
-│  └───────────────┬────────────────┘  │  │   │ - lazy-loads implementations │ │
-│                  │                   │  │   │ - push updates from host     │ │
-│  ┌───────────────┴───────────────┐   │  │   └──────────────────────────────┘ │
-│  │ Keyhive Isolation Identity    │   │  │                                    │
-│  │ - attenuated access           │   │  │                                    │
-│  │ - no account/settings/plugins │   │  │                                    │
-│  └───────────────────────────────┘   │  │                                    │
+│  Isolation Element                   │  │  Reconstructed DOM Tree            │
+│  ┌────────────────────────────────┐  │  │  ┌──────────────────────────────┐  │
+│  │ Serializes child subtree,      │  │  │  │ <repo-provider>              │  │
+│  │ manages iframe lifecycle       │  │  │  │  answers repo:handle-        │  │
+│  └────────────────────────────────┘  │  │  │  descriptor subscriptions    │  │
+│                                      │  │  │  ┌────────────────────────┐  │  │
+│  ┌────────────────────────────────┐  │  │  │  │ Providers (local)      │  │  │
+│  │ Intermediary Repo (ephemeral)  │  │  │  │  │ - comments-provider    │  │  │
+│  │                                │  │  │  │  │ - focus-provider       │  │  │
+│  │ ┌──────────────────────────┐   │  │  │  │  ├────────────────────────┤  │  │
+│  │ │ Allowlist                │   │  │  │  │  │ Tool Views             │  │  │
+│  │ │ - root docs + transitive │   │  │  │  │  │ - main document view   │  │  │
+│  │ │ - contact URL            │   │  │  │  │  │ - context sidebar      │  │  │
+│  │ │ - auto-allow unknown *   │   │  │  │  │  └────────────────────────┘  │  │
+│  │ │ - user-approved          │   │  │  │  └──────────────────────────────┘  │
+│  │ ├──────────────────────────┤   │  │  │                                    │
+│  │ │ Denylist                 │   │  │  │  ┌──────────────────────────────┐  │
+│  │ │ - account doc            │   │  │  │  │ In-memory Repo               │  │
+│  │ │ - module settings        │   │  │  │  │ (no keyhive, no storage)     │  │
+│  │ │ - tool source code       │   │  │  │  └──────────┬───────────────────┘  │
+│  │ │ - plugin import URLs     │   │  │  │             │                      │
+│  │ │ (takes precedence)       │   │  │  │  ┌──────────┴───────────────────┐  │
+│  │ └──────────────────────────┘   │  │  │  │ Module Loader                │  │
+│  │                                │  │  │  │ (es-module-shims source hook)│  │
+│  │ Signs "signable" commits       │  │  │  │ - all imports via RPC        │  │
+│  │ with isolation identity        │  │  │  │ - sees pkg: URLs only        │  │
+│  └───────────────┬────────────────┘  │  │  └──────────────────────────────┘  │
+│                  │                   │  │                                    │
+│  ┌───────────────┴───────────────┐   │  │  ┌──────────────────────────────┐  │
+│  │ Keyhive Isolation Identity    │   │  │  │ Fetch Proxy                  │  │
+│  │ - attenuated access           │   │  │  │ - host-origin fetch() → RPC  │  │
+│  │ - no account/settings/plugins │   │  │  │ - <link> interception        │  │
+│  └───────────────────────────────┘   │  │  └──────────────────────────────┘  │
 │                                      │  │                                    │
-│  ┌────────────────────────────────┐  │  │                                    │
-│  │ Plugins RPC Handler            │  │  │                                    │
-│  │ - fetch-package: pkg: → real   │  │  │                                    │
-│  │   automerge URL, return src    │  │  │                                    │
-│  │ - fetch-resource: resolve &    │  │  │                                    │
-│  │   return host-origin assets    │  │  │                                    │
+│  ┌────────────────────────────────┐  │  │  ┌──────────────────────────────┐  │
+│  │ Plugins RPC Handler            │  │  │  │ Package Registry             │  │
+│  │ - fetch-package: pkg: → real   │  │  │  │ - pre-populated (pkg: URLs)  │  │
+│  │   automerge URL, return src    │  │  │  │ - lazy-loads implementations │  │
+│  │ - fetch-resource: resolve &    │  │  │  │ - push updates from host     │  │
+│  │   return host-origin assets    │  │  │  └──────────────────────────────┘  │
 │  │ - PluginsUrlMapper (pkg: ↔     │  │  │                                    │
 │  │   automerge bidirectional)     │  │  │                                    │
+│  ├────────────────────────────────┤  │  │                                    │
+│  │ Providers Bridge               │  │  │                                    │
+│  │ - host-side allowlist:         │  │  │                                    │
+│  │   patchwork:contact,           │  │  │                                    │
+│  │   patchwork:selected-doc       │  │  │                                    │
+│  │ - value filter: checks URLs    │  │  │                                    │
+│  │   against repo allowlist       │  │  │                                    │
+│  │ - all other types rejected     │  │  │                                    │
 │  └────────────────────────────────┘  │  │                                    │
+│                                      │  │                                    │
 └──────────────────┬───────────────────┘  └──────────────────┬─────────────────┘
                    │                                         │
                    │   ┌─────────────────────────────────┐   │
@@ -76,6 +85,7 @@ We want to prevent one attack:
                    │   │  - fetch-resource (assets)      │   │
                    │   │  - registry operations          │   │
                    │   │  - navigation/access requests   │   │
+                   │   │  - providers-bridge (subscribe) │   │
                    │   ├─────────────────────────────────┤   │
                    │   │  Automerge Sync (MessagePort)   │   │
                    └───┤  - document data flow           ├───┘
@@ -112,11 +122,11 @@ The primary isolation boundary. Tool code runs inside an `<iframe sandbox="allow
 
 **Why this is needed:** Without origin isolation, a tool could read or modify any data accessible to the host page. The opaque-origin sandbox is the strongest isolation primitive browsers provide and is the foundation all other mechanisms build on.
 
-### Isolation element (frame tool)
+### Isolation element
 
-A host-side custom element that wraps the point where the main document area is loaded, replacing direct rendering with an isolated iframe. It manages the iframe lifecycle, resolves which tool to render, and coordinates all communication channels (RPC, sync, bootstrap).
+A host-side custom element (`<patchwork-isolation>`) that manages the boundary between trusted host code and untrusted tool code, setting up the iframe, establishing communication channels, and enforcing access control. It wraps an arbitrary subtree of the host DOM and runs it inside a sandboxed iframe. It recursively serializes its child elements (tag names, attributes, and nested children) into a transferable descriptor, then reconstructs the same DOM structure inside the iframe. All `doc-url` attributes found anywhere in the serialized tree become root URLs for the document allowlist.
 
-**Why this is needed:** Something must sit at the boundary between trusted host code and untrusted tool code, setting up the iframe, establishing communication channels, and enforcing access control. The isolation element is that boundary.
+The element manages the iframe lifecycle, coordinates all communication channels (RPC, sync, bootstrap), and enforces access control. Host-side children are removed from the DOM after serialization to prevent duplicate rendering.
 
 ### Intermediary Repo & document allowlist/denylist
 
@@ -153,13 +163,13 @@ The denylist also watches plugin registries for new registrations and dynamicall
 
 #### Allowlist
 
-The allowlist starts with only the root document URL and is expanded through three mechanisms:
+The allowlist is seeded from all `doc-url` attributes found in the serialized child tree, plus the user's contact document URL (read from the account doc), which we include as a special case. It is expanded through three mechanisms:
 
-1. **Transitive discovery.** The root document's content is scanned for embedded automerge URLs (recursively walking objects, arrays, and strings). All discovered URLs are added to the allowlist (unless denylisted). This reflects the assumption that if the user opened a document, its referenced children are authorized for the tool rendering it.
+1. **Transitive discovery.** Each root document's content is scanned for embedded automerge URLs (recursively walking objects, arrays, and strings). All discovered URLs are added to the allowlist (unless denylisted). This reflects the assumption that if the user opened a document, its referenced children are authorized for the tool rendering it.
 
-2. **Auto-allowlisting of unknown documents.** When the iframe requests a document that is not in the host repo's handles (i.e., the host has never seen it), it is automatically allowlisted without prompting the user. This covers documents newly created by the iframe, URLs added by a collaborator, or content embedded in the tool. _(TODO: ideally document creation should be proxied to the host so we can track which documents the iframe created, removing the need for this default-allow behavior.)_
+2. **Auto-allowlisting of unknown documents (temporary workaround).** When the iframe requests a document that is not in the host repo's handles (i.e., the host has never seen it), it is automatically allowlisted without prompting the user. This covers documents newly created by the iframe, URLs added by a collaborator, or content embedded in the tool. This is a workaround for not being able to distinguish iframe-created documents from other unknown documents. Once the Author ID API is available, documents created by the iframe's author ID can be identified and auto-allowlisted, while other unknown documents should prompt the user. _(See "Waiting on automerge/keyhive teams" below.)_
 
-3. **User approval.** If a requested document exists in the host repo but is not on the allowlist, the allowlist is first refreshed (re-scanning the root document for new URLs). If the document is still not allowlisted, the user is prompted via `window.confirm()` and can approve access explicitly.
+3. **User approval.** If a requested document exists in the host repo but is not on the allowlist, the allowlist is first refreshed (re-scanning all root documents for new URLs). If the document is still not allowlisted, the user is prompted via `window.confirm()` and can approve access explicitly.
 
 ### Keyhive integration
 
@@ -198,28 +208,55 @@ This serves two purposes:
 
 Heads hashes (used for pinning to specific document versions) are preserved by encoding them as a URL-encoded fragment in the package URL (e.g., `pkg:@patchwork--folder%23headsHash`).
 
+Resolved module URLs returned to the iframe are prefixed with the host origin (e.g., `https://host/pkg:@scope--name/dist/index.js`) so that relative imports in code-split packages resolve correctly. The host-side RPC handler strips the prefix when receiving chunk requests.
+
 ### Package registry in iframe
 
 At boot, the host pre-populates the iframe's plugin registries with metadata for all available plugins (with import URLs already rewritten to `pkg:` URLs). Plugins are registered as lazy-loading entries — their implementations are only fetched (via the module loader) when actually used. The host watches registries for new registrations and pushes updates to the iframe with mapped URLs.
 
 **Why this is needed:** Tools use plugin registries to discover and load other tools (e.g., to render embedded content). Without pre-population, the iframe would need direct access to the host's registries. Lazy-loading ensures only the plugins a tool actually uses are loaded into the iframe.
 
+### Repo provider in iframe
+
+The iframe registers a `<repo-provider>` custom element and wraps all reconstructed content inside it. This mirrors the host bootloader pattern — `<repo-provider>` answers `repo:handle-descriptor` subscriptions with an identity response (no remapping), which is required by `OverlayRepo.find()`. Without it, every `patchwork-view` in legacy mode (with `doc-url`) would hang forever waiting for a descriptor response.
+
+### Providers bridge
+
+DOM events do not cross iframe boundaries, so provider subscriptions (`patchwork:subscribe` events) from tools inside the iframe cannot reach host-side providers. An allowlist of bridgeable subscription types is managed on the host side. The iframe forwards all unclaimed `patchwork:subscribe` events to the host; the host checks the selector type against its allowlist and either answers or rejects.
+
+**Currently bridged types:**
+
+- **`patchwork:contact`** — returns the user's contact document URL. Leaks minimal information (the user's own contact doc, which is auto-allowlisted as a special case). Used by comments-view and codemirror-base to tag comments with the current user.
+- **`patchwork:selected-doc`** — returns the currently selected document URLs. Used by history-view to know which document to show history for.
+
+**All other subscription types are rejected.** Bridging additional providers could leak document URLs or other sensitive information to the isolated context.
+
+**Value filter:** Before relaying values to the iframe, the bridge checks them for automerge URLs. Single URL values and arrays of URLs are checked against the document allowlist. Unknown URLs trigger a refresh of the allowlist (re-scanning root documents) and, if still unknown, a user prompt via `window.confirm()`. Approved URLs are added to the allowlist; rejected URLs are stripped from the response.
+
+### Unsafe modal
+
+System tools (account picker, frame configurator, module settings manager) need full access to the host repo and sensitive documents (account doc, module settings) that are denylisted from the iframe. These tools open in a host-side lightbox modal via the `patchwork-unsafe-modal` component, which intercepts `patchwork:open-unsafe-modal` events bubbling up from descendants.
+
+The modal renders a `<patchwork-view>` in the host DOM (outside the isolation boundary) so the tool has full access to the host repo. The sideboard footer buttons dispatch `patchwork:open-unsafe-modal` instead of `patchwork:open-document` for these system tools.
+
 ## Pending work
 
 ### TODOs
 
-- [x] **Isolate multiple sister components together.** `patchwork-isolation` now recursively serializes its child element tree and reconstructs it inside the iframe. The allowlist is seeded from all `doc-url` attributes found anywhere in the tree. The host explicitly places providers (e.g. `<patchwork-view component="patchwork-comments-provider">`) as children of `<patchwork-isolation>` — the isolation element doesn't need to know about providers; it just serializes whatever DOM tree it's given. Remaining sub-items:
-  - [ ] **Account provider / contact URL in iframe.** The `AccountProvider` needs the account doc URL (denylisted). Tools inside the iframe that need the user's contact URL won't get it.
-- [ ] modify sideboard to open sensitive documents in a lightbox
 - [ ] **Filter automerge-backed requests in the fetch proxy.** The host-side RPC handler for `fetch-package` and `fetch-resource` currently resolves and returns whatever the iframe requests without filtering. Bundled non-automerge assets are not sensitive, but requests that resolve to automerge document URLs should be filtered to ensure only documents known to the `pkg:` registry managed by the isolation boundary are served.
-- [ ] **Distinguish iframe-created documents from unknown documents.** Currently, any document not in the host repo's handles is auto-allowlisted without prompting. This is because tools create new documents (e.g., for embedded content), those documents need to sync back, and we do not want to prompt for new documents the user implicitly approved. But it also means a tool could request a document ID that exists on the network but not locally, and it would be silently allowed. One possible fix is to proxy document creation through the host so the host can track which documents the iframe created, and then only auto-allow those — prompting for all other unknown documents.
-- [ ] **Security audits + throw an LLM at it.** I haven't had a chance to run this implementation through the gauntlet(s) yet. I'll do this after the TODOs above have been addressed.
+- [ ] **Remove auto-allowlisting of unknown documents.** Once the Author ID API is available and iframe-created documents can be identified by their author ID, remove the blanket auto-allowlist for unknown documents and replace it with: (1) auto-allowlist documents whose author matches the iframe's assigned author ID, (2) prompt the user for all other unknown documents. See the Author ID API item under "Waiting on automerge/keyhive teams".
+- [ ] **Security implications of bridging `patchwork:selected-doc`.** The selected-doc bridge pushes the currently selected document URL into the iframe. This is appropriate when the isolation boundary wraps the main document area, but could be a security concern if `patchwork-isolation` is used to wrap a component that shouldn't know which document the user is viewing. Consider whether the bridged provider types should be configurable per isolation instance rather than using a global default.
+- [ ] **Eliminate CORS errors from code-split provider chunks.** Provider plugins (e.g., `@tiny-patchwork/providers`) are built with code splitting. The main entry loads via the RPC source hook, but es-module-shims' native `import()` fallback also tries to fetch chunks directly, resulting in CORS errors from the opaque-origin iframe. These are currently harmless (the shim-based load succeeds first) but produce console noise. Fix by either configuring es-module-shims to suppress the native fallback, or by rewriting dynamic `import()` calls in the source hook to route through `importShim`.
+- [ ] **Security audits.** Run this implementation through security review and adversarial testing.
 
 ### Waiting on automerge/keyhive teams
 
 These are API changes being developed by the automerge and keyhive teams. The isolation architecture depends on them but cannot implement them until they ship.
 
-- **Author ID API.** Configure an author ID on the iframe's Repo so that edits made by tools are correctly attributed. The iframe repo will be configured with the isolation identity's author ID. (Not yet available on main.)
+- **Author ID API.** Configure an author ID on the iframe's Repo so that edits made by tools are correctly attributed. The iframe repo will be configured with the isolation identity's author ID. (Not yet available on main.) Once available:
+  - When the intermediary encounters an unknown document whose author matches the iframe's assigned author ID, auto-allowlist it (the iframe created it).
+  - For unknown documents with a different author, prompt the user instead of auto-allowlisting.
+  - This replaces the current blanket auto-allowlist workaround for unknown documents.
 - **"Signed or signable" bridge config.** Configure the bridge connection (NetworkAdapter or similar) between the intermediary repo and the iframe repo to only accept signed or signable commits from the iframe direction. Signable commits are signed with the isolation identity; mis-attributed commits are dropped. (Not yet available.)
 
 ### Tracked separately
