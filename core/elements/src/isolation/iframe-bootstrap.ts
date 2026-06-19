@@ -262,6 +262,7 @@ async function boot() {
       messagechannel,
       patchworkElements,
       patchworkPlugins,
+      patchworkProviders,
     ] = await Promise.all([
       importShim("@automerge/automerge/slim"),
       importShim("@automerge/automerge-subduction/slim"),
@@ -269,6 +270,7 @@ async function boot() {
       importShim("@automerge/automerge-repo-network-messagechannel"),
       importShim("@inkandswitch/patchwork-elements"),
       importShim("@inkandswitch/patchwork-plugins"),
+      importShim("@inkandswitch/patchwork-providers"),
     ]);
 
     log("modules loaded");
@@ -347,8 +349,15 @@ async function boot() {
     (window as any).repo = repo;
     log("repo connected");
 
-    // 11. Register patchwork-view
+    // 11. Register patchwork-view and repo-provider
     patchworkElements.registerPatchworkViewElement({ repo });
+    patchworkProviders.registerRepoProviderElement(repo);
+
+    // 11b. Create <repo-provider> as root wrapper — mirrors the host
+    // bootloader pattern. It answers `repo:handle-descriptor` subscriptions
+    // so OverlayRepo.find() doesn't hang.
+    const repoProvider = document.createElement("repo-provider");
+    document.body.appendChild(repoProvider);
 
     // 12. Register plugins with lazy loading via importShim
     // Plugin importUrls are pkg: URLs (converted by host before boot)
@@ -415,7 +424,7 @@ async function boot() {
     }
 
     const views = d.views ?? [];
-    reconstructTree(views, document.body);
+    reconstructTree(views, repoProvider);
 
     // 14. Initialize the inner SelectedDocProvider by dispatching
     // a patchwork:open-document event with the first doc-url found
