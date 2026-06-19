@@ -307,6 +307,15 @@ export function registerPatchworkIsolationElement(
           log(`allowlisted root ${url}`);
         }
 
+        // Allowlist the user's contact document so the patchwork:contact
+        // bridge can relay it without prompting.
+        const accountHandle = (window as any).accountDocHandle;
+        const contactUrl = accountHandle?.doc()?.contactUrl;
+        if (contactUrl && isValidAutomergeUrl(contactUrl)) {
+          allowlist.add(contactUrl);
+          log(`allowlisted contact ${contactUrl}`);
+        }
+
         const allowlistCleanups = await populateAllowlistFromRoots(
           repo,
           rootUrls,
