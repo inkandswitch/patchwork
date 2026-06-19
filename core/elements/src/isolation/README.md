@@ -8,7 +8,7 @@ The attacker is a tool author who publishes a tool that users install. The attac
 
 We want to prevent one attack:
 
-1. **Unauthorized data access.** A tool must not access data that wasn't handed to it by the user. This includes documents belonging to other tools — accessing those could allow a malicious tool to damage the user's environment (for example, by modifying another tool's source code).
+1. **Unauthorized data access.** A tool must not access data that wasn't handed to it by the user. This includes all keyhive keys as well as documents belonging to other tools — accessing those could allow a malicious tool to damage the user's environment (for example, by modifying another tool's source code).
 
 **Trust boundary.** The Patchwork host application and its built-in code are trusted. Third-party tool code is untrusted. The `<patchwork-isolation>` element wraps an arbitrary subtree of the host DOM and runs it inside a sandboxed iframe. In the default frame layout, the isolation boundary wraps the main document view, context sidebar, and their providers (comments, focus). The document toolbar runs outside the isolation boundary in the host.
 
