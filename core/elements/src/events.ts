@@ -57,18 +57,32 @@ export class NoToolEvent extends CustomEvent<NoToolEventDetail> {
   }
 }
 
+export type OpenUnsafeModalEventDetail = OpenDocumentEventDetail;
+
+export class OpenUnsafeModalEvent extends CustomEvent<OpenUnsafeModalEventDetail> {
+  constructor(detail: OpenUnsafeModalEventDetail) {
+    super("patchwork:open-unsafe-modal", {
+      detail,
+      composed: true,
+      bubbles: true,
+    });
+  }
+}
+
 declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
     "patchwork:unmounted": UnmountedEvent;
     "patchwork:no-tool": NoToolEvent;
+    "patchwork:open-unsafe-modal": OpenUnsafeModalEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
     "patchwork:unmounted": UnmountedEvent;
     "patchwork:no-tool": NoToolEvent;
+    "patchwork:open-unsafe-modal": OpenUnsafeModalEvent;
   }
 }
 
