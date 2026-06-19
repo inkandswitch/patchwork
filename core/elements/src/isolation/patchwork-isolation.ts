@@ -40,6 +40,7 @@ import {
 } from "./plugins-bridge.js";
 import { populateAllowlistFromRoots, refreshAllowlistFromRoots, getDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
+import { startHostProvidersBridge } from "./providers-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
 
@@ -373,6 +374,7 @@ export function registerPatchworkIsolationElement(
             this,
             (url) => this.#allowlist?.hasUrl(url) ?? false
           ),
+          startHostProvidersBridge(this.#hostRpcPort, this),
           watchRegistries(this.#hostRpcPort, mapper)
         );
 

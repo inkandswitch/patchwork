@@ -121,7 +121,10 @@ async function boot() {
     number,
     { resolve: (r: FetchResourceResult) => void; reject: (e: Error) => void }
   >();
+  // Providers bridge: tracks subscriptions forwarded to the host
+  const bridgedSubscriptions = new Map<number, MessagePort>();
   let fetchId = 0;
+  let bridgeId = 0;
   const pendingPluginUpdates: any[] = [];
 
   function fetchModule(url: string): Promise<FetchModuleResult> {
@@ -172,6 +175,17 @@ async function boot() {
       // Live registry update from host — register the plugin in the
       // iframe's registry so new tools/datatypes are available.
       pendingPluginUpdates.push(msg.entry);
+    } else if (msg.type === "providers-bridge-change") {
+      // Host provider pushed a value — relay to the consumer's port
+      log("providers-bridge: received change for id:", msg.id, "value:", msg.value);
+      const port = bridgedSubscriptions.get(msg.id);
+      if (port) {
+        port.postMessage({ type: "change", value: msg.value });
+      }
+    } else if (msg.type === "providers-bridge-rejected") {
+      // Host rejected this subscription type — clean up
+      log("providers-bridge: rejected by host for id:", msg.id);
+      bridgedSubscriptions.delete(msg.id);
     }
   }
 
@@ -451,6 +465,40 @@ async function boot() {
         })
       );
     }
+
+    // 15. Providers bridge — forward unclaimed patchwork:subscribe events
+    // to the host so host-side providers (e.g. AccountProvider for
+    // patchwork:contact) can answer them. Local providers call
+    // stopPropagation(), so only unclaimed subscriptions reach document.
+    document.addEventListener("patchwork:subscribe", ((event: CustomEvent) => {
+      const detail = event.detail;
+      if (!detail?.selector?.type || !detail?.port) return;
+
+      log("providers-bridge: captured unclaimed subscription:", detail.selector.type, detail.selector);
+
+      event.stopPropagation();
+      const id = ++bridgeId;
+      const consumerPort = detail.port as MessagePort;
+      bridgedSubscriptions.set(id, consumerPort);
+
+      // Forward to host
+      rpcPort.postMessage({
+        type: "providers-bridge",
+        id,
+        selector: detail.selector,
+      });
+
+      // Listen for consumer unsubscribe
+      consumerPort.addEventListener("message", (e: MessageEvent) => {
+        if (e.data?.type === "unsubscribe") {
+          log("providers-bridge: consumer unsubscribed:", detail.selector.type, id);
+          rpcPort.postMessage({ type: "providers-bridge-unsubscribe", id });
+          bridgedSubscriptions.delete(id);
+          consumerPort.close();
+        }
+      });
+      consumerPort.start();
+    }) as EventListener);
 
     log(`boot complete — ${views.length} top-level views`);
     rpcPort.postMessage({ type: "boot-complete" });
