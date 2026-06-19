@@ -374,7 +374,54 @@ export function registerPatchworkIsolationElement(
             this,
             (url) => this.#allowlist?.hasUrl(url) ?? false
           ),
-          startHostProvidersBridge(this.#hostRpcPort, this),
+          startHostProvidersBridge(
+            this.#hostRpcPort,
+            this,
+            undefined, // use default allowed types
+            async (selectorType, value) => {
+              // Check bridged values for automerge URLs that the iframe
+              // doesn't already have access to. For each unknown URL,
+              // prompt the user before allowing it through.
+
+              async function checkUrl(url: string): Promise<boolean> {
+                if (allowlist.hasUrl(url as AutomergeUrl)) return true;
+                // Re-scan root documents in case the URL was added recently
+                await refreshAllowlistFromRoots(repo!, rootUrls, allowlist, denylist);
+                if (allowlist.hasUrl(url as AutomergeUrl)) return true;
+                const approved = window.confirm(
+                  `A bridged provider wants to share a document URL:\n\n` +
+                    `URL: ${url}\n` +
+                    `Provider: ${selectorType}\n\n` +
+                    `Allow access?`
+                );
+                if (approved) {
+                  allowlist.add(url as AutomergeUrl);
+                  return true;
+                }
+                return false;
+              }
+
+              // Single automerge URL value
+              if (typeof value === "string" && isValidAutomergeUrl(value)) {
+                return (await checkUrl(value)) ? value : undefined;
+              }
+
+              // Array of values (may contain automerge URLs)
+              if (Array.isArray(value)) {
+                const result: unknown[] = [];
+                for (const item of value) {
+                  if (typeof item === "string" && isValidAutomergeUrl(item)) {
+                    if (await checkUrl(item)) result.push(item);
+                  } else {
+                    result.push(item);
+                  }
+                }
+                return result;
+              }
+
+              return value;
+            }
+          ),
           watchRegistries(this.#hostRpcPort, mapper)
         );
 

@@ -26,12 +26,28 @@
 
 import { log } from "./patchwork-isolation.js";
 
-const DEFAULT_ALLOWED_TYPES = ["patchwork:contact"];
+const DEFAULT_ALLOWED_TYPES = [
+  "patchwork:contact",
+  "patchwork:selected-doc",
+];
 
 interface ActiveSubscription {
   port: MessagePort;
   cleanup: () => void;
 }
+
+/**
+ * Optional async filter applied to values before relaying them to the iframe.
+ * Receives the subscription type and value; returns the (possibly modified)
+ * value, or `undefined` to suppress the emission entirely.
+ *
+ * This can be used to check values against the allowlist and prompt the user
+ * for access to URLs the iframe doesn't already know about.
+ */
+export type BridgeValueFilter = (
+  selectorType: string,
+  value: unknown
+) => Promise<unknown | undefined> | unknown | undefined;
 
 /**
  * Start the host-side providers bridge.
@@ -41,13 +57,15 @@ interface ActiveSubscription {
  *   (typically the `<patchwork-isolation>` element, whose ancestors include
  *   the providers that should answer bridged subscriptions)
  * @param allowedTypes - Subscription types that may be bridged (default:
- *   `["patchwork:contact"]`)
+ *   `["patchwork:contact", "patchwork:selected-doc"]`)
+ * @param valueFilter - Optional filter applied to values before relaying
  * @returns Cleanup function
  */
 export function startHostProvidersBridge(
   rpcPort: MessagePort,
   hostElement: HTMLElement,
-  allowedTypes: string[] = DEFAULT_ALLOWED_TYPES
+  allowedTypes: string[] = DEFAULT_ALLOWED_TYPES,
+  valueFilter?: BridgeValueFilter
 ): () => void {
   const allowed = new Set(allowedTypes);
   const active = new Map<number, ActiveSubscription>();
@@ -75,12 +93,16 @@ export function startHostProvidersBridge(
       const hostPort = channel.port2;
 
       // Listen for values from the host provider
-      hostPort.addEventListener("message", (e: MessageEvent) => {
+      hostPort.addEventListener("message", async (e: MessageEvent) => {
         if (e.data?.type === "change") {
+          const value = valueFilter
+            ? await valueFilter(selector.type, e.data.value)
+            : e.data.value;
+          if (value === undefined) return;
           rpcPort.postMessage({
             type: "providers-bridge-change",
             id,
-            value: e.data.value,
+            value,
           });
         }
       });

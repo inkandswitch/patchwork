@@ -440,33 +440,7 @@ async function boot() {
     const views = d.views ?? [];
     reconstructTree(views, repoProvider);
 
-    // 14. Initialize the inner SelectedDocProvider by dispatching
-    // a patchwork:open-document event with the first doc-url found
-    // in the serialized tree. Without this, the inner provider would
-    // have no initial selection (the iframe has no URL hash).
-    function findFirstDocUrl(specs: SerializedView[]): string | null {
-      for (const spec of specs) {
-        const url = spec.attributes["doc-url"];
-        if (url) return url;
-        const found = findFirstDocUrl(spec.children);
-        if (found) return found;
-      }
-      return null;
-    }
-
-    const initialDocUrl = findFirstDocUrl(views);
-    if (initialDocUrl) {
-      log("dispatching initial open-document:", initialDocUrl);
-      document.dispatchEvent(
-        new CustomEvent("patchwork:open-document", {
-          bubbles: true,
-          composed: true,
-          detail: { url: initialDocUrl },
-        })
-      );
-    }
-
-    // 15. Providers bridge — forward unclaimed patchwork:subscribe events
+    // 14. Providers bridge — forward unclaimed patchwork:subscribe events
     // to the host so host-side providers (e.g. AccountProvider for
     // patchwork:contact) can answer them. Local providers call
     // stopPropagation(), so only unclaimed subscriptions reach document.
