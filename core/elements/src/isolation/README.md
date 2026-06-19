@@ -222,16 +222,22 @@ The iframe registers a `<repo-provider>` custom element and wraps all reconstruc
 
 ### Providers bridge
 
-DOM events do not cross iframe boundaries, so provider subscriptions (`patchwork:subscribe` events) from tools inside the iframe cannot reach host-side providers. An allowlist of bridgeable subscription types is managed on the host side. The iframe forwards all unclaimed `patchwork:subscribe` events to the host; the host checks the selector type against its allowlist and either answers or rejects.
+DOM events do not cross iframe boundaries, so provider subscriptions (`patchwork:subscribe` events) from tools inside the iframe cannot reach host-side providers. The providers bridge relays a configurable set of subscription types across the boundary via RPC.
 
-**Currently bridged types:**
+**Two-tier allowlist:**
+
+1. **`ALLOWED_PROVIDERS` (hard allowlist)** — a set of provider types that have been analyzed for security implications and are safe to bridge: `patchwork:contact` and `patchwork:selected-doc`. New types require independent security analysis before being added. Any type not in this set is rejected with a console warning.
+
+2. **`shared-providers` attribute (per-instance)** — the `<patchwork-isolation>` element reads a `shared-providers` attribute (comma-separated list of provider types). The effective bridged set is the intersection of this attribute and `ALLOWED_PROVIDERS`. No providers are bridged by default — the host must opt in.
+
+**Analyzed types:**
 
 - **`patchwork:contact`** — returns the user's contact document URL. Leaks minimal information (the user's own contact doc, which is auto-allowlisted as a special case). Used by comments-view and codemirror-base to tag comments with the current user.
-- **`patchwork:selected-doc`** — returns the currently selected document URLs. Used by history-view to know which document to show history for.
+- **`patchwork:selected-doc`** — returns the currently selected document URLs. Used by history-view to know which document to show history for. Values are silently filtered to only include URLs already on the document allowlist (no prompting) — the semantic is "which of my allowlisted documents is selected," not "give me access to the selected document."
 
 **All other subscription types are rejected.** Bridging additional providers could leak document URLs or other sensitive information to the isolated context.
 
-**Value filter:** Before relaying values to the iframe, the bridge checks them for automerge URLs. Single URL values and arrays of URLs are checked against the document allowlist. Unknown URLs trigger a refresh of the allowlist (re-scanning root documents) and, if still unknown, a user prompt via `window.confirm()`. Approved URLs are added to the allowlist; rejected URLs are stripped from the response.
+**Value filter:** Before relaying values to the iframe, the bridge checks them for automerge URLs. For `patchwork:selected-doc`, non-allowlisted URLs are silently dropped (avoids spurious prompts during navigation when the iframe is about to be torn down and recreated). For other types, unknown URLs trigger a refresh of the allowlist and a user prompt via `window.confirm()` if still unknown.
 
 ### Unsafe modal
 
@@ -245,7 +251,6 @@ The modal renders a `<patchwork-view>` in the host DOM (outside the isolation bo
 
 - [ ] **Filter automerge-backed requests in the fetch proxy.** The host-side RPC handler for `fetch-package` and `fetch-resource` currently resolves and returns whatever the iframe requests without filtering. Bundled non-automerge assets are not sensitive, but requests that resolve to automerge document URLs should be filtered to ensure only documents known to the `pkg:` registry managed by the isolation boundary are served.
 - [ ] **Remove auto-allowlisting of unknown documents.** Once the Author ID API is available and iframe-created documents can be identified by their author ID, remove the blanket auto-allowlist for unknown documents and replace it with: (1) auto-allowlist documents whose author matches the iframe's assigned author ID, (2) prompt the user for all other unknown documents. See the Author ID API item under "Waiting on automerge/keyhive teams".
-- [ ] **Security implications of bridging `patchwork:selected-doc`.** The selected-doc bridge pushes the currently selected document URL into the iframe. This is appropriate when the isolation boundary wraps the main document area, but could be a security concern if `patchwork-isolation` is used to wrap a component that shouldn't know which document the user is viewing. Consider whether the bridged provider types should be configurable per isolation instance rather than using a global default.
 - [ ] **Eliminate CORS errors from code-split provider chunks.** Provider plugins (e.g., `@tiny-patchwork/providers`) are built with code splitting. The main entry loads via the RPC source hook, but es-module-shims' native `import()` fallback also tries to fetch chunks directly, resulting in CORS errors from the opaque-origin iframe. These are currently harmless (the shim-based load succeeds first) but produce console noise. Fix by either configuring es-module-shims to suppress the native fallback, or by rewriting dynamic `import()` calls in the source hook to route through `importShim`.
 - [ ] **Security audits.** Run this implementation through security review and adversarial testing.
 

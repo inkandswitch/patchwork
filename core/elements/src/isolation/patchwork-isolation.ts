@@ -40,7 +40,7 @@ import {
 } from "./plugins-bridge.js";
 import { populateAllowlistFromRoots, refreshAllowlistFromRoots, getDenylist } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
-import { startHostProvidersBridge } from "./providers-bridge.js";
+import { startHostProvidersBridge, ALLOWED_PROVIDERS } from "./providers-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import debug from "debug";
 
@@ -372,6 +372,25 @@ export function registerPatchworkIsolationElement(
 
         log("intermediary repo and allowlist ready");
 
+        // ── Bridged providers ────────────────────────────────────
+        // Read the shared-providers attribute and intersect with
+        // ALLOWED_PROVIDERS to get the effective set for this instance.
+        const requestedProviders = (this.getAttribute("shared-providers") ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const bridgedProviders: string[] = [];
+        for (const type of requestedProviders) {
+          if (ALLOWED_PROVIDERS.has(type)) {
+            bridgedProviders.push(type);
+          } else {
+            console.warn(
+              `[patchwork-isolation] shared-providers: "${type}" is not in ALLOWED_PROVIDERS. ` +
+                `New provider types need independent security analysis before being added.`
+            );
+          }
+        }
+
         // ── Host-side RPC ───────────────────────────────────────
         const rpcChannel = new MessageChannel();
         this.#hostRpcPort = rpcChannel.port1;
@@ -386,14 +405,23 @@ export function registerPatchworkIsolationElement(
           startHostProvidersBridge(
             this.#hostRpcPort,
             this,
-            undefined, // use default allowed types
+            bridgedProviders,
             async (selectorType, value) => {
               // Check bridged values for automerge URLs that the iframe
-              // doesn't already have access to. For each unknown URL,
-              // prompt the user before allowing it through.
+              // doesn't already have access to.
+              //
+              // For patchwork:selected-doc: silently filter non-allowlisted
+              // URLs. The semantic is "which of my allowlisted documents is
+              // selected" — not "give me access to the selected document."
+              // This avoids spurious prompts when the user navigates to a
+              // new document (the old iframe is about to be torn down).
+              //
+              // For other types: prompt the user for unknown URLs.
+              const silent = selectorType === "patchwork:selected-doc";
 
               async function checkUrl(url: string): Promise<boolean> {
                 if (allowlist.hasUrl(url as AutomergeUrl)) return true;
+                if (silent) return false;
                 // Re-scan root documents in case the URL was added recently
                 await refreshAllowlistFromRoots(repo!, rootUrls, allowlist, denylist);
                 if (allowlist.hasUrl(url as AutomergeUrl)) return true;

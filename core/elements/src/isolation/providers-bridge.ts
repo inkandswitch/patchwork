@@ -26,10 +26,24 @@
 
 import { log } from "./patchwork-isolation.js";
 
-const DEFAULT_ALLOWED_TYPES = [
+/**
+ * Provider subscription types that have been analyzed for security
+ * implications and are safe to bridge across the isolation boundary.
+ *
+ * WARNING: Adding new types here requires independent security analysis.
+ * Each bridged provider type is a channel through which information flows
+ * from the trusted host context into the untrusted iframe. The value
+ * filter checks for automerge URL leaks, but other sensitive data
+ * (user identity, behavioral signals, etc.) may also be a concern.
+ *
+ * In the future we hope to have a different security design that will
+ * allow us to loosen this requirement and give tool authors more freedom
+ * over which providers are bridged.
+ */
+export const ALLOWED_PROVIDERS = new Set([
   "patchwork:contact",
   "patchwork:selected-doc",
-];
+]);
 
 interface ActiveSubscription {
   port: MessagePort;
@@ -56,15 +70,16 @@ export type BridgeValueFilter = (
  * @param hostElement - The host DOM element to dispatch subscriptions on
  *   (typically the `<patchwork-isolation>` element, whose ancestors include
  *   the providers that should answer bridged subscriptions)
- * @param allowedTypes - Subscription types that may be bridged (default:
- *   `["patchwork:contact", "patchwork:selected-doc"]`)
+ * @param allowedTypes - Subscription types to bridge for this instance.
+ *   Should be the intersection of ALLOWED_PROVIDERS and the per-instance
+ *   `shared-providers` attribute, computed by the caller.
  * @param valueFilter - Optional filter applied to values before relaying
  * @returns Cleanup function
  */
 export function startHostProvidersBridge(
   rpcPort: MessagePort,
   hostElement: HTMLElement,
-  allowedTypes: string[] = DEFAULT_ALLOWED_TYPES,
+  allowedTypes: string[] = [],
   valueFilter?: BridgeValueFilter
 ): () => void {
   const allowed = new Set(allowedTypes);
