@@ -266,6 +266,11 @@ export function registerPatchworkIsolationElement(
       async #init() {
         const epoch = ++this.#initEpoch;
 
+        // Wait a microtask so the framework (e.g. Solid) finishes rendering
+        // children with their reactive attributes before we serialize them.
+        await Promise.resolve();
+        if (epoch !== this.#initEpoch) return;
+
         // Serialize children before replacing them with the iframe
         const views = serializeChildren(this);
         const rootUrls = collectRootUrls(views);
@@ -275,6 +280,11 @@ export function registerPatchworkIsolationElement(
           log("no children to isolate");
           return;
         }
+
+        // Remove host-side children — they've been serialized and will be
+        // reconstructed inside the iframe. Leaving them causes duplicate
+        // rendering in the host DOM alongside the iframe.
+        this.replaceChildren();
 
         const repo = this.#getRepo();
         if (!repo) return;
