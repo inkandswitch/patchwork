@@ -97,16 +97,33 @@ declare global {
 
 export interface SiteConfig {
   /**
-   * Automerge URL of the site's default module-settings document — the bundle
-   * of tools every user of this site gets out of the box. Must contribute at
-   * least a `patchwork:datatype` registration for `"account"` (typically the
-   * one supplied by `@inkandswitch/patchwork-frame`).
+   * The site's default tool bundle — the tools every user of this site gets
+   * out of the box. Must collectively contribute at least a
+   * `patchwork:datatype` registration for `"account"` (typically the one
+   * supplied by `@inkandswitch/patchwork-frame`).
+   *
+   * Each entry is a *module-list source* and may be either:
+   *  - an Automerge module-settings doc URL (`automerge:...`), which is
+   *    live-reloaded, or
+   *  - an HTTP(S) URL (absolute or site-relative, e.g. `/modules.json`) to a
+   *    static JSON manifest of the shape `{ modules: string[], branches? }`,
+   *    fetched once at boot.
+   *
+   * The module URLs *inside* either kind of source may themselves be Automerge
+   * folder docs or plain HTTP(S) bundles, so deployment targets can be freely
+   * mixed.
    *
    * Can be overridden at runtime by setting `localStorage.defaultToolsUrl` to
-   * another automerge: URL — useful for local development against an
-   * unpublished tool set.
+   * another `automerge:` URL or manifest URL — useful for local development
+   * against an unpublished tool set.
    */
-  defaultModulesUrl: AutomergeUrl;
+  defaultModules?: string | string[];
+
+  /**
+   * @deprecated Use {@link SiteConfig.defaultModules}. Retained for backwards
+   * compatibility with existing sites.
+   */
+  defaultModulesUrl?: AutomergeUrl;
 
   /**
    * `localStorage` key under which this site remembers which account document
@@ -171,7 +188,7 @@ const [automergeWasm, subductionWasm] = await Promise.all([
 export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
-  const defaultModulesUrl = resolveDefaultModulesUrl(config.defaultModulesUrl);
+  const defaultModuleSources = resolveDefaultModules(config);
   showLoadingAnimation();
   log(`booting`, config);
   await initializeWasm(automergeWasm);
@@ -255,7 +272,7 @@ export async function bootPatchworkSite(
   // is added lazily once it appears on the account doc — see below.
   const moduleWatcher = new ModuleWatcher(
     repo,
-    { system: defaultModulesUrl },
+    buildSystemSources(defaultModuleSources),
     onModuleLoaded,
     unregisterPlugins
   );
@@ -299,21 +316,70 @@ export async function bootPatchworkSite(
 
 // ─── Internals ──────────────────────────────────────────────────────────
 
-function resolveDefaultModulesUrl(builtin: AutomergeUrl): AutomergeUrl {
-  const override = globalThis.localStorage?.getItem("defaultToolsUrl");
-  if (!override) return builtin;
-  if (isValidAutomergeUrl(override)) {
-    if (override !== builtin) {
-      console.info(
-        `using defaultToolsUrl override from localStorage: ${override}`
-      );
-    }
-    return override;
-  }
-  console.warn(
-    `ignoring invalid defaultToolsUrl in localStorage: ${override}; using built-in default`
+/**
+ * A module-list source is valid if it is an Automerge URL or looks like an
+ * HTTP(S)/site-relative manifest URL.
+ */
+function isValidModuleSource(source: string): boolean {
+  if (isValidAutomergeUrl(source)) return true;
+  return (
+    source.startsWith("/") ||
+    source.startsWith("http://") ||
+    source.startsWith("https://") ||
+    source.startsWith("./")
   );
-  return builtin;
+}
+
+/**
+ * Resolve the site's default module-list sources, honouring the
+ * `localStorage.defaultToolsUrl` dev override (which replaces the entire
+ * built-in default bundle).
+ */
+function resolveDefaultModules(config: SiteConfig): string[] {
+  const builtin =
+    config.defaultModules ??
+    config.defaultModulesUrl ??
+    [];
+  const builtinList = (Array.isArray(builtin) ? builtin : [builtin]).filter(
+    Boolean
+  );
+
+  const override = globalThis.localStorage?.getItem("defaultToolsUrl");
+  if (override) {
+    if (isValidModuleSource(override)) {
+      if (!builtinList.includes(override)) {
+        console.info(
+          `using defaultToolsUrl override from localStorage: ${override}`
+        );
+      }
+      return [override];
+    }
+    console.warn(
+      `ignoring invalid defaultToolsUrl in localStorage: ${override}; using built-in default`
+    );
+  }
+
+  if (builtinList.length === 0) {
+    throw new Error(
+      "bootPatchworkSite: no default module sources configured (set `defaultModules`)"
+    );
+  }
+  return builtinList;
+}
+
+/**
+ * Turn an ordered list of module-list sources into the name-keyed map the
+ * ModuleWatcher expects. The first source keeps the canonical `system` name;
+ * additional sources get suffixed names. None may be `user` (reserved for the
+ * per-account settings doc, which has branch-override precedence).
+ */
+function buildSystemSources(sources: string[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  sources.forEach((source, index) => {
+    const name = index === 0 ? "system" : `system-${index}`;
+    map[name] = source;
+  });
+  return map;
 }
 
 function installDevConsoleGlobals(

@@ -19,6 +19,38 @@ export type ModuleSettingsDoc = {
 
 const DEFAULT_BRANCH = "default";
 
+function getDocumentBaseUrl(): string {
+  return globalThis.location?.href ?? "http://localhost/";
+}
+
+/**
+ * Fetch a static module manifest over HTTP and normalize it into the same shape
+ * as an Automerge module-settings doc. Relative (non-Automerge) module URLs are
+ * resolved against the manifest's own URL so they can be dynamically imported
+ * regardless of where the watcher code itself lives.
+ */
+async function fetchModuleManifest(url: string): Promise<ModuleSettingsDoc> {
+  const manifestUrl = new URL(url, getDocumentBaseUrl()).href;
+  const response = await fetch(manifestUrl);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch module manifest ${manifestUrl}: ${response.status}`
+    );
+  }
+  const json = (await response.json()) as Partial<ModuleSettingsDoc>;
+  const modules = (Array.isArray(json.modules) ? json.modules : []).map(
+    (moduleUrl) =>
+      isValidAutomergeUrl(moduleUrl)
+        ? moduleUrl
+        : (new URL(moduleUrl, manifestUrl).href as AutomergeUrl)
+  );
+  return {
+    "@patchwork": { type: "patchwork:module-settings" },
+    modules,
+    branches: json.branches,
+  } as ModuleSettingsDoc;
+}
+
 // todo this can be a function that takes a plugin system and returns a change
 // handler
 
@@ -26,14 +58,21 @@ const DEFAULT_BRANCH = "default";
  * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
  * It also watches the modules themselves for changes and reloads them when they change.
  *
- * Settings docs are passed in keyed by name (e.g. `{ system, user }`). When
- * resolving the active branch for a branches doc, the entry named "user" is
- * consulted first, so a user-local override beats the system default.
+ * Settings sources are passed in keyed by name (e.g. `{ system, user }`). Each
+ * source URL may be either an Automerge module-settings doc (`automerge:...`,
+ * live-reloaded) or an HTTP(S) URL to a static JSON manifest of the same shape
+ * (fetched once at construction). The two kinds can be freely mixed, and the
+ * module URLs *within* either kind can themselves point at Automerge folder
+ * docs or plain HTTP(S) bundles.
+ *
+ * When resolving the active branch for a branches doc, the entry named "user"
+ * is consulted first, so a user-local override beats the system default.
  */
 export class ModuleWatcher {
   repo: Repo;
-  urls: Record<string, AutomergeUrl>;
+  urls: Record<string, string>;
   handles: Record<string, DocHandle<ModuleSettingsDoc>> | undefined;
+  staticManifests: Record<string, ModuleSettingsDoc> = {};
   doneLoading: Promise<void>;
   #watchedModules = new Set<string>();
   #watchedBranchesDocs = new Set<AutomergeUrl>();
@@ -47,7 +86,7 @@ export class ModuleWatcher {
 
   constructor(
     repo: Repo,
-    urls: Record<string, AutomergeUrl>,
+    urls: Record<string, string>,
     callback: (name: string, mod: any) => void,
     onUnload?: (name: string) => void
   ) {
@@ -64,19 +103,45 @@ export class ModuleWatcher {
     const entries = Object.entries(this.urls);
     const settled = await Promise.allSettled(
       entries.map(async ([name, url]) => {
-        const handle = await this.repo.find<ModuleSettingsDoc>(url);
-        return [name, handle] as const;
+        if (isValidAutomergeUrl(url)) {
+          const handle = await this.repo.find<ModuleSettingsDoc>(url);
+          return { kind: "automerge", name, handle } as const;
+        }
+        const manifest = await fetchModuleManifest(url);
+        return { kind: "manifest", name, manifest } as const;
       })
     );
 
     this.handles = {};
     for (const result of settled) {
       if (result.status !== "fulfilled") continue;
-      const [name, handle] = result.value;
-      this.handles[name] = handle;
-      handle.addListener("change", this.onChange);
+      const value = result.value;
+      if (value.kind === "automerge") {
+        this.handles[value.name] = value.handle;
+        value.handle.addListener("change", this.onChange);
+      } else {
+        this.staticManifests[value.name] = value.manifest;
+      }
     }
     await this.load();
+  }
+
+  /**
+   * All settings docs currently driving this watcher, both live Automerge
+   * handles and static HTTP manifests, keyed by source name.
+   */
+  private settingsDocs(): Array<{
+    name: string;
+    doc: ModuleSettingsDoc | undefined;
+  }> {
+    const docs: Array<{ name: string; doc: ModuleSettingsDoc | undefined }> = [];
+    for (const [name, handle] of Object.entries(this.handles ?? {})) {
+      docs.push({ name, doc: handle.doc() });
+    }
+    for (const [name, manifest] of Object.entries(this.staticManifests)) {
+      docs.push({ name, doc: manifest });
+    }
+    return docs;
   }
 
   async loadModules(modules: string[]) {
@@ -144,11 +209,13 @@ export class ModuleWatcher {
    * system bundle.
    */
   private chosenBranchFor(branchesDocUrl: AutomergeUrl): string | undefined {
-    const handles = this.handles;
-    if (!handles) return undefined;
-    const names = ["user", ...Object.keys(handles).filter((n) => n !== "user")];
+    const docs = this.settingsDocs();
+    const byName = new Map(docs.map(({ name, doc }) => [name, doc]));
+    const names = ["user", ...byName.keys()].filter(
+      (n, i, arr) => arr.indexOf(n) === i
+    );
     for (const name of names) {
-      const branch = handles[name]?.doc()?.branches?.[branchesDocUrl];
+      const branch = byName.get(name)?.branches?.[branchesDocUrl];
       if (branch) return branch;
     }
     return undefined;
@@ -199,14 +266,18 @@ export class ModuleWatcher {
     }
   }
 
-  async addUrl(name: string, url: AutomergeUrl): Promise<void> {
+  async addUrl(name: string, url: string): Promise<void> {
     if (this.urls[name] === url) return;
     this.urls[name] = url;
     await this.doneLoading;
-    const handle = await this.repo.find<ModuleSettingsDoc>(url);
-    if (this.handles) this.handles[name] = handle;
-    handle.addListener("change", this.onChange);
-    // Reload everything: this handle may carry branch overrides for branches
+    if (isValidAutomergeUrl(url)) {
+      const handle = await this.repo.find<ModuleSettingsDoc>(url);
+      if (this.handles) this.handles[name] = handle;
+      handle.addListener("change", this.onChange);
+    } else {
+      this.staticManifests[name] = await fetchModuleManifest(url);
+    }
+    // Reload everything: this source may carry branch overrides for branches
     // docs that live in a different settings doc's modules.
     await this.load();
   }
@@ -251,8 +322,7 @@ export class ModuleWatcher {
     // branches doc URL — it only takes effect for branches docs that are
     // already listed in some settings doc's `modules`.
     const urls = new Set<string>();
-    for (const handle of Object.values(this.handles)) {
-      const doc = handle.doc();
+    for (const { doc } of this.settingsDocs()) {
       for (const m of doc?.modules ?? []) urls.add(m);
     }
     await this.loadModules([...urls]);

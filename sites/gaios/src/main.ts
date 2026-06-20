@@ -13,7 +13,7 @@ const DEFAULT_MODULES_URL =
   "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeUrl;
 
 await bootPatchworkSite({
-  defaultModulesUrl: DEFAULT_MODULES_URL,
+  defaultModules: DEFAULT_MODULES_URL,
   accountStorageKey: "gaiosAccountUrl",
   titleSuffix: "GAIOS",
   keyhive: __KEYHIVE__,

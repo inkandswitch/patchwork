@@ -13,7 +13,7 @@ const DEFAULT_MODULES_URL =
   "automerge:2uZrhZ7G2NJxryZSMWSdDNFCke8C" as AutomergeUrl;
 
 await bootPatchworkSite({
-  defaultModulesUrl: DEFAULT_MODULES_URL,
+  defaultModules: DEFAULT_MODULES_URL,
   accountStorageKey: "tinyPatchworkAccountUrl",
   titleSuffix: "patchwork",
   keyhive: __KEYHIVE__,
