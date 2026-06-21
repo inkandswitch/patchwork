@@ -19,6 +19,7 @@ const externals = [
   "@inkandswitch/patchwork-elements",
   "@inkandswitch/patchwork-filesystem",
   "@inkandswitch/patchwork-plugins",
+  "@inkandswitch/patchwork-providers",
 
   // sad
   "@codemirror/state",
