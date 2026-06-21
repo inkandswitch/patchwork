@@ -488,6 +488,13 @@ function installHashRouting(params: HashRoutingParams): void {
   const { rootElement, repo, accountDocHandle, moduleWatcher, titleSuffix } =
     params;
 
+  // Normalize pathname-based automerge URLs to hash form.
+  // e.g. /automerge:3Xq2XPdtJk9Zbf2E9C8aFiXNKBN6 -> /#automerge:3Xq2XPdtJk9Zbf2E9C8aFiXNKBN6
+  const pathnameUrl = location.pathname.slice(1);
+  if (pathnameUrl && isValidAutomergeUrl(pathnameUrl as AutomergeUrl)) {
+    history.replaceState(null, "", `/#${pathnameUrl}`);
+  }
+
   rootElement.addEventListener("patchwork:no-tool", (event) => {
     moduleWatcher.loadSuggestedImportUrl(event.detail.url);
   });
@@ -564,6 +571,16 @@ function installHashRouting(params: HashRoutingParams): void {
       if (isValidDocumentId(documentId)) {
         openDocument(rootElement, stringifyAutomergeUrl({ documentId }));
       }
+      return;
+    }
+
+    // Bare automerge URL in hash: /#automerge:<documentId>
+    if (isValidAutomergeUrl(hash as AutomergeUrl)) {
+      const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
+      openDocument(
+        rootElement,
+        stringifyAutomergeUrl({ documentId, heads })
+      );
       return;
     }
 
