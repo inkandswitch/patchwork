@@ -381,7 +381,7 @@ function primeRootElement(
   const initialParams = new URLSearchParams(location.hash.slice(1));
   if (initialParams.has("frame")) {
     rootElement.setAttribute("tool-id", initialParams.get("frame")!);
-    const docId = initialParams.get("doc");
+    const docId = initialParams.get("doc")?.replace(/^automerge:/, "");
     const docUrl = docId
       ? stringifyAutomergeUrl({ documentId: docId as DocumentId })
       : accountDocHandle.url;
@@ -579,14 +579,14 @@ function installHashRouting(params: HashRoutingParams): void {
     }
 
     const params = new URLSearchParams(hash);
-    const documentId = params.get("doc");
+    const documentId = params.get("doc")?.replace(/^automerge:/, "");
     const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
     const toolId = params.get("tool");
     const title = params.get("title");
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
-      const docUrl = params.get("doc") ?? accountDocHandle.url;
+      const docUrl = params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
       if (
         rootElement.getAttribute("tool-id") !== frame ||
         rootElement.getAttribute("doc-url") !== docUrl
