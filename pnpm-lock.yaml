@@ -396,6 +396,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../packages/providers/core
       solid-js:
         specifier: ^1.9.13
         version: 1.9.13
@@ -481,6 +484,9 @@ importers:
       '@inkandswitch/patchwork-plugins':
         specifier: workspace:^
         version: link:../../core/plugins
+      '@inkandswitch/patchwork-providers':
+        specifier: workspace:^
+        version: link:../../packages/providers/core
       solid-js:
         specifier: ^1.9.13
         version: 1.9.13

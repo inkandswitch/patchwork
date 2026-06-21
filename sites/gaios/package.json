@@ -37,6 +37,7 @@
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^",
     "solid-js": "^1.9.13",
     "tailwindcss": "^4.3.0"
   }
