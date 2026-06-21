@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@inkandswitch/patchwork-bootloader/vite";
-import tailwindcss from "@tailwindcss/vite";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,7 +24,6 @@ export default defineConfig({
     __KEYHIVE__: JSON.stringify(process.env.KEYHIVE === "true"),
   },
   plugins: [
-    tailwindcss(),
     wasm(),
     patchwork({
       importmap: {

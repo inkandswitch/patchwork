@@ -1,11 +1,3 @@
-@import "tailwindcss";
-@plugin "daisyui" {
-  themes:
-    light --default,
-    dark --prefersdark,
-    cupcake;
-}
-
 @layer patchwork, tool, user;
 
 :root {
@@ -68,12 +60,6 @@ body patchwork-view#root {
   }
 }
 
-/**
-`absolute top-1/2 -translate-y-1/2 z-10 bg-base-200 border border-base-300 p-2 hover:bg-base-300 transition-all duration-300 ${
-            isSidebarCollapsed ? "left-0 rounded-r-md" : "right-0 rounded-md"
-          }`
-          **/
-
 .sidebar-toggle {
   height: 100%;
   padding: 0;
@@ -90,7 +76,7 @@ body patchwork-view#root {
     margin-left: -10px;
   }
   &:hover {
-    background: var(--color-base-content);
+    background: currentColor;
   }
 }
 

@@ -7,8 +7,6 @@
     "@eslint/js": "^9.39.4",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
     "@keyhive/keyhive": "catalog:",
-    "@tailwindcss/vite": "^4.3.0",
-    "daisyui": "^5.5.20",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.5.0",
@@ -38,7 +36,6 @@
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
     "@inkandswitch/patchwork-providers": "workspace:^",
-    "solid-js": "^1.9.13",
-    "tailwindcss": "^4.3.0"
+    "solid-js": "^1.9.13"
   }
 }
