@@ -98,13 +98,15 @@ We want to prevent one attack:
   the user is prompted via window.confirm — see the Allowlist section.
 ```
 
+> **Not yet implemented (future / Keyhive):** the "Keyhive Isolation Identity" box, the "Signs 'signable' commits with isolation identity" line, and the sync-channel "'signed or signable' filter" / "unsigned in → signed out" notes describe the Keyhive-enabled design. Today the intermediary holds no isolation identity and signs nothing, and edits flow through unsigned. See [Security without Keyhive](#security-without-keyhive).
+
 ## Security considerations
 
 **A key security invariant is controlling which automerge URLs or document IDs the isolated context is able to learn about.**
 
-With this design, Keyhive provides three main guarantees:
+With this design, Keyhive provides three main guarantees. _(These describe the Keyhive-enabled design, which is **not yet implemented** — see [Keyhive integration (future)](#keyhive-integration-future). For the posture as it stands today, see [Security without Keyhive](#security-without-keyhive).)_
 
-- Tools will not be able to exfiltrate document access, since no keys cross the boundary and the tool cannot delegate access. They can still exfiltrate document data, and they can still access/edit allowlisted documents while they are running in Patchwork.
+- Tools will not be able to exfiltrate document **access**: because access is cryptographically key-gated and no keys cross the boundary, a tool cannot delegate the capability to read a document to anyone else. (It can still exfiltrate document *data* it was given, and still access/edit allowlisted documents while running in Patchwork.)
 - Keyhive protects a small and critical set of documents (account doc, module settings, plugin source code) from ever being accessed by the tool.
 - If the isolation identity behaves badly, access can be revoked without the user losing their entire device identity. However, we don't currently have anything in place to trace the source of bad edits to particular tools effectively.
 
@@ -113,6 +115,19 @@ Because we use a shared Keyhive isolation identity for all isolated contexts, th
 Given the transitive allowlist population which we use for the sake of reasonable UX, it should be assumed that once a tool discovers an automerge URL, it will be able to access and modify that document (because it could write it into an allowed document and then get access on a future load). These documents can be best protected by preventing the tool from learning their URLs. (Though as a final fallback, the isolation identity can be revoked.)
 
 Each component described below should be evaluated in terms of whether it leaks document IDs to the iframe or provides a channel through which the iframe could discover them.
+
+### Security without Keyhive
+
+The Keyhive pieces above are **not yet implemented** (see [Keyhive integration (future)](#keyhive-integration-future)). Today the intermediary is a plain repo enforcing the allowlist/denylist in JavaScript, syncing under the user's full device identity, with no encryption in the boundary.
+
+**The in-scope guarantee still holds.** Preventing *unauthorized data access* depends only on controlling which document IDs the tool can learn — and the mechanisms that do this (the opaque-origin sandbox, the allowlist/denylist gate, the `pkg:` scheme + `containsAutomergeUrl` filter, the providers value filter, the no-auto-allowlist prompt) are all pure browser/JavaScript and need nothing from Keyhive. A tool still cannot reach documents the user didn't give it.
+
+**But protection is weaker, because nothing is encrypted — an ID *is* access.** Two consequences:
+
+- For documents the user *did* authorize (out of scope either way): with Keyhive a tool could exfiltrate the data but not *access* (access is key-gated and non-delegable); without Keyhive it can exfiltrate both, since leaking the URL is enough to grant access.
+- There is no cryptographic backstop for the in-scope boundary: any sandbox escape, `access()` bug, or denylist gap that leaks an ID *is* a grant of access, with no second line of defense, no attenuated identity (a bypass reaches everything the device can read, including the protected set), no revocation, and no signed/attributed edits.
+
+In short, without Keyhive the design is **policy enforcement over which IDs leak, not a cryptographic access guarantee** — adequate against a buggy or moderately adversarial tool, but the depth Keyhive adds (encrypted protected set, attenuated identity, non-delegable access, revocation) is absent.
 
 ## Components
 
@@ -171,7 +186,9 @@ The allowlist is seeded from all `doc-url` attributes found in the serialized ch
 
 2. **User approval.** When the iframe requests a document that is not on the allowlist, the user is prompted via `window.confirm()` and can approve access explicitly. If the document is one the host repo already knows about, the allowlist is first refreshed (re-scanning all root documents for new URLs, e.g. a reference the user just typed) and the prompt is skipped if it now matches. Documents the host has never seen (newly created by the iframe, added by a collaborator, or embedded in the tool) skip that refresh — a root re-scan cannot surface a document the host has never seen — and prompt directly. Unknown documents are **not** auto-allowlisted; this prevents a tool from silently gaining access to any URL it constructs, at the cost of prompting for documents the iframe itself just created. Once the Author ID API is available, documents created by the iframe's own author ID will be auto-allowlisted while other unknown documents continue to prompt. _(See "Waiting on automerge/keyhive teams" below.)_
 
-### Keyhive integration
+### Keyhive integration (future)
+
+> **Not yet implemented.** None of this section is wired into the isolation boundary today: the intermediary repo is a plain Automerge `Repo` running with the user's full device identity, and the iframe repo has no keyhive. These are the guarantees the design will gain once Keyhive (and the supporting Automerge APIs) land — see "Waiting on automerge/keyhive teams". For the security posture as it stands today, see [Security without Keyhive](#security-without-keyhive) above.
 
 Keyhive adds cryptographic identity and access control to the system. Three aspects are relevant to isolation:
 
@@ -179,7 +196,7 @@ Keyhive adds cryptographic identity and access control to the system. Three aspe
 
 **2. No keyhive inside the iframe.** The iframe repo does not use keyhive and receives no keys. This is deliberate: we do not want tools or their authors to be able to delegate access to documents, and since we are not protecting against exfiltration, there is no benefit to signing edits inside the iframe.
 
-**3. Unsigned edits signed at the intermediary.** Tools in the iframe make unsigned edits to documents. These edits flow back to the intermediary repo over the sync connection. The bridge is configured to only accept "signed or signable" commits — it signs signable commits with the isolation identity's author ID and drops anything that is mis-attributed. This ensures all changes that enter the main document graph are properly signed, even though the tool never had keys.
+**3. Unsigned edits signed at the intermediary.** Tools in the iframe make unsigned edits to documents. These edits flow back to the intermediary repo over the sync connection. The bridge is configured to only accept "signed or signable" commits — it signs signable commits with the isolation identity's author ID and drops anything that is mis-attributed. This ensures all changes that enter the main document graph are properly signed, even though the tool never had keys. _(Not yet implemented: today the sync connection is a plain network adapter with no signed-or-signable filter, so tool edits flow through unsigned and are not dropped.)_
 
 **Why this is needed:** Keyhive requires all changes to be signed before they are accepted into the document graph. Without the unsigned→signed bridge, tool edits would be dropped. The isolation identity adds defense-in-depth by limiting what the intermediary repo itself can access.
 
