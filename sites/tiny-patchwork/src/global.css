@@ -83,3 +83,13 @@ body patchwork-view#root {
 .tl-watermark_SEE-LICENSE {
   display: none;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation-duration: 0.001s !important;
+    transition-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
