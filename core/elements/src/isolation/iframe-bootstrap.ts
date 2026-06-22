@@ -6,19 +6,11 @@
  * srcdoc's <script> tag as an IIFE.
  */
 
-export interface RegistryEntry {
-  type: string;
-  id: string;
-  name: string;
-  importUrl?: string;
-  [key: string]: unknown;
-}
-
-export interface SerializedView {
-  tagName: string;
-  attributes: Record<string, string>;
-  children: SerializedView[];
-}
+// SerializedView and RegistryEntry are the host↔iframe wire types — see
+// ./types.ts (the single source of truth). Imported for use in this file's
+// type positions and re-exported for any importer that sources them here.
+import type { RegistryEntry, SerializedView } from "./types.js";
+export type { RegistryEntry, SerializedView };
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
@@ -143,6 +135,10 @@ async function boot() {
     });
   }
 
+  // Routes every message arriving on the RPC port to its handler, keyed by
+  // `msg.type`. Responses to our outgoing requests (fetch-package/-resource)
+  // are matched back to their pending promise by `msg.id`; the rest are
+  // host-initiated pushes (live plugin registrations, provider-bridge events).
   function handleRpcMessage(event: MessageEvent) {
     const msg = event.data;
     if (!msg) return;
@@ -211,6 +207,11 @@ async function boot() {
   // so that providers (e.g. SelectedDocProvider) inside the iframe can
   // observe it. The host's SelectedDocProvider deduplicates by URL, so
   // forwarding the same selection back is a no-op.
+  //
+  // This listener (like the RPC and patchwork:subscribe listeners) is never
+  // removed: it is bound to the iframe's own document and lives for the
+  // iframe's whole lifetime. The host tears the iframe down wholesale, so
+  // there is nothing to clean up.
   document.addEventListener(
     "patchwork:open-document",
     ((event: CustomEvent) => {
@@ -379,21 +380,6 @@ async function boot() {
       return node;
     };
 
-    const patchInsertion = (method: "appendChild" | "insertBefore") => {
-      const original = (Node.prototype as any)[method] as (
-        ...args: any[]
-      ) => Node;
-      (Node.prototype as any)[method] = function (
-        this: Node,
-        ...args: any[]
-      ): Node {
-        args[0] = interceptInsertedNode(args[0]);
-        return original.apply(this, args);
-      };
-    };
-    patchInsertion("appendChild");
-    patchInsertion("insertBefore");
-
     // Removal: when a substituted stylesheet <link> is removed, also remove
     // the <style> we inserted in its place. The link itself was never inserted
     // (we swapped in the <style>), so for a mapped link we just remove the
@@ -410,19 +396,45 @@ async function boot() {
       }
       return false;
     };
-    const originalRemoveChild = Node.prototype.removeChild;
-    (Node.prototype as any).removeChild = function (
-      this: Node,
-      child: Node
-    ): Node {
-      if (removeSubstituteStyle(child)) return child;
-      return originalRemoveChild.call(this, child);
-    };
-    const originalRemove = Element.prototype.remove;
-    (Element.prototype as any).remove = function (this: Element): void {
-      if (removeSubstituteStyle(this)) return;
-      originalRemove.call(this);
-    };
+
+    // Install the prototype patches once. boot() runs a single time per iframe,
+    // and the iframe (with these globals) is destroyed wholesale when the host
+    // element is torn down — so there is nothing to restore. The guard is pure
+    // defense in depth: it guarantees the wrappers can never stack even if
+    // boot() were somehow re-entered.
+    const PATCH_FLAG = "__patchworkDomPatched";
+    if (!(Node.prototype as any)[PATCH_FLAG]) {
+      (Node.prototype as any)[PATCH_FLAG] = true;
+
+      const patchInsertion = (method: "appendChild" | "insertBefore") => {
+        const original = (Node.prototype as any)[method] as (
+          ...args: any[]
+        ) => Node;
+        (Node.prototype as any)[method] = function (
+          this: Node,
+          ...args: any[]
+        ): Node {
+          args[0] = interceptInsertedNode(args[0]);
+          return original.apply(this, args);
+        };
+      };
+      patchInsertion("appendChild");
+      patchInsertion("insertBefore");
+
+      const originalRemoveChild = Node.prototype.removeChild;
+      (Node.prototype as any).removeChild = function (
+        this: Node,
+        child: Node
+      ): Node {
+        if (removeSubstituteStyle(child)) return child;
+        return originalRemoveChild.call(this, child);
+      };
+      const originalRemove = Element.prototype.remove;
+      (Element.prototype as any).remove = function (this: Element): void {
+        if (removeSubstituteStyle(this)) return;
+        originalRemove.call(this);
+      };
+    }
 
     // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
@@ -475,14 +487,19 @@ async function boot() {
       log("plugins registered:", d.registryEntries.length);
     }
 
-    // Process any plugin updates that arrived during boot
+    // Live plugin registrations (plugin-registered RPC pushes) can arrive
+    // before boot finishes registering the initial set. handleRpcMessage queues
+    // those early arrivals by pushing them onto `pendingPluginUpdates`. Now that
+    // the registry is ready, drain the queue...
     for (const entry of pendingPluginUpdates) {
       log("registering deferred plugin update:", entry.id);
       registerEntry(entry);
     }
     pendingPluginUpdates.length = 0;
 
-    // Switch to live registration for future updates
+    // ...then replace the array's `push` so any *future* arrival registers
+    // immediately instead of queuing. This keeps handleRpcMessage's call site
+    // unchanged (it always just `.push()`es) while flipping queue → live.
     pendingPluginUpdates.push = function (entry: any) {
       log("registering live plugin update:", entry.id);
       registerEntry(entry);

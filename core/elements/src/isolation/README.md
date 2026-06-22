@@ -163,7 +163,7 @@ The denylist also watches plugin registries for new registrations and dynamicall
 
 #### Allowlist
 
-The allowlist is seeded from all `doc-url` attributes found in the serialized child tree, plus the user's contact document URL (read from the account doc), which we include as a special case. It is expanded through three mechanisms:
+The allowlist is seeded from all `doc-url` attributes found in the serialized child tree, plus the user's contact document URL (read from the account doc), which we include as a special case. It is expanded through two mechanisms:
 
 1. **Transitive discovery.** Each root document's content is scanned for embedded automerge URLs (recursively walking objects, arrays, and strings). All discovered URLs are added to the allowlist (unless denylisted). This reflects the assumption that if the user opened a document, its referenced children are authorized for the tool rendering it.
 

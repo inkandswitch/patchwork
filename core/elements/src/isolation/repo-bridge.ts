@@ -22,62 +22,50 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 import { log } from "./patchwork-isolation.js";
 
 /**
- * Maintains a set of document IDs that must never be synced to the iframe,
- * regardless of allowlist status. Takes precedence over the allowlist.
- * Used to protect sensitive documents: account doc, module settings,
- * tool/package source code, and branches docs.
+ * A set of document IDs, addable by either automerge URL or raw document ID,
+ * queryable by either. The allowlist and denylist are both just such sets
+ * gated against by the intermediary repo's shareConfig — they differ only in
+ * meaning, so they share this base. Kept as distinct named subclasses below so
+ * the security-meaningful names (and their types) stay explicit at call sites.
  */
-export class SyncDenylist {
-  #denied = new Set<DocumentId>();
+class SyncDocumentSet {
+  #ids = new Set<DocumentId>();
 
   add(url: AutomergeUrl): void {
     const { documentId } = parseAutomergeUrl(url);
-    this.#denied.add(documentId);
+    this.#ids.add(documentId);
+  }
+
+  addDocumentId(documentId: DocumentId): void {
+    this.#ids.add(documentId);
   }
 
   has(documentId: DocumentId): boolean {
-    return this.#denied.has(documentId);
+    return this.#ids.has(documentId);
   }
 
   hasUrl(url: AutomergeUrl): boolean {
     const { documentId } = parseAutomergeUrl(url);
-    return this.#denied.has(documentId);
+    return this.#ids.has(documentId);
   }
 
   get size(): number {
-    return this.#denied.size;
+    return this.#ids.size;
   }
 }
 
 /**
- * Maintains a set of document IDs that the iframe is allowed to sync.
- * Used by the intermediary repo's shareConfig to gate document access.
+ * Document IDs the iframe is allowed to sync. Used by the intermediary repo's
+ * shareConfig to gate document access.
  */
-export class SyncAllowlist {
-  #allowed = new Set<DocumentId>();
+export class SyncAllowlist extends SyncDocumentSet {}
 
-  add(url: AutomergeUrl): void {
-    const { documentId } = parseAutomergeUrl(url);
-    this.#allowed.add(documentId);
-  }
-
-  addDocumentId(documentId: DocumentId): void {
-    this.#allowed.add(documentId);
-  }
-
-  has(documentId: DocumentId): boolean {
-    return this.#allowed.has(documentId);
-  }
-
-  hasUrl(url: AutomergeUrl): boolean {
-    const { documentId } = parseAutomergeUrl(url);
-    return this.#allowed.has(documentId);
-  }
-
-  get size(): number {
-    return this.#allowed.size;
-  }
-}
+/**
+ * Document IDs that must never sync to the iframe, regardless of allowlist
+ * status — the denylist takes precedence. Protects sensitive documents: the
+ * account doc, module settings, tool/package source code, and branches docs.
+ */
+export class SyncDenylist extends SyncDocumentSet {}
 
 export interface IntermediaryRepoOptions {
   /** The allowlist controlling which documents can sync to the iframe. */

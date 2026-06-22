@@ -1,5 +1,5 @@
 export {
   registerPatchworkIsolationElement,
   type PatchworkIsolationElement,
-  type SerializedView,
 } from "./patchwork-isolation.js";
+export type { SerializedView } from "./types.js";

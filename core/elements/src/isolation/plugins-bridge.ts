@@ -20,8 +20,61 @@ import {
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
-import type { RegistryEntry } from "./iframe-bootstrap.js";
+import type { RegistryEntry } from "./types.js";
 import { log } from "./patchwork-isolation.js";
+
+// ---------------------------------------------------------------------------
+// Automerge URL segment scanning (shared helpers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Split a path segment into its automerge base and trailing heads (version)
+ * suffix. Automerge URLs may be pinned to specific heads as
+ * `automerge:<id>#<heads>`; `isValidAutomergeUrl` only recognizes the base, so
+ * callers strip the heads before validating and restore them afterwards.
+ */
+function stripHeads(segment: string): { base: string; heads: string } {
+  const hashIdx = segment.indexOf("#");
+  return hashIdx >= 0
+    ? { base: segment.slice(0, hashIdx), heads: segment.slice(hashIdx + 1) }
+    : { base: segment, heads: "" };
+}
+
+/**
+ * Scan a URL's path for segments that decode to a valid automerge URL.
+ * Returns one entry per matching segment, preserving the raw segment (for
+ * string replacement) alongside its decoded base/heads. Used by both the
+ * pkg:-URL mapper and the fetch-proxy automerge filter so the two share one
+ * notion of "where the automerge IDs are in a URL".
+ *
+ * Falls back to a raw "/"-split when the input isn't URL-parseable, so bare
+ * `automerge:...` strings are still scanned.
+ */
+function findAutomergeSegments(
+  url: string
+): Array<{ segment: string; base: string; heads: string }> {
+  let segments: string[];
+  try {
+    segments = new URL(url, window.location.origin).pathname
+      .split("/")
+      .filter(Boolean);
+  } catch {
+    segments = url.split("/").filter(Boolean);
+  }
+
+  const matches: Array<{ segment: string; base: string; heads: string }> = [];
+  for (const segment of segments) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      decoded = segment;
+    }
+    const { base, heads } = stripHeads(decoded);
+    if (isValidAutomergeUrl(base)) matches.push({ segment, base, heads });
+  }
+  return matches;
+}
 
 // ---------------------------------------------------------------------------
 // PluginsUrlMapper
@@ -57,36 +110,22 @@ export class PluginsUrlMapper {
    * Returns the URL unchanged if no automerge segment is found.
    */
   toPackageUrl(url: string, name?: string): string {
-    try {
-      const parsed = new URL(url);
-      const segments = parsed.pathname.split("/").filter(Boolean);
-      for (const segment of segments) {
-        const decoded = decodeURIComponent(segment);
-        // Strip heads suffix (e.g., "automerge:...#headshash") for lookup.
-        // isValidAutomergeUrl doesn't recognize URLs with heads appended.
-        const hashIdx = decoded.indexOf("#");
-        const base = hashIdx >= 0 ? decoded.slice(0, hashIdx) : decoded;
-        const heads = hashIdx >= 0 ? decoded.slice(hashIdx + 1) : "";
-        if (!isValidAutomergeUrl(base)) continue;
+    // Replace the first automerge segment found; leave non-automerge URLs as-is.
+    const [match] = findAutomergeSegments(url);
+    if (!match) return url;
+    const { segment, base, heads } = match;
 
-        // Use existing mapping or register a new one
-        let pkg = this.#automergeToPackage.get(base);
-        if (!pkg) {
-          pkg = name
-            ? this.#sanitizeName(name)
-            : `unknown-${this.#counter++}`;
-          this.#automergeToPackage.set(base, pkg);
-          this.#packageToAutomerge.set(pkg, base);
-        }
-
-        // Preserve heads as a version suffix on the pkg: URL
-        const pkgSegment = heads ? `pkg:${pkg}%23${heads}` : `pkg:${pkg}`;
-        return url.replace(`/${segment}/`, `/${pkgSegment}/`);
-      }
-    } catch {
-      // not a valid URL, return as-is
+    // Use the existing mapping for this automerge ID, or register a new one.
+    let pkg = this.#automergeToPackage.get(base);
+    if (!pkg) {
+      pkg = name ? this.#sanitizeName(name) : `unknown-${this.#counter++}`;
+      this.#automergeToPackage.set(base, pkg);
+      this.#packageToAutomerge.set(pkg, base);
     }
-    return url;
+
+    // Preserve any heads as a version suffix on the pkg: URL.
+    const pkgSegment = heads ? `pkg:${pkg}%23${heads}` : `pkg:${pkg}`;
+    return url.replace(`/${segment}/`, `/${pkgSegment}/`);
   }
 
   /**
@@ -149,29 +188,7 @@ export class PluginsUrlMapper {
  * package name (not an automerge ID), so they are unaffected.
  */
 export function containsAutomergeUrl(url: string): boolean {
-  let segments: string[];
-  try {
-    segments = new URL(url, window.location.origin).pathname
-      .split("/")
-      .filter(Boolean);
-  } catch {
-    // Not URL-parseable; scan the raw string split on "/" so bare
-    // `automerge:...` inputs are still caught.
-    segments = url.split("/").filter(Boolean);
-  }
-  for (const segment of segments) {
-    let decoded: string;
-    try {
-      decoded = decodeURIComponent(segment);
-    } catch {
-      decoded = segment;
-    }
-    // Strip any heads suffix (e.g. "automerge:...#heads") before the check.
-    const hashIdx = decoded.indexOf("#");
-    const base = hashIdx >= 0 ? decoded.slice(0, hashIdx) : decoded;
-    if (isValidAutomergeUrl(base)) return true;
-  }
-  return false;
+  return findAutomergeSegments(url).length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -245,53 +262,61 @@ async function resolveUrl(
 // ---------------------------------------------------------------------------
 
 /**
- * Collect registry entries from all plugin registries, converting automerge
- * importUrls to pkg: URLs via the mapper so that automerge document IDs
- * don't leak to the iframe.
+ * Convert a host registry plugin into a serializable `RegistryEntry` for the
+ * iframe:
+ *  - resolve its automerge `importUrl` to a package entry point, then rewrite
+ *    it to an opaque `pkg:` URL via the mapper (so automerge IDs never leak);
+ *  - strip non-cloneable fields (`load`, `module`) and deep-copy the rest so it
+ *    survives `postMessage`.
+ *
+ * Returns `undefined` (and logs) if the plugin can't be cloned. Shared by the
+ * initial collection (`getRegistries`) and the live update watcher
+ * (`watchRegistries`) so both produce entries identically.
+ */
+async function processRegistryPlugin(
+  plugin: any,
+  mapper: PluginsUrlMapper
+): Promise<RegistryEntry | undefined> {
+  let importUrl = plugin.importUrl as string | undefined;
+  if (importUrl) {
+    const resolved = await resolvePluginEntryUrl(importUrl);
+    importUrl = resolved
+      ? mapper.toPackageUrl(resolved.entryUrl, resolved.packageName ?? plugin.id)
+      : undefined;
+  }
+
+  const { load, module, ...rest } = plugin;
+  let entry: RegistryEntry;
+  try {
+    entry = structuredClone(rest);
+  } catch (err) {
+    log(`skipping non-cloneable plugin: ${rest.id}`, err);
+    return undefined;
+  }
+  entry.importUrl = importUrl;
+  return entry;
+}
+
+/**
+ * Collect registry entries from all plugin registries (with importUrls
+ * rewritten to pkg: URLs) for the iframe's initial registry population.
  */
 export async function getRegistries(
   mapper: PluginsUrlMapper
 ): Promise<RegistryEntry[]> {
   const entries: RegistryEntry[] = [];
-
   for (const [, registry] of getAllRegistries()) {
     for (const plugin of registry.all()) {
-      let importUrl = (plugin as any).importUrl as string | undefined;
-
-      if (importUrl) {
-        const resolved = await resolvePluginEntryUrl(importUrl);
-        if (resolved) {
-          importUrl = mapper.toPackageUrl(
-            resolved.entryUrl,
-            resolved.packageName ?? (plugin as any).id
-          );
-        } else {
-          importUrl = undefined;
-        }
-      }
-
-      // Strip non-cloneable properties (functions, loaded implementations)
-      // and deep-copy everything else so it can be sent via postMessage.
-      const { load, module, ...rest } = plugin as any;
-      let entry: RegistryEntry;
-      try {
-        entry = structuredClone(rest);
-      } catch (err) {
-        log(`skipping non-cloneable plugin: ${rest.id}`, err);
-        continue;
-      }
-      entry.importUrl = importUrl;
-      entries.push(entry);
+      const entry = await processRegistryPlugin(plugin, mapper);
+      if (entry) entries.push(entry);
     }
   }
-
   return entries;
 }
 
 /**
- * Watch all host registries for new plugin registrations and push updates
- * to the iframe via the RPC port. Also updates the mapper with new package
- * URL mappings.
+ * Watch all host registries for new plugin registrations and push each (as a
+ * mapped, serializable entry) to the iframe via the RPC port.
  *
  * Returns a cleanup function that unsubscribes from all registries.
  */
@@ -303,30 +328,8 @@ export function watchRegistries(
 
   for (const [, registry] of getAllRegistries()) {
     const unsub = registry.on("registered", async (plugin: any) => {
-      let importUrl = plugin.importUrl as string | undefined;
-
-      if (importUrl) {
-        const resolved = await resolvePluginEntryUrl(importUrl);
-        if (resolved) {
-          importUrl = mapper.toPackageUrl(
-            resolved.entryUrl,
-            resolved.packageName ?? plugin.id
-          );
-        } else {
-          importUrl = undefined;
-        }
-      }
-
-      const { load, module, ...rest } = plugin;
-      let entry: RegistryEntry;
-      try {
-        entry = structuredClone(rest);
-      } catch (err) {
-        log(`skipping non-cloneable plugin update: ${rest.id}`, err);
-        return;
-      }
-      entry.importUrl = importUrl;
-
+      const entry = await processRegistryPlugin(plugin, mapper);
+      if (!entry) return;
       log(`pushing registry update: ${entry.id}`);
       port.postMessage({ type: "plugin-registered", entry });
     });
@@ -366,6 +369,48 @@ function rejectIfAutomerge(
 }
 
 /**
+ * Shared skeleton for the two fetch-proxy RPC handlers. Both follow the same
+ * path: reject raw-automerge URLs, resolve the requested URL, fetch it, and
+ * post an error on failure. Only the success handling differs (module source
+ * text + pkg: resolvedUrl vs. resource bytes + content type), so that is passed
+ * in as `onResponse`, which is responsible for posting the success message
+ * (the resource handler needs to transfer its ArrayBuffer).
+ */
+async function handleFetchRpc(
+  msg: { id: number; url: string },
+  type: "fetch-package" | "fetch-resource",
+  port: MessagePort,
+  mapper: PluginsUrlMapper,
+  onResponse: (
+    response: Response,
+    fetchUrl: string,
+    id: number
+  ) => Promise<void> | void
+): Promise<void> {
+  const errorType = `${type}-error` as const;
+  const { id, url } = msg;
+  if (rejectIfAutomerge(port, id, url, errorType)) return;
+  try {
+    const fetchUrl = await resolveUrl(url, mapper);
+    log(fetchUrl !== url ? `${type} ${url} → ${fetchUrl}` : `${type} ${url}`);
+
+    const response = await fetch(fetchUrl);
+    if (!response.ok) {
+      const error = `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`;
+      log(`${type} error ${url}: ${error}`);
+      port.postMessage({ type: errorType, id, error });
+      return;
+    }
+    // Awaited so a failure reading the body is caught by the catch below.
+    await onResponse(response, fetchUrl, id);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    log(`${type} error ${url}: ${error}`);
+    port.postMessage({ type: errorType, id, error });
+  }
+}
+
+/**
  * Start the host-side RPC handler for plugins and resource loading.
  *
  * Handles two message types:
@@ -380,24 +425,7 @@ export function startPluginsRpc(options: PluginsRpcOptions): () => void {
     if (!msg) return;
 
     if (msg.type === "fetch-package") {
-      const { id, url } = msg as { id: number; url: string };
-      if (rejectIfAutomerge(port, id, url, "fetch-package-error")) return;
-      try {
-        const fetchUrl = await resolveUrl(url, mapper);
-
-        if (fetchUrl !== url) {
-          log(`fetch-package ${url} → ${fetchUrl}`);
-        } else {
-          log(`fetch-package ${url}`);
-        }
-        const response = await fetch(fetchUrl);
-        if (!response.ok) {
-          const error = `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`;
-          log(`fetch-package error ${url}: ${error}`);
-          port.postMessage({ type: "fetch-package-error", id, error });
-          return;
-        }
-
+      await handleFetchRpc(msg, "fetch-package", port, mapper, async (response, fetchUrl, id) => {
         const source = await response.text();
         // Convert the resolved URL back to a pkg: URL (hiding automerge IDs).
         // If it IS a pkg: URL, prefix with host origin so es-module-shims can
@@ -408,51 +436,22 @@ export function startPluginsRpc(options: PluginsRpcOptions): () => void {
         const resolvedUrl = pkgUrl.startsWith("pkg:")
           ? `${window.location.origin}/${pkgUrl}`
           : pkgUrl;
-        port.postMessage({
-          type: "fetch-package-response",
-          id,
-          source,
-          resolvedUrl,
-        });
-      } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
-        log(`fetch-package error ${url}: ${error}`);
-        port.postMessage({ type: "fetch-package-error", id, error });
-      }
+        port.postMessage({ type: "fetch-package-response", id, source, resolvedUrl });
+      });
       return;
     }
 
     if (msg.type === "fetch-resource") {
-      const { id, url } = msg as { id: number; url: string };
-      if (rejectIfAutomerge(port, id, url, "fetch-resource-error")) return;
-      try {
-        const fetchUrl = await resolveUrl(url, mapper);
-        const response = await fetch(fetchUrl);
-        if (!response.ok) {
-          const error = `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`;
-          log(`fetch-resource error ${url}: ${error}`);
-          port.postMessage({ type: "fetch-resource-error", id, error });
-          return;
-        }
-
+      await handleFetchRpc(msg, "fetch-resource", port, mapper, async (response, _fetchUrl, id) => {
         const body = await response.arrayBuffer();
         const contentType =
           response.headers.get("content-type") || "application/octet-stream";
-        log(`fetch-resource ${url} → ${fetchUrl} (${contentType})`);
+        // Transfer (not copy) the ArrayBuffer for efficiency.
         port.postMessage(
-          {
-            type: "fetch-resource-response",
-            id,
-            body,
-            contentType,
-          },
+          { type: "fetch-resource-response", id, body, contentType },
           [body]
         );
-      } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
-        log(`fetch-resource error ${url}: ${error}`);
-        port.postMessage({ type: "fetch-resource-error", id, error });
-      }
+      });
       return;
     }
   };

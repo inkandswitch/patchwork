@@ -42,6 +42,7 @@ import { populateAllowlistFromRoots, refreshAllowlistFromRoots, getDenylist } fr
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { startHostProvidersBridge, ALLOWED_PROVIDERS } from "./providers-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
+import type { SerializedView } from "./types.js";
 import debug from "debug";
 
 export const log = debug("patchwork:elements:isolation");
@@ -58,15 +59,8 @@ declare global {
 
 export interface PatchworkIsolationElement extends HTMLElement {}
 
-/**
- * A serialized element: tag name, attributes, and children.
- * Reconstructed inside the iframe to build the isolated view tree.
- */
-export interface SerializedView {
-  tagName: string;
-  attributes: Record<string, string>;
-  children: SerializedView[];
-}
+// SerializedView (the host↔iframe element-tree wire type) is imported from
+// ./types.ts — the single source of truth shared with the iframe bootstrap.
 
 /**
  * Recursively serialize an element and its descendants into a
@@ -251,8 +245,16 @@ export function registerPatchworkIsolationElement(
       #intermediary: IntermediaryRepo | null = null;
       #iframe: HTMLIFrameElement | null = null;
       #hostRpcPort: MessagePort | null = null;
+      // Teardown callbacks registered during #init (host-side RPC handlers,
+      // bridges, the registry watcher). All are run, then cleared, in #teardown.
       #cleanups: Array<() => void> = [];
+      // True once #init has fully completed. #teardown is a no-op before then
+      // (see the guard there): nothing is wired up until the very end of #init,
+      // which bails out at the first stale-epoch check after any failed step.
       #booted = false;
+      // Monotonic init counter. Each #init / #teardown bumps it; async steps in
+      // #init re-check it after every await and abort if it changed, so a
+      // disconnect (or rapid reconnect) can't let a stale init keep running.
       #initEpoch = 0;
 
       connectedCallback() {
@@ -316,17 +318,23 @@ export function registerPatchworkIsolationElement(
           log(`allowlisted contact ${contactUrl}`);
         }
 
-        const allowlistCleanups = await populateAllowlistFromRoots(
+        // One-shot scan of the root documents to seed the allowlist with
+        // everything they transitively reference. Not a live subscription —
+        // later references are picked up lazily on access (see refreshRoots).
+        await populateAllowlistFromRoots(
           repo,
           rootUrls,
           allowlist,
           denylist,
           () => epoch !== this.#initEpoch
         );
-        for (const cleanup of allowlistCleanups) {
-          this.#cleanups.push(cleanup);
-        }
         if (epoch !== this.#initEpoch) return;
+
+        // Lazily re-scan the root documents for newly-added references. Used by
+        // both the document access gate and the bridged-provider value filter
+        // before they fall back to prompting the user.
+        const refreshRoots = () =>
+          refreshAllowlistFromRoots(repo, rootUrls, allowlist, denylist);
 
         this.#intermediary = createIntermediaryRepo({
           allowlist,
@@ -347,12 +355,7 @@ export function registerPatchworkIsolationElement(
               // reference), so re-scan roots before asking. (Skipped for
               // unknown docs: a root re-scan can't surface a doc the host has
               // never seen, so it would be wasted work.)
-              await refreshAllowlistFromRoots(
-                repo,
-                rootUrls,
-                allowlist,
-                denylist
-              );
+              await refreshRoots();
               if (allowlist.has(documentId)) return true;
             }
 
@@ -422,7 +425,7 @@ export function registerPatchworkIsolationElement(
                 if (allowlist.hasUrl(url as AutomergeUrl)) return true;
                 if (silent) return false;
                 // Re-scan root documents in case the URL was added recently
-                await refreshAllowlistFromRoots(repo!, rootUrls, allowlist, denylist);
+                await refreshRoots();
                 if (allowlist.hasUrl(url as AutomergeUrl)) return true;
                 const approved = window.confirm(
                   `A bridged provider wants to share a document URL:\n\n` +
@@ -472,6 +475,8 @@ export function registerPatchworkIsolationElement(
 
       // ── Helpers ─────────────────────────────────────────────────
 
+      // The host repo is provided by the nearest <repo-provider> ancestor (the
+      // app bootloader mounts one). The intermediary repo syncs from it.
       #getRepo(): Repo | undefined {
         const repoProvider = this.closest<RepoProviderElement>("repo-provider");
         const repo = repoProvider?.repo;

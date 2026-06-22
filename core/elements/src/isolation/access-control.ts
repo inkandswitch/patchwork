@@ -30,67 +30,31 @@ import { log } from "./patchwork-isolation.js";
 // ---------------------------------------------------------------------------
 
 /**
- * Populate the allowlist from a document's content. Scans for all automerge
- * URLs in the document and adds them to the allowlist (unless denylisted).
- * Watches for document changes to dynamically expand the allowlist.
+ * Scan a single document's content for automerge URLs and add any new ones to
+ * the allowlist (unless they are denylisted or turn out to be sensitive — see
+ * {@link checkAndDenylistIfSensitive}).
  *
- * Returns a cleanup function that removes the change listener.
+ * This is a one-shot scan, not a live subscription: it reads the document's
+ * current contents once. Callers re-invoke it (via the wrappers below) when
+ * they want to pick up newly-referenced URLs — at boot from the root docs, and
+ * lazily when an access request arrives for a URL we haven't seen yet.
  *
- * @param isStale - callback that returns true if the caller has been
- *   torn down (e.g. a newer init epoch started). Checked after each
- *   async boundary to avoid stale updates.
+ * @param isStale - optional guard returning true if the caller has been torn
+ *   down (e.g. a newer init epoch started). Checked once after `repo.find`
+ *   resolves so we don't mutate a stale allowlist. Omit for lazy re-scans where
+ *   staleness doesn't matter.
  */
-export async function populateAllowlist(
+async function scanDocIntoAllowlist(
   repo: Repo,
   docUrl: AutomergeUrl,
   allowlist: SyncAllowlist,
   denylist: SyncDenylist | undefined,
-  isStale: () => boolean
-): Promise<(() => void) | undefined> {
-  const allowUrlsFromDoc = async (doc: unknown) => {
-    const urls = new Set<AutomergeUrl>();
-    collectAutomergeUrls(doc, urls);
-    for (const url of urls) {
-      if (allowlist.hasUrl(url)) continue;
-      if (denylist) {
-        const sensitive = await checkAndDenylistIfSensitive(
-          repo,
-          url,
-          denylist
-        );
-        if (sensitive) continue;
-      }
-      allowlist.add(url);
-      log(`allowlisted ${url}`);
-    }
-  };
-
-  try {
-    const handle = await repo.find(docUrl);
-    if (isStale()) return;
-
-    const doc = handle.doc();
-    if (doc) await allowUrlsFromDoc(doc);
-    log(`allowlist populated from ${docUrl}`);
-  } catch (err) {
-    log(`populateAllowlist: failed to scan ${docUrl}`, err);
-    return undefined;
-  }
-}
-
-/**
- * Re-scan the root document and add any new automerge URLs to the allowlist.
- * Called lazily (e.g., when a document access is requested) instead of on
- * every keystroke.
- */
-export async function refreshAllowlist(
-  repo: Repo,
-  docUrl: AutomergeUrl,
-  allowlist: SyncAllowlist,
-  denylist: SyncDenylist | undefined
+  isStale?: () => boolean
 ): Promise<void> {
   try {
     const handle = await repo.find(docUrl);
+    if (isStale?.()) return;
+
     const doc = handle.doc();
     if (!doc) return;
 
@@ -98,27 +62,26 @@ export async function refreshAllowlist(
     collectAutomergeUrls(doc, urls);
     for (const url of urls) {
       if (allowlist.hasUrl(url)) continue;
+      // A URL embedded in user content might point at a sensitive document
+      // (e.g. a branches doc or module settings). Denylist those instead of
+      // allowlisting them, and skip — never grant the tool access.
       if (denylist) {
-        const sensitive = await checkAndDenylistIfSensitive(
-          repo,
-          url,
-          denylist
-        );
+        const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
         if (sensitive) continue;
       }
       allowlist.add(url);
       log(`allowlisted ${url}`);
     }
+    log(`allowlist scanned from ${docUrl}`);
   } catch (err) {
-    log(`refreshAllowlist: failed to scan ${docUrl}`, err);
+    log(`scanDocIntoAllowlist: failed to scan ${docUrl}`, err);
   }
 }
 
 /**
- * Populate the allowlist from multiple root documents. Scans each root for
- * automerge URLs and adds them to the allowlist (unless denylisted).
- *
- * Returns an array of cleanup functions.
+ * Scan multiple root documents into the allowlist. Used at boot to seed the
+ * allowlist with everything transitively referenced by the open documents.
+ * Stops early if `isStale` flips (a newer init epoch started).
  */
 export async function populateAllowlistFromRoots(
   repo: Repo,
@@ -126,18 +89,17 @@ export async function populateAllowlistFromRoots(
   allowlist: SyncAllowlist,
   denylist: SyncDenylist | undefined,
   isStale: () => boolean
-): Promise<Array<() => void>> {
-  const cleanups: Array<() => void> = [];
+): Promise<void> {
   for (const url of rootUrls) {
-    const cleanup = await populateAllowlist(repo, url, allowlist, denylist, isStale);
-    if (isStale()) return cleanups;
-    if (cleanup) cleanups.push(cleanup);
+    await scanDocIntoAllowlist(repo, url, allowlist, denylist, isStale);
+    if (isStale()) return;
   }
-  return cleanups;
 }
 
 /**
- * Re-scan all root documents and add any new automerge URLs to the allowlist.
+ * Re-scan all root documents and add any newly-referenced automerge URLs to
+ * the allowlist. Called lazily (e.g. when an access request arrives) rather
+ * than on every change, to catch references the user just added.
  */
 export async function refreshAllowlistFromRoots(
   repo: Repo,
@@ -146,7 +108,7 @@ export async function refreshAllowlistFromRoots(
   denylist: SyncDenylist | undefined
 ): Promise<void> {
   for (const url of rootUrls) {
-    await refreshAllowlist(repo, url, allowlist, denylist);
+    await scanDocIntoAllowlist(repo, url, allowlist, denylist);
   }
 }
 
@@ -222,8 +184,21 @@ async function denylistModuleEntry(
 }
 
 /**
- * Populate the denylist with all sensitive documents: account doc,
- * module settings docs, and all tool/package source code documents.
+ * Populate the denylist with the documents that must never reach a tool,
+ * because access to them would let a malicious tool damage the user's whole
+ * environment rather than just the documents it was given:
+ *
+ *  1. Account document — the root of the user's identity/config; leaking or
+ *     letting a tool edit it compromises everything.
+ *  2. Module settings docs — control which tools are installed; a tool that
+ *     could edit these could install or replace other tools.
+ *  3. Tool/package source code (folder & branches docs reachable from the
+ *     module settings, plus every plugin importUrl) — a tool that could edit
+ *     another tool's source could inject code that runs with that tool's access.
+ *
+ * The denylist takes precedence over the allowlist, so these stay blocked even
+ * if a URL to one shows up inside user content (see also
+ * checkAndDenylistIfSensitive, which catches them at allowlist-time).
  */
 async function populateDenylist(
   repo: Repo,
@@ -333,24 +308,31 @@ let sharedDenylist: SyncDenylist | null = null;
 
 /**
  * Get the shared denylist, creating and populating it on first call.
- * Watches all plugin registries for new registrations and dynamically
- * denylists their source code documents.
+ *
+ * This is a deliberate process-lifetime singleton, shared by every isolation
+ * instance on the page. The denylisted set — account doc, module settings,
+ * tool/package source code — is global and identical for all instances, and
+ * the plugin registries it watches are themselves page-global singletons. So a
+ * single shared denylist (and its registry listeners, which therefore also
+ * live for the page's lifetime and are intentionally never removed) is correct;
+ * there is nothing per-instance to scope or tear down.
  */
 export function getDenylist(repo: Repo): SyncDenylist {
   if (sharedDenylist) return sharedDenylist;
 
-  sharedDenylist = new SyncDenylist();
-  populateDenylist(repo, sharedDenylist);
+  const denylist = new SyncDenylist();
+  sharedDenylist = denylist;
+  populateDenylist(repo, denylist);
 
-  // Watch for new plugin registrations and denylist their source code
+  // Watch for new plugin registrations and denylist their source code.
   for (const [, registry] of getAllRegistries()) {
     registry.on("registered", (plugin: any) => {
       const importUrl = plugin.importUrl as string | undefined;
       if (importUrl && isValidAutomergeUrl(importUrl)) {
-        denylistModuleEntry(repo, importUrl as AutomergeUrl, sharedDenylist!);
+        denylistModuleEntry(repo, importUrl as AutomergeUrl, denylist);
       }
     });
   }
 
-  return sharedDenylist;
+  return denylist;
 }
