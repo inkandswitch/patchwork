@@ -39,24 +39,23 @@ html {
     }
   }
 }
-@layer patchwork {
-  patchwork-view {
-    display: block;
-    height: 100%;
-    width: 100%;
-    contain: layout;
-  }
 
-  body patchwork-view#root {
-    height: 100vh;
-    height: 100dvh;
-    width: 100vw;
-    width: 100dvw;
+patchwork-view {
+  display: block;
+  height: 100%;
+  width: 100%;
+  contain: layout;
+}
 
-    @media all and (display-mode: standalone) {
-      height: 100lvh;
-      width: 100lvw;
-    }
+body patchwork-view#root {
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  width: 100dvw;
+
+  @media all and (display-mode: standalone) {
+    height: 100lvh;
+    width: 100lvw;
   }
 }
 
