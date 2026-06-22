@@ -316,82 +316,113 @@ async function boot() {
     };
     log("fetch proxy installed");
 
-    // 9b. Intercept host-origin <link rel="stylesheet"> additions to <head>.
-    // Native <link> elements make direct browser requests that bypass the
-    // fetch proxy and CORS-fail from the opaque origin; replace them with a
-    // <style> tag whose content is fetched through the proxy. (modulepreload
-    // links are handled synchronously in 9c below — the observer is too late.)
-    const linkObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of Array.from(mutation.addedNodes)) {
-          if (
-            node instanceof HTMLLinkElement &&
-            node.rel === "stylesheet" &&
-            node.href &&
-            node.href.startsWith(hostOrigin)
-          ) {
-            const href = node.href;
-            node.remove();
-            fetch(href)
-              .then((r) => r.text())
-              .then((css) => {
-                const style = document.createElement("style");
-                style.textContent = css;
-                for (const attr of Array.from(node.attributes)) {
-                  if (attr.name.startsWith("data-")) {
-                    style.setAttribute(attr.name, attr.value);
-                  }
-                }
-                document.head.appendChild(style);
-              })
-              .catch((err) =>
-                log("failed to load stylesheet:", href, err)
-              );
-          }
-        }
-      }
-    });
-    linkObserver.observe(document.head, { childList: true });
+    // 9b. Intercept host-origin <link> insertions SYNCHRONOUSLY, at insertion
+    // time. Native <link> elements make direct browser requests that bypass
+    // the fetch proxy and CORS-fail from the opaque origin. Crucially, the
+    // browser begins that native request the instant the element is inserted —
+    // BEFORE any async MutationObserver callback can run — so we cannot fix it
+    // after the fact by removing/replacing the node. We must intervene before
+    // the node enters the DOM, by patching the DOM insertion methods. Two
+    // cases, both triggered by tool/bundler code (e.g. Vite's __vitePreload,
+    // or the theming tool's ensureThemeLink):
+    //
+    //  - rel="modulepreload": flip to "modulepreload-shim". The browser
+    //    ignores the unknown rel (no native fetch), while es-module-shims
+    //    honors it and preloads the chunk through its source hook → our RPC.
+    //    (The chunk also loads via the rewritten importShim dynamic import;
+    //    this just makes the parallel preload work instead of CORS-failing.)
+    //
+    //  - rel="stylesheet": substitute a <style> element inserted in the link's
+    //    place, and fill it by fetching the CSS through the proxy. The link
+    //    itself never enters the DOM, so no native request is made. We map the
+    //    original link → its <style> so a later link.remove()/removeChild()
+    //    (e.g. theme deregistration) also removes the substituted <style>.
+    const styleForLink = new WeakMap<HTMLLinkElement, HTMLStyleElement>();
 
-    // 9c. Convert <link rel="modulepreload"> → "modulepreload-shim" at
-    // INSERTION TIME (synchronously), not via the MutationObserver above.
-    //
-    // Code-split bundles (e.g. Vite's __vitePreload) inject a plain
-    // <link rel="modulepreload" crossorigin> per chunk. The browser begins
-    // the native preload fetch the instant the element is inserted — which
-    // CORS-fails from the opaque origin — and that happens BEFORE any async
-    // MutationObserver callback can run, so removing/replacing the node after
-    // the fact cannot prevent the failed request. We must mutate the node
-    // before it enters the DOM. es-module-shims only honors
-    // "modulepreload-shim" links (which it preloads through its source hook →
-    // our RPC proxy), so flipping rel here both silences the native fetch
-    // (the browser ignores the unknown rel) and lets esms warm the chunk.
-    //
-    // The chunk also loads via the rewritten importShim dynamic import; this
-    // just makes the parallel preload work instead of CORS-failing.
-    const convertModulePreload = (node: Node): void => {
+    // Returns a replacement node to insert instead of `node`, or `node` itself
+    // (possibly mutated) when no substitution is needed.
+    const interceptInsertedNode = (node: Node): Node => {
       if (
-        node instanceof HTMLLinkElement &&
-        node.rel === "modulepreload" &&
-        node.href &&
-        node.href.startsWith(hostOrigin)
+        !(node instanceof HTMLLinkElement) ||
+        !node.href ||
+        !node.href.startsWith(hostOrigin)
       ) {
+        return node;
+      }
+
+      if (node.rel === "modulepreload") {
         log("converted modulepreload → modulepreload-shim:", node.href);
         node.rel = "modulepreload-shim";
+        return node;
       }
+
+      if (node.rel === "stylesheet") {
+        const href = node.href;
+        const style = document.createElement("style");
+        // Carry over data-* attributes (some tools key off them).
+        for (const attr of Array.from(node.attributes)) {
+          if (attr.name.startsWith("data-")) {
+            style.setAttribute(attr.name, attr.value);
+          }
+        }
+        styleForLink.set(node, style);
+        fetch(href)
+          .then((r) => r.text())
+          .then((css) => {
+            style.textContent = css;
+          })
+          .catch((err) => log("failed to load stylesheet:", href, err));
+        log("substituted stylesheet link → style:", href);
+        return style;
+      }
+
+      return node;
     };
-    const patchInsertion = <K extends "appendChild" | "insertBefore">(
-      proto: Node,
-      method: K
-    ) => {
-      const original = proto[method] as (...args: any[]) => Node;
-      (proto as any)[method] = function (this: Node, ...args: any[]): Node {
-        convertModulePreload(args[0]);
+
+    const patchInsertion = (method: "appendChild" | "insertBefore") => {
+      const original = (Node.prototype as any)[method] as (
+        ...args: any[]
+      ) => Node;
+      (Node.prototype as any)[method] = function (
+        this: Node,
+        ...args: any[]
+      ): Node {
+        args[0] = interceptInsertedNode(args[0]);
         return original.apply(this, args);
       };
     };
-    patchInsertion(Node.prototype, "appendChild");
-    patchInsertion(Node.prototype, "insertBefore");
+    patchInsertion("appendChild");
+    patchInsertion("insertBefore");
+
+    // Removal: when a substituted stylesheet <link> is removed, also remove
+    // the <style> we inserted in its place. The link itself was never inserted
+    // (we swapped in the <style>), so for a mapped link we just remove the
+    // style and skip the native call (which would throw NotFoundError). For
+    // every other node we defer to native behavior unchanged.
+    const removeSubstituteStyle = (node: Node): boolean => {
+      if (node instanceof HTMLLinkElement) {
+        const style = styleForLink.get(node);
+        if (style) {
+          style.remove();
+          styleForLink.delete(node);
+          return true;
+        }
+      }
+      return false;
+    };
+    const originalRemoveChild = Node.prototype.removeChild;
+    (Node.prototype as any).removeChild = function (
+      this: Node,
+      child: Node
+    ): Node {
+      if (removeSubstituteStyle(child)) return child;
+      return originalRemoveChild.call(this, child);
+    };
+    const originalRemove = Element.prototype.remove;
+    (Element.prototype as any).remove = function (this: Element): void {
+      if (removeSubstituteStyle(this)) return;
+      originalRemove.call(this);
+    };
 
     // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
