@@ -127,6 +127,54 @@ export class PluginsUrlMapper {
 }
 
 // ---------------------------------------------------------------------------
+// Automerge URL filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true if any path segment of `url` decodes to a valid automerge URL.
+ *
+ * Used to reject iframe fetch-proxy requests that smuggle a raw automerge
+ * document ID into the host-origin fetch. Legitimate iframe URLs only ever use
+ * the opaque `pkg:` scheme (automerge IDs never cross the boundary), so a raw
+ * automerge ID in an incoming request can only come from a malicious tool
+ * trying to load a document as source/bytes and bypass the sync allowlist.
+ *
+ * The only legitimate way an automerge-backed URL reaches the real `fetch()`
+ * is via the mapper translating a known `pkg:` URL inside `resolveUrl` — those
+ * are documents the isolation boundary registered in the `pkg:` registry. By
+ * filtering the iframe's *input* (before resolution) and trusting the mapper's
+ * output, we serve only registry-known documents.
+ *
+ * Heads-pinned `pkg:` URLs carry the heads as a `%23<heads>` suffix on the
+ * package name (not an automerge ID), so they are unaffected.
+ */
+export function containsAutomergeUrl(url: string): boolean {
+  let segments: string[];
+  try {
+    segments = new URL(url, window.location.origin).pathname
+      .split("/")
+      .filter(Boolean);
+  } catch {
+    // Not URL-parseable; scan the raw string split on "/" so bare
+    // `automerge:...` inputs are still caught.
+    segments = url.split("/").filter(Boolean);
+  }
+  for (const segment of segments) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      decoded = segment;
+    }
+    // Strip any heads suffix (e.g. "automerge:...#heads") before the check.
+    const hashIdx = decoded.indexOf("#");
+    const base = hashIdx >= 0 ? decoded.slice(0, hashIdx) : decoded;
+    if (isValidAutomergeUrl(base)) return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // URL resolution
 // ---------------------------------------------------------------------------
 
@@ -300,6 +348,24 @@ export interface PluginsRpcOptions {
 }
 
 /**
+ * Reject a fetch-proxy request whose URL contains a raw automerge document ID.
+ * Posts the appropriate error message back to the iframe and logs host-side.
+ * Returns true if the request was blocked (caller should return early).
+ */
+function rejectIfAutomerge(
+  port: MessagePort,
+  id: number,
+  url: string,
+  errorType: "fetch-package-error" | "fetch-resource-error"
+): boolean {
+  if (!containsAutomergeUrl(url)) return false;
+  const error = `blocked: request contains an automerge URL (${url})`;
+  log(`${errorType.replace("-error", "")} blocked ${url}`);
+  port.postMessage({ type: errorType, id, error });
+  return true;
+}
+
+/**
  * Start the host-side RPC handler for plugins and resource loading.
  *
  * Handles two message types:
@@ -315,6 +381,7 @@ export function startPluginsRpc(options: PluginsRpcOptions): () => void {
 
     if (msg.type === "fetch-package") {
       const { id, url } = msg as { id: number; url: string };
+      if (rejectIfAutomerge(port, id, url, "fetch-package-error")) return;
       try {
         const fetchUrl = await resolveUrl(url, mapper);
 
@@ -357,6 +424,7 @@ export function startPluginsRpc(options: PluginsRpcOptions): () => void {
 
     if (msg.type === "fetch-resource") {
       const { id, url } = msg as { id: number; url: string };
+      if (rejectIfAutomerge(port, id, url, "fetch-resource-error")) return;
       try {
         const fetchUrl = await resolveUrl(url, mapper);
         const response = await fetch(fetchUrl);
