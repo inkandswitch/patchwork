@@ -316,10 +316,11 @@ async function boot() {
     };
     log("fetch proxy installed");
 
-    // 9b. Intercept <link rel="stylesheet"> additions to <head>.
+    // 9b. Intercept host-origin <link rel="stylesheet"> additions to <head>.
     // Native <link> elements make direct browser requests that bypass the
-    // fetch proxy. For host-origin stylesheets, replace with <style> tags
-    // whose content is fetched through the proxy.
+    // fetch proxy and CORS-fail from the opaque origin; replace them with a
+    // <style> tag whose content is fetched through the proxy. (modulepreload
+    // links are handled synchronously in 9c below — the observer is too late.)
     const linkObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of Array.from(mutation.addedNodes)) {
@@ -351,6 +352,46 @@ async function boot() {
       }
     });
     linkObserver.observe(document.head, { childList: true });
+
+    // 9c. Convert <link rel="modulepreload"> → "modulepreload-shim" at
+    // INSERTION TIME (synchronously), not via the MutationObserver above.
+    //
+    // Code-split bundles (e.g. Vite's __vitePreload) inject a plain
+    // <link rel="modulepreload" crossorigin> per chunk. The browser begins
+    // the native preload fetch the instant the element is inserted — which
+    // CORS-fails from the opaque origin — and that happens BEFORE any async
+    // MutationObserver callback can run, so removing/replacing the node after
+    // the fact cannot prevent the failed request. We must mutate the node
+    // before it enters the DOM. es-module-shims only honors
+    // "modulepreload-shim" links (which it preloads through its source hook →
+    // our RPC proxy), so flipping rel here both silences the native fetch
+    // (the browser ignores the unknown rel) and lets esms warm the chunk.
+    //
+    // The chunk also loads via the rewritten importShim dynamic import; this
+    // just makes the parallel preload work instead of CORS-failing.
+    const convertModulePreload = (node: Node): void => {
+      if (
+        node instanceof HTMLLinkElement &&
+        node.rel === "modulepreload" &&
+        node.href &&
+        node.href.startsWith(hostOrigin)
+      ) {
+        log("converted modulepreload → modulepreload-shim:", node.href);
+        node.rel = "modulepreload-shim";
+      }
+    };
+    const patchInsertion = <K extends "appendChild" | "insertBefore">(
+      proto: Node,
+      method: K
+    ) => {
+      const original = proto[method] as (...args: any[]) => Node;
+      (proto as any)[method] = function (this: Node, ...args: any[]): Node {
+        convertModulePreload(args[0]);
+        return original.apply(this, args);
+      };
+    };
+    patchInsertion(Node.prototype, "appendChild");
+    patchInsertion(Node.prototype, "insertBefore");
 
     // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
