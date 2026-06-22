@@ -576,7 +576,48 @@ async function boot() {
 // Srcdoc generator
 // ---------------------------------------------------------------------------
 
-export function generateIframeSrcdoc(): string {
+/**
+ * The host's current resolved appearance, used to paint the iframe's first
+ * frame to match. Both values are resolved browser values (not theming-tool
+ * variables/attributes), so this stays independent of any specific theme tool.
+ */
+export interface IframeAppearance {
+  /** Resolved background color to paint before the theme CSS loads. */
+  background?: string;
+  /** Resolved `color-scheme` (so form controls/scrollbars match immediately). */
+  colorScheme?: string;
+}
+
+/**
+ * Allow only characters that are safe to interpolate into the static srcdoc
+ * CSS below. These values come from the host's own computed styles (a resolved
+ * `rgb(...)`/`color()` string and a `color-scheme` keyword), not from tools,
+ * but we sanitize anyway so nothing can break out of the <style> context.
+ */
+function cssSafe(value: string): string {
+  return value.replace(/[^a-zA-Z0-9 #%(),.\-/]/g, "");
+}
+
+/**
+ * Build the iframe srcdoc. The host's current background and color-scheme are
+ * baked into the static markup so the iframe's *first paint* already matches
+ * the host — eliminating the flash of white that otherwise shows until the
+ * theming tool boots inside the iframe and applies the real theme CSS. This is
+ * tool-agnostic: it mirrors whatever the host actually renders, with no
+ * knowledge of how (or which tool) produced it.
+ */
+export function generateIframeSrcdoc(appearance?: IframeAppearance): string {
+  const background = appearance?.background ? cssSafe(appearance.background) : "";
+  const colorScheme = appearance?.colorScheme
+    ? cssSafe(appearance.colorScheme)
+    : "";
+  const firstPaint =
+    background || colorScheme
+      ? `\n      ${colorScheme ? `color-scheme: ${colorScheme};` : ""}${
+          background ? ` background: ${background};` : ""
+        }`
+      : "";
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -590,7 +631,7 @@ export function generateIframeSrcdoc(): string {
       height: 100%;
       overflow: hidden;
       display: flex;
-      flex-direction: row;
+      flex-direction: row;${firstPaint}
     }
   </style>
 </head>

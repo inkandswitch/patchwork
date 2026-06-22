@@ -128,6 +128,8 @@ A host-side custom element (`<patchwork-isolation>`) that manages the boundary b
 
 The element manages the iframe lifecycle, coordinates all communication channels (RPC, sync, bootstrap), and enforces access control. Host-side children are removed from the DOM after serialization to prevent duplicate rendering.
 
+**Theme-matched first paint.** The iframe is a separate document that would otherwise paint white until the theming tool boots inside it. To avoid that flash, the host reads its own current appearance (`readHostAppearance`) and bakes it into the iframe's static `srcdoc`, so the iframe's first frame already matches. This read is deliberately **tool-agnostic** — it does not depend on the theming tool's CSS variables, attribute conventions, or palette (the theming tool is swappable, and the platform must not couple to it). It reads only resolved browser values: the host's actual painted background (found by walking up from the isolation element to the first ancestor with a non-transparent computed `backgroundColor`, whatever produced it) and the resolved `color-scheme` (a CSS standard property). The real theme is then applied to the iframe's content as normal when the theming tool boots inside it; because the first paint already matched, there is no visible transition. (The native `window.confirm()` access/navigation prompts are browser chrome and cannot be themed.)
+
 ### Intermediary Repo & document allowlist/denylist
 
 An ephemeral host-side Automerge repo (in-memory, no storage) that sits between the host's main repo and the iframe's repo. It enforces which documents can sync to the iframe using two mechanisms:
@@ -253,6 +255,7 @@ The modal renders a `<patchwork-view>` in the host DOM (outside the isolation bo
 ### TODOs
 
 - [ ] **Security audits.** Run this implementation through security review and adversarial testing.
+- [ ] make updates below after Automerge API changes and Keyhive land
 
 ### Waiting on automerge/keyhive teams
 
