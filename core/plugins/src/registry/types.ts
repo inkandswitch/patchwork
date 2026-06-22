@@ -37,9 +37,8 @@ export interface PluginDescription {
 export type LoadablePlugin<
   D extends PluginDescription = PluginDescription,
   I = any,
-> = D & {
-  load: () => Promise<I>;
-};
+> = D &
+  ({ load: () => Promise<I> } | { import: string });
 
 /**
  * A fully loaded plugin combining description and implementation

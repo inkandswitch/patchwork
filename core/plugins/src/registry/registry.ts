@@ -141,8 +141,11 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
     log(`Loading plugin implementation: ${id}`);
     this.#loading.add(id);
 
-    const loadPromise: Promise<LoadedPlugin<D, I> | undefined> = description
-      .load()
+    const loadPromise: Promise<LoadedPlugin<D, I> | undefined> = (
+      "load" in description
+        ? description.load()
+        : import(description.import)
+    )
       .then((implementation) => {
         const clearIfOurs = () => {
           if (this.#loadPromises.get(id) === loadPromise) {
@@ -179,7 +182,11 @@ export class PluginRegistry<D extends PluginDescription, I = any> {
           }
         }
 
-        const { load, ...descriptionWithoutLoad } = desc;
+        const {
+          load: _load,
+          import: _import,
+          ...descriptionWithoutLoad
+        } = desc as Record<string, any>;
         if (!isPluginDescription<D>(descriptionWithoutLoad)) {
           throw new Error("Invalid plugin description");
         }

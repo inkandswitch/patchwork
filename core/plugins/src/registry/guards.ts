@@ -30,8 +30,8 @@ export function isLoadablePlugin<
 >(value: unknown): value is LoadablePlugin<D, I> {
   return (
     isPluginDescription<D>(value) &&
-    "load" in value &&
-    typeof value.load === "function"
+    (("load" in value && typeof value.load === "function") ||
+      ("import" in value && typeof value.import === "string"))
   );
 }
 
