@@ -333,35 +333,34 @@ export function registerPatchworkIsolationElement(
           hostRepo: repo,
           denylist,
           onAccessRequest: async (documentId: DocumentId) => {
-            // If the host repo doesn't have this document yet, allow it
-            // without prompting — it could be a new document created by
-            // the iframe, a URL added by a collaborator, or something
-            // embedded in the tool.
-            // TODO: ideally document creation should be proxied to the
-            // host so we can track which documents the iframe created.
-            // Then we wouldn't need to allow unknown URLs by default —
-            // only explicitly created or allowlisted documents would
-            // be permitted.
-            if (!repo.handles[documentId]) {
-              log(`auto-allowlisting unknown document: ${documentId}`);
-              allowlist.addDocumentId(documentId);
-              return true;
+            // Unknown documents are NOT auto-allowlisted — the user is
+            // prompted. This is a safe default: it prevents a tool from
+            // silently gaining access to any URL it constructs. The cost is
+            // that documents the iframe itself just created also prompt.
+            // TODO: once the Author ID API is available, auto-allowlist
+            // unknown documents whose author matches the iframe's assigned
+            // author ID (the iframe created them) and continue to prompt for
+            // all others.
+            if (repo.handles[documentId]) {
+              // Known to the host but not yet allowlisted — the URL may have
+              // been added since the initial scan (e.g. the user typed a new
+              // reference), so re-scan roots before asking. (Skipped for
+              // unknown docs: a root re-scan can't surface a doc the host has
+              // never seen, so it would be wasted work.)
+              await refreshAllowlistFromRoots(
+                repo,
+                rootUrls,
+                allowlist,
+                denylist
+              );
+              if (allowlist.has(documentId)) return true;
             }
-
-            // Re-scan all root documents — the URL may have been added
-            // since the initial scan (e.g., the user typed a new reference)
-            await refreshAllowlistFromRoots(
-              repo,
-              rootUrls,
-              allowlist,
-              denylist
-            );
-            if (allowlist.has(documentId)) return true;
 
             const approved = window.confirm(
               `A tool wants to access a document:\n\n` +
                 `Document ID: ${documentId}\n\n` +
-                `Allow access?`
+                `This may be a document the tool just created, or one it is ` +
+                `trying to open. Allow access?`
             );
             if (approved) {
               allowlist.addDocumentId(documentId);

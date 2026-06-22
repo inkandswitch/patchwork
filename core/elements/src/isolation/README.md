@@ -38,7 +38,7 @@ We want to prevent one attack:
 │  │ │ Allowlist                │   │  │  │  │  │ Tool Views             │  │  │
 │  │ │ - root docs + transitive │   │  │  │  │  │ - main document view   │  │  │
 │  │ │ - contact URL            │   │  │  │  │  │ - context sidebar      │  │  │
-│  │ │ - auto-allow unknown *   │   │  │  │  │  └────────────────────────┘  │  │
+│  │ │ - unknown: prompt *      │   │  │  │  │  └────────────────────────┘  │  │
 │  │ │ - user-approved          │   │  │  │  └──────────────────────────────┘  │
 │  │ ├──────────────────────────┤   │  │  │                                    │
 │  │ │ Denylist                 │   │  │  │  ┌──────────────────────────────┐  │
@@ -94,8 +94,8 @@ We want to prevent one attack:
                        │  - unsigned in → signed out     │
                        └─────────────────────────────────┘
 
-* auto-allow unknown: documents not in the host repo are auto-allowlisted
-  without prompting — see "Security consideration" in Allowlist section.
+* unknown: prompt — documents not in the host repo are not auto-allowlisted;
+  the user is prompted via window.confirm — see the Allowlist section.
 ```
 
 ## Security considerations
@@ -167,9 +167,7 @@ The allowlist is seeded from all `doc-url` attributes found in the serialized ch
 
 1. **Transitive discovery.** Each root document's content is scanned for embedded automerge URLs (recursively walking objects, arrays, and strings). All discovered URLs are added to the allowlist (unless denylisted). This reflects the assumption that if the user opened a document, its referenced children are authorized for the tool rendering it.
 
-2. **Auto-allowlisting of unknown documents (temporary workaround).** When the iframe requests a document that is not in the host repo's handles (i.e., the host has never seen it), it is automatically allowlisted without prompting the user. This covers documents newly created by the iframe, URLs added by a collaborator, or content embedded in the tool. This is a workaround for not being able to distinguish iframe-created documents from other unknown documents. Once the Author ID API is available, documents created by the iframe's author ID can be identified and auto-allowlisted, while other unknown documents should prompt the user. _(See "Waiting on automerge/keyhive teams" below.)_
-
-3. **User approval.** If a requested document exists in the host repo but is not on the allowlist, the allowlist is first refreshed (re-scanning all root documents for new URLs). If the document is still not allowlisted, the user is prompted via `window.confirm()` and can approve access explicitly.
+2. **User approval.** When the iframe requests a document that is not on the allowlist, the user is prompted via `window.confirm()` and can approve access explicitly. If the document is one the host repo already knows about, the allowlist is first refreshed (re-scanning all root documents for new URLs, e.g. a reference the user just typed) and the prompt is skipped if it now matches. Documents the host has never seen (newly created by the iframe, added by a collaborator, or embedded in the tool) skip that refresh — a root re-scan cannot surface a document the host has never seen — and prompt directly. Unknown documents are **not** auto-allowlisted; this prevents a tool from silently gaining access to any URL it constructs, at the cost of prompting for documents the iframe itself just created. Once the Author ID API is available, documents created by the iframe's own author ID will be auto-allowlisted while other unknown documents continue to prompt. _(See "Waiting on automerge/keyhive teams" below.)_
 
 ### Keyhive integration
 
@@ -254,17 +252,16 @@ The modal renders a `<patchwork-view>` in the host DOM (outside the isolation bo
 
 ### TODOs
 
-- [ ] **Remove auto-allowlisting of unknown documents.** Once the Author ID API is available and iframe-created documents can be identified by their author ID, remove the blanket auto-allowlist for unknown documents and replace it with: (1) auto-allowlist documents whose author matches the iframe's assigned author ID, (2) prompt the user for all other unknown documents. See the Author ID API item under "Waiting on automerge/keyhive teams".
 - [ ] **Security audits.** Run this implementation through security review and adversarial testing.
 
 ### Waiting on automerge/keyhive teams
 
 These are API changes being developed by the automerge and keyhive teams. The isolation architecture depends on them but cannot implement them until they ship.
 
-- **Author ID API.** Configure an author ID on the iframe's Repo so that edits made by tools are correctly attributed. The iframe repo will be configured with the isolation identity's author ID. (Not yet available on main.) Once available:
-  - When the intermediary encounters an unknown document whose author matches the iframe's assigned author ID, auto-allowlist it (the iframe created it).
-  - For unknown documents with a different author, prompt the user instead of auto-allowlisting.
-  - This replaces the current blanket auto-allowlist workaround for unknown documents.
+- **Author ID API.** Configure an author ID on the iframe's Repo so that edits made by tools are correctly attributed. The iframe repo will be configured with the isolation identity's author ID. (Not yet available on main.) Once available, improve the unknown-document handling in `onAccessRequest`:
+  - When the intermediary encounters an unknown document whose author matches the iframe's assigned author ID, auto-allowlist it (the iframe created it) instead of prompting.
+  - For unknown documents with a different author, keep prompting the user.
+  - Today, _all_ unknown documents prompt the user (the blanket auto-allowlist workaround has been removed); this change would restore silent access for the iframe's own creations only.
 - **"Signed or signable" bridge config.** Configure the bridge connection (NetworkAdapter or similar) between the intermediary repo and the iframe repo to only accept signed or signable commits from the iframe direction. Signable commits are signed with the isolation identity; mis-attributed commits are dropped. (Not yet available.)
 
 ### Tracked separately
