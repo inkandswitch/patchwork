@@ -7,6 +7,13 @@
 export const HANDOFF_CHANNEL = "@patchwork/handoff";
 
 /**
+ * BroadcastChannel on which the automerge shared worker announces remote
+ * heads it learns about from the sync server. Any tab can listen to stay
+ * informed of sync progress without repo-to-repo gossiping.
+ */
+export const SYNCSTATE_CHANNEL = "@patchwork/syncstate";
+
+/**
  * The special URL to resolve, plus enough of the {@link Request} the service
  * worker is holding that the automerge worker can construct one that
  * `cache.match`es it.

@@ -23,7 +23,6 @@ import {
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocumentId,
-  type StorageId,
   type UrlHeads,
 } from "@automerge/vanillajs/slim";
 import * as Automerge from "@automerge/automerge/slim";
@@ -145,12 +144,6 @@ export interface SiteConfig {
   rootElementId?: string;
 
   /**
-   * Storage IDs to subscribe to for remote-heads gossiping. Defaults to
-   * Ink & Switch's production Subduction storage.
-   */
-  remoteStorageIds?: StorageId[];
-
-  /**
    * When true, initialize keyhive for access control.
    * The Repo will use keyhive's network adapter, peerId, and idFactory
    * instead of a sharePolicy.
@@ -163,9 +156,6 @@ export interface BootResult {
   moduleWatcher: ModuleWatcher;
   accountDocHandle: DocHandle<AccountDoc>;
 }
-
-const DEFAULT_REMOTE_STORAGE_ID =
-  "3760df37-a4c6-4f66-9ecd-732039a9385d" as StorageId;
 
 // Legacy big-patchwork hash shape: `slug--<documentId>[?=type]`.
 const BIG_PATCHWORK_HASH_REGEX =
@@ -239,10 +229,6 @@ export async function bootPatchworkSite(
         `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
     });
   }
-  repo.subscribeToRemotes(
-    config.remoteStorageIds ?? [DEFAULT_REMOTE_STORAGE_ID]
-  );
-
   await repo.networkSubsystem.whenReady();
   if (hive) {
     (hive.networkAdapter as any).syncKeyhive?.();
