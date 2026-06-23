@@ -52,13 +52,29 @@ async function clearOldCaches() {
 }
 
 self.addEventListener("activate", (event) => {
-  // Without waitUntil the activate event settles immediately and clients.claim()
-  // runs detached — the new worker can be killed before it takes control, so
-  // existing tabs keep talking to the old SW. Extend the event instead.
   (event as ExtendableEvent).waitUntil(
     (async () => {
       await clearOldCaches();
       await self.clients.claim();
+      // Pre-cache pages of already-open clients so they survive going offline
+      // before the next navigation.
+      const allClients = await self.clients.matchAll({ type: "window" });
+      const cache = await caches.open(cachename);
+      await Promise.all(
+        allClients.map(async (client) => {
+          try {
+            const existing = await cache.match(client.url);
+            if (!existing) {
+              const response = await fetch(client.url);
+              if (cacheableStatuses.includes(response.status)) {
+                await cache.put(client.url, response);
+              }
+            }
+          } catch {
+            // Network may be unavailable during activation
+          }
+        })
+      );
     })()
   );
 });
