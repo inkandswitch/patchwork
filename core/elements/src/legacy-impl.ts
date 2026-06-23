@@ -509,31 +509,34 @@ export class LegacyImpl {
     }
   }
 
-  #displayLoading = (toolId: string) => {
+  #displayLoading = (_toolId: string) => {
     const div = document.createElement("div");
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.justifyContent = "center";
     div.style.height = "100%";
+    div.style.opacity = "0";
+    div.style.transition = "opacity 0.8s ease-in";
     div.innerHTML = /* html */ `
       <style>
-        @keyframes pw-loading-spin {
-          to { transform: rotate(360deg); }
+        @keyframes pw-loading-pulse {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; transform: scale(1); }
         }
       </style>
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-        <div style="
-          width: 24px;
-          height: 24px;
-          border: 3px solid #e0e0e0;
-          border-top-color: #888;
-          border-radius: 50%;
-          animation: pw-loading-spin 0.8s linear infinite;
-        "></div>
-        <div style="font-size: 12px; color: #888;">loading ${toolId}</div>
-      </div>
+      <div style="
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #888;
+        animation: pw-loading-pulse 2s ease-in-out infinite;
+      "></div>
     `;
     this.#element.append(div);
+    const timer = setTimeout(() => {
+      div.style.opacity = "1";
+    }, 2000);
+    this.#teardowns.add(() => clearTimeout(timer));
   };
 
   #displayError = (error: string) => {
