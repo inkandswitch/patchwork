@@ -41,96 +41,12 @@ import {
 
 import {
   HANDOFF_CHANNEL,
-  SYNCSTATE_CHANNEL,
   type HandoffCachedMessage,
   type HandoffOnlineMessage,
   type HandoffRequest,
   type HandoffRequestMessage,
   type HandoffResponseMessage,
 } from "./types.js";
-
-// eslint-disable-next-line -- not part of the public API but we need to
-// intercept the subduction remote-heads callback before any Repo is created.
-// @ts-ignore
-import { RemoteHeadsSubscriptions } from "@automerge/automerge-repo/src/RemoteHeadsSubscriptions.js";
-
-// ── Remote-heads broadcasting ──────────────────────────────────────────
-//
-// Subduction reports the sync server's heads via onRemoteHeadsChanged →
-// RemoteHeadsSubscriptions.handleImmediateRemoteHeadsChanged(). That method
-// is public but the class isn't exported, so we patch the prototype before
-// any Repo is constructed.
-
-const syncStateChannel = new BroadcastChannel(SYNCSTATE_CHANNEL);
-
-const SYNCSTATE_DB_NAME = "syncstate";
-const SYNCSTATE_STORE_NAME = "syncstate";
-const SYNCSTATE_DB_VERSION = 1;
-
-function openSyncStateDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(SYNCSTATE_DB_NAME, SYNCSTATE_DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(SYNCSTATE_STORE_NAME)) {
-        db.createObjectStore(SYNCSTATE_STORE_NAME);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-let syncStateDbPromise: Promise<IDBDatabase> | null = null;
-
-function getSyncStateDb(): Promise<IDBDatabase> {
-  if (!syncStateDbPromise) {
-    syncStateDbPromise = openSyncStateDb();
-    syncStateDbPromise.catch(() => {
-      syncStateDbPromise = null;
-    });
-  }
-  return syncStateDbPromise;
-}
-
-function saveSyncState(
-  documentId: string,
-  storageId: string,
-  heads: string[],
-  timestamp: number,
-): void {
-  getSyncStateDb()
-    .then((db) => {
-      const tx = db.transaction(SYNCSTATE_STORE_NAME, "readwrite");
-      const store = tx.objectStore(SYNCSTATE_STORE_NAME);
-      store.put({ documentId, storageId, heads, timestamp }, documentId);
-    })
-    .catch((err) => {
-      console.error("syncstate: failed to save", err);
-    });
-}
-
-{
-  const orig =
-    RemoteHeadsSubscriptions.prototype.handleImmediateRemoteHeadsChanged;
-  RemoteHeadsSubscriptions.prototype.handleImmediateRemoteHeadsChanged =
-    function (
-      documentId: string,
-      storageId: string,
-      heads: string[],
-    ) {
-      const timestamp = Date.now();
-      saveSyncState(documentId, storageId, heads, timestamp);
-      syncStateChannel.postMessage({
-        type: "remote-heads",
-        documentId,
-        storageId,
-        heads,
-        timestamp,
-      });
-      return orig.call(this, documentId, storageId, heads);
-    };
-}
 
 declare const __SITE_NAME__: string;
 declare const __KEYHIVE__: boolean;
