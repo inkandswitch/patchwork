@@ -64,8 +64,34 @@ export class SyncAllowlist extends SyncDocumentSet {}
  * Document IDs that must never sync to the iframe, regardless of allowlist
  * status — the denylist takes precedence. Protects sensitive documents: the
  * account doc, module settings, tool/package source code, and branches docs.
+ *
+ * Unlike the allowlist, the denylist is populated asynchronously (it walks
+ * documents to discover the protected set). Callers must not seed the allowlist
+ * or sync anything to the iframe until it is fully populated, or a protected
+ * doc could slip through before its entry lands. `setReady` records the
+ * populate promise; `whenReady()` lets the boot path await it, and the
+ * synchronous `isReady` flag lets the per-document sync gate fail closed
+ * cheaply (see createIntermediaryRepo).
  */
-export class SyncDenylist extends SyncDocumentSet {}
+export class SyncDenylist extends SyncDocumentSet {
+  // A denylist with no population scheduled is trivially ready (empty but
+  // complete). setReady() marks it not-ready until its populate promise lands.
+  #ready: Promise<void> = Promise.resolve();
+  isReady = true;
+
+  /** Record the population promise; not ready until it resolves. */
+  setReady(populated: Promise<void>): void {
+    this.isReady = false;
+    this.#ready = populated.then(() => {
+      this.isReady = true;
+    });
+  }
+
+  /** Resolves once population has completed. */
+  whenReady(): Promise<void> {
+    return this.#ready;
+  }
+}
 
 export interface IntermediaryRepoOptions {
   /** The allowlist controlling which documents can sync to the iframe. */
@@ -125,13 +151,26 @@ export function createIntermediaryRepo(
     network: [hostAdapter, iframeAdapter],
     isEphemeral: true,
     shareConfig: {
-      announce: async (_peerId: PeerId, documentId?: DocumentId) => {
+      announce: async (peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return true;
+        // Fail closed to the iframe until the denylist is fully populated, so a
+        // protected doc can't sync during the population window. Defense in
+        // depth: the boot path already awaits readiness before creating this
+        // repo, so on the normal path this is never false.
+        if (denylist && !denylist.isReady && peerId !== hostRepoPeerId) {
+          return false;
+        }
         if (denylist?.has(documentId)) return false;
         return allowlist.has(documentId);
       },
       access: async (peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return false;
+        // Fail closed to the iframe until the denylist is fully populated (see
+        // announce above).
+        if (denylist && !denylist.isReady && peerId !== hostRepoPeerId) {
+          log(`access ${documentId} BLOCKED (denylist not ready)`);
+          return false;
+        }
         if (denylist?.has(documentId)) {
           if (peerId !== hostRepoPeerId) {
             log(`access ${documentId} DENIED`);

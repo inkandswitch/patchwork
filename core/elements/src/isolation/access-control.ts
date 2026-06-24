@@ -1,19 +1,24 @@
 /**
  * Access control for the isolation boundary.
  *
- *  - Allowlist population: scans a document's content for automerge URLs
- *    and adds them to the allowlist (unless denylisted). Watches for
- *    document changes to expand the allowlist dynamically.
+ *  - Allowlist population: one-shot scans of a document's content for automerge
+ *    URLs, adding each to the allowlist unless it is sensitive (see
+ *    `denylistIfSensitive`).
  *  - Denylist: a shared singleton (`getDenylist`) that blocks sensitive
- *    documents (account doc, module settings, tool source code) from
- *    ever syncing to the iframe. Watches plugin registries for new
- *    registrations and denylists their source code automatically.
+ *    documents (account doc, module settings, tool source code) from ever
+ *    syncing to the iframe. Populated eagerly over the known protected roots at
+ *    boot, and lazily extended (by `denylistIfSensitive`) for sensitive docs
+ *    discovered later in content. Also watches plugin registries and the
+ *    account doc to denylist tool source / the user's settings doc as they
+ *    appear. The denylist is a classification *cache*: a sensitive doc is
+ *    walked once, then every later check is an O(1) set lookup.
  */
 
 import {
   type AutomergeUrl,
   type Repo,
   isValidAutomergeUrl,
+  parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { getAllRegistries } from "@inkandswitch/patchwork-plugins";
 import {
@@ -63,10 +68,11 @@ async function scanDocIntoAllowlist(
     for (const url of urls) {
       if (allowlist.hasUrl(url)) continue;
       // A URL embedded in user content might point at a sensitive document
-      // (e.g. a branches doc or module settings). Denylist those instead of
-      // allowlisting them, and skip — never grant the tool access.
+      // (e.g. the account doc, a branches doc, or module settings). Denylist
+      // those instead of allowlisting them, and skip — never grant the tool
+      // access.
       if (denylist) {
-        const sensitive = await checkAndDenylistIfSensitive(repo, url, denylist);
+        const sensitive = await denylistIfSensitive(repo, url, denylist);
         if (sensitive) continue;
       }
       allowlist.add(url);
@@ -143,7 +149,6 @@ async function denylistFolderDoc(
   denylist.add(folderUrl);
   try {
     const handle = await repo.find<FolderDoc>(folderUrl);
-    await handle.whenReady();
     const doc = handle.doc();
     for (const docLink of doc?.docs ?? []) {
       denylist.add(docLink.url);
@@ -165,7 +170,6 @@ async function denylistModuleEntry(
   denylist.add(moduleUrl);
   try {
     const handle = await repo.find<HasPatchworkMetadata>(moduleUrl);
-    await handle.whenReady();
     const doc = handle.doc();
     const type = doc?.["@patchwork"]?.type;
 
@@ -184,62 +188,77 @@ async function denylistModuleEntry(
 }
 
 /**
- * Populate the denylist with the documents that must never reach a tool,
- * because access to them would let a malicious tool damage the user's whole
+ * The set of module-settings document URLs the user currently has, drawn from
+ * both sources of truth: the ModuleWatcher's loaded URLs and the account doc's
+ * `moduleSettingsUrl` (the user's own bundle, which the bootloader wires into
+ * the watcher only lazily — so reading the account doc directly catches it even
+ * before the watcher has it). Used both to seed the denylist and to recognize a
+ * settings doc on the fly.
+ */
+function getModuleSettingsUrls(): AutomergeUrl[] {
+  const urls = new Set<AutomergeUrl>();
+  const moduleWatcher = (window as any).patchwork?.packages;
+  if (moduleWatcher?.urls) {
+    for (const url of Object.values(moduleWatcher.urls) as AutomergeUrl[]) {
+      if (isValidAutomergeUrl(url)) urls.add(url);
+    }
+  }
+  const userSettingsUrl = (window as any).accountDocHandle?.doc()
+    ?.moduleSettingsUrl;
+  if (userSettingsUrl && isValidAutomergeUrl(userSettingsUrl)) {
+    urls.add(userSettingsUrl);
+  }
+  return [...urls];
+}
+
+/** Denylist a module-settings doc and every module entry it references. */
+async function denylistModuleSettings(
+  repo: Repo,
+  settingsUrl: AutomergeUrl,
+  denylist: SyncDenylist
+): Promise<void> {
+  denylist.add(settingsUrl);
+  try {
+    const handle = await repo.find<ModuleSettingsDoc>(settingsUrl);
+    const doc = handle.doc();
+    for (const moduleUrl of doc?.modules ?? []) {
+      await denylistModuleEntry(repo, moduleUrl, denylist);
+    }
+  } catch (err) {
+    log(`failed to read module settings ${settingsUrl}`, err);
+  }
+}
+
+/**
+ * Eagerly enumerate and denylist the protected set — the documents that must
+ * never reach a tool, because access would let it damage the user's whole
  * environment rather than just the documents it was given:
  *
- *  1. Account document — the root of the user's identity/config; leaking or
- *     letting a tool edit it compromises everything.
- *  2. Module settings docs — control which tools are installed; a tool that
- *     could edit these could install or replace other tools.
+ *  1. Account document — the root of the user's identity/config.
+ *  2. Module settings docs — control which tools are installed.
  *  3. Tool/package source code (folder & branches docs reachable from the
- *     module settings, plus every plugin importUrl) — a tool that could edit
- *     another tool's source could inject code that runs with that tool's access.
+ *     module settings, plus every plugin importUrl) — editing another tool's
+ *     source could inject code that runs with that tool's access.
  *
- * The denylist takes precedence over the allowlist, so these stay blocked even
- * if a URL to one shows up inside user content (see also
- * checkAndDenylistIfSensitive, which catches them at allowlist-time).
+ * This is the eager pass over the *known* roots. Sensitive docs that are only
+ * discovered later (e.g. referenced deep in user content) are caught lazily by
+ * `denylistIfSensitive`, which shares the same recognition logic.
  */
-async function populateDenylist(
+export async function populateDenylist(
   repo: Repo,
   denylist: SyncDenylist
 ): Promise<void> {
   // 1. Account document
-  const accountHandle = (window as any).accountDocHandle;
-  if (accountHandle?.url) {
-    denylist.add(accountHandle.url);
+  const accountUrl = (window as any).accountDocHandle?.url;
+  if (accountUrl) denylist.add(accountUrl);
+
+  // 2 + 3. Module settings docs (from the watcher and the account doc) and the
+  // tool source reachable from each.
+  for (const settingsUrl of getModuleSettingsUrls()) {
+    await denylistModuleSettings(repo, settingsUrl, denylist);
   }
 
-  // 2. Module settings documents (from ModuleWatcher)
-  const moduleWatcher = (window as any).patchwork?.packages;
-  const moduleSettingsUrls: AutomergeUrl[] = [];
-  if (moduleWatcher?.urls) {
-    for (const url of Object.values(moduleWatcher.urls) as AutomergeUrl[]) {
-      if (isValidAutomergeUrl(url)) {
-        denylist.add(url);
-        moduleSettingsUrls.push(url);
-      }
-    }
-  }
-
-  // 3. Walk module settings → module entries → folder docs → children
-  for (const settingsUrl of moduleSettingsUrls) {
-    try {
-      const handle = await repo.find<ModuleSettingsDoc>(settingsUrl);
-      await handle.whenReady();
-      const doc = handle.doc();
-      for (const moduleUrl of doc?.modules ?? []) {
-        await denylistModuleEntry(repo, moduleUrl, denylist);
-      }
-    } catch (err) {
-      log(
-        `populateDenylist: failed to read module settings ${settingsUrl}`,
-        err
-      );
-    }
-  }
-
-  // 4. Denylist all plugin importUrls from the registry as a catch-all
+  // 4. Denylist all plugin importUrls from the registry as a catch-all.
   for (const [, registry] of getAllRegistries()) {
     for (const plugin of registry.all()) {
       const importUrl = (plugin as any).importUrl as string | undefined;
@@ -252,49 +271,83 @@ async function populateDenylist(
   log(`denylist populated with ${denylist.size} documents`);
 }
 
+/** Whether two automerge URLs refer to the same document (by documentId). */
+function sameDoc(a: AutomergeUrl, b: AutomergeUrl): boolean {
+  try {
+    return parseAutomergeUrl(a).documentId === parseAutomergeUrl(b).documentId;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Check if a document is a sensitive type (branches doc, module settings, etc.)
- * and dynamically add it to the denylist if so. Called when URLs are about to
- * be added to the allowlist to prevent sensitive documents from leaking through
- * document content.
+ * The single authority on "is this URL a sensitive document, and if so add it
+ * (with its descendants) to the denylist." Used both by the lazy allowlist scan
+ * (before allowlisting a content-referenced URL) and by the root-URL gate in
+ * the isolation element. Returns true if the document was denylisted (caller
+ * must skip allowlisting it).
  *
- * Returns true if the document was denylisted (caller should skip allowlisting).
+ * Recognition, cheapest first:
+ *  1. Already denylisted — an O(1) set lookup. Once the eager `populateDenylist`
+ *     pass has run, the account doc, every module-settings doc, and all
+ *     tool-source folder/branches docs are already here, so this short-circuit
+ *     catches them with no I/O. (This is why the denylist is a cache, not
+ *     redundant work — see the module header.)
+ *  2. The account doc, matched by identity.
+ *  3. A module-settings doc, matched by membership in the user's settings set
+ *     (covers a settings doc wired in after the eager pass).
+ *  4. A branches or module-settings doc, matched by `@patchwork.type` (covers
+ *     docs only discovered via content references, not from a known root).
+ *
+ * Note on folders: a plain tool-source FolderDoc has no distinguishing
+ * `@patchwork.type` — it is structurally identical to a user-content folder.
+ * It is recognized ONLY by provenance: it was reached from a module-settings
+ * doc during a denylist walk and is therefore already in the set (step 1). We
+ * deliberately do NOT fingerprint folders by shape, which would wrongly block
+ * the user's own content folders.
  */
-async function checkAndDenylistIfSensitive(
+export async function denylistIfSensitive(
   repo: Repo,
   url: AutomergeUrl,
   denylist: SyncDenylist
 ): Promise<boolean> {
+  // 1. Already known sensitive.
   if (denylist.hasUrl(url)) return true;
 
+  // 2. The account doc, by identity.
+  const accountUrl = (window as any).accountDocHandle?.url as
+    | AutomergeUrl
+    | undefined;
+  if (accountUrl && sameDoc(url, accountUrl)) {
+    log(`dynamically denylisting account doc: ${url}`);
+    denylist.add(url);
+    return true;
+  }
+
+  // 3. A module-settings doc the user has, by membership.
+  if (getModuleSettingsUrls().some((settingsUrl) => sameDoc(url, settingsUrl))) {
+    log(`dynamically denylisting module settings doc (membership): ${url}`);
+    await denylistModuleSettings(repo, url, denylist);
+    return true;
+  }
+
+  // 4. A branches or module-settings doc discovered via content, by type.
   try {
     const handle = await repo.find<HasPatchworkMetadata>(url);
-    await handle.whenReady();
-    const doc = handle.doc();
-    const type = doc?.["@patchwork"]?.type;
+    const type = handle.doc()?.["@patchwork"]?.type;
 
     if (type === "branches") {
       log(`dynamically denylisting branches doc: ${url}`);
-      const branchesDoc = doc as unknown as BranchesDoc;
-      denylist.add(url);
-      for (const branchUrl of Object.values(branchesDoc.branches ?? {})) {
-        await denylistFolderDoc(repo, branchUrl, denylist);
-        log(`denylisted ${branchUrl} for branches doc: ${url}`);
-      }
+      await denylistModuleEntry(repo, url, denylist);
       return true;
     }
-
     if (type === "patchwork:module-settings") {
       log(`dynamically denylisting module settings doc: ${url}`);
-      denylist.add(url);
-      const settingsDoc = doc as unknown as ModuleSettingsDoc;
-      for (const moduleUrl of settingsDoc.modules ?? []) {
-        await denylistModuleEntry(repo, moduleUrl, denylist);
-      }
+      await denylistModuleSettings(repo, url, denylist);
       return true;
     }
   } catch (err) {
-    log(`checkAndDenylistIfSensitive: failed to read ${url}`, err);
+    log(`denylistIfSensitive: failed to read ${url}`, err);
   }
 
   return false;
@@ -321,17 +374,41 @@ export function getDenylist(repo: Repo): SyncDenylist {
   if (sharedDenylist) return sharedDenylist;
 
   const denylist = new SyncDenylist();
+  // Assign the singleton before kicking off population so concurrent callers
+  // share this instance and its single in-flight populate (via whenReady),
+  // rather than re-populating. Record the promise so callers can await it
+  // before allowlisting anything (see SyncDenylist.setReady / the boot path).
   sharedDenylist = denylist;
-  populateDenylist(repo, denylist);
+  denylist.setReady(populateDenylist(repo, denylist));
 
   // Watch for new plugin registrations and denylist their source code.
   for (const [, registry] of getAllRegistries()) {
     registry.on("registered", (plugin: any) => {
       const importUrl = plugin.importUrl as string | undefined;
       if (importUrl && isValidAutomergeUrl(importUrl)) {
-        denylistModuleEntry(repo, importUrl as AutomergeUrl, denylist);
+        void denylistModuleEntry(repo, importUrl as AutomergeUrl, denylist);
       }
     });
+  }
+
+  // The user's own module-settings doc is wired into the ModuleWatcher lazily
+  // (the bootloader adds it when it appears on the account doc), so the eager
+  // populate above can miss it. Watch the account doc and denylist that
+  // settings doc (and its tool source) when it first appears, then stop. This
+  // mirrors the bootloader's own wireModuleSettingsWhenReady.
+  const accountHandle = (window as any).accountDocHandle;
+  if (accountHandle) {
+    const onChange = () => {
+      const settingsUrl = accountHandle.doc()?.moduleSettingsUrl;
+      if (settingsUrl && isValidAutomergeUrl(settingsUrl)) {
+        accountHandle.off?.("change", onChange);
+        void denylistModuleSettings(repo, settingsUrl as AutomergeUrl, denylist);
+      }
+    };
+    onChange();
+    if (!accountHandle.doc()?.moduleSettingsUrl) {
+      accountHandle.on?.("change", onChange);
+    }
   }
 
   return denylist;

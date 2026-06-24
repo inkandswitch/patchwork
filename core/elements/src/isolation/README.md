@@ -167,16 +167,16 @@ This asymmetry reflects the threat model: code is published by tool authors and 
 
 #### Denylist
 
-The denylist is a shared singleton populated at boot and updated dynamically. It blocks sensitive system documents from ever syncing to the iframe, regardless of whether they appear in document content or are requested by the tool. Denylisted document categories:
+The denylist is a shared singleton, populated eagerly at boot and extended dynamically. It blocks sensitive system documents from ever syncing to the iframe, regardless of whether they appear in document content or are requested by the tool. **Population is awaited before the allowlist is seeded or the intermediary repo is created** (`SyncDenylist.whenReady()`), so a protected document can never be allowlisted/synced during the population window. As a further backstop, the intermediary's `access()`/`announce()` fail closed to the iframe while the denylist is not yet ready. Denylisted document categories:
 
 1. **Account document** — the user's account doc (`window.accountDocHandle`).
-2. **Module settings documents** — all `ModuleSettingsDoc` URLs from `window.patchwork.packages`.
+2. **Module settings documents** — every `ModuleSettingsDoc` URL the user has: those loaded in `window.patchwork.packages` **and** the user's own `moduleSettingsUrl` read directly from the account doc (the bootloader wires the latter into the watcher only lazily, so reading the account doc catches it regardless of timing).
 3. **Tool/package source code** — for each module settings doc, all referenced module entries (branches docs, folder docs, and their children) are transitively denylisted.
 4. **All plugin import URLs** — as a catch-all, every `importUrl` from every plugin registry is denylisted along with its transitive module entries.
 
-The denylist also watches plugin registries for new registrations and dynamically denylists their source code documents as they appear.
+The denylist also watches plugin registries for new registrations (denylisting their source code as it appears) and the account doc for a late-arriving `moduleSettingsUrl` (denylisting the user's settings doc and its tool source when it first appears).
 
-**Dynamic denylist expansion.** When a URL is about to be added to the allowlist (e.g., discovered in document content), it is first checked against the denylist _and_ inspected for sensitive types. If the document turns out to be a `branches` doc or `patchwork:module-settings` doc, it is dynamically denylisted (along with its children) instead of being allowlisted. This prevents sensitive documents from leaking through user content that happens to reference them.
+**Dynamic denylist expansion.** Sensitive docs that the eager pass didn't reach (e.g. ones referenced deep in user content) are caught lazily: before a URL is added to the allowlist it goes through `denylistIfSensitive`, the single classifier shared with the boot-time pass. It recognizes a sensitive doc by, cheapest first: (1) already on the denylist — an O(1) lookup that, after the eager pass, catches the account doc, all module-settings docs, and all tool-source folder/branches docs; (2) the account doc by identity; (3) a module-settings doc by membership in the user's settings set; (4) a `branches` or `patchwork:module-settings` doc by `@patchwork.type`. A matched doc is denylisted (with its children) instead of allowlisted. Note that a plain tool-source folder doc has no distinguishing type and is structurally identical to a user-content folder — it is recognized only by provenance (it was reached from a module-settings doc during a denylist walk, so it is already on the denylist via mechanism 1), never by shape, so the user's own content folders are never wrongly blocked.
 
 #### Allowlist
 

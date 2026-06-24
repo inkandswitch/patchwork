@@ -38,7 +38,12 @@ import {
   startPluginsRpc,
   watchRegistries,
 } from "./plugins-bridge.js";
-import { populateAllowlistFromRoots, refreshAllowlistFromRoots, getDenylist } from "./access-control.js";
+import {
+  populateAllowlistFromRoots,
+  refreshAllowlistFromRoots,
+  getDenylist,
+  denylistIfSensitive,
+} from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { startHostProvidersBridge, ALLOWED_PROVIDERS } from "./providers-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
@@ -343,15 +348,30 @@ export function registerPatchworkIsolationElement(
         const mapper = new PluginsUrlMapper();
 
         // ── Access control ──────────────────────────────────────
+        // Wait for the denylist to finish populating before seeding the
+        // allowlist or creating the intermediary repo. Otherwise a protected
+        // doc that appears in root content could be allowlisted/synced during
+        // the population window (the denylist is built asynchronously).
         const denylist = getDenylist(repo);
+        await denylist.whenReady();
+        if (epoch !== this.#initEpoch) return;
 
         const allowlist = new SyncAllowlist();
         this.#allowlist = allowlist;
 
+        // Seed the allowlist with the root docs — but never allowlist a
+        // sensitive one (e.g. if the account doc is used as a root, it stays
+        // denylisted and simply isn't handed to the isolated tool; such tools
+        // run host-side via the unsafe modal instead).
         for (const url of rootUrls) {
+          if (await denylistIfSensitive(repo, url, denylist)) {
+            log(`root ${url} is sensitive — denylisted, not allowlisted`);
+            continue;
+          }
           allowlist.add(url);
           log(`allowlisted root ${url}`);
         }
+        if (epoch !== this.#initEpoch) return;
 
         // Allowlist the user's contact document so the patchwork:contact
         // bridge can relay it without prompting.
