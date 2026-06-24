@@ -224,7 +224,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           if (!cached) {
             return new Response(
               `the automerge worker reported ${handoffURL} cached, but it has no match in ${cachename}`,
-              { status: 500 }
+              { status: 555 }
             );
           }
           log(`serving ${handoffURL} from cache ${cachename} after handoff`);
@@ -261,7 +261,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
         if (match) return match;
 
         return new Response(message, {
-          status: 500,
+          status: 556,
           headers: { "content-type": "text/plain" },
         });
       }

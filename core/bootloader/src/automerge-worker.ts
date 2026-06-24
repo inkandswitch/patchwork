@@ -555,7 +555,7 @@ async function handleHandoffRequest(message: HandoffRequestMessage) {
       id,
       type: "response",
       response: {
-        status: 500,
+        status: 557,
         body,
         headers: { "content-type": "text/plain" },
       },
@@ -601,7 +601,7 @@ async function handleHandoffRequest(message: HandoffRequestMessage) {
       id,
       type: "response",
       response: {
-        status: 500,
+        status: 558,
         body: String(error),
         headers: { "content-type": "text/plain" },
       },
