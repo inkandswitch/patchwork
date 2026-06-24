@@ -54,6 +54,68 @@ declare const __KEYHIVE_SYNC_SERVER__: boolean;
 
 let debugging = false;
 
+// ── Forward console output + uncaught errors to the main thread ─────────
+// The SharedWorker has its own console that's a pain to find (chrome://inspect
+// → shared workers). Patch console.* and the global error handlers to also
+// post back over every connected tab's control port, tagged [automerge-worker].
+
+const controlPorts = new Set<MessagePort>();
+// Logs emitted before any tab has connected (e.g. during wasm boot) would
+// otherwise be lost — buffer a bounded number and flush on first connect.
+const preConnectBuffer: Array<{ level: string; args: string[] }> = [];
+const MAX_BUFFER = 200;
+
+function serializeArg(arg: any): string {
+  if (typeof arg === "string") return arg;
+  if (arg instanceof Error) return arg.stack || `${arg.name}: ${arg.message}`;
+  try {
+    return JSON.stringify(arg);
+  } catch {
+    return String(arg);
+  }
+}
+
+function forwardToMainThread(level: string, rawArgs: any[]) {
+  const args = rawArgs.map(serializeArg);
+  if (!controlPorts.size) {
+    if (preConnectBuffer.length < MAX_BUFFER) {
+      preConnectBuffer.push({ level, args });
+    }
+    return;
+  }
+  for (const port of controlPorts) {
+    try {
+      port.postMessage({ type: "console", level, args });
+    } catch {
+      // Port may be closing — ignore.
+    }
+  }
+}
+
+for (const level of ["log", "info", "warn", "error", "debug"] as const) {
+  const original = console[level].bind(console);
+  console[level] = (...args: any[]) => {
+    original(...args);
+    forwardToMainThread(level, args);
+  };
+}
+
+self.addEventListener("error", (event) => {
+  const e = event as ErrorEvent;
+  forwardToMainThread("error", [
+    `uncaught error: ${e.message}`,
+    e.error instanceof Error ? e.error.stack : undefined,
+  ]);
+});
+
+self.addEventListener("unhandledrejection", (event) => {
+  const reason = (event as PromiseRejectionEvent).reason;
+  forwardToMainThread("error", [
+    "unhandled rejection:",
+    reason instanceof Error ? reason.stack || reason.message : reason,
+  ]);
+});
+
 // Sync server selection. Sub is the default. Build with KEYHIVE_SYNC_SERVER=true
 // to target keyhive.sync.automerge.org.
 const useKeyhiveSyncServer =
@@ -376,10 +438,24 @@ self.addEventListener("connect", (event) => {
   // Fires when the owning page is destroyed. Browsers without the close
   // event fall back to the adapters' lazy useWeakRef cleanup.
   controlPort.addEventListener("close", () => {
+    controlPorts.delete(controlPort);
     void dropConnection(connection);
   });
 
   controlPort.start();
+
+  // Start forwarding console output to this tab, and flush anything buffered
+  // while no tab was connected (e.g. boot-time logs) to the first arrival.
+  controlPorts.add(controlPort);
+  if (preConnectBuffer.length) {
+    for (const { level, args } of preConnectBuffer.splice(0)) {
+      try {
+        controlPort.postMessage({ type: "console", level, args });
+      } catch {
+        // Port may already be gone — ignore.
+      }
+    }
+  }
 });
 
 // ── Automerge URL resolution ───────────────────────────────────────────

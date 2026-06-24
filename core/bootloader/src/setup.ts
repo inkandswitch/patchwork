@@ -76,6 +76,14 @@ function getAutomergeWorker(): SharedWorker {
     // Control replies (port-ready &c) come back on this port, so it needs
     // start() — we listen with addEventListener, not onmessage.
     automergeWorker.port.start();
+    // Surface the SharedWorker's console output and uncaught errors in this
+    // tab's console (it has its own console that's awkward to find otherwise).
+    automergeWorker.port.addEventListener("message", (event: MessageEvent) => {
+      if (event.data?.type !== "console") return;
+      const { level, args } = event.data;
+      const fn = (console as any)[level] ?? console.log;
+      fn("[automerge-worker]", ...args);
+    });
     automergeWorker.port.postMessage({ type: "debug", debug: workerDebugging });
   }
   return automergeWorker;
