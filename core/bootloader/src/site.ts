@@ -35,6 +35,7 @@ import {
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
 declare const __SITE_NAME__: string;
 const siteName =
@@ -66,6 +67,7 @@ import {
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
+import { startSyncIndicator } from "./sync-indicator.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
@@ -189,6 +191,7 @@ export async function bootPatchworkSite(
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
+  let tabPeerId: string | undefined;
 
   // If a Repo is already on `window` — an embedding context provided one before
   // this entry ran — reuse it and its keyhive instead of standing up a fresh
@@ -227,9 +230,15 @@ export async function bootPatchworkSite(
         },
       }));
     } else {
+      // Pass an explicit signer (instead of the Repo's internal default) so we
+      // can label this tab's own row in the sync indicator (by its peerId) and
+      // log its identity. The tab never connects via Subduction (no
+      // endpoints/adapters), so this id never goes on the wire.
+      const tabSigner = new MemorySigner();
       repo = new Repo({
         network: [new MessageChannelNetworkAdapter(workerPort)],
         storage: new IndexedDBStorageAdapter(),
+        signer: tabSigner,
         async sharePolicy(peerId) {
           return peerId.includes("automerge-worker");
         },
@@ -237,6 +246,16 @@ export async function bootPatchworkSite(
         peerId:
           `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
       });
+      const tabIdentity = {
+        peerId: tabSigner.peerId().toString(),
+        verifyingKey: toHex(tabSigner.verifyingKey()),
+      };
+      console.log("[patchwork] tab subduction identity:", tabIdentity);
+      tabPeerId = tabIdentity.peerId;
+      const w = window as unknown as {
+        patchworkSyncIdentity?: Record<string, unknown>;
+      };
+      w.patchworkSyncIdentity = { ...w.patchworkSyncIdentity, tab: tabIdentity };
     }
   }
   await repo.networkSubsystem.whenReady();
@@ -286,6 +305,10 @@ export async function bootPatchworkSite(
 
   primeRootElement(rootElement, accountDocHandle);
   logToolRegistryWhenLoaded(moduleWatcher);
+
+  // Sync indicator: lists every document the worker knows about with each
+  // peer's heads vs. this tab's local heads (broadcast over SYNCSTATE_CHANNEL).
+  startSyncIndicator({ repo, tabPeerId });
 
   window.patchwork = {
     repo,
@@ -376,6 +399,10 @@ function buildSystemSources(sources: string[]): Record<string, string> {
     map[name] = source;
   });
   return map;
+}
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function installDevConsoleGlobals(

@@ -14,6 +14,55 @@ export const HANDOFF_CHANNEL = "@patchwork/handoff";
 export const SYNCSTATE_CHANNEL = "@patchwork/syncstate";
 
 /**
+ * Worker → tabs: a Subduction peer (the sync server), identified by its
+ * verifying-key `storageId`, advertised new `heads` for a document.
+ */
+export interface SyncStateRemoteHeadsMessage {
+  type: "remote-heads";
+  documentId: string;
+  storageId: string;
+  heads: string[];
+  timestamp: number;
+}
+
+/**
+ * Worker → tabs: the worker's Subduction link to the sync server flipped.
+ * `serverPeerIds` are the directly-connected sync-server peer ids (their
+ * verifying keys), so a tab can tell which peer rows are *the server* and
+ * judge "synced" against them specifically.
+ */
+export interface SyncStateConnectionMessage {
+  type: "connection";
+  connected: boolean;
+  serverPeerIds: string[];
+}
+
+/**
+ * Worker → tabs: the shared worker's own Subduction identity, so a tab can
+ * tell which peer rows are "us". `peerId` is `signer.peerId().toString()` (the
+ * value that shows up as a peer id); `verifyingKey` is its hex Ed25519 key.
+ */
+export interface SyncStateWhoAmIMessage {
+  type: "whoami";
+  peerId: string;
+  verifyingKey: string;
+}
+
+export type SyncStateBroadcast =
+  | SyncStateRemoteHeadsMessage
+  | SyncStateConnectionMessage
+  | SyncStateWhoAmIMessage;
+
+/**
+ * Tab → worker: please replay the current sync state so a freshly-opened tab
+ * can render immediately. Optionally scoped to a single document.
+ */
+export interface SyncStateRequestMessage {
+  type: "request";
+  documentId?: string;
+}
+
+/**
  * The special URL to resolve, plus enough of the {@link Request} the service
  * worker is holding that the automerge worker can construct one that
  * `cache.match`es it.

@@ -25,3 +25,21 @@ catalog:
   "@types/react-dom": 18.3.1
   react: 18.3.1
   react-dom: 18.3.1
+
+# Pin every @automerge/* (including transitive copies) to the catalog versions
+# above, so the whole workspace dedupes to a single automerge / automerge-repo /
+# subduction instance. (Previously link:../automerge-repo/* for local fork dev;
+# now on the published -subduction.36 release.)
+overrides:
+  "@automerge/automerge": "catalog:"
+  "@automerge/automerge-repo": "catalog:"
+  "@automerge/automerge-repo-keyhive": "catalog:"
+  "@automerge/automerge-repo-network-messagechannel": "catalog:"
+  "@automerge/automerge-repo-network-websocket": "catalog:"
+  "@automerge/automerge-repo-react-hooks": "catalog:"
+  "@automerge/automerge-repo-solid-primitives": "catalog:"
+  "@automerge/automerge-repo-storage-indexeddb": "catalog:"
+  "@automerge/automerge-repo-storage-nodefs": "catalog:"
+  "@automerge/automerge-subduction": "catalog:"
+  "@automerge/react": "catalog:"
+  "@automerge/vanillajs": "catalog:"
