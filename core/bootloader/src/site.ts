@@ -67,6 +67,11 @@ import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
 import { initTabDiagnostics, type TabDiagnostics } from "./diagnostics.js";
+import {
+  dropAutomergeStorage,
+  dropSubductionStorage,
+  type DropResult,
+} from "./idb-maintenance.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
@@ -76,6 +81,38 @@ const log = debug("patchwork:bootloader:site");
 // `window.patchworkDiagnostics.export()` and persistent log capture exist even
 // when boot wedges (a wedged boot/dead worker is exactly when it's needed).
 const tabDiagnostics: TabDiagnostics = initTabDiagnostics({ siteName });
+
+// Maintenance commands, installed early so they're reachable even when a
+// bloated store is making boot slow. Each drops only one record namespace from
+// automerge/documents; the signing key and logs are separate databases and are
+// never touched. Reload afterwards so the worker rehydrates.
+window.dropSubductionStorage = async () => {
+  console.warn(
+    "[patchwork] Dropping Subduction sync records from IndexedDB " +
+      "(automerge/documents). Documents, signing key, and logs are left intact."
+  );
+  const result = await dropSubductionStorage();
+  console.info(
+    `[patchwork] Dropped ${result.deleted} Subduction record(s); kept ${result.kept}. ` +
+      "Reload the page so the worker rehydrates."
+  );
+  return result;
+};
+
+window.dropAutomergeStorage = async () => {
+  console.warn(
+    "[patchwork] Dropping Automerge document chunks from IndexedDB " +
+      "(automerge/documents). DESTRUCTIVE: this removes materialized document " +
+      "data; synced docs re-materialize from Subduction and the sync server on " +
+      "reload. The signing key and logs are left intact."
+  );
+  const result = await dropAutomergeStorage();
+  console.info(
+    `[patchwork] Dropped ${result.deleted} Automerge record(s); kept ${result.kept}. ` +
+      "Reload the page so the worker rehydrates."
+  );
+  return result;
+};
 
 declare global {
   interface Window {
@@ -104,6 +141,19 @@ declare global {
      * `await window.patchworkDiagnostics.export()`.
      */
     patchworkDiagnostics: TabDiagnostics;
+    /**
+     * Maintenance: drop Subduction's accumulated sync records from IndexedDB
+     * (`automerge/documents`), leaving documents, the signing key, and logs
+     * intact. Reload afterwards. `await window.dropSubductionStorage()`.
+     */
+    dropSubductionStorage: () => Promise<DropResult>;
+    /**
+     * Maintenance: drop the Automerge document chunks from IndexedDB
+     * (`automerge/documents`), leaving the Subduction log, signing key, and
+     * logs intact. Destructive — reload afterwards to re-materialize from
+     * Subduction and the sync server. `await window.dropAutomergeStorage()`.
+     */
+    dropAutomergeStorage: () => Promise<DropResult>;
   }
 }
 
