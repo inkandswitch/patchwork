@@ -46,13 +46,30 @@ import {
   type HandoffRequest,
   type HandoffRequestMessage,
   type HandoffResponseMessage,
+  type WorkerDiagnostics,
 } from "./types.js";
+import { RingLogger } from "./logger.js";
 
 declare const __SITE_NAME__: string;
 declare const __KEYHIVE__: boolean;
 declare const __KEYHIVE_SYNC_SERVER__: boolean;
 
-let debugging = false;
+// Whether to PRINT worker logs to the console. Defaults on; the main thread
+// can flip it via the "debug" control message (see setup.ts). Note this only
+// gates console *display* — the persistent ring logger below captures every
+// log() call regardless, so the diagnostics bundle is complete either way.
+let debugging = true;
+
+// Persistent, contention-isolated log capture for the diagnostics bundle.
+// Lives in its own `patchwork-logs-worker` IndexedDB database so it never
+// contends with the `automerge` document store. Flushing is deferred until
+// after the repo's network subsystem is ready (see getRepoHive).
+const workerLog = new RingLogger("worker");
+let workerSigner: WebCryptoSigner | undefined;
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 // ── Forward console output + uncaught errors to the main thread ─────────
 // The SharedWorker has its own console that's a pain to find (chrome://inspect
@@ -75,7 +92,9 @@ function serializeArg(arg: any): string {
   }
 }
 
-function forwardToMainThread(level: string, rawArgs: any[]) {
+// Forward (display) a line to every connected tab. Does NOT record — callers
+// decide whether the line also goes to the persistent ring.
+function postToTabs(level: string, rawArgs: any[]) {
   const args = rawArgs.map(serializeArg);
   if (!controlPorts.size) {
     if (preConnectBuffer.length < MAX_BUFFER) {
@@ -91,6 +110,17 @@ function forwardToMainThread(level: string, rawArgs: any[]) {
     }
   }
 }
+
+// Capture to the persistent ring AND forward to tabs. Used by the console patch
+// and the global error/rejection handlers.
+function forwardToMainThread(level: string, rawArgs: any[]) {
+  workerLog.record(level, rawArgs);
+  postToTabs(level, rawArgs);
+}
+
+// The unpatched console.log, captured before the patch below — used by log()
+// to print its styled banner without re-recording through the patch.
+const rawConsoleLog = console.log.bind(console);
 
 for (const level of ["log", "info", "warn", "error", "debug"] as const) {
   const original = console[level].bind(console);
@@ -180,14 +210,19 @@ const siteName =
 const cacheableStatuses = [200, 203, 204];
 
 function log(...args: any[]) {
+  // Always capture clean (un-styled) args to the persistent ring, so the
+  // diagnostics bundle has the worker's full history regardless of `debugging`.
+  workerLog.record("debug", args);
   if (!debugging) return;
-  console.log.call(
-    console,
+  // Display only: styled print via the raw (unpatched) console so we don't
+  // re-record through the patch, plus forward the clean args to connected tabs.
+  rawConsoleLog(
     `%cpatchwork:automergeworker%c\n`,
     `color: #ffaa00; font-weight: bold`,
     "color: inherit",
     ...args
   );
+  postToTabs("debug", args);
 }
 
 let repoHivePromise: Promise<{
@@ -213,6 +248,8 @@ function getRepoHive() {
 
       if (!useKeyhive) {
         const signer = await WebCryptoSigner.setup();
+        // Retain so the diagnostics handler can read the public verifying key.
+        workerSigner = signer;
 
         const repo = new Repo({
           storage: new IndexedDBStorageAdapter(),
@@ -233,6 +270,9 @@ function getRepoHive() {
 
         repo.networkSubsystem.whenReady().then(() => {
           log("repo network subsystem ready");
+          // Boot/hydration is the contention-sensitive window — only now do we
+          // let the logger start persisting (a 15s failsafe covers a hang).
+          workerLog.start();
         });
 
         return { repo };
@@ -269,6 +309,7 @@ function getRepoHive() {
       // would deadlock that path and starve the handoff handler.
       repo.networkSubsystem.whenReady().then(() => {
         log("repo network subsystem ready");
+        workerLog.start();
       });
 
       hive.networkAdapter.whenReady().then(() => {
@@ -424,7 +465,121 @@ function handleControlMessage(
         });
         replyPort?.close();
       });
+  } else if (data?.type === "diagnostics") {
+    const [replyPort] = event.ports;
+    void collectWorkerDiagnostics().then((diagnostics) => {
+      try {
+        replyPort?.postMessage({
+          type: "diagnostics-result",
+          data: diagnostics,
+        });
+      } catch (err) {
+        console.error("failed to post worker diagnostics", err);
+      }
+      try {
+        replyPort?.close();
+      } catch {}
+    });
   }
+}
+
+/** Gather everything the SharedWorker knows for a diagnostics bundle. */
+async function collectWorkerDiagnostics(): Promise<WorkerDiagnostics> {
+  const errors: string[] = [];
+
+  let repoInfo: WorkerDiagnostics["repo"] = null;
+  let subductionPeerIds: string[] | null = null;
+  const repo = (self as any).repo as Repo | undefined;
+  if (repo) {
+    try {
+      const handlesRecord: Record<string, DocHandle<unknown>> = (repo as any)
+        .handles ?? {};
+      const handles = Object.entries(handlesRecord).map(
+        ([documentId, handle]) => {
+          let state: string | undefined;
+          let heads: string[] | null | undefined;
+          try {
+            state = (handle as any).state;
+          } catch {}
+          try {
+            heads = (handle as any).heads?.() ?? null;
+          } catch {
+            heads = null;
+          }
+          return { documentId, state, heads };
+        }
+      );
+      const peers = ((repo as any).peers ?? []).map((p: unknown) => String(p));
+      repoInfo = {
+        peerId:
+          (repo as any).peerId != null ? String((repo as any).peerId) : null,
+        peers,
+        peerCount: peers.length,
+        handleCount: handles.length,
+        handles,
+      };
+    } catch (err) {
+      errors.push(`repo: ${String(err)}`);
+    }
+
+    try {
+      const fn = (repo as any).connectedSubductionPeerIds;
+      if (typeof fn === "function") {
+        subductionPeerIds = await fn.call(repo);
+      }
+    } catch (err) {
+      errors.push(`connectedSubductionPeerIds: ${String(err)}`);
+    }
+  }
+
+  let signer: WorkerDiagnostics["signer"] = null;
+  if (workerSigner) {
+    try {
+      const s = workerSigner as any;
+      const vkRaw =
+        typeof s.verifyingKey === "function"
+          ? s.verifyingKey()
+          : s.verifyingKey;
+      const vk =
+        vkRaw instanceof Uint8Array
+          ? vkRaw
+          : vkRaw
+            ? new Uint8Array(vkRaw)
+            : null;
+      const pidRaw = typeof s.peerId === "function" ? s.peerId() : s.peerId;
+      signer = {
+        verifyingKeyHex: vk ? toHex(vk) : null,
+        peerId: pidRaw != null ? String(pidRaw) : null,
+      };
+    } catch (err) {
+      errors.push(`signer: ${String(err)}`);
+    }
+  }
+
+  let logs: WorkerDiagnostics["logs"] = [];
+  let logsDropped = 0;
+  try {
+    const result = await workerLog.readForExport();
+    logs = result.entries;
+    logsDropped = result.dropped;
+  } catch (err) {
+    errors.push(`logs: ${String(err)}`);
+  }
+
+  return {
+    collectedAt: Date.now(),
+    keyhive: useKeyhive,
+    endpoints: SUBDUCTION_ENDPOINTS,
+    classicSync: classicSyncAdapter
+      ? { server: classicSyncServer, connected: true }
+      : null,
+    repo: repoInfo,
+    subductionPeerIds,
+    signer,
+    logs,
+    logsDropped,
+    errors,
+  };
 }
 
 self.addEventListener("connect", (event) => {

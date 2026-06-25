@@ -66,9 +66,16 @@ import {
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
+import { initTabDiagnostics, type TabDiagnostics } from "./diagnostics.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
+
+// Install the diagnostics surface as early as possible — before the top-level
+// wasm fetch and the boot awaits that can hang — so the console one-liner
+// `window.patchworkDiagnostics.export()` and persistent log capture exist even
+// when boot wedges (a wedged boot/dead worker is exactly when it's needed).
+const tabDiagnostics: TabDiagnostics = initTabDiagnostics({ siteName });
 
 declare global {
   interface Window {
@@ -91,6 +98,12 @@ declare global {
       };
     };
     uncache: (match: string) => Promise<void>;
+    /**
+     * Diagnostics export. Installed early in boot (before the awaits that can
+     * hang), so the console one-liner exists even when boot wedges:
+     * `await window.patchworkDiagnostics.export()`.
+     */
+    patchworkDiagnostics: TabDiagnostics;
   }
 }
 
@@ -179,13 +192,17 @@ export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
   const defaultModuleSources = resolveDefaultModules(config);
+  tabDiagnostics.setConfig({ ...config });
+  tabDiagnostics.breadcrumb("boot-start");
   showLoadingAnimation();
   log(`booting`, config);
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
+  tabDiagnostics.breadcrumb("wasm-initialized");
 
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
+  tabDiagnostics.breadcrumb("service-worker-setup");
 
   let hive: AutomergeRepoKeyhive | undefined;
   // Get the initial automerge-worker port via subscribeToRepoChannel,
@@ -196,6 +213,7 @@ export async function bootPatchworkSite(
   });
   await sw.subscribeToRepoChannel(resolvePort);
   const workerPort = await portPromise;
+  tabDiagnostics.breadcrumb("worker-port-ready");
 
   let repo: Repo;
   if (config.keyhive) {
@@ -234,6 +252,14 @@ export async function bootPatchworkSite(
     (hive.networkAdapter as any).syncKeyhive?.();
   }
 
+  tabDiagnostics.setRepo(repo);
+  tabDiagnostics.setHive(hive);
+  tabDiagnostics.setPlugins(plugins);
+  // Boot's contention-sensitive window is past — let the tab log persist now
+  // (a 15s failsafe in the logger covers the case where this is never reached).
+  tabDiagnostics.start();
+  tabDiagnostics.breadcrumb("repo-ready");
+
   installDevConsoleGlobals(repo, hive, sw.getRepoChannel);
 
   registerRepoProviderElement(repo as any);
@@ -262,6 +288,7 @@ export async function bootPatchworkSite(
     onModuleLoaded,
     unregisterPlugins
   );
+  tabDiagnostics.setModuleWatcher(moduleWatcher);
 
   const accountDocHandle = (await resolveAccountHandle(repo, {
     storageKey: config.accountStorageKey,
@@ -271,6 +298,8 @@ export async function bootPatchworkSite(
   //       fix this before merging to main!
 
   window.accountDocHandle = accountDocHandle;
+  tabDiagnostics.setAccountUrl(accountDocHandle.url);
+  tabDiagnostics.breadcrumb("account-resolved");
 
   wireModuleSettingsWhenReady(accountDocHandle, moduleWatcher);
 
@@ -322,10 +351,7 @@ function isValidModuleSource(source: string): boolean {
  * built-in default bundle).
  */
 function resolveDefaultModules(config: SiteConfig): string[] {
-  const builtin =
-    config.defaultModules ??
-    config.defaultModulesUrl ??
-    [];
+  const builtin = config.defaultModules ?? config.defaultModulesUrl ?? [];
   const builtinList = (Array.isArray(builtin) ? builtin : [builtin]).filter(
     Boolean
   );
@@ -623,10 +649,7 @@ function installHashRouting(params: HashRoutingParams): void {
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
       const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
       window.location.hash = "";
-      openDocument(
-        rootElement,
-        stringifyAutomergeUrl({ documentId, heads })
-      );
+      openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
       return;
     }
 
@@ -638,7 +661,8 @@ function installHashRouting(params: HashRoutingParams): void {
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
-      const docUrl = params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
+      const docUrl =
+        params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
       if (
         rootElement.getAttribute("tool-id") !== frame ||
         rootElement.getAttribute("doc-url") !== docUrl

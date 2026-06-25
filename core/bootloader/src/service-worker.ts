@@ -11,10 +11,50 @@ import {
   HANDOFF_CHANNEL,
   type HandoffReplyMessage,
   type HandoffRequestMessage,
+  type ServiceWorkerDiagnostics,
 } from "./types.js";
+import { RingLogger } from "./logger.js";
 
 let cachename = "default";
-let debugging = false;
+// Whether to PRINT service-worker logs to the console. Defaults on; the main
+// thread can flip it via the "debug" message (see setup.ts). Gates console
+// *display* only — the persistent ring logger below captures every log() call
+// regardless, so the diagnostics bundle is complete either way.
+let debugging = true;
+
+// Persistent log capture for the diagnostics bundle, in its own
+// `patchwork-logs-sw` database. The service worker doesn't touch the
+// `automerge` store, so there's nothing to contend with — start immediately.
+const swLog = new RingLogger("sw");
+swLog.start();
+
+// The unpatched console.log, captured before the patch below — used by log()
+// to print its styled banner without re-recording through the patch.
+const rawConsoleLog = console.log.bind(console);
+
+for (const level of ["log", "info", "warn", "error", "debug"] as const) {
+  const original = console[level].bind(console);
+  console[level] = (...args: any[]) => {
+    original(...args);
+    swLog.record(level, args);
+  };
+}
+
+self.addEventListener("error", (event) => {
+  const e = event as ErrorEvent;
+  swLog.record("error", [
+    `uncaught error: ${e.message}`,
+    e.error instanceof Error ? e.error.stack : undefined,
+  ]);
+});
+
+self.addEventListener("unhandledrejection", (event) => {
+  const reason = (event as PromiseRejectionEvent).reason;
+  swLog.record("error", [
+    "unhandled rejection:",
+    reason instanceof Error ? reason.stack || reason.message : reason,
+  ]);
+});
 
 const cacheableStatuses = [200, 203, 204];
 
@@ -23,9 +63,13 @@ const cacheableStatuses = [200, 203, 204];
 const HANDOFF_TIMEOUT_MS = 35_000;
 
 function log(...args: any[]) {
+  // Always capture clean (un-styled) args to the persistent ring, so the
+  // diagnostics bundle has the full history regardless of `debugging`.
+  swLog.record("debug", args);
   if (!debugging) return;
-  console.log.call(
-    console,
+  // Display only: styled print via the raw (unpatched) console so we don't
+  // re-record through the patch.
+  rawConsoleLog(
     `%cpatchwork:serviceworker%c\n`,
     `color: #00ffcc; font-weight: bold`,
     "color: inherit",
@@ -93,8 +137,61 @@ self.addEventListener("message", async (event) => {
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
+  } else if (event.data.type == "diagnostics") {
+    const replyPort = event.ports[0];
+    const data = await collectServiceWorkerDiagnostics();
+    try {
+      replyPort?.postMessage({ type: "diagnostics-result", data });
+    } catch (error) {
+      console.error("failed to post service worker diagnostics", error);
+    }
+    try {
+      replyPort?.close();
+    } catch {}
   }
 });
+
+/** Gather cache + log state for a diagnostics bundle. */
+async function collectServiceWorkerDiagnostics(): Promise<ServiceWorkerDiagnostics> {
+  const errors: string[] = [];
+  const cacheInfos: ServiceWorkerDiagnostics["caches"] = [];
+  try {
+    for (const name of await caches.keys()) {
+      try {
+        const cache = await caches.open(name);
+        const requests = await cache.keys();
+        cacheInfos.push({
+          name,
+          entryCount: requests.length,
+          urls: requests.slice(0, 200).map((r) => r.url),
+        });
+      } catch (error) {
+        errors.push(`cache ${name}: ${String(error)}`);
+      }
+    }
+  } catch (error) {
+    errors.push(`caches.keys: ${String(error)}`);
+  }
+
+  let logs: ServiceWorkerDiagnostics["logs"] = [];
+  let logsDropped = 0;
+  try {
+    const result = await swLog.readForExport();
+    logs = result.entries;
+    logsDropped = result.dropped;
+  } catch (error) {
+    errors.push(`logs: ${String(error)}`);
+  }
+
+  return {
+    collectedAt: Date.now(),
+    cacheVersion: cachename,
+    caches: cacheInfos,
+    logs,
+    logsDropped,
+    errors,
+  };
+}
 
 // ── Handoff to the automerge worker ────────────────────────────────────
 

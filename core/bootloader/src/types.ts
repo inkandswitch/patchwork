@@ -1,3 +1,5 @@
+import type { LogEntry } from "./logger.js";
+
 /**
  * The BroadcastChannel the service worker and the automerge shared worker
  * use to hand requests off to each other. Broadcast (rather than a
@@ -94,6 +96,65 @@ export interface HandoffOnlineMessage {
   type: "online";
 }
 
+// ── Diagnostics ────────────────────────────────────────────────────────
+// Tab → worker (control port) / tab → service worker (postMessage). The tab
+// sends `{ type: "diagnostics" }` with a transferred reply MessagePort; the
+// worker/SW gathers its state and posts a result back on that port, then
+// closes it.
+
+export interface DiagnosticsRequestMessage {
+  type: "diagnostics";
+}
+
+/** State the automerge SharedWorker contributes to a diagnostics bundle. */
+export interface WorkerDiagnostics {
+  collectedAt: number;
+  keyhive: boolean;
+  endpoints: string[];
+  classicSync: { server: string; connected: boolean } | null;
+  repo: {
+    peerId: string | null;
+    peers: string[];
+    peerCount: number;
+    handleCount: number;
+    handles: Array<{
+      documentId: string;
+      state?: string;
+      heads?: string[] | null;
+    }>;
+  } | null;
+  subductionPeerIds: string[] | null;
+  /**
+   * The peer's Ed25519 verifying (public) key + subduction peer id. NOTE: the
+   * private signing key itself lives in the raw IndexedDB dump the tab collects
+   * (`subduction-signer`), per the "full visibility" bundle policy.
+   */
+  signer: { verifyingKeyHex: string | null; peerId: string | null } | null;
+  logs: LogEntry[];
+  logsDropped: number;
+  errors: string[];
+}
+
+/** State the service worker contributes to a diagnostics bundle. */
+export interface ServiceWorkerDiagnostics {
+  collectedAt: number;
+  cacheVersion: string | null;
+  caches: Array<{ name: string; entryCount: number; urls?: string[] }>;
+  logs: LogEntry[];
+  logsDropped: number;
+  errors: string[];
+}
+
+export interface WorkerDiagnosticsResultMessage {
+  type: "diagnostics-result";
+  data: WorkerDiagnostics;
+}
+
+export interface ServiceWorkerDiagnosticsResultMessage {
+  type: "diagnostics-result";
+  data: ServiceWorkerDiagnostics;
+}
+
 export type SetupServiceWorkerOptions = {
   /**
    * The public path to the service worker file.
@@ -119,4 +180,19 @@ export type SetupServiceWorkerResult = {
   ) => Promise<() => void>;
   /** Open a fresh repo sync port to the automerge worker (dev console). */
   getRepoChannel: () => MessagePort;
+  /**
+   * Ask the automerge SharedWorker for its diagnostics snapshot. Resolves
+   * `null` if it doesn't reply within `timeoutMs` (so a wedged worker can't
+   * hang the export).
+   */
+  requestWorkerDiagnostics: (
+    timeoutMs?: number
+  ) => Promise<WorkerDiagnostics | null>;
+  /**
+   * Ask the service worker for its diagnostics snapshot. Resolves `null` if
+   * there's no controller or it doesn't reply within `timeoutMs`.
+   */
+  requestServiceWorkerDiagnostics: (
+    timeoutMs?: number
+  ) => Promise<ServiceWorkerDiagnostics | null>;
 };
