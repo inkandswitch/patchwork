@@ -79,7 +79,7 @@ Attached:  [ ] diagnostics bundle   [ ] host-diagnostics.txt
 
 Two console commands selectively clear the local Automerge store (`automerge/documents`). Both leave your signing key (the `subduction-signer` database) and logs (`patchwork-logs-*`) untouched, both return `{ deleted, kept }` counts, and both need a reload afterwards — the SharedWorker holds repo and Subduction state in memory, so the reload is what brings storage and the worker back into sync.
 
-Drop Subduction's sync log (loose commits, blobs, fragments). It accumulates to hundreds of MB and slows hydration, so if a bundle shows `idb/automerge.documents` dominated by `subduction/*` records this reclaims that space. The data re-fetches from the sync server, so it is recoverable, and your documents are left intact:
+Drop Subduction's store (loose commits, blobs, fragments). It accumulates to hundreds of MB and slows hydration, so if a bundle shows `idb/automerge.documents` dominated by `subduction/*` records this reclaims that space. The data re-fetches from the sync server, so it is recoverable, and your documents are left intact:
 
 ```js
 await window.dropSubductionStorage();
