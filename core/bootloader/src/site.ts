@@ -67,7 +67,6 @@ import {
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
-import { startSyncIndicator } from "./sync-indicator.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
@@ -85,6 +84,10 @@ declare global {
       packages: ModuleWatcher;
       plugins: typeof plugins;
       accountDocHandle: DocHandle<AccountDoc>;
+      signer?: {
+        peerId: string;
+        verifyingKey: string;
+      };
       sw: {
         connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
@@ -191,7 +194,7 @@ export async function bootPatchworkSite(
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
-  let tabPeerId: string | undefined;
+  let tabSignerIdentity: { peerId: string; verifyingKey: string } | undefined;
 
   // If a Repo is already on `window` — an embedding context provided one before
   // this entry ran — reuse it and its keyhive instead of standing up a fresh
@@ -231,9 +234,9 @@ export async function bootPatchworkSite(
       }));
     } else {
       // Pass an explicit signer (instead of the Repo's internal default) so we
-      // can label this tab's own row in the sync indicator (by its peerId) and
-      // log its identity. The tab never connects via Subduction (no
-      // endpoints/adapters), so this id never goes on the wire.
+      // can expose tab signer identity on window.patchwork for dev inspection.
+      // The tab never connects via Subduction (no endpoints/adapters), so this
+      // id never goes on the wire.
       const tabSigner = new MemorySigner();
       repo = new Repo({
         network: [new MessageChannelNetworkAdapter(workerPort)],
@@ -246,16 +249,15 @@ export async function bootPatchworkSite(
         peerId:
           `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
       });
-      const tabIdentity = {
+      tabSignerIdentity = {
         peerId: tabSigner.peerId().toString(),
-        verifyingKey: toHex(tabSigner.verifyingKey()),
+        verifyingKey: (
+          tabSigner.verifyingKey() as Uint8Array<ArrayBufferLike> & {
+            toHex(): string;
+          }
+        ).toHex(),
       };
-      console.log("[patchwork] tab subduction identity:", tabIdentity);
-      tabPeerId = tabIdentity.peerId;
-      const w = window as unknown as {
-        patchworkSyncIdentity?: Record<string, unknown>;
-      };
-      w.patchworkSyncIdentity = { ...w.patchworkSyncIdentity, tab: tabIdentity };
+      console.log("[patchwork] tab subduction identity:", tabSignerIdentity);
     }
   }
   await repo.networkSubsystem.whenReady();
@@ -306,15 +308,12 @@ export async function bootPatchworkSite(
   primeRootElement(rootElement, accountDocHandle);
   logToolRegistryWhenLoaded(moduleWatcher);
 
-  // Sync indicator: lists every document the worker knows about with each
-  // peer's heads vs. this tab's local heads (broadcast over SYNCSTATE_CHANNEL).
-  startSyncIndicator({ repo, tabPeerId });
-
   window.patchwork = {
     repo,
     packages: moduleWatcher,
     plugins,
     accountDocHandle,
+    ...(tabSignerIdentity ? { signer: tabSignerIdentity } : {}),
     sw: {
       connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
@@ -399,10 +398,6 @@ function buildSystemSources(sources: string[]): Record<string, string> {
     map[name] = source;
   });
   return map;
-}
-
-function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function installDevConsoleGlobals(

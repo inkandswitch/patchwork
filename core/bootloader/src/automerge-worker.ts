@@ -228,7 +228,11 @@ function getRepoHive() {
         const signer = await WebCryptoSigner.setup();
         const identity = {
           peerId: signer.peerId().toString(),
-          verifyingKey: toHex(signer.verifyingKey()),
+          verifyingKey: (
+            signer.verifyingKey() as Uint8Array<ArrayBufferLike> & {
+              toHex(): string;
+            }
+          ).toHex(),
         };
         console.log("[patchwork] shared-worker subduction identity:", identity);
 
@@ -306,10 +310,6 @@ function getRepoHive() {
     });
   }
   return repoHivePromise;
-}
-
-function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // ── Sync-state broadcast ───────────────────────────────────────────────
