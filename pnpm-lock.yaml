@@ -22,7 +22,7 @@ catalogs:
 overrides:
   '@automerge/automerge': 3.3.0-fragments.1
   '@automerge/automerge-repo': 2.6.0-subduction.37
-  '@automerge/automerge-repo-keyhive': 0.3.0-alpha.sub.7
+  '@automerge/automerge-repo-keyhive': 0.3.0-alpha.sub.8
   '@automerge/automerge-repo-network-messagechannel': 2.6.0-subduction.37
   '@automerge/automerge-repo-network-websocket': 2.6.0-subduction.37
   '@automerge/automerge-repo-react-hooks': 2.6.0-subduction.37
@@ -31,7 +31,7 @@ overrides:
   '@automerge/automerge-subduction': 0.16.0
   '@automerge/react': 2.6.0-subduction.37
   '@automerge/vanillajs': 2.6.0-subduction.37
-  '@keyhive/keyhive': 0.1.0-alpha.4
+  '@keyhive/keyhive': 0.1.0-alpha.5
 
 importers:
 
@@ -114,8 +114,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/providers/core
       '@keyhive/keyhive':
-        specifier: 0.1.0-alpha.4
-        version: 0.1.0-alpha.4
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5
       '@types/debug':
         specifier: ^4.1.13
         version: 4.1.13
@@ -133,8 +133,8 @@ importers:
         version: 0.1.4
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.7
-        version: 0.3.0-alpha.sub.7(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.8
+        version: 0.3.0-alpha.sub.8(ws@8.21.0)
       esbuild:
         specifier: ^0.23.1
         version: 0.23.1
@@ -152,8 +152,8 @@ importers:
         specifier: 2.6.0-subduction.37
         version: 2.6.0-subduction.37
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.7
-        version: 0.3.0-alpha.sub.7(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.8
+        version: 0.3.0-alpha.sub.8(ws@8.21.0)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -235,8 +235,8 @@ importers:
         specifier: 2.6.0-subduction.37
         version: 2.6.0-subduction.37
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.7
-        version: 0.3.0-alpha.sub.7(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.8
+        version: 0.3.0-alpha.sub.8(ws@8.21.0)
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
@@ -404,8 +404,8 @@ importers:
         version: 1.9.13
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.7
-        version: 0.3.0-alpha.sub.7(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.8
+        version: 0.3.0-alpha.sub.8(ws@8.21.0)
       '@eslint/js':
         specifier: ^9.39.4
         version: 9.39.4
@@ -413,8 +413,8 @@ importers:
         specifier: workspace:^
         version: link:../../core/bootloader
       '@keyhive/keyhive':
-        specifier: 0.1.0-alpha.4
-        version: 0.1.0-alpha.4
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5
       eslint:
         specifier: ^9.39.4
         version: 9.39.4(jiti@2.7.0)
@@ -483,8 +483,8 @@ importers:
         version: 1.9.13
     devDependencies:
       '@automerge/automerge-repo-keyhive':
-        specifier: 0.3.0-alpha.sub.7
-        version: 0.3.0-alpha.sub.7(ws@8.21.0)
+        specifier: 0.3.0-alpha.sub.8
+        version: 0.3.0-alpha.sub.8(ws@8.21.0)
       '@eslint/js':
         specifier: ^9.39.4
         version: 9.39.4
@@ -492,8 +492,8 @@ importers:
         specifier: workspace:^
         version: link:../../core/bootloader
       '@keyhive/keyhive':
-        specifier: 0.1.0-alpha.4
-        version: 0.1.0-alpha.4
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5
       eslint:
         specifier: ^9.39.4
         version: 9.39.4(jiti@2.7.0)
@@ -518,8 +518,8 @@ packages:
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
 
-  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.7':
-    resolution: {integrity: sha512-LbBi93O6AJsU03fK9UagDYe+nWESmi5p43X0h8krYxAvlaZVYnExpf6XYRmt7PXDR/Irm6e3ZV63GDu0NPhttQ==}
+  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.8':
+    resolution: {integrity: sha512-7unWjVfYUMii5RgLbVbkRK7JNlUZQaotx+3cCUw6HtvPazX1JPGQuHv70Oa3tyXbb5sjtZEiZcGxFNB9IrVakw==}
 
   '@automerge/automerge-repo-network-broadcastchannel@2.6.0-subduction.37':
     resolution: {integrity: sha512-OEm6cuCQcEThxb5o7hLk8g471omeu8daaeGoLqaGXvTpzE/1HacJK9WpdZQ7SWudkHYdum56nmR4X9BwDkfS3Q==}
@@ -1077,8 +1077,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@keyhive/keyhive@0.1.0-alpha.4':
-    resolution: {integrity: sha512-q2DmlG4gsZCVN2H2Dl7axQiLLwU/g1PCaiwWWewmi0MUpYWGkaU/hMmcBWKhDXmIzy1jXdSIODgx8+JSF86sZg==}
+  '@keyhive/keyhive@0.1.0-alpha.5':
+    resolution: {integrity: sha512-RoFimLwO91OR4/794pVT0SyTA4Gn3Jk9KL64ONrLe1UYLBdIPhrqeeQgY6i0FBcS1/zSeIFeK3AJZ8GzCRTRmA==}
 
   '@lezer/common@1.5.2':
     resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
@@ -2614,12 +2614,12 @@ snapshots:
       lru-cache: 10.4.3
     optional: true
 
-  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.7(ws@8.21.0)':
+  '@automerge/automerge-repo-keyhive@0.3.0-alpha.sub.8(ws@8.21.0)':
     dependencies:
       '@automerge/automerge-repo': 2.6.0-subduction.37
       '@automerge/automerge-repo-network-websocket': 2.6.0-subduction.37
       '@automerge/automerge-subduction': 0.16.0
-      '@keyhive/keyhive': 0.1.0-alpha.4
+      '@keyhive/keyhive': 0.1.0-alpha.5
       '@noble/hashes': 2.2.0
       cbor-x: 1.6.4
       eventemitter3: 5.0.4
@@ -3171,7 +3171,7 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
     optional: true
 
-  '@keyhive/keyhive@0.1.0-alpha.4': {}
+  '@keyhive/keyhive@0.1.0-alpha.5': {}
 
   '@lezer/common@1.5.2': {}
 
