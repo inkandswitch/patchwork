@@ -50,6 +50,7 @@ import {
   type HandoffRequestMessage,
   type HandoffResponseMessage,
   type SyncStateBroadcast,
+  type SyncStateDocMessage,
   type SyncStateRequestMessage,
 } from "./types.js";
 
@@ -65,6 +66,46 @@ let debugging = false;
 // post back over every connected tab's control port, tagged [automerge-worker].
 
 const controlPorts = new Set<MessagePort>();
+
+// ── Per-tab sync-state subscriptions ────────────────────────────────────
+// Each tab's control port subscribes to the documents it cares about; we push
+// only those docs' heads back down that port (addressed — tab A never sees tab
+// B's docs), and drop a port's whole subscription set when it closes (the tab
+// went away), so there's nothing to reference-count or time out. The global
+// connection/whoami signals still go over SYNCSTATE_CHANNEL.
+const syncWatchers = new Map<MessagePort, Set<string>>();
+
+// Installed by setupSyncStateBroadcast once the repo's snapshot exists, so a
+// fresh `sync-sub` can be replayed the doc's current heads immediately. Null
+// until then; subscriptions taken during boot are replayed when it installs.
+let replaySyncForPort:
+  | ((documentId: string, port: MessagePort) => void)
+  | null = null;
+
+function syncSubscribe(port: MessagePort, documentId: string): void {
+  let docs = syncWatchers.get(port);
+  if (!docs) syncWatchers.set(port, (docs = new Set()));
+  if (docs.has(documentId)) return;
+  docs.add(documentId);
+  replaySyncForPort?.(documentId, port);
+}
+
+function syncUnsubscribe(port: MessagePort, documentId: string): void {
+  syncWatchers.get(port)?.delete(documentId);
+}
+
+// Push one document's heads to every control port currently watching it.
+function pushSyncState(message: SyncStateDocMessage): void {
+  for (const [port, docs] of syncWatchers) {
+    if (!docs.has(message.documentId)) continue;
+    try {
+      port.postMessage(message);
+    } catch {
+      // Port already gone; its close handler will reap the entry.
+    }
+  }
+}
+
 // Logs emitted before any tab has connected (e.g. during wasm boot) would
 // otherwise be lost — buffer a bounded number and flush on first connect.
 const preConnectBuffer: Array<{ level: string; args: string[] }> = [];
@@ -353,19 +394,46 @@ function setupSyncStateBroadcast(
   // Announce our identity so tabs can label which peer rows are this worker.
   postWhoAmI();
 
+  // Heads are addressed, not broadcast: push a doc's heads only to the control
+  // ports that subscribed to it (see syncWatchers / pushSyncState).
   const postHeads = (
     documentId: string,
     storageId: string,
     heads: string[],
     timestamp: number
   ) =>
-    channel.postMessage({
-      type: "remote-heads",
+    pushSyncState({
+      type: "sync-state",
       documentId,
       storageId,
       heads,
       timestamp,
-    } satisfies SyncStateBroadcast);
+    });
+
+  // Let a `sync-sub` (which may have arrived while the repo was still booting)
+  // replay this doc's current snapshot to the subscribing port immediately.
+  const replayDoc = (documentId: string, port: MessagePort) => {
+    const byStorage = snapshot.get(documentId);
+    if (!byStorage) return;
+    for (const [storageId, { heads, timestamp }] of byStorage) {
+      try {
+        port.postMessage({
+          type: "sync-state",
+          documentId,
+          storageId,
+          heads,
+          timestamp,
+        } satisfies SyncStateDocMessage);
+      } catch {
+        // Port gone; its close handler reaps it.
+      }
+    }
+  };
+  replaySyncForPort = replayDoc;
+  // Catch up any ports that subscribed before this wiring existed.
+  for (const [port, docs] of syncWatchers) {
+    for (const documentId of docs) replayDoc(documentId, port);
+  }
 
   const postConnection = () =>
     channel.postMessage({
@@ -562,20 +630,13 @@ function setupSyncStateBroadcast(
   });
 
   // A BroadcastChannel never receives its own posts, so this only sees tabs'
-  // requests, never our own broadcasts.
+  // requests, never our own broadcasts. We replay just the global signals here;
+  // a late tab gets per-doc heads by subscribing (sync-sub), not from this.
   channel.addEventListener("message", (event: MessageEvent) => {
     const data = event.data as SyncStateRequestMessage;
     if (data?.type !== "request") return;
     postWhoAmI();
     postConnection();
-    const docs = data.documentId ? [data.documentId] : [...snapshot.keys()];
-    for (const documentId of docs) {
-      const byStorage = snapshot.get(documentId);
-      if (!byStorage) continue;
-      for (const [storageId, { heads, timestamp }] of byStorage) {
-        postHeads(documentId, storageId, heads, timestamp);
-      }
-    }
   });
 
   // In case we're already connected by the time this wires up.
@@ -706,6 +767,14 @@ function handleControlMessage(
         });
       }
     );
+  } else if (data?.type === "sync-sub") {
+    if (typeof data.documentId === "string") {
+      syncSubscribe(controlPort, data.documentId);
+    }
+  } else if (data?.type === "sync-unsub") {
+    if (typeof data.documentId === "string") {
+      syncUnsubscribe(controlPort, data.documentId);
+    }
   } else if (data?.type === "debug") {
     debugging = data.debug;
     log("automerge worker debugging enabled");
@@ -744,6 +813,9 @@ self.addEventListener("connect", (event) => {
   // event fall back to the adapters' lazy useWeakRef cleanup.
   controlPort.addEventListener("close", () => {
     controlPorts.delete(controlPort);
+    // The tab is gone — drop its sync subscriptions wholesale so we stop
+    // pushing it heads (no per-doc unsub needed, no leak).
+    syncWatchers.delete(controlPort);
     void dropConnection(connection);
   });
 

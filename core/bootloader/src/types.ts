@@ -14,18 +14,6 @@ export const HANDOFF_CHANNEL = "@patchwork/handoff";
 export const SYNCSTATE_CHANNEL = "@patchwork/syncstate";
 
 /**
- * Worker → tabs: a Subduction peer (the sync server), identified by its
- * verifying-key `storageId`, advertised new `heads` for a document.
- */
-export interface SyncStateRemoteHeadsMessage {
-  type: "remote-heads";
-  documentId: string;
-  storageId: string;
-  heads: string[];
-  timestamp: number;
-}
-
-/**
  * Worker → tabs: the worker's Subduction link to the sync server flipped.
  * `serverPeerIds` are the directly-connected sync-server peer ids (their
  * verifying keys), so a tab can tell which peer rows are *the server* and
@@ -48,18 +36,58 @@ export interface SyncStateWhoAmIMessage {
   verifyingKey: string;
 }
 
+// What the worker broadcasts on SYNCSTATE_CHANNEL: only the *global* signals
+// now. Per-document heads are addressed to subscribers over the control port
+// instead (see SyncStateDocMessage) rather than fanned out to every tab.
 export type SyncStateBroadcast =
-  | SyncStateRemoteHeadsMessage
   | SyncStateConnectionMessage
   | SyncStateWhoAmIMessage;
 
 /**
- * Tab → worker: please replay the current sync state so a freshly-opened tab
- * can render immediately. Optionally scoped to a single document.
+ * Tab → worker: please replay the current global sync signals (whoami +
+ * connection) so a freshly-opened tab can orient immediately. Per-document
+ * heads are no longer replayed here — a tab subscribes to the specific docs it
+ * cares about over its control port instead (see {@link SyncSubscribeMessage}).
  */
 export interface SyncStateRequestMessage {
   type: "request";
+  /** @deprecated ignored — per-doc state is delivered via sync-sub now. */
   documentId?: string;
+}
+
+// ── Per-tab sync-state subscription (over the SharedWorker control port) ──
+//
+// The broadcast SyncState* messages above are global (connection/whoami).
+// Per-document heads, by contrast, are addressed: a tab subscribes its control
+// port to just the documents it cares about and the worker pushes only those
+// docs' heads back down that port. The worker drops a port's whole
+// subscription set automatically when the port closes (the tab went away), so
+// there's no reference counting or heartbeat to leak.
+
+/** Tab → worker: start pushing me this document's heads (replays current state). */
+export interface SyncSubscribeMessage {
+  type: "sync-sub";
+  documentId: string;
+}
+
+/** Tab → worker: stop pushing me this document's heads. */
+export interface SyncUnsubscribeMessage {
+  type: "sync-unsub";
+  documentId: string;
+}
+
+/**
+ * Worker → tab (control port): a peer's heads for a subscribed document — the
+ * worker's own (keyed by its peerId) or a Subduction peer's (keyed by its
+ * verifying-key storageId). Same payload as the old broadcast remote-heads
+ * message, but delivered only to the tabs that asked for this document.
+ */
+export interface SyncStateDocMessage {
+  type: "sync-state";
+  documentId: string;
+  storageId: string;
+  heads: string[];
+  timestamp: number;
 }
 
 /**
@@ -168,4 +196,15 @@ export type SetupServiceWorkerResult = {
   ) => Promise<() => void>;
   /** Open a fresh repo sync port to the automerge worker (dev console). */
   getRepoChannel: () => MessagePort;
+  /**
+   * Watch one document's sync heads (this tab's own and each Subduction peer's,
+   * as the worker learns them). Calls `listener` on every update for that doc,
+   * replaying the current state on subscribe. Returns an unsubscribe function;
+   * the worker stops pushing the doc once the last local watcher drops it (and
+   * automatically if this tab goes away).
+   */
+  subscribeSyncState: (
+    documentId: string,
+    listener: (update: SyncStateDocMessage) => void
+  ) => () => void;
 };

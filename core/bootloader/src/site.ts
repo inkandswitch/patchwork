@@ -67,7 +67,10 @@ import {
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
 import setupServiceWorker from "./setup.js";
-import type { ServiceWorkerRepoChannelListener } from "./types.js";
+import type {
+  ServiceWorkerRepoChannelListener,
+  SyncStateDocMessage,
+} from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
 
@@ -93,6 +96,10 @@ declare global {
         subscribeToRepoChannel: (
           listener: ServiceWorkerRepoChannelListener
         ) => Promise<() => void>;
+        subscribeSyncState: (
+          documentId: string,
+          listener: (update: SyncStateDocMessage) => void
+        ) => () => void;
       };
     };
     uncache: (match: string) => Promise<void>;
@@ -317,6 +324,7 @@ export async function bootPatchworkSite(
     sw: {
       connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
+      subscribeSyncState: sw.subscribeSyncState,
     },
   };
   window.uncache = uncache;
