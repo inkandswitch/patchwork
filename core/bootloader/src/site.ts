@@ -188,46 +188,56 @@ export async function bootPatchworkSite(
   if (!sw) throw new Error("Failed to set up service worker");
 
   let hive: AutomergeRepoKeyhive | undefined;
-  // Get the initial automerge-worker port via subscribeToRepoChannel,
-  // then pass it to keyhive init which wraps it in its own network adapter.
-  let resolvePort!: (port: MessagePort) => void;
-  const portPromise = new Promise<MessagePort>((r) => {
-    resolvePort = r;
-  });
-  await sw.subscribeToRepoChannel(resolvePort);
-  const workerPort = await portPromise;
-
   let repo: Repo;
-  if (config.keyhive) {
-    initKeyhiveWasm();
 
-    ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
-      createRepo: (config) => new Repo(config),
-      storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
-      peerIdSuffix: siteName + Math.random().toString(36).slice(2),
-      networkAdapter: new MessageChannelNetworkAdapter(workerPort),
-      automaticArchiveIngestion: true,
-      cachingMode: "periodic",
-      onlyShareWithHardcodedServerPeerId: false,
-      // ARK selects the relay via `syncServer` ("keyhive" | "subduction").
-      // Defaults to "subduction".
-      ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
-      repo: {
-        storage: new IndexedDBStorageAdapter(),
-        enableRemoteHeadsGossiping: true,
-      },
-    }));
+  // If a Repo is already on `window` — an embedding context provided one before
+  // this entry ran — reuse it and its keyhive instead of standing up a fresh
+  // realm-local Repo, so we share the same documents and sync/keyhive context.
+  // Otherwise create our own below.
+  if (window.repo) {
+    repo = window.repo;
+    hive = window.hive;
   } else {
-    repo = new Repo({
-      network: [new MessageChannelNetworkAdapter(workerPort)],
-      storage: new IndexedDBStorageAdapter(),
-      async sharePolicy(peerId) {
-        return peerId.includes("automerge-worker");
-      },
-      enableRemoteHeadsGossiping: true,
-      peerId:
-        `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+    // Get the initial automerge-worker port via subscribeToRepoChannel,
+    // then pass it to keyhive init which wraps it in its own network adapter.
+    let resolvePort!: (port: MessagePort) => void;
+    const portPromise = new Promise<MessagePort>((r) => {
+      resolvePort = r;
     });
+    await sw.subscribeToRepoChannel(resolvePort);
+    const workerPort = await portPromise;
+
+    if (config.keyhive) {
+      initKeyhiveWasm();
+
+      ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
+        createRepo: (config) => new Repo(config),
+        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+        peerIdSuffix: siteName + Math.random().toString(36).slice(2),
+        networkAdapter: new MessageChannelNetworkAdapter(workerPort),
+        automaticArchiveIngestion: true,
+        cachingMode: "periodic",
+        onlyShareWithHardcodedServerPeerId: false,
+        // ARK selects the relay via `syncServer` ("keyhive" | "subduction").
+        // Defaults to "subduction".
+        ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+        repo: {
+          storage: new IndexedDBStorageAdapter(),
+          enableRemoteHeadsGossiping: true,
+        },
+      }));
+    } else {
+      repo = new Repo({
+        network: [new MessageChannelNetworkAdapter(workerPort)],
+        storage: new IndexedDBStorageAdapter(),
+        async sharePolicy(peerId) {
+          return peerId.includes("automerge-worker");
+        },
+        enableRemoteHeadsGossiping: true,
+        peerId:
+          `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+      });
+    }
   }
   await repo.networkSubsystem.whenReady();
   if (hive) {
