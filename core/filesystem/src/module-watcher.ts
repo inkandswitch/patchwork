@@ -20,7 +20,14 @@ export type ModuleSettingsDoc = {
 const DEFAULT_BRANCH = "default";
 
 function getDocumentBaseUrl(): string {
-  return globalThis.location?.href ?? "http://localhost/";
+  // `document.baseURI` is the document's proper base URL — for a srcdoc/sandboxed
+  // frame that's the embedder's URL (a valid base), where `location.href` would
+  // be "about:srcdoc" (invalid). Falls back to location for non-document realms.
+  return (
+    globalThis.document?.baseURI ??
+    globalThis.location?.href ??
+    "http://localhost/"
+  );
 }
 
 /**

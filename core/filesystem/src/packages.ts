@@ -6,6 +6,19 @@ const log = debug("patchwork:filesystem");
 
 export const defaultImportConditions = ["patchwork", "browser", "import"];
 
+// The origin to resolve service-worker module URLs against. `location.origin`
+// is the string "null" inside a srcdoc/sandboxed frame — an invalid URL base —
+// whereas `document.baseURI` is the document's proper base URL (the embedder's
+// URL for a srcdoc frame, and the page URL for a normal document), so its origin
+// is valid in both cases.
+function documentBaseOrigin(): string {
+  try {
+    return new URL(document.baseURI).origin;
+  } catch {
+    return window.location.origin;
+  }
+}
+
 export async function importModuleFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
   subpath: string = ".",
@@ -35,7 +48,7 @@ async function packageJsonContentsFromFolderDocUrl(
     "package.json",
     new URL(
       getImportableUrlFromAutomergeUrl(folderDocUrl),
-      window.location.origin
+      documentBaseOrigin()
     )
   ).href;
 
@@ -85,7 +98,7 @@ async function packageEntryPointUrl(
   // Build the final URL via the URL constructor
   const base = new URL(
     getImportableUrlFromAutomergeUrl(folderDocUrl),
-    window.location.origin
+    documentBaseOrigin()
   );
 
   const entry = new URL(entryPoint, base);
