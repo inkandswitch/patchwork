@@ -82,7 +82,15 @@ function getAutomergeWorker(): SharedWorker {
       if (event.data?.type !== "console") return;
       const { level, args } = event.data;
       const fn = (console as any)[level] ?? console.log;
-      fn("[automerge-worker]", ...args);
+      // The worker's logs (debug library, the worker's own log()) carry %c
+      // format directives in args[0] with CSS in the following args. Prefix
+      // the tag into the format string rather than as a separate positional,
+      // or the %c would no longer be in arg 0 and the CSS would print raw.
+      if (typeof args[0] === "string") {
+        fn(`[automerge-worker] ${args[0]}`, ...args.slice(1));
+      } else {
+        fn("[automerge-worker]", ...args);
+      }
     });
     automergeWorker.port.postMessage({ type: "debug", debug: workerDebugging });
   }
