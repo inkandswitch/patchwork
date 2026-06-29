@@ -178,7 +178,6 @@ const [automergeWasm, subductionWasm] = await Promise.all([
 export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
-  (window as any)._ivy = getAutomergeWorker();
   const defaultModuleSources = resolveDefaultModules(config);
   showLoadingAnimation();
   log(`booting`, config);
@@ -187,9 +186,6 @@ export async function bootPatchworkSite(
 
   log("enabling workers");
   const sw = await setupServiceWorker();
-  console.log({ ...sw });
-  (window as any).sw = { ...sw };
-  (window as any)._sw = sw;
   if (!sw) throw new Error("Failed to set up service worker");
   log("workers ready");
 

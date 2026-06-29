@@ -206,7 +206,6 @@ export default async function setupServiceWorker(
   // service worker installs.
   const shared = getAutomergeWorker();
   // todo delete
-  (window as any).shared = shared;
 
   const path = options?.path ?? "/service-worker.js";
   // No controller at this point means the page loaded without a service
@@ -261,12 +260,6 @@ export default async function setupServiceWorker(
       // worker repo there's nothing to reconnect: one port, handed over once.
       await listener(await openRepoChannel());
       return () => {};
-    },
-    kill() {
-      if (automergeWorker) {
-        automergeWorker.port.close();
-        automergeWorker = undefined;
-      }
     },
   };
 }
