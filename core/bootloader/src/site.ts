@@ -184,11 +184,13 @@ export async function bootPatchworkSite(
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
-  log("enabling service worker");
+  log("enabling workers");
   const sw = await setupServiceWorker();
+  console.log(sw);
   (window as any).sw = sw;
+  (window as any)._sw = sw;
   if (!sw) throw new Error("Failed to set up service worker");
-  log("service worker ready");
+  log("workers ready");
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
