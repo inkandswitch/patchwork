@@ -248,6 +248,8 @@ export async function bootPatchworkSite(
       log("repo created");
     }
   }
+  log("popping repo on window");
+  window.repo = repo;
   log("await repo.networkSubsystem.whenReady()");
   await repo.networkSubsystem.whenReady();
   log("networkSubsystem ready");
