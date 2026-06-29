@@ -252,11 +252,9 @@ export async function bootPatchworkSite(
   log("popping repo on window");
   window.repo = repo;
   log("await repo.networkSubsystem.whenReady()");
-  // ignore this
-  if (!localStorage.ivy) {
-    await repo.networkSubsystem.whenReady();
-    log("networkSubsystem ready");
-  }
+
+  await repo.networkSubsystem.whenReady();
+  log("networkSubsystem ready");
 
   if (hive) {
     (hive.networkAdapter as any).syncKeyhive?.();

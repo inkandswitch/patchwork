@@ -120,11 +120,7 @@ export function connectClassicSync(
       if (event.data?.type === "connect-classic-sync-ready") {
         resolve();
       } else {
-        reject(
-          new Error(
-            event.data?.error ?? "connect-classic-sync failed"
-          )
-        );
+        reject(new Error(event.data?.error ?? "connect-classic-sync failed"));
       }
     };
     worker.port.postMessage({ type: "connect-classic-sync", server: url }, [
@@ -208,7 +204,7 @@ export default async function setupServiceWorker(
 
   // Start the automerge worker right away so it boots (wasm, repo) while the
   // service worker installs.
-  getAutomergeWorker();
+  const shared = getAutomergeWorker();
 
   const path = options?.path ?? "/service-worker.js";
   // No controller at this point means the page loaded without a service
@@ -247,6 +243,7 @@ export default async function setupServiceWorker(
   );
 
   return {
+    shared,
     connectClassicSync,
     getRepoChannel,
     async subscribeToRepoChannel(listener: ServiceWorkerRepoChannelListener) {
