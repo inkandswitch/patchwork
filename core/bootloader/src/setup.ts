@@ -67,7 +67,7 @@ function configureServiceWorker(sw: ServiceWorker | null) {
 let automergeWorkerPath = "/automerge-worker.js";
 let automergeWorker: SharedWorker | undefined;
 
-function getAutomergeWorker(): SharedWorker {
+export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
     automergeWorker = new SharedWorker(automergeWorkerPath, {
       name: "patchwork-automerge",

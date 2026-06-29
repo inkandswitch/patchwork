@@ -65,7 +65,7 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-import setupServiceWorker from "./setup.js";
+import setupServiceWorker, { getAutomergeWorker } from "./setup.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
@@ -178,6 +178,7 @@ const [automergeWasm, subductionWasm] = await Promise.all([
 export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
+  (window as any)._ivy = getAutomergeWorker();
   const defaultModuleSources = resolveDefaultModules(config);
   showLoadingAnimation();
   log(`booting`, config);
