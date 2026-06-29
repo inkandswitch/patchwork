@@ -205,6 +205,8 @@ export default async function setupServiceWorker(
   // Start the automerge worker right away so it boots (wasm, repo) while the
   // service worker installs.
   const shared = getAutomergeWorker();
+  // todo delete
+  (window as any).shared = shared;
 
   const path = options?.path ?? "/service-worker.js";
   // No controller at this point means the page loaded without a service
@@ -241,6 +243,14 @@ export default async function setupServiceWorker(
     "service worker alive, loading %c patchwork system ",
     "background: #fcf2f0; color: #333; border: 2px solid; border-radius: 4px"
   );
+
+  // todon't
+  (window as any).killsw = () => {
+    if (automergeWorker) {
+      automergeWorker.port.close();
+      automergeWorker = undefined;
+    }
+  };
 
   return {
     shared,
