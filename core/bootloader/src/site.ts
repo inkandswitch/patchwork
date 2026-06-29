@@ -186,6 +186,7 @@ export async function bootPatchworkSite(
 
   log("enabling service worker");
   const sw = await setupServiceWorker();
+  (window as any).sw = sw;
   if (!sw) throw new Error("Failed to set up service worker");
   log("service worker ready");
 
@@ -251,8 +252,11 @@ export async function bootPatchworkSite(
   log("popping repo on window");
   window.repo = repo;
   log("await repo.networkSubsystem.whenReady()");
-  await repo.networkSubsystem.whenReady();
-  log("networkSubsystem ready");
+  // ignore this
+  if (!localStorage.ivy) {
+    await repo.networkSubsystem.whenReady();
+    log("networkSubsystem ready");
+  }
 
   if (hive) {
     (hive.networkAdapter as any).syncKeyhive?.();
