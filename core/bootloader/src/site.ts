@@ -184,8 +184,10 @@ export async function bootPatchworkSite(
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
+  log("enabling service worker");
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
+  log("service worker ready");
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
@@ -195,6 +197,7 @@ export async function bootPatchworkSite(
   // realm-local Repo, so we share the same documents and sync/keyhive context.
   // Otherwise create our own below.
   if (window.repo) {
+    log("using existing Repo from window");
     repo = window.repo;
     hive = window.hive;
   } else {
@@ -204,10 +207,13 @@ export async function bootPatchworkSite(
     const portPromise = new Promise<MessagePort>((r) => {
       resolvePort = r;
     });
+    log("subscribing to repo channel");
     await sw.subscribeToRepoChannel(resolvePort);
+    log("repo channel subscribed");
     const workerPort = await portPromise;
 
     if (config.keyhive) {
+      log("setting up keyhive");
       initKeyhiveWasm();
 
       ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
@@ -226,7 +232,9 @@ export async function bootPatchworkSite(
           enableRemoteHeadsGossiping: true,
         },
       }));
+      log("keyhive setup complete");
     } else {
+      log("creating repo");
       repo = new Repo({
         network: [new MessageChannelNetworkAdapter(workerPort)],
         storage: new IndexedDBStorageAdapter(),
@@ -237,9 +245,13 @@ export async function bootPatchworkSite(
         peerId:
           `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
       });
+      log("repo created");
     }
   }
+  log("await repo.networkSubsystem.whenReady()");
   await repo.networkSubsystem.whenReady();
+  log("networkSubsystem ready");
+
   if (hive) {
     (hive.networkAdapter as any).syncKeyhive?.();
   }
@@ -332,10 +344,7 @@ function isValidModuleSource(source: string): boolean {
  * built-in default bundle).
  */
 function resolveDefaultModules(config: SiteConfig): string[] {
-  const builtin =
-    config.defaultModules ??
-    config.defaultModulesUrl ??
-    [];
+  const builtin = config.defaultModules ?? config.defaultModulesUrl ?? [];
   const builtinList = (Array.isArray(builtin) ? builtin : [builtin]).filter(
     Boolean
   );
@@ -633,10 +642,7 @@ function installHashRouting(params: HashRoutingParams): void {
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
       const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
       window.location.hash = "";
-      openDocument(
-        rootElement,
-        stringifyAutomergeUrl({ documentId, heads })
-      );
+      openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
       return;
     }
 
@@ -648,7 +654,8 @@ function installHashRouting(params: HashRoutingParams): void {
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
-      const docUrl = params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
+      const docUrl =
+        params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
       if (
         rootElement.getAttribute("tool-id") !== frame ||
         rootElement.getAttribute("doc-url") !== docUrl
