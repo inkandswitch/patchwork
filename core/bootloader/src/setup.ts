@@ -252,5 +252,11 @@ export default async function setupServiceWorker(
       await listener(await openRepoChannel());
       return () => {};
     },
+    kill() {
+      if (automergeWorker) {
+        automergeWorker.port.close();
+        automergeWorker = undefined;
+      }
+    },
   };
 }
