@@ -196,12 +196,31 @@ export function containsAutomergeUrl(url: string): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve a plugin's automerge importUrl to its package entry point URL
- * and package name from package.json.
+ * Resolve a plugin's importUrl to its package entry point URL and package name.
+ *
+ * Plugin source can be stored in two places, and the importUrl says which:
+ *  - **Automerge URL** (`automerge:...`) — the package lives in a folder doc in
+ *    the host repo. We resolve it the same way the host does: read the folder's
+ *    `package.json` (via the service-worker-resolvable host-origin path) and
+ *    resolve its export to the entry point. These get rewritten to opaque `pkg:`
+ *    URLs by the caller so the automerge ID never reaches the iframe.
+ *  - **Plain HTTP(S) URL** — the package is statically deployed elsewhere (e.g.
+ *    a Netlify bundle listed in a static module manifest). The importUrl is
+ *    already the resolved entry point (mirroring how `ModuleWatcher` does a
+ *    bare `import(importName)` for non-automerge modules), so we pass it through
+ *    unchanged. It carries no user data and is loaded directly, not via the
+ *    host-origin/automerge path — routing it through the service worker is what
+ *    produced the 35s "no reply from the automerge worker" hangs.
  */
 async function resolvePluginEntryUrl(
   importUrl: string
 ): Promise<{ entryUrl: string; packageName?: string } | undefined> {
+  // Non-automerge importUrls are already-resolved entry points hosted wherever
+  // they live; pass them through without the folder/package.json resolution.
+  if (!isValidAutomergeUrl(importUrl)) {
+    return { entryUrl: importUrl };
+  }
+
   const folderPath = getImportableUrlFromAutomergeUrl(
     importUrl as AutomergeUrl
   );
@@ -264,8 +283,11 @@ async function resolveUrl(
 /**
  * Convert a host registry plugin into a serializable `RegistryEntry` for the
  * iframe:
- *  - resolve its automerge `importUrl` to a package entry point, then rewrite
- *    it to an opaque `pkg:` URL via the mapper (so automerge IDs never leak);
+ *  - resolve its `importUrl` to a package entry point. For an automerge
+ *    `importUrl` the mapper rewrites the entry to an opaque `pkg:` URL so the
+ *    automerge ID never leaks; for a plain HTTP(S) `importUrl` the entry passes
+ *    through unchanged (`toPackageUrl` only rewrites automerge segments), so the
+ *    iframe imports it directly from where it is deployed;
  *  - strip non-cloneable fields (`load`, `module`) and deep-copy the rest so it
  *    survives `postMessage`.
  *
