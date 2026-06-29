@@ -186,8 +186,8 @@ export async function bootPatchworkSite(
 
   log("enabling workers");
   const sw = await setupServiceWorker();
-  console.log(sw);
-  (window as any).sw = sw;
+  console.log({ ...sw });
+  (window as any).sw = { ...sw };
   (window as any)._sw = sw;
   if (!sw) throw new Error("Failed to set up service worker");
   log("workers ready");
