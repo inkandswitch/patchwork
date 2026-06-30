@@ -7,23 +7,25 @@
  *
  *   const el = document.createElement("patchwork-isolation");
  *   el.configure({
- *     rootComponentId: "threepane-document-area",
+ *     entryUrl: new URL("./isolation-entry.js", import.meta.url).href,
  *     props: { selectedDocUrl, traySlots, ... },  // structured-clone JSON only
  *     rootUrls: [selectedDocUrl, contactUrl],      // allowlist seeds
  *   });
  *
  * The spec is data only — no live DOM, no functions. Tool code therefore never
- * runs in the host realm: the iframe resolves `rootComponentId` against its own
- * registry and mounts it. Any later `configure()` with a different spec tears the
- * iframe down and boots a fresh one (no diffing, no in-place re-pointing).
+ * runs in the host realm: the iframe imports the module at `entryUrl` and calls
+ * its default export as the mount fn. No registry entry is involved. Any later
+ * `configure()` with a different spec tears the iframe down and boots a fresh one
+ * (no diffing, no in-place re-pointing).
  *
  * Lifecycle (per boot):
  *  1. Fetch boot assets (es-module-shims, WASM, host styles) — cached
  *  2. Get shared denylist (singleton, populated once from sensitive docs)
  *  3. Create allowlist seeded from `spec.rootUrls` (+ populated from doc content)
  *  4. Create intermediary repo gated by allowlist + denylist
- *  5. Start host-side RPC for plugin loading, navigation, and bridged providers
- *  6. Create sandboxed iframe and send boot message (rootComponentId + props +
+ *  5. Resolve `spec.entryUrl` to an opaque `pkg:` URL (same pipeline as plugins)
+ *  6. Start host-side RPC for plugin loading, navigation, and bridged providers
+ *  7. Create sandboxed iframe and send boot message (entryUrl + props +
  *     registry entries)
  *
  * Register at boot time via `registerPatchworkIsolationElement()`.
@@ -42,6 +44,7 @@ import {
   getRegistries,
   startPluginsRpc,
   watchRegistries,
+  resolveRootEntryPkgUrl,
 } from "./plugins-bridge.js";
 import {
   populateAllowlistFromRoots,
@@ -253,7 +256,7 @@ function getResolvedImportMap(): ImportMap {
  * (expensive) iframe reboot.
  */
 function specsEqual(a: IsolationBootSpec, b: IsolationBootSpec): boolean {
-  if (a.rootComponentId !== b.rootComponentId) return false;
+  if (a.entryUrl !== b.entryUrl) return false;
   if (a.rootUrls.length !== b.rootUrls.length) return false;
   for (let i = 0; i < a.rootUrls.length; i++) {
     if (a.rootUrls[i] !== b.rootUrls[i]) return false;
@@ -333,7 +336,7 @@ export function registerPatchworkIsolationElement(
 
         const rootUrls = spec.rootUrls;
         log(
-          `init root "${spec.rootComponentId}" with ${rootUrls.length} root URLs`
+          `init root "${spec.entryUrl}" with ${rootUrls.length} root URLs`
         );
 
         const repo = this.#getRepo();
@@ -526,9 +529,22 @@ export function registerPatchworkIsolationElement(
           watchRegistries(this.#hostRpcPort, mapper)
         );
 
+        // Resolve the root entry module URL to an opaque pkg: URL — the same
+        // pipeline plugin import URLs go through — so the iframe loads it via the
+        // existing fetch path and no automerge id crosses the boundary.
+        const entryPkgUrl = await resolveRootEntryPkgUrl(spec.entryUrl, mapper);
+        if (epoch !== this.#initEpoch) return;
+        if (!entryPkgUrl) {
+          console.error(
+            "[patchwork-isolation] could not resolve root entry URL:",
+            spec.entryUrl
+          );
+          return;
+        }
+
         // ── Iframe ──────────────────────────────────────────────
         this.#createIframe(epoch, rpcChannel.port2, this.#intermediary.iframePort, mapper, assets, {
-          rootComponentId: spec.rootComponentId,
+          entryUrl: entryPkgUrl,
           props: spec.props,
           importMap,
         });
@@ -568,7 +584,7 @@ export function registerPatchworkIsolationElement(
         mapper: PluginsUrlMapper,
         assets: BootAssets,
         config: {
-          rootComponentId: string;
+          entryUrl: string;
           props: Record<string, unknown>;
           importMap: ImportMap;
         }
@@ -597,12 +613,12 @@ export function registerPatchworkIsolationElement(
           const subductionWasm = assets.subductionWasm.slice(0);
 
           log(
-            `sending boot message with ${registryEntries.length} registry entries, root "${config.rootComponentId}"`
+            `sending boot message with ${registryEntries.length} registry entries, entry "${config.entryUrl}"`
           );
           iframe.contentWindow.postMessage(
             {
               type: "boot",
-              rootComponentId: config.rootComponentId,
+              entryUrl: config.entryUrl,
               props: config.props,
               registryEntries,
               esmsSource: assets.esmsSource,

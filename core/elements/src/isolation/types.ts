@@ -14,13 +14,22 @@ import type { AutomergeUrl } from "@automerge/automerge-repo";
  * The boot spec the host hands to `<patchwork-isolation>` via `configure()`.
  *
  * It is data only — no live DOM, no functions, no handles. The host computes it
- * from its own state; the iframe mounts `rootComponentId` (a `patchwork:component`)
- * and the element seeds the document allowlist from `rootUrls`. Any change to the
- * spec tears the iframe down and boots a fresh one (no diffing).
+ * from its own state; the iframe imports the module at `entryUrl` and calls its
+ * default export as the mount fn, and the element seeds the document allowlist
+ * from `rootUrls`. Any change to the spec tears the iframe down and boots a fresh
+ * one (no diffing).
  */
 export interface IsolationBootSpec {
-  /** The `patchwork:component` id to mount as the isolated root. */
-  rootComponentId: string;
+  /**
+   * URL of the root module to mount. The host resolves it to an opaque `pkg:`
+   * URL (the same pipeline plugin import URLs go through) before sending it to
+   * the iframe, which imports it and calls its **default export** as the mount
+   * fn `(element, repo) => cleanup`. No registry entry is involved.
+   *
+   * A tool typically produces this with
+   * `new URL(/* @vite-ignore *\/ "./entry.js", import.meta.url).href`.
+   */
+  entryUrl: string;
   /**
    * Props handed to the root. Structured-clone JSON only — no `Accessor`,
    * callback, DOM node, or handle. Materialized inside the iframe as an inert

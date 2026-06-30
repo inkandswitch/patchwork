@@ -25,7 +25,7 @@ interface InitMessage {
   rpcPort: MessagePort;
   syncPort: MessagePort;
   data: {
-    rootComponentId: string;
+    entryUrl: string;
     props: Record<string, unknown>;
     registryEntries: RegistryEntry[];
     esmsSource: string;
@@ -222,7 +222,7 @@ async function boot() {
   );
 
   const d = init.data;
-  log("init", { root: d.rootComponentId });
+  log("init", { entryUrl: d.entryUrl });
 
   // Inject host page stylesheets so tools render with the same CSS
   // framework (Tailwind, DaisyUI, etc.) as on the host.
@@ -507,22 +507,32 @@ async function boot() {
       return 0;
     };
 
-    // 13. Mount the isolated root component.
-    // The root is an ordinary patchwork:component named by the boot spec; the
-    // normal <patchwork-view component=...> path resolves and mounts it from the
-    // iframe's own registry (incl. the not-yet-loaded and hot-reload cases). Its
-    // props travel as an inert <script type="application/json"> child the root
-    // reads on mount — data, never executable, so nothing tool-bearing is ever
-    // constructed from host-supplied code. The script is appended before the
-    // <patchwork-view> connects, and patchwork-view defers its render by a
-    // microtask, so the props are in place before the root's mount fn runs.
-    const rootView = document.createElement("patchwork-view");
-    rootView.setAttribute("component", d.rootComponentId);
+    // 13. Mount the isolated root.
+    // The host sends the root module's URL (already mapped to an opaque pkg: URL);
+    // we import it directly and call its default export as the mount fn — no
+    // registry lookup. Props travel as an inert <script type="application/json">
+    // child of the mount container the mount fn reads — data, never executable, so
+    // nothing tool-bearing is ever constructed from host-supplied code. The
+    // container gets explicit full size: unlike a <patchwork-view> it doesn't match
+    // the srcdoc's `patchwork-view { width/height:100% }` rule, and a frame root
+    // expects a full-size parent.
+    const mod = await importShim(d.entryUrl);
+    const mount = mod.default;
+    if (typeof mount !== "function") {
+      throw new Error(
+        "isolated root module has no default-export mount function: " +
+          d.entryUrl
+      );
+    }
+    const rootContainer = document.createElement("div");
+    rootContainer.style.cssText =
+      "width: 100%; height: 100%; display: flex; min-width: 0;";
     const propsScript = document.createElement("script");
     propsScript.type = "application/json";
     propsScript.textContent = JSON.stringify(d.props ?? {});
-    rootView.appendChild(propsScript);
-    repoProvider.appendChild(rootView);
+    rootContainer.appendChild(propsScript);
+    repoProvider.appendChild(rootContainer);
+    mount(rootContainer, repo);
 
     // 14. Providers bridge — forward unclaimed patchwork:subscribe events
     // to the host so host-side providers (e.g. AccountProvider for
@@ -558,7 +568,7 @@ async function boot() {
       consumerPort.start();
     }) as EventListener);
 
-    log(`boot complete — root "${d.rootComponentId}"`);
+    log(`boot complete — entry "${d.entryUrl}"`);
     rpcPort.postMessage({ type: "boot-complete" });
   } catch (err: any) {
     console.error("[iframe] boot failed:", err);
