@@ -33,7 +33,49 @@ function log(...args: any[]) {
   );
 }
 
+// ── Lifecycle diagnostics ──────────────────────────────────────────────
+// [lifecycle] markers for SW (re)boots, install/activate, crashes, and stranded
+// handoffs. The SW can't read localStorage, so it always emits and forwards to
+// the tab, which gates rendering on the live toggle. The SW holds no sync
+// socket — observability only.
+
+async function postToClients(message: unknown) {
+  const clients = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  for (const client of clients) client.postMessage(message);
+}
+
+function lifecycle(level: "info" | "warn", text: string) {
+  const msg = `[lifecycle] ${new Date().toISOString()} ${text}`;
+  console[level](msg);
+  void postToClients({ type: "sw-lifecycle", level, msg });
+}
+
+lifecycle("info", `booted (scope ${self.registration?.scope ?? "?"})`);
+
+self.addEventListener("error", (event) => {
+  const e = event as ErrorEvent;
+  lifecycle(
+    "warn",
+    `uncaught error: ${e.message}` +
+      (e.filename ? ` @ ${e.filename}:${e.lineno}:${e.colno}` : "")
+  );
+});
+
+self.addEventListener("unhandledrejection", (event) => {
+  const reason = (event as PromiseRejectionEvent).reason;
+  lifecycle(
+    "warn",
+    `unhandled rejection: ${
+      reason instanceof Error ? reason.stack || reason.message : String(reason)
+    }`
+  );
+});
+
 self.addEventListener("install", (event) => {
+  lifecycle("info", "install (skipWaiting)");
   // waitUntil keeps the worker alive until skipWaiting resolves, so a freshly
   // installed SW reliably jumps the "waiting" queue instead of stalling until
   // every old tab closes.
@@ -52,6 +94,7 @@ async function clearOldCaches() {
 }
 
 self.addEventListener("activate", (event) => {
+  lifecycle("info", "activate (claiming clients)");
   (event as ExtendableEvent).waitUntil(
     (async () => {
       await clearOldCaches();
@@ -118,7 +161,15 @@ handoffChannel.addEventListener("message", (event) => {
   } else if (data?.type === "online") {
     // The automerge worker (re)started — re-broadcast anything still in
     // flight so requests that raced its boot aren't stranded.
-    for (const { message } of pendingHandoffs.values()) {
+    const stranded = [...pendingHandoffs.values()];
+    if (stranded.length > 0) {
+      lifecycle(
+        "info",
+        `automerge worker (re)started; re-broadcasting ${stranded.length} ` +
+          `in-flight asset handoff(s)`
+      );
+    }
+    for (const { message } of stranded) {
       log(`re-broadcasting handoff ${message.id} to the fresh worker`);
       handoffChannel.postMessage(message);
     }
@@ -148,6 +199,11 @@ function handoff(
   log(`broadcasting handoff request for cache ${cachename}`, message);
   handoffChannel.postMessage(message);
   const timeout = setTimeout(() => {
+    lifecycle(
+      "warn",
+      `asset handoff ${id} stranded: no reply from the automerge worker after ` +
+        `${HANDOFF_TIMEOUT_MS}ms (${handoffURL.href})`
+    );
     resolvers.reject(
       new Error(
         `no reply from the automerge worker after ${HANDOFF_TIMEOUT_MS}ms`
