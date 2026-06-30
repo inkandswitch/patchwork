@@ -13,7 +13,6 @@
  */
 import {
   type DocHandle,
-  IndexedDBStorageAdapter,
   initializeWasm,
   isValidAutomergeUrl,
   isValidDocumentId,
@@ -25,6 +24,7 @@ import {
   type DocumentId,
   type UrlHeads,
 } from "@automerge/vanillajs/slim";
+import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import * as Automerge from "@automerge/automerge/slim";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim";
 import {
@@ -222,7 +222,7 @@ export async function bootPatchworkSite(
 
       ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
         createRepo: (config) => new Repo(config),
-        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix: siteName + Math.random().toString(36).slice(2),
         networkAdapter: new MessageChannelNetworkAdapter(workerPort),
         automaticArchiveIngestion: true,
@@ -232,7 +232,7 @@ export async function bootPatchworkSite(
         // Defaults to "subduction".
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           enableRemoteHeadsGossiping: true,
         },
       }));
@@ -241,7 +241,7 @@ export async function bootPatchworkSite(
       log("creating repo");
       repo = new Repo({
         network: [new MessageChannelNetworkAdapter(workerPort)],
-        storage: new IndexedDBStorageAdapter(),
+        storage: new IndexedDBWorkerStorageAdapter(),
         async sharePolicy(peerId) {
           return peerId.includes("automerge-worker");
         },
