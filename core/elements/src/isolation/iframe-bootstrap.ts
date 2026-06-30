@@ -628,6 +628,25 @@ export function generateIframeSrcdoc(appearance?: IframeAppearance): string {
       display: flex;
       flex-direction: row;${firstPaint}
     }
+    /* Base layout for the platform elements, mirroring the host app shell's
+       global.css. Without these, patchwork-view / repo-provider default to
+       display:inline inside the iframe and any root that relies on a full-size
+       flex/height context (e.g. a frame's document column) collapses. The host
+       provides this for free via its site stylesheet; the isolated realm must
+       provide it itself since that stylesheet does not cross the boundary. */
+    repo-provider {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+    patchwork-view {
+      display: block;
+      width: 100%;
+      height: 100%;
+      contain: layout;
+    }
   </style>
 </head>
 <body>

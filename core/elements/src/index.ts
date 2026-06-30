@@ -1,6 +1,10 @@
 export * from "./patchwork-view.js";
 export * from "./events.js";
-export { registerPatchworkIsolationElement } from "./isolation/index.js";
+export {
+  registerPatchworkIsolationElement,
+  type PatchworkIsolationElement,
+  type IsolationBootSpec,
+} from "./isolation/index.js";
 
 import type {} from "react";
 import type {} from "solid-js";
