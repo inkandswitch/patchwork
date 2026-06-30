@@ -295,24 +295,6 @@ async function resolveUrl(
  * initial collection (`getRegistries`) and the live update watcher
  * (`watchRegistries`) so both produce entries identically.
  */
-/**
- * Resolve an isolation root's entry module URL to the opaque `pkg:` URL the
- * iframe imports. Runs the *identical* pipeline `processRegistryPlugin` uses on
- * plugin import URLs — `resolvePluginEntryUrl` (folder doc → package entry point,
- * or hosted URL pass-through) then `mapper.toPackageUrl` (automerge segment →
- * `pkg:`) — so the root loads through the same fetch path the iframe already
- * understands and no automerge id ever crosses the boundary. Returns `undefined`
- * if the URL can't be resolved.
- */
-export async function resolveRootEntryPkgUrl(
-  entryUrl: string,
-  mapper: PluginsUrlMapper
-): Promise<string | undefined> {
-  const resolved = await resolvePluginEntryUrl(entryUrl);
-  if (!resolved) return undefined;
-  return mapper.toPackageUrl(resolved.entryUrl, resolved.packageName);
-}
-
 async function processRegistryPlugin(
   plugin: any,
   mapper: PluginsUrlMapper
