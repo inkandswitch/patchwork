@@ -12,6 +12,34 @@ import debug from "debug";
 const serviceWorkerDebugging = debug.enabled("patchwork:serviceworker");
 const workerDebugging = debug.enabled("patchwork:automergeworker");
 
+// Diagnostic [lifecycle] logging, on by default. Disable via
+// localStorage["patchwork:lifecycle-logs"] = "off". Read live at log time.
+const LIFECYCLE_LOG_KEY = "patchwork:lifecycle-logs";
+export function lifecycleLoggingEnabled(): boolean {
+  try {
+    const v = globalThis.localStorage?.getItem(LIFECYCLE_LOG_KEY);
+    return v !== "off" && v !== "false" && v !== "0" && v !== "no";
+  } catch {
+    return true;
+  }
+}
+
+// The SW can't read localStorage, so it always emits [lifecycle] markers and
+// forwards them as `sw-lifecycle`; gate rendering here on the live toggle.
+let swLifecycleListenerInstalled = false;
+function installServiceWorkerLogForwarding(): void {
+  if (swLifecycleListenerInstalled) return;
+  if (typeof navigator === "undefined" || !navigator.serviceWorker) return;
+  swLifecycleListenerInstalled = true;
+  navigator.serviceWorker.addEventListener("message", (event: MessageEvent) => {
+    const data = event.data;
+    if (data?.type !== "sw-lifecycle") return;
+    if (!lifecycleLoggingEnabled()) return;
+    const fn = (console as any)[data.level] ?? console.log;
+    fn(`[service-worker] ${data.msg}`);
+  });
+}
+
 const key = "patchworkServiceWorkerCacheVersion";
 let nextRepoChannelId = 0;
 
@@ -81,6 +109,14 @@ export function getAutomergeWorker(): SharedWorker {
     automergeWorker.port.addEventListener("message", (event: MessageEvent) => {
       if (event.data?.type !== "console") return;
       const { level, args } = event.data;
+      // Gate forwarded [lifecycle] logs on the toggle too.
+      if (
+        !lifecycleLoggingEnabled() &&
+        typeof args?.[0] === "string" &&
+        args[0].includes("[lifecycle]")
+      ) {
+        return;
+      }
       const fn = (console as any)[level] ?? console.log;
       // The worker's logs (debug library, the worker's own log()) carry %c
       // format directives in args[0] with CSS in the following args. Prefix
@@ -93,8 +129,80 @@ export function getAutomergeWorker(): SharedWorker {
       }
     });
     automergeWorker.port.postMessage({ type: "debug", debug: workerDebugging });
+
+    installWorkerDeathDetection(automergeWorker);
   }
   return automergeWorker;
+}
+
+/**
+ * Detect when the automerge SharedWorker dies or restarts: control-port close,
+ * worker error, changed instance id, or an unanswered heartbeat while the tab
+ * is visible (a miss while hidden is more likely suspension). [lifecycle]-tagged.
+ */
+function installWorkerDeathDetection(worker: SharedWorker): void {
+  const stamp = () => new Date().toISOString();
+  const warn = (msg: string) => {
+    if (lifecycleLoggingEnabled()) console.warn(`[lifecycle] ${stamp()} ${msg}`);
+  };
+  const info = (msg: string) => {
+    if (lifecycleLoggingEnabled()) console.info(`[lifecycle] ${stamp()} ${msg}`);
+  };
+
+  let instanceId: string | undefined;
+  let lastPongAt = Date.now();
+  let warnedUnresponsive = false;
+
+  worker.port.addEventListener("message", (event: MessageEvent) => {
+    const data = event.data;
+    if (data?.type !== "hello" && data?.type !== "pong") return;
+    if (data.type === "pong") {
+      lastPongAt = Date.now();
+      warnedUnresponsive = false;
+    }
+    if (instanceId === undefined) {
+      instanceId = data.instanceId;
+      info(`automerge SharedWorker instance ${data.instanceId} (via ${data.type})`);
+    } else if (data.instanceId && data.instanceId !== instanceId) {
+      warn(
+        `automerge SharedWorker RESTARTED (instance ${data.instanceId}, ` +
+          `was ${instanceId}) — fresh peerId + cold state; docs need re-subscribe`
+      );
+      instanceId = data.instanceId;
+    }
+  });
+
+  // Fires when the SharedWorker is destroyed (where supported).
+  worker.port.addEventListener("close", () => {
+    warn("automerge SharedWorker control port CLOSED — worker terminated");
+  });
+
+  worker.addEventListener("error", event => {
+    warn(`automerge SharedWorker error: ${(event as ErrorEvent).message || event}`);
+  });
+
+  // A missed pong while the tab is visible means the worker likely died (an
+  // active tab keeps it alive); a miss while hidden is more likely suspension.
+  const HEARTBEAT_MS = 10_000;
+  const HEARTBEAT_TIMEOUT_MS = 25_000;
+  let seq = 0;
+  setInterval(() => {
+    try {
+      worker.port.postMessage({ type: "ping", id: ++seq });
+    } catch {
+      // Port already torn down — the "close" handler covers that case.
+    }
+    const silentMs = Date.now() - lastPongAt;
+    const visible =
+      typeof document === "undefined" || document.visibilityState === "visible";
+    if (silentMs > HEARTBEAT_TIMEOUT_MS && visible && !warnedUnresponsive) {
+      warnedUnresponsive = true;
+      warn(
+        `automerge SharedWorker UNRESPONSIVE ~${Math.round(silentMs / 1000)}s ` +
+          `while tab visible — likely died/crashed`
+      );
+    }
+  }, HEARTBEAT_MS);
 }
 
 export function connectClassicSync(
@@ -200,6 +308,10 @@ function getRepoChannel(): MessagePort {
 export default async function setupServiceWorker(
   options?: SetupServiceWorkerOptions
 ): Promise<SetupServiceWorkerResult> {
+  // Attach the SW→tab [lifecycle] log bridge as early as possible so boot /
+  // install / activate markers from the controlling worker are rendered here.
+  installServiceWorkerLogForwarding();
+
   if (options?.workerPath) automergeWorkerPath = options.workerPath;
 
   // Start the automerge worker right away so it boots (wasm, repo) while the

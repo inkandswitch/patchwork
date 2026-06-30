@@ -54,6 +54,12 @@ declare const __KEYHIVE_SYNC_SERVER__: boolean;
 
 let debugging = false;
 
+// Per-boot identity so a tab can detect a worker *restart*: a fresh instance
+// means a new repo peerId + cold in-memory state, so the tab's docs must be
+// re-subscribed. Sent in `hello` (on connect) and every `pong`.
+const WORKER_INSTANCE_ID = Math.random().toString(36).slice(2);
+const WORKER_BOOT_TIME = Date.now();
+
 // ── Forward console output + uncaught errors to the main thread ─────────
 // The SharedWorker has its own console that's a pain to find (chrome://inspect
 // → shared workers). Patch console.* and the global error handlers to also
@@ -115,6 +121,35 @@ self.addEventListener("unhandledrejection", (event) => {
     reason instanceof Error ? reason.stack || reason.message : reason,
   ]);
 });
+
+// Boot marker, buffered until the first tab connects. A new instance id means
+// the worker restarted (fresh peerId + cold state).
+console.warn(
+  `[lifecycle] ${new Date(WORKER_BOOT_TIME).toISOString()} automerge ` +
+    `SharedWorker started (instance ${WORKER_INSTANCE_ID})`
+);
+
+// ── Suspension watchdog ─────────────────────────────────────────────────
+// A SharedWorker gets no lifecycle events, so infer freeze/suspend from timer
+// drift. A large gap means keepalive pongs stalled and the server may have
+// reaped us.
+const WATCHDOG_TICK_MS = 5_000;
+const WATCHDOG_GAP_FACTOR = 2;
+let watchdogLast = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const gap = now - watchdogLast;
+  watchdogLast = now;
+  if (gap > WATCHDOG_TICK_MS * WATCHDOG_GAP_FACTOR) {
+    console.warn(
+      `[lifecycle] worker resumed after ~${Math.round(gap / 1000)}s gap ` +
+        `(timer expected every ${WATCHDOG_TICK_MS / 1000}s) — likely ` +
+        `suspended/frozen/throttled; WebSocket keepalive pongs were not sent ` +
+        `during this window, so the sync server may have reaped us. at ` +
+        `${new Date(now).toISOString()}`
+    );
+  }
+}, WATCHDOG_TICK_MS);
 
 // Sync server selection. Sub is the default. Build with KEYHIVE_SYNC_SERVER=true
 // to target keyhive.sync.automerge.org.
@@ -424,6 +459,13 @@ function handleControlMessage(
         });
         replyPort?.close();
       });
+  } else if (data?.type === "ping") {
+    // Heartbeat: reply so the tab can detect our death or restart.
+    controlPort.postMessage({
+      type: "pong",
+      id: data.id,
+      instanceId: WORKER_INSTANCE_ID,
+    });
   }
 }
 
@@ -443,6 +485,14 @@ self.addEventListener("connect", (event) => {
   });
 
   controlPort.start();
+
+  // Greet the tab with our per-boot instance id so it can detect a restart
+  // (a different id than last seen) even if no port "close" fired.
+  controlPort.postMessage({
+    type: "hello",
+    instanceId: WORKER_INSTANCE_ID,
+    bootTime: WORKER_BOOT_TIME,
+  });
 
   // Start forwarding console output to this tab, and flush anything buffered
   // while no tab was connected (e.g. boot-time logs) to the first arrival.

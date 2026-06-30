@@ -65,7 +65,10 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-import setupServiceWorker, { getAutomergeWorker } from "./setup.js";
+import setupServiceWorker, {
+  getAutomergeWorker,
+  lifecycleLoggingEnabled,
+} from "./setup.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
@@ -181,6 +184,7 @@ export async function bootPatchworkSite(
   const defaultModuleSources = resolveDefaultModules(config);
   showLoadingAnimation();
   log(`booting`, config);
+  installLifecycleLogging();
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
@@ -402,6 +406,46 @@ function installDevConsoleGlobals(
     window.hive = hive;
   }
   window.getRepoChannel = getRepoChannel;
+}
+
+/**
+ * Log this tab's Page Lifecycle + connectivity transitions (visibility,
+ * freeze, bfcache, online/offline) so they line up against the SharedWorker's
+ * sync-socket reaps. [lifecycle]-tagged, on by default.
+ */
+function installLifecycleLogging(): void {
+  if (typeof document === "undefined") return;
+  const opts = { capture: true } as const;
+  const note = (label: string, extra?: unknown) => {
+    if (!lifecycleLoggingEnabled()) return;
+    const msg = `[lifecycle] ${new Date().toISOString()} ${label}`;
+    if (extra === undefined) console.info(msg);
+    else console.info(msg, extra);
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    () => note(`visibilitychange → ${document.visibilityState}`),
+    opts
+  );
+  document.addEventListener("freeze", () => note("freeze (tab suspended)"), opts);
+  document.addEventListener("resume", () => note("resume (tab unsuspended)"), opts);
+  window.addEventListener(
+    "pageshow",
+    e => note("pageshow", { persisted: (e as PageTransitionEvent).persisted }),
+    opts
+  );
+  window.addEventListener(
+    "pagehide",
+    e => note("pagehide", { persisted: (e as PageTransitionEvent).persisted }),
+    opts
+  );
+  window.addEventListener("online", () => note("online"), opts);
+  window.addEventListener("offline", () => note("offline"), opts);
+
+  note(
+    `lifecycle logging installed (visibilityState=${document.visibilityState}, hasFocus=${document.hasFocus()})`
+  );
 }
 
 function onModuleLoaded(name: string, mod: any): void {
