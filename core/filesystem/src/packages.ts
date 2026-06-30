@@ -10,12 +10,14 @@ export const defaultImportConditions = ["patchwork", "browser", "import"];
 // is the string "null" inside a srcdoc/sandboxed frame — an invalid URL base —
 // whereas `document.baseURI` is the document's proper base URL (the embedder's
 // URL for a srcdoc frame, and the page URL for a normal document), so its origin
-// is valid in both cases.
+// is valid in both cases. Reached via `globalThis` so this also works inside a
+// worker (where `document`/`window` are undefined but `self.location` is the
+// site origin the service worker serves module URLs from).
 function documentBaseOrigin(): string {
   try {
-    return new URL(document.baseURI).origin;
+    return new URL(globalThis.document.baseURI).origin;
   } catch {
-    return window.location.origin;
+    return globalThis.location.origin;
   }
 }
 
@@ -39,6 +41,43 @@ export async function importModuleFromFolderDocUrl(
   log(`importing ${entryPointUrl.slice(-60)}`);
 
   return await import(/* @vite-ignore */ entryPointUrl);
+}
+
+/**
+ * Import the entry point of a package (at `folderDocUrl`, which should be
+ * pinned to heads) and return the loaded implementation of a single one of the
+ * plugins it exports, selected by `pluginId`.
+ *
+ * This is the main-thread counterpart to discovering a package's plugin
+ * descriptors in a worker: the worker reports *which* plugins a package
+ * exports, and this re-imports the package here to actually run the plugin's
+ * own `load()` / `import` — mirroring what {@link PluginRegistry.load} would do
+ * with the live descriptor, so the registered description and the loaded
+ * implementation come from the same pinned version.
+ */
+export async function importPluginFromFolderDocUrl(
+  folderDocUrl: AutomergeUrl,
+  pluginId: string,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+) {
+  const mod = await importModuleFromFolderDocUrl(folderDocUrl, subpath, conditions);
+  const plugins: any[] = Array.isArray(mod?.plugins) ? mod.plugins : [];
+  const plugin = plugins.find((p) => p?.id === pluginId);
+  if (!plugin) {
+    throw new Error(
+      `No plugin "${pluginId}" exported by the package at ${folderDocUrl}`
+    );
+  }
+  if (typeof plugin.load === "function") {
+    return plugin.load();
+  }
+  if (typeof plugin.import === "string") {
+    return import(/* @vite-ignore */ plugin.import);
+  }
+  throw new Error(
+    `Plugin "${pluginId}" at ${folderDocUrl} has no load() function or import URL`
+  );
 }
 
 async function packageJsonContentsFromFolderDocUrl(

@@ -4,7 +4,6 @@ import {
   type DocumentId,
   isValidAutomergeUrl,
   type Repo,
-  stringifyAutomergeUrl,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
 import { getType, type HasPatchworkMetadata } from "./metadata.js";
@@ -90,17 +89,28 @@ export class ModuleWatcher {
 
   onLoad: (name: string, mod: any) => void;
   onUnload?: (name: string) => void;
+  /**
+   * How an Automerge folder-doc module (pinned to heads) is turned into the
+   * `{ plugins }` shape `onLoad` consumes. Defaults to importing the package
+   * entry point directly on this thread. The browser bootloader overrides this
+   * to run the entry point in a worker for descriptor discovery and rebuild the
+   * `{ plugins }` shape with main-thread `load()` functions.
+   */
+  importAutomergeModule: (urlAtHeads: string) => Promise<any>;
 
   constructor(
     repo: Repo,
     urls: Record<string, string>,
     callback: (name: string, mod: any) => void,
-    onUnload?: (name: string) => void
+    onUnload?: (name: string) => void,
+    importAutomergeModule: (urlAtHeads: string) => Promise<any> = (url) =>
+      importModuleFromFolderDocUrl(url as AutomergeUrl)
   ) {
     this.repo = repo;
     this.urls = { ...urls };
     this.onLoad = callback;
     this.onUnload = onUnload;
+    this.importAutomergeModule = importAutomergeModule;
     this.doneLoading = this.init();
   }
 
@@ -247,23 +257,14 @@ export class ModuleWatcher {
 
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
-      const valid = isValidAutomergeUrl(importName);
-
-      if (valid) {
+      if (isValidAutomergeUrl(importName)) {
+        // Pin to heads so descriptor discovery and any later main-thread load
+        // resolve against the exact same version of the folder doc.
         const handle = await this.repo.find(importName as AutomergeUrl);
-        importName = stringifyAutomergeUrl({
-          documentId: handle.documentId,
-          heads: handle.heads(),
-        });
-        importName = handle.view(handle.heads()).url;
-      } else {
-        return import(importName)
+        const urlAtHeads = handle.view(handle.heads()).url;
+        return await this.importAutomergeModule(urlAtHeads);
       }
-
-      const mod = valid
-        ? importModuleFromFolderDocUrl(importName as AutomergeUrl)
-        : import(/* @vite-ignore */ importName);
-      return mod;
+      return await import(/* @vite-ignore */ importName);
     } catch (error) {
       console.error(
         `%c Failed to import ${importName}`,

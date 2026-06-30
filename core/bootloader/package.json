@@ -30,6 +30,10 @@
       "import": "./dist/automerge-worker.js",
       "types": "./dist/automerge-worker.d.ts"
     },
+    "./module-loader-worker": {
+      "import": "./dist/module-loader-worker.js",
+      "types": "./dist/module-loader-worker.d.ts"
+    },
     "./site": {
       "import": "./dist/site.js",
       "types": "./dist/site.d.ts"
