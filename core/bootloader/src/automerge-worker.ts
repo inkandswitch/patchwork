@@ -30,9 +30,9 @@ import {
 import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 
 // Small adapters — bundled directly into the worker
-import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
+import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
+import { WebSocketWorkerClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import {
   initializeAutomergeRepoKeyhiveRustWithRepo,
   initKeyhiveWasm,
@@ -175,7 +175,7 @@ const RESOLVE_TIMEOUT_MS = 30_000;
 const DEFAULT_CLASSIC_SYNC_SERVER = "wss://sync3.automerge.org";
 
 let classicSyncServer = DEFAULT_CLASSIC_SYNC_SERVER;
-let classicSyncAdapter: WebSocketClientAdapter | null = null;
+let classicSyncAdapter: WebSocketWorkerClientAdapter | null = null;
 let classicSyncConnectPromise: Promise<void> | null = null;
 
 async function connectClassicSyncNetwork(server: string): Promise<void> {
@@ -194,7 +194,7 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
   classicSyncConnectPromise = (async () => {
     const { repo } = await getRepoHive();
     if (!classicSyncAdapter) {
-      classicSyncAdapter = new WebSocketClientAdapter(url);
+      classicSyncAdapter = new WebSocketWorkerClientAdapter(url);
       repo.networkSubsystem.addNetworkAdapter(classicSyncAdapter);
     }
     await classicSyncAdapter.whenReady();
@@ -250,7 +250,7 @@ function getRepoHive() {
         const signer = await WebCryptoSigner.setup();
 
         const repo = new Repo({
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           signer,
           peerId: ("automerge-worker-" +
             Math.random()
@@ -278,7 +278,7 @@ function getRepoHive() {
       // ARK variant for talking to the keyhive-enabled subduction sync server.
       const { hive, repo } = await initializeAutomergeRepoKeyhiveRustWithRepo({
         createRepo: (config) => new Repo(config),
-        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix:
           `${siteName}-worker` + Math.random().toString(36).slice(2),
         automaticArchiveIngestion: true,
@@ -288,7 +288,7 @@ function getRepoHive() {
         // defaults to "subduction".
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
           enableRemoteHeadsGossiping: true,
         },
