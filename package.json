@@ -22,22 +22,6 @@
     "test": "pnpm --filter \"./os\" test",
     "tsc": "pnpm -r exec tsc"
   },
-  "pnpm": {
-    "overrides": {
-      "@automerge/automerge": "catalog:",
-      "@automerge/automerge-repo": "catalog:",
-      "@automerge/automerge-repo-keyhive": "catalog:",
-      "@automerge/automerge-repo-network-messagechannel": "catalog:",
-      "@automerge/automerge-repo-network-websocket": "catalog:",
-      "@automerge/automerge-repo-react-hooks": "catalog:",
-      "@automerge/automerge-repo-solid-primitives": "catalog:",
-      "@automerge/automerge-repo-storage-indexeddb": "catalog:",
-      "@automerge/automerge-subduction": "catalog:",
-      "@automerge/react": "catalog:",
-      "@automerge/vanillajs": "catalog:",
-      "@keyhive/keyhive": "catalog:"
-    }
-  },
   "keywords": [],
   "author": "Ink & Switch",
   "devDependencies": {
