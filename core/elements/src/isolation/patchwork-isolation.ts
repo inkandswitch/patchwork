@@ -1,25 +1,30 @@
 /**
- * `<patchwork-isolation>` — renders patchwork components inside a sandboxed
+ * `<patchwork-isolation>` — mounts an isolated root component inside a sandboxed
  * iframe with data access mediated by an intermediary repo and allowlist.
  *
- * Usage:
- *   <patchwork-isolation>
- *     <patchwork-view doc-url="automerge:..." tool-id="my-tool" />
- *     <patchwork-view doc-url="automerge:..." tool-id="sidebar" />
- *   </patchwork-isolation>
+ * The element renders nothing on its own and never inspects its light DOM. The
+ * host hands it a serializable boot spec via the imperative `configure()` method:
  *
- * Child elements are serialized (tag name + attributes) and reconstructed
- * inside the iframe. All `doc-url` attributes found on children are used
- * as root URLs for the document allowlist.
+ *   const el = document.createElement("patchwork-isolation");
+ *   el.configure({
+ *     rootComponentId: "threepane-document-area",
+ *     props: { selectedDocUrl, traySlots, ... },  // structured-clone JSON only
+ *     rootUrls: [selectedDocUrl, contactUrl],      // allowlist seeds
+ *   });
  *
- * Lifecycle:
+ * The spec is data only — no live DOM, no functions. Tool code therefore never
+ * runs in the host realm: the iframe resolves `rootComponentId` against its own
+ * registry and mounts it. Any later `configure()` with a different spec tears the
+ * iframe down and boots a fresh one (no diffing, no in-place re-pointing).
+ *
+ * Lifecycle (per boot):
  *  1. Fetch boot assets (es-module-shims, WASM, host styles) — cached
- *  2. Serialize children and collect doc-url roots
- *  3. Create allowlist (seeded with all root URLs, populated from doc content)
- *  4. Get shared denylist (singleton, populated once from sensitive docs)
- *  5. Create intermediary repo gated by allowlist + denylist
- *  6. Start host-side RPC for plugin loading and navigation
- *  7. Create sandboxed iframe and send boot message with registry entries
+ *  2. Get shared denylist (singleton, populated once from sensitive docs)
+ *  3. Create allowlist seeded from `spec.rootUrls` (+ populated from doc content)
+ *  4. Create intermediary repo gated by allowlist + denylist
+ *  5. Start host-side RPC for plugin loading, navigation, and bridged providers
+ *  6. Create sandboxed iframe and send boot message (rootComponentId + props +
+ *     registry entries)
  *
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
@@ -47,7 +52,7 @@ import {
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import { startHostProvidersBridge, ALLOWED_PROVIDERS } from "./providers-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
-import type { SerializedView } from "./types.js";
+import type { IsolationBootSpec } from "./types.js";
 import debug from "debug";
 
 export const log = debug("patchwork:elements:isolation");
@@ -62,52 +67,14 @@ declare global {
   }
 }
 
-export interface PatchworkIsolationElement extends HTMLElement {}
-
-// SerializedView (the host↔iframe element-tree wire type) is imported from
-// ./types.ts — the single source of truth shared with the iframe bootstrap.
-
-/**
- * Recursively serialize an element and its descendants into a
- * transferable descriptor.
- */
-function serializeElement(el: Element): SerializedView {
-  const attrs: Record<string, string> = {};
-  for (const attr of Array.from(el.attributes)) {
-    attrs[attr.name] = attr.value;
-  }
-  const children: SerializedView[] = [];
-  for (const child of Array.from(el.children)) {
-    children.push(serializeElement(child));
-  }
-  return { tagName: el.tagName.toLowerCase(), attributes: attrs, children };
-}
-
-/**
- * Serialize the direct children of the isolation element into a
- * transferable descriptor, recursing into their subtrees.
- */
-function serializeChildren(host: HTMLElement): SerializedView[] {
-  return Array.from(host.children).map(serializeElement);
-}
-
-/**
- * Recursively collect all `doc-url` attribute values from serialized views
- * that are valid automerge URLs. These become roots for the allowlist.
- */
-function collectRootUrls(views: SerializedView[]): AutomergeUrl[] {
-  const urls: AutomergeUrl[] = [];
-  function walk(nodes: SerializedView[]) {
-    for (const view of nodes) {
-      const docUrl = view.attributes["doc-url"];
-      if (docUrl && isValidAutomergeUrl(docUrl)) {
-        urls.push(docUrl);
-      }
-      walk(view.children);
-    }
-  }
-  walk(views);
-  return urls;
+export interface PatchworkIsolationElement extends HTMLElement {
+  /**
+   * Boot (or re-boot) the isolated iframe from a serializable spec. Stored and
+   * deferred if the element is disconnected; applied on connect. A later call
+   * with a different spec tears down the existing iframe and boots a fresh one;
+   * a byte-identical spec is a no-op.
+   */
+  configure(spec: IsolationBootSpec): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +242,26 @@ function getResolvedImportMap(): ImportMap {
 }
 
 // ---------------------------------------------------------------------------
+// Spec equality
+// ---------------------------------------------------------------------------
+
+/**
+ * Structural equality for two boot specs. `props` is structured-clone JSON and
+ * `rootUrls` is computed deterministically by the host, so a stable JSON
+ * stringify is a sound and cheap comparison — it lets `configure()` ignore a
+ * host that recomputes and re-hands an unchanged spec, avoiding a needless
+ * (expensive) iframe reboot.
+ */
+function specsEqual(a: IsolationBootSpec, b: IsolationBootSpec): boolean {
+  if (a.rootComponentId !== b.rootComponentId) return false;
+  if (a.rootUrls.length !== b.rootUrls.length) return false;
+  for (let i = 0; i < a.rootUrls.length; i++) {
+    if (a.rootUrls[i] !== b.rootUrls[i]) return false;
+  }
+  return JSON.stringify(a.props) === JSON.stringify(b.props);
+}
+
+// ---------------------------------------------------------------------------
 // Custom element
 // ---------------------------------------------------------------------------
 
@@ -305,38 +292,49 @@ export function registerPatchworkIsolationElement(
       // #init re-check it after every await and abort if it changed, so a
       // disconnect (or rapid reconnect) can't let a stale init keep running.
       #initEpoch = 0;
+      // The spec the element is (or should be) booted from. Set by configure();
+      // applied on connect. Persists across disconnect/reconnect so a detached
+      // configure() boots once reconnected.
+      #spec: IsolationBootSpec | null = null;
 
       connectedCallback() {
-        this.#init();
+        // Boot from a spec configured while disconnected (or before connect).
+        if (this.#spec) this.#init(this.#spec);
       }
       disconnectedCallback() {
         this.#teardown();
       }
 
-      // ── Init ────────────────────────────────────────────────────
+      // ── Configure ───────────────────────────────────────────────
 
-      async #init() {
-        const epoch = ++this.#initEpoch;
-
-        // Wait a microtask so the framework (e.g. Solid) finishes rendering
-        // children with their reactive attributes before we serialize them.
-        await Promise.resolve();
-        if (epoch !== this.#initEpoch) return;
-
-        // Serialize children before replacing them with the iframe
-        const views = serializeChildren(this);
-        const rootUrls = collectRootUrls(views);
-        log(`init with ${views.length} views, ${rootUrls.length} root URLs`);
-
-        if (views.length === 0) {
-          log("no children to isolate");
+      configure(spec: IsolationBootSpec) {
+        // Skip a redundant reconfigure with a byte-identical spec — the host may
+        // recompute and re-hand an unchanged spec on unrelated state changes, and
+        // a reboot is expensive (module re-fetch + WASM re-init).
+        if (this.#spec && specsEqual(this.#spec, spec)) {
+          log("configure: spec unchanged, ignoring");
           return;
         }
+        this.#spec = spec;
+        if (!this.isConnected) {
+          log("configure: stored (disconnected); will boot on connect");
+          return;
+        }
+        // A real change while connected: tear down the running iframe and boot
+        // fresh. #teardown is a no-op if nothing is booted yet.
+        this.#teardown();
+        this.#init(spec);
+      }
 
-        // Remove host-side children — they've been serialized and will be
-        // reconstructed inside the iframe. Leaving them causes duplicate
-        // rendering in the host DOM alongside the iframe.
-        this.replaceChildren();
+      // ── Init ────────────────────────────────────────────────────
+
+      async #init(spec: IsolationBootSpec) {
+        const epoch = ++this.#initEpoch;
+
+        const rootUrls = spec.rootUrls;
+        log(
+          `init root "${spec.rootComponentId}" with ${rootUrls.length} root URLs`
+        );
 
         const repo = this.#getRepo();
         if (!repo) return;
@@ -530,7 +528,8 @@ export function registerPatchworkIsolationElement(
 
         // ── Iframe ──────────────────────────────────────────────
         this.#createIframe(epoch, rpcChannel.port2, this.#intermediary.iframePort, mapper, assets, {
-          views,
+          rootComponentId: spec.rootComponentId,
+          props: spec.props,
           importMap,
         });
 
@@ -569,7 +568,8 @@ export function registerPatchworkIsolationElement(
         mapper: PluginsUrlMapper,
         assets: BootAssets,
         config: {
-          views: SerializedView[];
+          rootComponentId: string;
+          props: Record<string, unknown>;
           importMap: ImportMap;
         }
       ) {
@@ -580,8 +580,8 @@ export function registerPatchworkIsolationElement(
         // Bake the host's current background + color-scheme into the srcdoc so
         // the iframe's first paint matches the host (no flash of white before
         // the theming tool boots inside the iframe). Read tool-agnostically off
-        // the live element — `this` is still connected (only its children were
-        // removed), so its ancestors carry the host background.
+        // the live element — `this` is still connected, so its ancestors carry
+        // the host background.
         iframe.srcdoc = generateIframeSrcdoc(readHostAppearance(this));
         this.#iframe = iframe;
 
@@ -597,12 +597,13 @@ export function registerPatchworkIsolationElement(
           const subductionWasm = assets.subductionWasm.slice(0);
 
           log(
-            `sending boot message with ${registryEntries.length} registry entries, ${config.views.length} views`
+            `sending boot message with ${registryEntries.length} registry entries, root "${config.rootComponentId}"`
           );
           iframe.contentWindow.postMessage(
             {
               type: "boot",
-              views: config.views,
+              rootComponentId: config.rootComponentId,
+              props: config.props,
               registryEntries,
               esmsSource: assets.esmsSource,
               hostStyles: assets.hostStyles,

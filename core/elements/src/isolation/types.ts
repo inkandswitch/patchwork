@@ -8,15 +8,27 @@
  * cannot drift apart.
  */
 
+import type { AutomergeUrl } from "@automerge/automerge-repo";
+
 /**
- * A serialized DOM element: tag name, attributes, and children. The host
- * serializes its isolated subtree into this shape; the iframe reconstructs the
- * same tree from it.
+ * The boot spec the host hands to `<patchwork-isolation>` via `configure()`.
+ *
+ * It is data only — no live DOM, no functions, no handles. The host computes it
+ * from its own state; the iframe mounts `rootComponentId` (a `patchwork:component`)
+ * and the element seeds the document allowlist from `rootUrls`. Any change to the
+ * spec tears the iframe down and boots a fresh one (no diffing).
  */
-export interface SerializedView {
-  tagName: string;
-  attributes: Record<string, string>;
-  children: SerializedView[];
+export interface IsolationBootSpec {
+  /** The `patchwork:component` id to mount as the isolated root. */
+  rootComponentId: string;
+  /**
+   * Props handed to the root. Structured-clone JSON only — no `Accessor`,
+   * callback, DOM node, or handle. Materialized inside the iframe as an inert
+   * `<script type="application/json">` child the root reads on mount.
+   */
+  props: Record<string, unknown>;
+  /** Documents to seed the sync allowlist with, computed from host state. */
+  rootUrls: AutomergeUrl[];
 }
 
 /**

@@ -6,11 +6,11 @@
  * srcdoc's <script> tag as an IIFE.
  */
 
-// SerializedView and RegistryEntry are the host↔iframe wire types — see
-// ./types.ts (the single source of truth). Imported for use in this file's
-// type positions and re-exported for any importer that sources them here.
-import type { RegistryEntry, SerializedView } from "./types.js";
-export type { RegistryEntry, SerializedView };
+// RegistryEntry is a host↔iframe wire type — see ./types.ts (the single source
+// of truth). Imported for use in this file's type positions and re-exported for
+// any importer that sources it here.
+import type { RegistryEntry } from "./types.js";
+export type { RegistryEntry };
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
@@ -25,7 +25,8 @@ interface InitMessage {
   rpcPort: MessagePort;
   syncPort: MessagePort;
   data: {
-    views: SerializedView[];
+    rootComponentId: string;
+    props: Record<string, unknown>;
     registryEntries: RegistryEntry[];
     esmsSource: string;
     hostStyles: string;
@@ -221,7 +222,7 @@ async function boot() {
   );
 
   const d = init.data;
-  log("init", { views: d.views?.length ?? 0 });
+  log("init", { root: d.rootComponentId });
 
   // Inject host page stylesheets so tools render with the same CSS
   // framework (Tailwind, DaisyUI, etc.) as on the host.
@@ -506,28 +507,22 @@ async function boot() {
       return 0;
     };
 
-    // 13. Reconstruct the serialized element tree from the host.
-    // The host serializes its children (including provider wrappers,
-    // layout divs, and tool views) as a recursive tree. We rebuild
-    // the same DOM structure inside the iframe.
-    function reconstructTree(
-      specs: SerializedView[],
-      parent: HTMLElement
-    ) {
-      for (const spec of specs) {
-        const el = document.createElement(spec.tagName);
-        for (const [key, value] of Object.entries(spec.attributes)) {
-          el.setAttribute(key, value);
-        }
-        if (spec.children.length > 0) {
-          reconstructTree(spec.children, el);
-        }
-        parent.appendChild(el);
-      }
-    }
-
-    const views = d.views ?? [];
-    reconstructTree(views, repoProvider);
+    // 13. Mount the isolated root component.
+    // The root is an ordinary patchwork:component named by the boot spec; the
+    // normal <patchwork-view component=...> path resolves and mounts it from the
+    // iframe's own registry (incl. the not-yet-loaded and hot-reload cases). Its
+    // props travel as an inert <script type="application/json"> child the root
+    // reads on mount — data, never executable, so nothing tool-bearing is ever
+    // constructed from host-supplied code. The script is appended before the
+    // <patchwork-view> connects, and patchwork-view defers its render by a
+    // microtask, so the props are in place before the root's mount fn runs.
+    const rootView = document.createElement("patchwork-view");
+    rootView.setAttribute("component", d.rootComponentId);
+    const propsScript = document.createElement("script");
+    propsScript.type = "application/json";
+    propsScript.textContent = JSON.stringify(d.props ?? {});
+    rootView.appendChild(propsScript);
+    repoProvider.appendChild(rootView);
 
     // 14. Providers bridge — forward unclaimed patchwork:subscribe events
     // to the host so host-side providers (e.g. AccountProvider for
@@ -563,7 +558,7 @@ async function boot() {
       consumerPort.start();
     }) as EventListener);
 
-    log(`boot complete — ${views.length} top-level views`);
+    log(`boot complete — root "${d.rootComponentId}"`);
     rpcPort.postMessage({ type: "boot-complete" });
   } catch (err: any) {
     console.error("[iframe] boot failed:", err);
