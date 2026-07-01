@@ -11,6 +11,7 @@ import { installLocalStorageStub } from "../iframe/local-storage.js";
 import { installFetchProxy } from "../iframe/fetch-proxy.js";
 import { installLinkInterception } from "../iframe/link-interception.js";
 import { createRpcClient } from "../iframe/rpc.js";
+import { createProvidersBridge } from "../iframe/providers-bridge.js";
 
 /**
  * The host's current resolved appearance, used to paint the iframe's first
@@ -100,6 +101,7 @@ export function generateIframeSrcdoc(appearance?: IframeAppearance): string {
       installFetchProxy: ${installFetchProxy.toString()},
       installLinkInterception: ${installLinkInterception.toString()},
       createRpcClient: ${createRpcClient.toString()},
+      createProvidersBridge: ${createProvidersBridge.toString()},
     });
   </script>
 </body>

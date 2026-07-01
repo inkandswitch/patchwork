@@ -23,6 +23,10 @@ import type { installLocalStorageStub } from "./local-storage.js";
 import type { installFetchProxy } from "./fetch-proxy.js";
 import type { installLinkInterception } from "./link-interception.js";
 import type { createRpcClient, RpcClient } from "./rpc.js";
+import type {
+  createProvidersBridge,
+  ProvidersBridge,
+} from "./providers-bridge.js";
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
@@ -60,6 +64,7 @@ interface BootDeps {
   installFetchProxy: typeof installFetchProxy;
   installLinkInterception: typeof installLinkInterception;
   createRpcClient: typeof createRpcClient;
+  createProvidersBridge: typeof createProvidersBridge;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +77,7 @@ export async function boot(deps: BootDeps) {
     installFetchProxy,
     installLinkInterception,
     createRpcClient,
+    createProvidersBridge,
   } = deps;
   // Minimal debug-compatible logger. The real `debug` package isn't available
   // until modules load, but we need logging during bootstrap.
@@ -113,20 +119,20 @@ export async function boot(deps: BootDeps) {
   };
 
   // 2. RPC + inbound-message state.
-  // The RPC client (module/resource fetch req-reply) owns its own maps; see
-  // ./rpc.ts. The port itself is owned here because it also carries pushes for
-  // other features — live plugin registrations and the providers bridge — whose
-  // state stays local to boot():
+  // The RPC client (fetch req-reply) and the providers bridge each own their own
+  // state; see ./rpc.ts and ./providers-bridge.ts. The port itself is owned here
+  // because it fans messages out to all three consumers, and the registry queue
+  // (live plugin registrations) stays local to boot():
   let rpcPort: MessagePort;
   let rpc: RpcClient;
-  const bridgedSubscriptions = new Map<number, MessagePort>(); // providers bridge
-  let bridgeId = 0;
+  let providers: ProvidersBridge;
   const pendingPluginUpdates: any[] = [];
 
-  // Route an inbound RPC message: let the RPC client consume its fetch replies
-  // first, then handle the host-initiated pushes this file owns.
+  // Route an inbound RPC message: let the RPC client and providers bridge each
+  // consume the messages they own, then handle the registry pushes boot() owns.
   function handleRpcMessage(event: MessageEvent) {
     if (rpc.handle(event)) return;
+    if (providers.handle(event)) return;
     const msg = event.data;
     if (!msg) return;
 
@@ -134,17 +140,6 @@ export async function boot(deps: BootDeps) {
       // Live registry update from host — register the plugin in the
       // iframe's registry so new tools/datatypes are available.
       pendingPluginUpdates.push(msg.entry);
-    } else if (msg.type === "providers-bridge-change") {
-      // Host provider pushed a value — relay to the consumer's port
-      log("providers-bridge: received change for id:", msg.id, "value:", msg.value);
-      const port = bridgedSubscriptions.get(msg.id);
-      if (port) {
-        port.postMessage({ type: "change", value: msg.value });
-      }
-    } else if (msg.type === "providers-bridge-rejected") {
-      // Host rejected this subscription type — clean up
-      log("providers-bridge: rejected by host for id:", msg.id);
-      bridgedSubscriptions.delete(msg.id);
     }
   }
 
@@ -163,6 +158,7 @@ export async function boot(deps: BootDeps) {
 
   rpcPort = init.rpcPort;
   rpc = createRpcClient(rpcPort);
+  providers = createProvidersBridge(rpcPort, log);
   rpcPort.addEventListener("message", handleRpcMessage);
   rpcPort.start();
 
@@ -359,39 +355,9 @@ export async function boot(deps: BootDeps) {
     rootView.appendChild(propsScript);
     repoProvider.appendChild(rootView);
 
-    // 14. Providers bridge — forward unclaimed patchwork:subscribe events
-    // to the host so host-side providers (e.g. AccountProvider for
-    // patchwork:contact) can answer them. Local providers call
-    // stopPropagation(), so only unclaimed subscriptions reach document.
-    document.addEventListener("patchwork:subscribe", ((event: CustomEvent) => {
-      const detail = event.detail;
-      if (!detail?.selector?.type || !detail?.port) return;
-
-      log("providers-bridge: captured unclaimed subscription:", detail.selector.type, detail.selector);
-
-      event.stopPropagation();
-      const id = ++bridgeId;
-      const consumerPort = detail.port as MessagePort;
-      bridgedSubscriptions.set(id, consumerPort);
-
-      // Forward to host
-      rpcPort.postMessage({
-        type: "providers-bridge",
-        id,
-        selector: detail.selector,
-      });
-
-      // Listen for consumer unsubscribe
-      consumerPort.addEventListener("message", (e: MessageEvent) => {
-        if (e.data?.type === "unsubscribe") {
-          log("providers-bridge: consumer unsubscribed:", detail.selector.type, id);
-          rpcPort.postMessage({ type: "providers-bridge-unsubscribe", id });
-          bridgedSubscriptions.delete(id);
-          consumerPort.close();
-        }
-      });
-      consumerPort.start();
-    }) as EventListener);
+    // 14. Providers bridge — forward unclaimed patchwork:subscribe events to
+    // the host so host-side providers can answer them (see ./providers-bridge.ts).
+    providers.install();
 
     log(`boot complete — root "${d.rootComponentId}"`);
     rpcPort.postMessage({ type: "boot-complete" });
