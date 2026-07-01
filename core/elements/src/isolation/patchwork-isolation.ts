@@ -43,10 +43,9 @@ import {
   watchRegistries,
 } from "./plugins-bridge.js";
 import {
-  populateAllowlistFromRoots,
+  buildAllowlist,
   refreshAllowlistFromRoots,
   getDenylist,
-  denylistIfSensitive,
 } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
 import {
@@ -357,34 +356,14 @@ export function registerPatchworkIsolationElement(
         await denylist.whenReady();
         if (epoch !== this.#initEpoch) return;
 
-        const allowlist = new SyncAllowlist();
-        this.#allowlist = allowlist;
-
-        // Seed the allowlist with the root docs — but never allowlist a
-        // sensitive one (e.g. if the account doc is used as a root, it stays
-        // denylisted and simply isn't handed to the isolated tool; such tools
-        // run host-side via the unsafe modal instead).
-        for (const url of rootUrls) {
-          if (await denylistIfSensitive(repo, url, denylist)) {
-            log(`root ${url} is sensitive — denylisted, not allowlisted`);
-            continue;
-          }
-          allowlist.add(url);
-          log(`allowlisted root ${url}`);
-        }
-        if (epoch !== this.#initEpoch) return;
-
-        // One-shot scan of the root documents to seed the allowlist with
-        // everything they transitively reference. Not a live subscription —
-        // later references are picked up lazily on access (see refreshRoots).
-        await populateAllowlistFromRoots(
+        const allowlist = await buildAllowlist(
           repo,
           rootUrls,
-          allowlist,
           denylist,
           () => epoch !== this.#initEpoch
         );
         if (epoch !== this.#initEpoch) return;
+        this.#allowlist = allowlist;
 
         // Lazily re-scan the root documents for newly-added references. Used by
         // both the document access gate and the bridged-provider value filter

@@ -85,11 +85,44 @@ async function scanDocIntoAllowlist(
 }
 
 /**
- * Scan multiple root documents into the allowlist. Used at boot to seed the
- * allowlist with everything transitively referenced by the open documents.
- * Stops early if `isStale` flips (a newer init epoch started).
+ * Build the document allowlist for one isolation boot: create it, add each
+ * root URL (skipping any that turns out to be sensitive — those stay
+ * denylisted and are simply never handed to the tool), then transitively scan
+ * the roots so everything they reference is allowlisted too.
+ *
+ * The returned allowlist is what gates the intermediary repo's sync. Later,
+ * newly-added references are picked up lazily via `refreshAllowlistFromRoots`.
+ *
+ * `isStale` stops the (async) scan early if a newer init epoch started; the
+ * caller re-checks staleness and discards the result on abort.
  */
-export async function populateAllowlistFromRoots(
+export async function buildAllowlist(
+  repo: Repo,
+  rootUrls: AutomergeUrl[],
+  denylist: SyncDenylist,
+  isStale: () => boolean
+): Promise<SyncAllowlist> {
+  const allowlist = new SyncAllowlist();
+
+  for (const url of rootUrls) {
+    if (await denylistIfSensitive(repo, url, denylist)) {
+      log(`root ${url} is sensitive — denylisted, not allowlisted`);
+      continue;
+    }
+    allowlist.add(url);
+    log(`allowlisted root ${url}`);
+  }
+
+  await populateAllowlistFromRoots(repo, rootUrls, allowlist, denylist, isStale);
+  return allowlist;
+}
+
+/**
+ * Scan multiple root documents into the allowlist, adding everything they
+ * transitively reference. Stops early if `isStale` flips (a newer init epoch
+ * started). Used by `buildAllowlist` for the initial boot-time seed.
+ */
+async function populateAllowlistFromRoots(
   repo: Repo,
   rootUrls: AutomergeUrl[],
   allowlist: SyncAllowlist,
