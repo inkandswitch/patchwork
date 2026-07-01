@@ -92,23 +92,35 @@ export type BridgeValueFilter = (
 
 /**
  * Build a {@link BridgeValueFilter} that vets every automerge URL a bridged
- * value carries before it crosses to the iframe, delegating the per-URL
- * decision to `checkUrl` (which the isolation element implements against its
- * allowlist, with an optional prompt).
+ * value carries before it crosses to the iframe.
+ *
+ * Two per-URL checks, chosen by provider type:
+ *  - `isAllowed(url)` — synchronous allowlist membership, no side effects.
+ *  - `requestAccess(url)` — may re-scan, prompt the user, and grant access.
+ *
+ * `patchwork:selected-doc` uses `isAllowed` only: unknown URLs are silently
+ * dropped, never prompted. Its semantic is "which of my allowlisted documents
+ * is selected" — not "give me access to the selected document" — and prompting
+ * on it would fire spuriously as the user navigates (the old iframe is about to
+ * be torn down). Every other bridged type uses `requestAccess`.
  *
  * Handles the value shapes a provider can emit: a single automerge-URL string
- * (suppressed entirely if `checkUrl` rejects it), or an array (each automerge-
- * URL element kept only if allowed; non-URL elements passed through). Any other
- * value is relayed unchanged. The traversal is generic; all policy lives in
- * `checkUrl`.
+ * (suppressed entirely if rejected), or an array (each automerge-URL element
+ * kept only if allowed; non-URL elements passed through). Any other value is
+ * relayed unchanged.
  */
-export function makeBridgedValueFilter(
-  checkUrl: (url: string, selectorType: string) => Promise<boolean>
-): BridgeValueFilter {
+export function makeBridgedValueFilter(checks: {
+  isAllowed: (url: string) => boolean;
+  requestAccess: (url: string) => Promise<boolean>;
+}): BridgeValueFilter {
   return async (selectorType, value) => {
+    const silent = selectorType === "patchwork:selected-doc";
+    const checkUrl = (url: string): boolean | Promise<boolean> =>
+      silent ? checks.isAllowed(url) : checks.requestAccess(url);
+
     // Single automerge URL value
     if (typeof value === "string" && isValidAutomergeUrl(value)) {
-      return (await checkUrl(value, selectorType)) ? value : undefined;
+      return (await checkUrl(value)) ? value : undefined;
     }
 
     // Array of values (may contain automerge URLs)
@@ -116,7 +128,7 @@ export function makeBridgedValueFilter(
       const result: unknown[] = [];
       for (const item of value) {
         if (typeof item === "string" && isValidAutomergeUrl(item)) {
-          if (await checkUrl(item, selectorType)) result.push(item);
+          if (await checkUrl(item)) result.push(item);
         } else {
           result.push(item);
         }

@@ -141,7 +141,7 @@ async function populateAllowlistFromRoots(
  * the allowlist. Called lazily (e.g. when an access request arrives) rather
  * than on every change, to catch references the user just added.
  */
-export async function refreshAllowlistFromRoots(
+async function refreshAllowlistFromRoots(
   repo: Repo,
   rootUrls: AutomergeUrl[],
   allowlist: SyncAllowlist,
@@ -193,6 +193,41 @@ export async function handleAccessRequest(
     allowlist.addDocumentId(documentId);
   }
   return approved;
+}
+
+/**
+ * Decide whether a document URL carried by a bridged provider value may be
+ * relayed to the iframe. Like {@link handleAccessRequest} but keyed by URL (the
+ * form bridged values carry) and without the silent-vs-prompt policy, which is
+ * the provider bridge's concern — this is only reached for provider types that
+ * are allowed to prompt.
+ *
+ * Grants immediately if already allowlisted; otherwise re-scans the roots (the
+ * URL may have been referenced since the initial scan) and, failing that,
+ * prompts the user. Returns true (and allowlists the URL) if access is granted.
+ */
+export async function requestBridgedUrlAccess(
+  repo: Repo,
+  rootUrls: AutomergeUrl[],
+  allowlist: SyncAllowlist,
+  denylist: SyncDenylist,
+  url: AutomergeUrl
+): Promise<boolean> {
+  if (allowlist.hasUrl(url)) return true;
+  // Re-scan root documents in case the URL was referenced recently.
+  await refreshAllowlistFromRoots(repo, rootUrls, allowlist, denylist);
+  if (allowlist.hasUrl(url)) return true;
+
+  const approved = window.confirm(
+    `A bridged provider wants to share a document URL:\n\n` +
+      `URL: ${url}\n\n` +
+      `Allow access?`
+  );
+  if (approved) {
+    allowlist.add(url);
+    return true;
+  }
+  return false;
 }
 
 /**

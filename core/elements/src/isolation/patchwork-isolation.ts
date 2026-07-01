@@ -44,8 +44,8 @@ import {
 } from "./plugins-bridge.js";
 import {
   buildAllowlist,
-  refreshAllowlistFromRoots,
   handleAccessRequest,
+  requestBridgedUrlAccess,
   getDenylist,
 } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
@@ -378,38 +378,19 @@ export function registerPatchworkIsolationElement(
         // ALLOWED_PROVIDERS (see providers-bridge).
         const bridgedProviders = resolveBridgedProviders(this);
 
-        // Per-URL access check for bridged values. Delegated to by
-        // makeBridgedValueFilter, which handles the value-shape traversal.
-        //
-        // For patchwork:selected-doc: silently filter non-allowlisted URLs.
-        // The semantic is "which of my allowlisted documents is selected" —
-        // not "give me access to the selected document." This avoids spurious
-        // prompts when the user navigates to a new document (the old iframe is
-        // about to be torn down).
-        //
-        // For other types: prompt the user for unknown URLs.
-        const checkBridgedUrl = async (
-          url: string,
-          selectorType: string
-        ): Promise<boolean> => {
-          if (allowlist.hasUrl(url as AutomergeUrl)) return true;
-          if (selectorType === "patchwork:selected-doc") return false;
-          // Re-scan root documents in case the URL was added recently
-          await refreshAllowlistFromRoots(repo, rootUrls, allowlist, denylist);
-          if (allowlist.hasUrl(url as AutomergeUrl)) return true;
-          const approved = window.confirm(
-            `A bridged provider wants to share a document URL:\n\n` +
-              `URL: ${url}\n` +
-              `Provider: ${selectorType}\n\n` +
-              `Allow access?`
-          );
-          if (approved) {
-            allowlist.add(url as AutomergeUrl);
-            return true;
-          }
-          return false;
-        };
-        const bridgedValueFilter = makeBridgedValueFilter(checkBridgedUrl);
+        // The bridge filters URLs in bridged values against the allowlist; the
+        // silent-vs-prompt policy per provider type lives in the bridge.
+        const bridgedValueFilter = makeBridgedValueFilter({
+          isAllowed: (url) => allowlist.hasUrl(url as AutomergeUrl),
+          requestAccess: (url) =>
+            requestBridgedUrlAccess(
+              repo,
+              rootUrls,
+              allowlist,
+              denylist,
+              url as AutomergeUrl
+            ),
+        });
 
         // ── Host-side RPC ───────────────────────────────────────
         const rpcChannel = new MessageChannel();
