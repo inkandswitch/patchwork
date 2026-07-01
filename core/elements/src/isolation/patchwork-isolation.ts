@@ -29,7 +29,7 @@
  * Register at boot time via `registerPatchworkIsolationElement()`.
  */
 
-import type { AutomergeUrl, DocumentId, Repo } from "@automerge/automerge-repo";
+import type { AutomergeUrl, Repo } from "@automerge/automerge-repo";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   createIntermediaryRepo,
@@ -45,6 +45,7 @@ import {
 import {
   buildAllowlist,
   refreshAllowlistFromRoots,
+  handleAccessRequest,
   getDenylist,
 } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
@@ -362,46 +363,12 @@ export function registerPatchworkIsolationElement(
         if (this.#stale(epoch)) return;
         this.#allowlist = allowlist;
 
-        // Lazily re-scan the root documents for newly-added references. Used by
-        // both the document access gate and the bridged-provider value filter
-        // before they fall back to prompting the user.
-        const refreshRoots = () =>
-          refreshAllowlistFromRoots(repo, rootUrls, allowlist, denylist);
-
         this.#intermediary = createIntermediaryRepo({
           allowlist,
           hostRepo: repo,
           denylist,
-          onAccessRequest: async (documentId: DocumentId) => {
-            // Unknown documents are NOT auto-allowlisted — the user is
-            // prompted. This is a safe default: it prevents a tool from
-            // silently gaining access to any URL it constructs. The cost is
-            // that documents the iframe itself just created also prompt.
-            // TODO: once the Author ID API is available, auto-allowlist
-            // unknown documents whose author matches the iframe's assigned
-            // author ID (the iframe created them) and continue to prompt for
-            // all others.
-            if (repo.handles[documentId]) {
-              // Known to the host but not yet allowlisted — the URL may have
-              // been added since the initial scan (e.g. the user typed a new
-              // reference), so re-scan roots before asking. (Skipped for
-              // unknown docs: a root re-scan can't surface a doc the host has
-              // never seen, so it would be wasted work.)
-              await refreshRoots();
-              if (allowlist.has(documentId)) return true;
-            }
-
-            const approved = window.confirm(
-              `A tool wants to access a document:\n\n` +
-                `Document ID: ${documentId}\n\n` +
-                `This may be a document the tool just created, or one it is ` +
-                `trying to open. Allow access?`
-            );
-            if (approved) {
-              allowlist.addDocumentId(documentId);
-            }
-            return approved;
-          },
+          onAccessRequest: (documentId) =>
+            handleAccessRequest(repo, rootUrls, allowlist, denylist, documentId),
         });
 
         log("intermediary repo and allowlist ready");
@@ -428,7 +395,7 @@ export function registerPatchworkIsolationElement(
           if (allowlist.hasUrl(url as AutomergeUrl)) return true;
           if (selectorType === "patchwork:selected-doc") return false;
           // Re-scan root documents in case the URL was added recently
-          await refreshRoots();
+          await refreshAllowlistFromRoots(repo, rootUrls, allowlist, denylist);
           if (allowlist.hasUrl(url as AutomergeUrl)) return true;
           const approved = window.confirm(
             `A bridged provider wants to share a document URL:\n\n` +

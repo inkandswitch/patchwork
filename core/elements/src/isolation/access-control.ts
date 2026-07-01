@@ -16,6 +16,7 @@
 
 import {
   type AutomergeUrl,
+  type DocumentId,
   type Repo,
   isValidAutomergeUrl,
   parseAutomergeUrl,
@@ -149,6 +150,49 @@ export async function refreshAllowlistFromRoots(
   for (const url of rootUrls) {
     await scanDocIntoAllowlist(repo, url, allowlist, denylist);
   }
+}
+
+/**
+ * Decide whether the iframe may access a document that isn't yet on the
+ * allowlist — the intermediary repo's `onAccessRequest` gate.
+ *
+ * Unknown documents are NOT auto-allowlisted; the user is prompted. This is a
+ * safe default: it stops a tool from silently gaining access to any URL it
+ * constructs. The cost is that documents the iframe itself just created also
+ * prompt.
+ *
+ * TODO: once the Author ID API is available, auto-allowlist unknown documents
+ * whose author matches the iframe's assigned author ID (the iframe created
+ * them) and continue to prompt for all others.
+ *
+ * Returns true (and allowlists the doc) if access is granted.
+ */
+export async function handleAccessRequest(
+  repo: Repo,
+  rootUrls: AutomergeUrl[],
+  allowlist: SyncAllowlist,
+  denylist: SyncDenylist,
+  documentId: DocumentId
+): Promise<boolean> {
+  if (repo.handles[documentId]) {
+    // Known to the host but not yet allowlisted — the URL may have been added
+    // since the initial scan (e.g. the user typed a new reference), so re-scan
+    // roots before asking. (Skipped for unknown docs: a root re-scan can't
+    // surface a doc the host has never seen, so it would be wasted work.)
+    await refreshAllowlistFromRoots(repo, rootUrls, allowlist, denylist);
+    if (allowlist.has(documentId)) return true;
+  }
+
+  const approved = window.confirm(
+    `A tool wants to access a document:\n\n` +
+      `Document ID: ${documentId}\n\n` +
+      `This may be a document the tool just created, or one it is ` +
+      `trying to open. Allow access?`
+  );
+  if (approved) {
+    allowlist.addDocumentId(documentId);
+  }
+  return approved;
 }
 
 /**
