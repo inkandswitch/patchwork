@@ -108,8 +108,6 @@ export interface IntermediaryRepoOptions {
 }
 
 export interface IntermediaryRepo {
-  /** The intermediary Repo instance. */
-  repo: Repo;
   /** Port to hand to the iframe's Repo via MessageChannelNetworkAdapter. */
   iframePort: MessagePort;
   /** Tear down the intermediary repo and close all channels. */
@@ -117,7 +115,8 @@ export interface IntermediaryRepo {
 }
 
 /**
- * Create an intermediary repo with an allowlist seeded with `rootDocUrl`.
+ * Create an intermediary repo gated by the caller-supplied allowlist and
+ * denylist (both already seeded before this runs).
  *
  * Two MessageChannels are created:
  *  1. hostChannel — connects intermediary ↔ host repo
@@ -213,7 +212,6 @@ export function createIntermediaryRepo(
   hostRepo.networkSubsystem.addNetworkAdapter(isolationHostAdapter);
 
   return {
-    repo,
     iframePort: iframeChannel.port2,
 
     shutdown() {

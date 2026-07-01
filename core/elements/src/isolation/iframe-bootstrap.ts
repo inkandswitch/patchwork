@@ -244,7 +244,7 @@ async function boot() {
       ) {
         log("source hook:", url);
         const result = await fetchModule(url);
-        let source = result.source.replace(
+        const source = result.source.replace(
           /^(\s+)import\s*\(([^)]*)\)\s*\{/gm,
           '$1["import"]($2) {'
         );

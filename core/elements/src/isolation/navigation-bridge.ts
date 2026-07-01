@@ -69,23 +69,3 @@ export function startHostNavigationBridge(
     rpcPort.removeEventListener("message", onMessage);
   };
 }
-
-/**
- * Returns the iframe-side bootstrap code for the navigation bridge as a
- * string to be inlined in the iframe's srcdoc.
- *
- * This code intercepts `patchwork:open-document` events at the document
- * level and forwards them to the host via the RPC port.
- */
-export function getIframeNavigationBridgeCode(): string {
-  return `
-    // Navigation bridge: forward patchwork:open-document events to host
-    document.addEventListener("patchwork:open-document", (event) => {
-      event.stopPropagation();
-      __rpcPort.postMessage({
-        type: "open-document",
-        detail: event.detail,
-      });
-    }, true);
-  `;
-}
