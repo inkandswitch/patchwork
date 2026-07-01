@@ -10,7 +10,9 @@ We want to prevent one attack:
 
 1. **Unauthorized data access.** A tool must not access data that wasn't handed to it by the user. This includes all keyhive keys as well as documents belonging to other tools — accessing those could allow a malicious tool to damage the user's environment (for example, by modifying another tool's source code).
 
-**Trust boundary.** The Patchwork host application and its built-in code are trusted. Third-party tool code is untrusted. The `<patchwork-isolation>` element wraps an arbitrary subtree of the host DOM and runs it inside a sandboxed iframe. In the default frame layout, the isolation boundary wraps the main document view, context sidebar, and their providers (comments, focus). The document toolbar runs outside the isolation boundary in the host.
+**Trust boundary.** The Patchwork host application and its built-in code are trusted. Third-party tool code is untrusted. The `<patchwork-isolation>` element mounts an isolated **root component** inside a sandboxed iframe. The host hands it only a serializable boot spec (data) — never a live DOM subtree — so no tool code is ever inserted into the host DOM and untrusted code runs only inside the iframe, from its first instruction. The iframe resolves the named root against its own registry and mounts it, and the root builds the isolated subtree inside the iframe.
+
+Which parts of the UI end up inside the boundary is a choice of the frame configuration, not a property of the element. In the default frame layout, for example, the document toolbar and main work area run inside the boundary, and only the sidebar and system tray run outside it in the host.
 
 **No server enforcement.** Patchwork is local-first. There is no server mediating tool access to documents. All isolation must happen in the browser, using the browser's own security primitives.
 
@@ -25,21 +27,25 @@ We want to prevent one attack:
  HOST (trusted)                           IFRAME (untrusted, opaque origin)
 ┌──────────────────────────────────────┐  ┌────────────────────────────────────┐
 │                                      │  │                                    │
-│  Isolation Element                   │  │  Reconstructed DOM Tree            │
-│  ┌────────────────────────────────┐  │  │  ┌──────────────────────────────┐  │
-│  │ Serializes child subtree,      │  │  │  │ <repo-provider>              │  │
-│  │ manages iframe lifecycle       │  │  │  │  answers repo:handle-        │  │
-│  └────────────────────────────────┘  │  │  │  descriptor subscriptions    │  │
-│                                      │  │  │  ┌────────────────────────┐  │  │
-│  ┌────────────────────────────────┐  │  │  │  │ Providers (local)      │  │  │
-│  │ Intermediary Repo (ephemeral)  │  │  │  │  │ - comments-provider    │  │  │
-│  │                                │  │  │  │  │ - focus-provider       │  │  │
-│  │ ┌──────────────────────────┐   │  │  │  │  ├────────────────────────┤  │  │
-│  │ │ Allowlist                │   │  │  │  │  │ Tool Views             │  │  │
-│  │ │ - root docs + transitive │   │  │  │  │  │ - main document view   │  │  │
-│  │ │ - contact URL            │   │  │  │  │  │ - context sidebar      │  │  │
-│  │ │ - unknown: prompt *      │   │  │  │  │  └────────────────────────┘  │  │
-│  │ │ - user-approved          │   │  │  │  └──────────────────────────────┘  │
+│  Isolation Element                   │  │  ┌──────────────────────────────┐  │
+│  ┌────────────────────────────────┐  │  │  │ <repo-provider>              │  │
+│  │ configure(bootSpec) — boots &  │  │  │  │  answers repo:handle-        │  │
+│  │ manages the iframe. The spec   │  │  │  │  descriptor subscriptions    │  │
+│  │ is DATA ONLY (no live DOM):    │  │  │  │  ┌────────────────────────┐  │  │
+│  │ - rootComponentId              │  │  │  │  │ Root <patchwork-view   │  │  │
+│  │ - props     (JSON only)        │  │  │  │  │  component=rootId>      │  │  │
+│  │ - rootUrls  (allowlist seeds)  │  │  │  │  │  + props via inert     │  │  │
+│  └────────────────────────────────┘  │  │  │  │  <script json>         │  │  │
+│                                      │  │  │  ├────────────────────────┤  │  │
+│  ┌────────────────────────────────┐  │  │  │  │ Root builds subtree:   │  │  │
+│  │ Intermediary Repo (ephemeral)  │  │  │  │  │ - local providers      │  │  │
+│  │                                │  │  │  │  │ - tool views           │  │  │
+│  │ ┌──────────────────────────┐   │  │  │  │  └────────────────────────┘  │  │
+│  │ │ Allowlist                │   │  │  │  └──────────────────────────────┘  │
+│  │ │ - rootUrls + transitive  │   │  │  │                                    │
+│  │ │ - contact URL            │   │  │  │                                    │
+│  │ │ - unknown: prompt *      │   │  │  │                                    │
+│  │ │ - user-approved          │   │  │  │                                    │
 │  │ ├──────────────────────────┤   │  │  │                                    │
 │  │ │ Denylist                 │   │  │  │  ┌──────────────────────────────┐  │
 │  │ │ - account doc            │   │  │  │  │ In-memory Repo               │  │
@@ -139,9 +145,21 @@ The primary isolation boundary. Tool code runs inside an `<iframe sandbox="allow
 
 ### Isolation element
 
-A host-side custom element (`<patchwork-isolation>`) that manages the boundary between trusted host code and untrusted tool code, setting up the iframe, establishing communication channels, and enforcing access control. It wraps an arbitrary subtree of the host DOM and runs it inside a sandboxed iframe. It recursively serializes its child elements (tag names, attributes, and nested children) into a transferable descriptor, then reconstructs the same DOM structure inside the iframe. All `doc-url` attributes found anywhere in the serialized tree become root URLs for the document allowlist.
+A host-side custom element (`<patchwork-isolation>`) that manages the boundary between trusted host code and untrusted tool code: setting up the iframe, establishing communication channels, and enforcing access control. It renders nothing on its own and never inspects its light DOM. The host drives it through one imperative method:
 
-The element manages the iframe lifecycle, coordinates all communication channels (RPC, sync, bootstrap), and enforces access control. Host-side children are removed from the DOM after serialization to prevent duplicate rendering.
+```ts
+element.configure(spec: IsolationBootSpec)
+```
+
+The spec is **data only** — no live DOM, no functions, no handles:
+
+- `rootComponentId` — the `patchwork:component` id to mount as the isolated root.
+- `props` — structured-clone JSON handed to the root (no accessors, callbacks, DOM nodes, or handles).
+- `rootUrls` — documents to seed the sync allowlist with, computed from host state.
+
+**Why a boot spec instead of a live subtree.** Custom elements upgrade synchronously the instant they enter a live document, so any tool-bearing element the host constructed would begin executing tool code in the trusted host realm before it could be moved behind the sandbox. Handing the element only data removes that window entirely: nothing tool-bearing is ever inserted into host DOM, the iframe resolves `rootComponentId` against its **own** registry and mounts it there, and the root reads `props` from an inert `<script type="application/json">` child. Tool code runs only inside the iframe, from its first instruction.
+
+`configure()` boots exactly one iframe. Any later call with a different spec fully tears down the running iframe and boots a fresh one from the new spec — no prop diffing, no in-place re-pointing (a byte-identical spec is a no-op). A spec set while the element is disconnected is stored and applied on connect.
 
 **Theme-matched first paint.** The iframe is a separate document that would otherwise paint white until the theming tool boots inside it. To avoid that flash, the host reads its own current appearance (`readHostAppearance`) and bakes it into the iframe's static `srcdoc`, so the iframe's first frame already matches. This read is deliberately **tool-agnostic** — it does not depend on the theming tool's CSS variables, attribute conventions, or palette (the theming tool is swappable, and the platform must not couple to it). It reads only resolved browser values: the host's actual painted background (found by walking up from the isolation element to the first ancestor with a non-transparent computed `backgroundColor`, whatever produced it) and the resolved `color-scheme` (a CSS standard property). The real theme is then applied to the iframe's content as normal when the theming tool boots inside it; because the first paint already matched, there is no visible transition. (The native `window.confirm()` access/navigation prompts are browser chrome and cannot be themed.)
 
@@ -180,7 +198,7 @@ The denylist also watches plugin registries for new registrations (denylisting t
 
 #### Allowlist
 
-The allowlist is seeded from all `doc-url` attributes found in the serialized child tree, plus the user's contact document URL (read from the account doc), which we include as a special case. It is expanded through two mechanisms:
+The allowlist is seeded from the boot spec's `rootUrls` (computed from host state), plus the user's contact document URL (read from the account doc), which we include as a special case. It is expanded through two mechanisms:
 
 1. **Transitive discovery.** Each root document's content is scanned for embedded automerge URLs (recursively walking objects, arrays, and strings). All discovered URLs are added to the allowlist (unless denylisted). This reflects the assumption that if the user opened a document, its referenced children are authorized for the tool rendering it.
 
@@ -240,7 +258,9 @@ At boot, the host pre-populates the iframe's plugin registries with metadata for
 
 ### Repo provider in iframe
 
-The iframe registers a `<repo-provider>` custom element and wraps all reconstructed content inside it. This mirrors the host bootloader pattern — `<repo-provider>` answers `repo:handle-descriptor` subscriptions with an identity response (no remapping), which is required by `OverlayRepo.find()`. Without it, every `patchwork-view` in legacy mode (with `doc-url`) would hang forever waiting for a descriptor response.
+The iframe registers a `<repo-provider>` custom element and mounts the root `<patchwork-view component=...>` inside it. This mirrors the host bootloader pattern — `<repo-provider>` answers `repo:handle-descriptor` subscriptions with an identity response (no remapping), which is required by `OverlayRepo.find()`. Without it, every `patchwork-view` in legacy mode (with `doc-url`) would hang forever waiting for a descriptor response.
+
+The root is an ordinary `patchwork:component`, so mounting it through `patchwork-view`'s normal component path reuses the existing machinery the in-iframe root needs anyway: lazy module loading from the registry (including plugins that haven't loaded yet, which arrive both in the initial registry and via live RPC pushes), hot-reload on a newer `importUrl`, and the mount/unmount lifecycle events that in-iframe provider-readiness gates rely on.
 
 ### Providers bridge
 
