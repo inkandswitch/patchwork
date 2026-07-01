@@ -1,73 +1,9 @@
 /**
- * Supporting functions that run inside the sandboxed iframe, injected into
- * `boot()` (see ./main.ts). Each is defined at module scope so tsc checks it and
- * it reads on its own, but none executes in the host: `../host/srcdoc.ts`
- * serializes each with `.toString()` into the iframe's srcdoc `<script>` and
- * passes them to `boot()`. They can't close over `boot()`'s locals, so anything
- * they need (`hostOrigin`, `log`, the RPC `fetchResource` sender) is passed in.
- *
- * All three are install-once and stateless afterward, which is why they live
- * here rather than inside `boot()` — unlike the RPC senders, which share
- * `boot()`'s mutable state and stay there.
+ * Host-origin `<link>` interception for the sandboxed iframe. Injected into
+ * `boot()` and serialized into the srcdoc by ../host/srcdoc.ts (see ./main.ts).
  */
 
-import type { FetchResourceResult } from "./rpc.js";
-
-export type IframeLog = (...args: unknown[]) => void;
-
-/**
- * Give the sandboxed iframe a `localStorage`. An opaque-origin iframe throws on
- * any `localStorage` access, which would break tools (and the `debug` package)
- * that read it. We install an in-memory no-op stub — except `getItem("debug")`,
- * which returns `patchwork:*` so debug logging works inside the iframe when the
- * host has it enabled. Only runs if real `localStorage` is unavailable.
- */
-export function installLocalStorageStub(): void {
-  try {
-    void localStorage;
-  } catch {
-    Object.defineProperty(window, "localStorage", {
-      value: {
-        getItem: (key: string) => (key === "debug" ? "patchwork:*" : null),
-        setItem: () => {},
-        removeItem: () => {},
-        clear: () => {},
-        length: 0,
-        key: () => null,
-      },
-    });
-  }
-}
-
-/**
- * Install the host-origin fetch proxy. The sandboxed iframe can't reach the
- * host's service worker, so any fetch to a host-origin URL (package resources,
- * CSS @imports, etc.) is routed through the RPC `fetchResource` sender instead;
- * everything else falls through to the real `fetch`. Installed after WASM init
- * so `initializeWasm`/`initSync` aren't affected.
- */
-export function installFetchProxy(
-  hostOrigin: string,
-  fetchResource: (url: string) => Promise<FetchResourceResult>,
-  log: IframeLog
-): void {
-  const originalFetch = self.fetch;
-  (self as any).fetch = async (
-    input: RequestInfo | URL,
-    requestInit?: RequestInit
-  ): Promise<Response> => {
-    const url = typeof input === "string" ? input : input.toString();
-    if (url.startsWith(hostOrigin)) {
-      const result = await fetchResource(url);
-      return new Response(result.body, {
-        status: 200,
-        headers: { "Content-Type": result.contentType },
-      });
-    }
-    return originalFetch(input, requestInit);
-  };
-  log("fetch proxy installed");
-}
+import type { IframeLog } from "./types.js";
 
 /**
  * Intercept host-origin <link> insertions SYNCHRONOUSLY, at insertion time.

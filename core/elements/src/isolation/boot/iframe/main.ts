@@ -16,14 +16,12 @@
 import type { RegistryEntry } from "../../types.js";
 export type { RegistryEntry };
 
-// The injected iframe code (defined in ./helpers.ts and ./rpc.ts, serialized
-// into the srcdoc by ../host/srcdoc.ts). Imported as types only: boot() receives
-// these via `deps` at runtime and never references the module bindings directly.
-import type {
-  installLocalStorageStub,
-  installFetchProxy,
-  installLinkInterception,
-} from "./helpers.js";
+// The injected iframe code (each concern in its own ./*.ts, serialized into the
+// srcdoc by ../host/srcdoc.ts). Imported as types only: boot() receives these
+// via `deps` at runtime and never references the module bindings directly.
+import type { installLocalStorageStub } from "./local-storage.js";
+import type { installFetchProxy } from "./fetch-proxy.js";
+import type { installLinkInterception } from "./link-interception.js";
 import type { createRpcClient, RpcClient } from "./rpc.js";
 
 // ---------------------------------------------------------------------------

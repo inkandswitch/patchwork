@@ -7,11 +7,9 @@
  */
 
 import { boot } from "../iframe/main.js";
-import {
-  installLocalStorageStub,
-  installFetchProxy,
-  installLinkInterception,
-} from "../iframe/helpers.js";
+import { installLocalStorageStub } from "../iframe/local-storage.js";
+import { installFetchProxy } from "../iframe/fetch-proxy.js";
+import { installLinkInterception } from "../iframe/link-interception.js";
 import { createRpcClient } from "../iframe/rpc.js";
 
 /**
