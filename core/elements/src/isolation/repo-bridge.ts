@@ -145,6 +145,26 @@ export function createIntermediaryRepo(
     useWeakRef: true,
   });
 
+  // The one denylist gate, shared by `announce` and `access` so the two can
+  // never drift apart (both must agree for the security invariant to hold).
+  // Returns why a document is blocked from crossing to the iframe, or null if
+  // the denylist permits it (the caller still applies the allowlist).
+  //  - "not-ready": the denylist hasn't finished populating; fail closed to the
+  //    iframe so a protected doc can't sync during the population window.
+  //    Defense in depth — the boot path already awaits readiness before this
+  //    repo exists, so on the normal path this never fires.
+  //  - "denylisted": the document is in the protected set.
+  // The host peer is never gated here; only iframe-bound sync is.
+  const denylistBlock = (
+    peerId: PeerId,
+    documentId: DocumentId
+  ): "not-ready" | "denylisted" | null => {
+    if (peerId === hostRepoPeerId) return null;
+    if (denylist && !denylist.isReady) return "not-ready";
+    if (denylist?.has(documentId)) return "denylisted";
+    return null;
+  };
+
   const repo = new Repo({
     peerId: `intermediary-${crypto.randomUUID().slice(0, 8)}` as PeerId,
     network: [hostAdapter, iframeAdapter],
@@ -152,28 +172,18 @@ export function createIntermediaryRepo(
     shareConfig: {
       announce: async (peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return true;
-        // Fail closed to the iframe until the denylist is fully populated, so a
-        // protected doc can't sync during the population window. Defense in
-        // depth: the boot path already awaits readiness before creating this
-        // repo, so on the normal path this is never false.
-        if (denylist && !denylist.isReady && peerId !== hostRepoPeerId) {
-          return false;
-        }
-        if (denylist?.has(documentId)) return false;
+        if (denylistBlock(peerId, documentId)) return false;
         return allowlist.has(documentId);
       },
       access: async (peerId: PeerId, documentId?: DocumentId) => {
         if (!documentId) return false;
-        // Fail closed to the iframe until the denylist is fully populated (see
-        // announce above).
-        if (denylist && !denylist.isReady && peerId !== hostRepoPeerId) {
+        const blocked = denylistBlock(peerId, documentId);
+        if (blocked === "not-ready") {
           log(`access ${documentId} BLOCKED (denylist not ready)`);
           return false;
         }
-        if (denylist?.has(documentId)) {
-          if (peerId !== hostRepoPeerId) {
-            log(`access ${documentId} DENIED`);
-          }
+        if (blocked === "denylisted") {
+          log(`access ${documentId} DENIED`);
           return false;
         }
         if (allowlist.has(documentId)) return true;
