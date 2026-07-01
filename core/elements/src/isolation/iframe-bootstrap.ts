@@ -244,6 +244,11 @@ async function boot() {
       ) {
         log("source hook:", url);
         const result = await fetchModule(url);
+        // Rewrite class methods literally named `import` to bracket notation.
+        // es-module-shims' lexer misreads a method named `import` as a dynamic
+        // `import()` expression and throws a parse error. This is a live case,
+        // not vestigial: @automerge/automerge-repo's Repo class has an
+        // `import(binary, args) { … }` method, and Repo loads into every iframe.
         const source = result.source.replace(
           /^(\s+)import\s*\(([^)]*)\)\s*\{/gm,
           '$1["import"]($2) {'
@@ -325,20 +330,22 @@ async function boot() {
     // BEFORE any async MutationObserver callback can run — so we cannot fix it
     // after the fact by removing/replacing the node. We must intervene before
     // the node enters the DOM, by patching the DOM insertion methods. Two
-    // cases, both triggered by tool/bundler code (e.g. Vite's __vitePreload,
-    // or the theming tool's ensureThemeLink):
+    // cases, both produced at runtime by code running inside the iframe:
     //
-    //  - rel="modulepreload": flip to "modulepreload-shim". The browser
-    //    ignores the unknown rel (no native fetch), while es-module-shims
-    //    honors it and preloads the chunk through its source hook → our RPC.
-    //    (The chunk also loads via the rewritten importShim dynamic import;
-    //    this just makes the parallel preload work instead of CORS-failing.)
+    //  - rel="modulepreload": emitted by bundler runtime (e.g. Vite's
+    //    __vitePreload) when a code-split chunk loads. Flip to
+    //    "modulepreload-shim": the browser ignores the unknown rel (no native
+    //    fetch), while es-module-shims honors it and preloads the chunk through
+    //    its source hook → our RPC. (The chunk also loads via the rewritten
+    //    importShim dynamic import; this just makes the parallel preload work
+    //    instead of CORS-failing.)
     //
-    //  - rel="stylesheet": substitute a <style> element inserted in the link's
-    //    place, and fill it by fetching the CSS through the proxy. The link
-    //    itself never enters the DOM, so no native request is made. We map the
-    //    original link → its <style> so a later link.remove()/removeChild()
-    //    (e.g. theme deregistration) also removes the substituted <style>.
+    //  - rel="stylesheet": emitted by tool code loaded inside isolation that
+    //    injects its own host-origin stylesheet <link> at runtime. Substitute a
+    //    <style> element in the link's place and fill it by fetching the CSS
+    //    through the proxy. The link itself never enters the DOM, so no native
+    //    request is made. We map the original link → its <style> so a later
+    //    link.remove()/removeChild() also removes the substituted <style>.
     const styleForLink = new WeakMap<HTMLLinkElement, HTMLStyleElement>();
 
     // Returns a replacement node to insert instead of `node`, or `node` itself
