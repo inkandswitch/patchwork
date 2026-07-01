@@ -11,12 +11,9 @@
  * `boot()`'s mutable state and stay there.
  */
 
-export type IframeLog = (...args: unknown[]) => void;
+import type { FetchResourceResult } from "./rpc.js";
 
-export interface FetchResourceResult {
-  body: ArrayBuffer;
-  contentType: string;
-}
+export type IframeLog = (...args: unknown[]) => void;
 
 /**
  * Give the sandboxed iframe a `localStorage`. An opaque-origin iframe throws on

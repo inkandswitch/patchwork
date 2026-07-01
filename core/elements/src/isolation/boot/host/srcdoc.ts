@@ -12,6 +12,7 @@ import {
   installFetchProxy,
   installLinkInterception,
 } from "../iframe/helpers.js";
+import { createRpcClient } from "../iframe/rpc.js";
 
 /**
  * The host's current resolved appearance, used to paint the iframe's first
@@ -93,13 +94,14 @@ export function generateIframeSrcdoc(appearance?: IframeAppearance): string {
 </head>
 <body>
   <script>
-    // The iframe script. boot() and its injected helpers are defined as typed
-    // functions in iframe-bootstrap.ts and serialized in here via .toString();
-    // the helpers are passed to boot() since they can't close over its scope.
+    // The iframe script. boot() and its injected code (helpers + RPC client) are
+    // defined as typed functions in ../iframe/*.ts and serialized in here via
+    // .toString(); they're passed to boot() since they can't close over its scope.
     (${boot.toString()})({
       installLocalStorageStub: ${installLocalStorageStub.toString()},
       installFetchProxy: ${installFetchProxy.toString()},
       installLinkInterception: ${installLinkInterception.toString()},
+      createRpcClient: ${createRpcClient.toString()},
     });
   </script>
 </body>

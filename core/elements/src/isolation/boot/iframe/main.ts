@@ -16,15 +16,15 @@
 import type { RegistryEntry } from "../../types.js";
 export type { RegistryEntry };
 
-// The injected helpers (defined in ./helpers.ts, serialized into the srcdoc by
-// ../host/srcdoc.ts). Imported as types only: boot() receives them via `deps`
-// at runtime and never references these module bindings directly.
+// The injected iframe code (defined in ./helpers.ts and ./rpc.ts, serialized
+// into the srcdoc by ../host/srcdoc.ts). Imported as types only: boot() receives
+// these via `deps` at runtime and never references the module bindings directly.
 import type {
   installLocalStorageStub,
   installFetchProxy,
   installLinkInterception,
-  FetchResourceResult,
 } from "./helpers.js";
+import type { createRpcClient, RpcClient } from "./rpc.js";
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
@@ -51,22 +51,17 @@ interface InitMessage {
   };
 }
 
-interface FetchModuleResult {
-  source: string;
-  resolvedUrl: string;
-}
-
 /**
- * The iframe helpers injected into `boot()`. They live in ./helpers.ts (defined
- * at module scope so tsc checks them) and are serialized into the srcdoc by
+ * The iframe code injected into `boot()`. Each lives at module scope (./helpers.ts,
+ * ./rpc.ts) so tsc checks it, and is serialized into the srcdoc by
  * ../host/srcdoc.ts; `boot()` receives them here since `.toString()` can't
- * capture surrounding scope. See ./helpers.ts for why these live outside boot()
- * (install-once + stateless) while the RPC senders stay inside it.
+ * capture surrounding scope.
  */
 interface BootDeps {
   installLocalStorageStub: typeof installLocalStorageStub;
   installFetchProxy: typeof installFetchProxy;
   installLinkInterception: typeof installLinkInterception;
+  createRpcClient: typeof createRpcClient;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,8 +69,12 @@ interface BootDeps {
 // ---------------------------------------------------------------------------
 
 export async function boot(deps: BootDeps) {
-  const { installLocalStorageStub, installFetchProxy, installLinkInterception } =
-    deps;
+  const {
+    installLocalStorageStub,
+    installFetchProxy,
+    installLinkInterception,
+    createRpcClient,
+  } = deps;
   // Minimal debug-compatible logger. The real `debug` package isn't available
   // until modules load, but we need logging during bootstrap.
   // Respects the same localStorage("debug") namespace convention.
@@ -115,71 +114,25 @@ export async function boot(deps: BootDeps) {
     _originalConsoleDebug.apply(console, args);
   };
 
-  // 2. RPC infrastructure
+  // 2. RPC + inbound-message state.
+  // The RPC client (module/resource fetch req-reply) owns its own maps; see
+  // ./rpc.ts. The port itself is owned here because it also carries pushes for
+  // other features — live plugin registrations and the providers bridge — whose
+  // state stays local to boot():
   let rpcPort: MessagePort;
-  const pendingModuleFetches = new Map<
-    number,
-    { resolve: (r: FetchModuleResult) => void; reject: (e: Error) => void }
-  >();
-  const pendingResourceFetches = new Map<
-    number,
-    { resolve: (r: FetchResourceResult) => void; reject: (e: Error) => void }
-  >();
-  // Providers bridge: tracks subscriptions forwarded to the host
-  const bridgedSubscriptions = new Map<number, MessagePort>();
-  let fetchId = 0;
+  let rpc: RpcClient;
+  const bridgedSubscriptions = new Map<number, MessagePort>(); // providers bridge
   let bridgeId = 0;
   const pendingPluginUpdates: any[] = [];
 
-  function fetchModule(url: string): Promise<FetchModuleResult> {
-    return new Promise((resolve, reject) => {
-      const id = ++fetchId;
-      pendingModuleFetches.set(id, { resolve, reject });
-      rpcPort.postMessage({ type: "fetch-package", id, url });
-    });
-  }
-
-  function fetchResource(url: string): Promise<FetchResourceResult> {
-    return new Promise((resolve, reject) => {
-      const id = ++fetchId;
-      pendingResourceFetches.set(id, { resolve, reject });
-      rpcPort.postMessage({ type: "fetch-resource", id, url });
-    });
-  }
-
-  // Routes every message arriving on the RPC port to its handler, keyed by
-  // `msg.type`. Responses to our outgoing requests (fetch-package/-resource)
-  // are matched back to their pending promise by `msg.id`; the rest are
-  // host-initiated pushes (live plugin registrations, provider-bridge events).
+  // Route an inbound RPC message: let the RPC client consume its fetch replies
+  // first, then handle the host-initiated pushes this file owns.
   function handleRpcMessage(event: MessageEvent) {
+    if (rpc.handle(event)) return;
     const msg = event.data;
     if (!msg) return;
 
-    if (msg.type === "fetch-package-response") {
-      const pending = pendingModuleFetches.get(msg.id);
-      if (pending) {
-        pendingModuleFetches.delete(msg.id);
-        pending.resolve({ source: msg.source, resolvedUrl: msg.resolvedUrl });
-      }
-    } else if (msg.type === "fetch-package-error") {
-      const pending = pendingModuleFetches.get(msg.id);
-      if (pending) {
-        pendingModuleFetches.delete(msg.id);
-        pending.reject(new Error(msg.error));
-      }
-    } else if (msg.type === "fetch-resource-response") {
-      const pending = pendingResourceFetches.get(msg.id);
-      if (pending) {
-        pendingResourceFetches.delete(msg.id);
-        pending.resolve({ body: msg.body, contentType: msg.contentType });
-      }
-    } else if (msg.type === "fetch-resource-error") {
-      const pending = pendingResourceFetches.get(msg.id);
-      if (pending) {
-        pendingResourceFetches.delete(msg.id);
-        pending.reject(new Error(msg.error));
-      }
-    } else if (msg.type === "plugin-registered") {
+    if (msg.type === "plugin-registered") {
       // Live registry update from host — register the plugin in the
       // iframe's registry so new tools/datatypes are available.
       pendingPluginUpdates.push(msg.entry);
@@ -211,6 +164,7 @@ export async function boot(deps: BootDeps) {
   });
 
   rpcPort = init.rpcPort;
+  rpc = createRpcClient(rpcPort);
   rpcPort.addEventListener("message", handleRpcMessage);
   rpcPort.start();
 
@@ -254,7 +208,7 @@ export async function boot(deps: BootDeps) {
         _defaultSource: Function
       ) {
         log("source hook:", url);
-        const result = await fetchModule(url);
+        const result = await rpc.fetchModule(url);
         // Rewrite class methods literally named `import` to bracket notation.
         // es-module-shims' lexer misreads a method named `import` as a dynamic
         // `import()` expression and throws a parse error. This is a live case,
@@ -317,7 +271,7 @@ export async function boot(deps: BootDeps) {
     // iframe; see the injected helpers at module scope for the full rationale.
     // Order matters: link interception fetches through the patched proxy.
     const hostOrigin = d.hostOrigin;
-    installFetchProxy(hostOrigin, fetchResource, log);
+    installFetchProxy(hostOrigin, rpc.fetchResource, log);
     installLinkInterception(hostOrigin, log);
 
     // 10. Create in-memory Repo
