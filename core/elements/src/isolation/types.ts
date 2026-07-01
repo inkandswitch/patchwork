@@ -35,7 +35,7 @@ export interface IsolationBootSpec {
  * A plugin registry entry, stripped of non-cloneable fields (functions, loaded
  * implementations) so it can be sent to the iframe via postMessage. `importUrl`
  * has been rewritten to an opaque `pkg:` URL before transfer (see
- * PluginsUrlMapper). The index signature carries through any other
+ * PackagesUrlMapper). The index signature carries through any other
  * serializable plugin metadata.
  */
 export interface RegistryEntry {

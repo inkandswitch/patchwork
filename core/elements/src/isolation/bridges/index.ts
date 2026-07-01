@@ -13,12 +13,9 @@ export {
   SyncAllowlist,
   type IntermediaryRepo,
 } from "./repo-bridge.js";
-export {
-  PluginsUrlMapper,
-  getRegistries,
-  startPluginsRpc,
-  watchRegistries,
-} from "./plugins-bridge.js";
+export { PackagesUrlMapper } from "./url-mapping.js";
+export { startResourceBridge } from "./resource-bridge.js";
+export { getRegistries, watchRegistries } from "./registry-bridge.js";
 export {
   buildAllowlist,
   handleAccessRequest,

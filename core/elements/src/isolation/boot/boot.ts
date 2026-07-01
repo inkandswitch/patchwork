@@ -22,9 +22,9 @@ import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   createIntermediaryRepo,
   type IntermediaryRepo,
-  PluginsUrlMapper,
+  PackagesUrlMapper,
   getRegistries,
-  startPluginsRpc,
+  startResourceBridge,
   watchRegistries,
   buildAllowlist,
   handleAccessRequest,
@@ -92,7 +92,7 @@ export function bootIsolation(
     if (stale()) return;
 
     const importMap = getResolvedImportMap();
-    const mapper = new PluginsUrlMapper();
+    const mapper = new PackagesUrlMapper();
 
     // ── Access control ──────────────────────────────────────
     // Wait for the denylist to finish populating before seeding the allowlist
@@ -140,7 +140,7 @@ export function bootIsolation(
     hostRpcPort = rpcChannel.port1;
 
     cleanups.push(
-      startPluginsRpc({ port: hostRpcPort, mapper }),
+      startResourceBridge({ port: hostRpcPort, mapper }),
       startHostNavigationBridge(hostRpcPort, host, (url) =>
         allowlist.hasUrl(url)
       ),
@@ -164,7 +164,7 @@ export function bootIsolation(
   function createIframe(
     rpcPort: MessagePort,
     syncPort: MessagePort,
-    mapper: PluginsUrlMapper,
+    mapper: PackagesUrlMapper,
     assets: Awaited<ReturnType<typeof fetchBootAssets>>,
     config: {
       rootComponentId: string;

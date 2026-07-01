@@ -1,27 +1,24 @@
 /**
- * Plugin registry bridge — collects plugin metadata from the host's
- * registries, maps automerge URLs to opaque package URLs, and handles
- * RPC requests from the iframe for module and resource loading.
+ * URL translation, resolution, and filtering for the isolation boundary — the
+ * naming/addressing layer that both the resource bridge and the registry bridge
+ * build on.
  *
- * This module consolidates:
- *  - PluginsUrlMapper: bidirectional mapping between automerge URL segments
- *    and opaque `pkg:` URLs
- *  - getRegistries: walks all host registries and produces
- *    serializable RegistryEntry objects for the iframe
- *  - startPluginsRpc: host-side RPC handler for fetch-package / fetch-resource
+ *  - `PackagesUrlMapper`: bidirectional mapping between automerge URL segments
+ *    and opaque `pkg:` URLs, so real document IDs never reach the iframe.
+ *  - `resolvePackageEntryUrl` / `resolveUrl`: turn an importUrl (or an incoming
+ *    iframe request) into a concrete fetchable URL.
+ *  - `containsAutomergeUrl`: the security filter that rejects raw automerge IDs
+ *    smuggled into fetch-proxy requests.
  */
 
 import {
   isValidAutomergeUrl,
   type AutomergeUrl,
 } from "@automerge/automerge-repo";
-import { getAllRegistries } from "@inkandswitch/patchwork-plugins";
 import {
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
-import type { RegistryEntry } from "../types.js";
-import { log } from "../log.js";
 
 // ---------------------------------------------------------------------------
 // Automerge URL segment scanning (shared helpers)
@@ -77,7 +74,7 @@ function findAutomergeSegments(
 }
 
 // ---------------------------------------------------------------------------
-// PluginsUrlMapper
+// PackagesUrlMapper
 // ---------------------------------------------------------------------------
 
 /**
@@ -89,7 +86,7 @@ function findAutomergeSegments(
  *  - Provides a hierarchical URL scheme for relative import resolution
  *  - Makes fetch proxy rules simple: only `pkg:` URLs get proxied
  */
-export class PluginsUrlMapper {
+export class PackagesUrlMapper {
   #counter = 0;
   // Raw automerge URL → package name (e.g., "automerge:3Dz..." → "@patchwork--folder")
   #automergeToPackage = new Map<string, string>();
@@ -212,7 +209,7 @@ export function containsAutomergeUrl(url: string): boolean {
  *    host-origin/automerge path — routing it through the service worker is what
  *    produced the 35s "no reply from the automerge worker" hangs.
  */
-async function resolvePluginEntryUrl(
+export async function resolvePackageEntryUrl(
   importUrl: string
 ): Promise<{ entryUrl: string; packageName?: string } | undefined> {
   // Non-automerge importUrls are already-resolved entry points hosted wherever
@@ -252,9 +249,9 @@ async function resolvePluginEntryUrl(
  * resolved module URL returned to es-module-shims is host-origin-prefixed to
  * enable relative URL resolution against pkg: paths.
  */
-async function resolveUrl(
+export async function resolveUrl(
   url: string,
-  mapper: PluginsUrlMapper
+  mapper: PackagesUrlMapper
 ): Promise<string> {
   // Strip host origin prefix if present — chunk URLs arrive this way
   // because resolved module URLs are prefixed for relative URL resolution.
@@ -268,220 +265,10 @@ async function resolveUrl(
   if (realUrl) return realUrl;
 
   if (isValidAutomergeUrl(lookupUrl)) {
-    const resolved = await resolvePluginEntryUrl(lookupUrl);
+    const resolved = await resolvePackageEntryUrl(lookupUrl);
     if (resolved) return resolved.entryUrl;
     throw new Error(`Failed to resolve automerge URL: ${lookupUrl}`);
   }
 
   return url;
-}
-
-// ---------------------------------------------------------------------------
-// Registry entry collection
-// ---------------------------------------------------------------------------
-
-/**
- * Convert a host registry plugin into a serializable `RegistryEntry` for the
- * iframe:
- *  - resolve its `importUrl` to a package entry point. For an automerge
- *    `importUrl` the mapper rewrites the entry to an opaque `pkg:` URL so the
- *    automerge ID never leaks; for a plain HTTP(S) `importUrl` the entry passes
- *    through unchanged (`toPackageUrl` only rewrites automerge segments), so the
- *    iframe imports it directly from where it is deployed;
- *  - strip non-cloneable fields (`load`, `module`) and deep-copy the rest so it
- *    survives `postMessage`.
- *
- * Returns `undefined` (and logs) if the plugin can't be cloned. Shared by the
- * initial collection (`getRegistries`) and the live update watcher
- * (`watchRegistries`) so both produce entries identically.
- */
-async function processRegistryPlugin(
-  plugin: any,
-  mapper: PluginsUrlMapper
-): Promise<RegistryEntry | undefined> {
-  let importUrl = plugin.importUrl as string | undefined;
-  if (importUrl) {
-    const resolved = await resolvePluginEntryUrl(importUrl);
-    importUrl = resolved
-      ? mapper.toPackageUrl(resolved.entryUrl, resolved.packageName ?? plugin.id)
-      : undefined;
-  }
-
-  const { load, module, ...rest } = plugin;
-  let entry: RegistryEntry;
-  try {
-    entry = structuredClone(rest);
-  } catch (err) {
-    log(`skipping non-cloneable plugin: ${rest.id}`, err);
-    return undefined;
-  }
-  entry.importUrl = importUrl;
-  return entry;
-}
-
-/**
- * Collect registry entries from all plugin registries (with importUrls
- * rewritten to pkg: URLs) for the iframe's initial registry population.
- */
-export async function getRegistries(
-  mapper: PluginsUrlMapper
-): Promise<RegistryEntry[]> {
-  const entries: RegistryEntry[] = [];
-  for (const [, registry] of getAllRegistries()) {
-    for (const plugin of registry.all()) {
-      const entry = await processRegistryPlugin(plugin, mapper);
-      if (entry) entries.push(entry);
-    }
-  }
-  return entries;
-}
-
-/**
- * Watch all host registries for new plugin registrations and push each (as a
- * mapped, serializable entry) to the iframe via the RPC port.
- *
- * Returns a cleanup function that unsubscribes from all registries.
- */
-export function watchRegistries(
-  port: MessagePort,
-  mapper: PluginsUrlMapper
-): () => void {
-  const unsubs: Array<() => void> = [];
-
-  for (const [, registry] of getAllRegistries()) {
-    const unsub = registry.on("registered", async (plugin: any) => {
-      const entry = await processRegistryPlugin(plugin, mapper);
-      if (!entry) return;
-      log(`pushing registry update: ${entry.id}`);
-      port.postMessage({ type: "plugin-registered", entry });
-    });
-    unsubs.push(unsub);
-  }
-
-  return () => {
-    for (const unsub of unsubs) unsub();
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Plugins RPC — host-side handler for iframe module/resource loading
-// ---------------------------------------------------------------------------
-
-export interface PluginsRpcOptions {
-  port: MessagePort;
-  mapper: PluginsUrlMapper;
-}
-
-/**
- * Reject a fetch-proxy request whose URL contains a raw automerge document ID.
- * Posts the appropriate error message back to the iframe and logs host-side.
- * Returns true if the request was blocked (caller should return early).
- */
-function rejectIfAutomerge(
-  port: MessagePort,
-  id: number,
-  url: string,
-  errorType: "fetch-package-error" | "fetch-resource-error"
-): boolean {
-  if (!containsAutomergeUrl(url)) return false;
-  const error = `blocked: request contains an automerge URL (${url})`;
-  log(`${errorType.replace("-error", "")} blocked ${url}`);
-  port.postMessage({ type: errorType, id, error });
-  return true;
-}
-
-/**
- * Shared skeleton for the two fetch-proxy RPC handlers. Both follow the same
- * path: reject raw-automerge URLs, resolve the requested URL, fetch it, and
- * post an error on failure. Only the success handling differs (module source
- * text + pkg: resolvedUrl vs. resource bytes + content type), so that is passed
- * in as `onResponse`, which is responsible for posting the success message
- * (the resource handler needs to transfer its ArrayBuffer).
- */
-async function handleFetchRpc(
-  msg: { id: number; url: string },
-  type: "fetch-package" | "fetch-resource",
-  port: MessagePort,
-  mapper: PluginsUrlMapper,
-  onResponse: (
-    response: Response,
-    fetchUrl: string,
-    id: number
-  ) => Promise<void> | void
-): Promise<void> {
-  const errorType = `${type}-error` as const;
-  const { id, url } = msg;
-  if (rejectIfAutomerge(port, id, url, errorType)) return;
-  try {
-    const fetchUrl = await resolveUrl(url, mapper);
-    log(fetchUrl !== url ? `${type} ${url} → ${fetchUrl}` : `${type} ${url}`);
-
-    const response = await fetch(fetchUrl);
-    if (!response.ok) {
-      const error = `HTTP ${response.status}: ${response.statusText} (${fetchUrl})`;
-      log(`${type} error ${url}: ${error}`);
-      port.postMessage({ type: errorType, id, error });
-      return;
-    }
-    // Awaited so a failure reading the body is caught by the catch below.
-    await onResponse(response, fetchUrl, id);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    log(`${type} error ${url}: ${error}`);
-    port.postMessage({ type: errorType, id, error });
-  }
-}
-
-/**
- * Start the host-side RPC handler for plugins and resource loading.
- *
- * Handles two message types:
- *  - `fetch-package`: returns source text + resolved URL (for es-module-shims)
- *  - `fetch-resource`: returns ArrayBuffer + content type (for fetch proxy)
- */
-export function startPluginsRpc(options: PluginsRpcOptions): () => void {
-  const { port, mapper } = options;
-
-  const onMessage = async (event: MessageEvent) => {
-    const msg = event.data;
-    if (!msg) return;
-
-    if (msg.type === "fetch-package") {
-      await handleFetchRpc(msg, "fetch-package", port, mapper, async (response, fetchUrl, id) => {
-        const source = await response.text();
-        // Convert the resolved URL back to a pkg: URL (hiding automerge IDs).
-        // If it IS a pkg: URL, prefix with host origin so es-module-shims can
-        // resolve relative imports (code-split chunks) against it — bare `pkg:`
-        // URLs aren't valid hierarchical URLs. Already-absolute URLs (e.g.
-        // host-origin asset paths) are returned as-is to avoid double-prefixing.
-        const pkgUrl = mapper.toPackageUrl(response.url || fetchUrl);
-        const resolvedUrl = pkgUrl.startsWith("pkg:")
-          ? `${window.location.origin}/${pkgUrl}`
-          : pkgUrl;
-        port.postMessage({ type: "fetch-package-response", id, source, resolvedUrl });
-      });
-      return;
-    }
-
-    if (msg.type === "fetch-resource") {
-      await handleFetchRpc(msg, "fetch-resource", port, mapper, async (response, _fetchUrl, id) => {
-        const body = await response.arrayBuffer();
-        const contentType =
-          response.headers.get("content-type") || "application/octet-stream";
-        // Transfer (not copy) the ArrayBuffer for efficiency.
-        port.postMessage(
-          { type: "fetch-resource-response", id, body, contentType },
-          [body]
-        );
-      });
-      return;
-    }
-  };
-
-  port.addEventListener("message", onMessage);
-  port.start();
-
-  return () => {
-    port.removeEventListener("message", onMessage);
-  };
 }

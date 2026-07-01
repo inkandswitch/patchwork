@@ -66,12 +66,12 @@ Which parts of the UI end up inside the boundary is a choice of the frame config
 │  └───────────────────────────────┘   │  │  └──────────────────────────────┘  │
 │                                      │  │                                    │
 │  ┌────────────────────────────────┐  │  │  ┌──────────────────────────────┐  │
-│  │ Plugins RPC Handler            │  │  │  │ Package Registry             │  │
+│  │ Resource Bridge (RPC)          │  │  │  │ Package Registry             │  │
 │  │ - fetch-package: pkg: → real   │  │  │  │ - pre-populated (pkg: URLs)  │  │
 │  │   automerge URL, return src    │  │  │  │ - lazy-loads implementations │  │
 │  │ - fetch-resource: resolve &    │  │  │  │ - push updates from host     │  │
 │  │   return host-origin assets    │  │  │  └──────────────────────────────┘  │
-│  │ - PluginsUrlMapper (pkg: ↔     │  │  │                                    │
+│  │ - PackagesUrlMapper (pkg: ↔    │  │  │                                    │
 │  │   automerge bidirectional)     │  │  │                                    │
 │  ├────────────────────────────────┤  │  │                                    │
 │  │ Providers Bridge               │  │  │                                    │
@@ -222,7 +222,7 @@ Keyhive adds cryptographic identity and access control to the system. Three aspe
 
 The iframe's opaque origin prevents it from making same-origin requests to the host — the browser blocks these by default. However, tools need to load JavaScript modules and static resources (CSS, images, etc.) to function. To make this possible, the isolation system introduces two proxy channels that selectively bridge the gap:
 
-1. **Module imports** (`fetch-package` RPC) — every ES module import goes through the `es-module-shims` source hook, which sends the URL to the host. The host resolves `pkg:` URLs back to real automerge paths via the `PluginsUrlMapper`, resolves bare automerge URLs to package entry points, and passes through other URLs. The source text and resolved URL are returned to the iframe.
+1. **Module imports** (`fetch-package` RPC) — every ES module import goes through the `es-module-shims` source hook, which sends the URL to the host. The host resolves `pkg:` URLs back to real automerge paths via the `PackagesUrlMapper`, resolves bare automerge URLs to package entry points, and passes through other URLs. The source text and resolved URL are returned to the iframe.
 
 2. **Resource fetches** (`fetch-resource` RPC) — the iframe installs a `fetch()` override that intercepts all requests to host-origin URLs and forwards them to the host via RPC. The host resolves the URL and returns the response body and content type. Non-host-origin fetches pass through to the browser's native `fetch`.
 
@@ -233,13 +233,13 @@ Additionally, host-origin `<link>` elements are intercepted **synchronously at i
 
 Both substitutions route the actual fetch through the `fetch()` override → `fetch-resource` RPC, so the host-side automerge filter still applies — a stylesheet href containing a raw automerge URL is rejected like any other (it will fail to load rather than CORS-error).
 
-**Security consideration:** These proxies re-open a channel that the opaque origin otherwise closes. Bundled non-automerge assets (host-origin JS, CSS, images, etc.) are not sensitive — they are the same for all users and do not contain user data, so serving them freely is fine. However, requests that resolve to automerge document URLs are sensitive: a tool could construct URLs that reach the service worker and load arbitrary automerge documents as source text. The host-side proxy filters these out: both `fetch-package` and `fetch-resource` reject any incoming request whose URL contains a raw AutomergeUrl (`containsAutomergeUrl`), _before_ resolution. Legitimate iframe URLs only ever use the opaque `pkg:` scheme, so a raw AutomergeUrl can only come from a tool attempting to bypass the sync allowlist. The only automerge-backed fetches that proceed are those the `PluginsUrlMapper` itself produces by translating a known `pkg:` URL — i.e. documents the isolation boundary registered in the `pkg:` registry.
+**Security consideration:** These proxies re-open a channel that the opaque origin otherwise closes. Bundled non-automerge assets (host-origin JS, CSS, images, etc.) are not sensitive — they are the same for all users and do not contain user data, so serving them freely is fine. However, requests that resolve to automerge document URLs are sensitive: a tool could construct URLs that reach the service worker and load arbitrary automerge documents as source text. The host-side proxy filters these out: both `fetch-package` and `fetch-resource` reject any incoming request whose URL contains a raw AutomergeUrl (`containsAutomergeUrl`), _before_ resolution. Legitimate iframe URLs only ever use the opaque `pkg:` scheme, so a raw AutomergeUrl can only come from a tool attempting to bypass the sync allowlist. The only automerge-backed fetches that proceed are those the `PackagesUrlMapper` itself produces by translating a known `pkg:` URL — i.e. documents the isolation boundary registered in the `pkg:` registry.
 
 ### `pkg:` URL scheme
 
 Tool code inside the iframe never sees real automerge document IDs for plugin source code. Instead, plugin import URLs are rewritten to use an opaque `pkg:` scheme before being sent to the iframe. For example, a plugin's automerge URL like `automerge:3Dz.../dist/index.js` becomes `pkg:@patchwork--codemirror-base/dist/index.js`.
 
-The `PluginsUrlMapper` maintains a bidirectional mapping between automerge URL segments and package names. When the iframe requests a `pkg:` URL via the module loader, the host converts it back to the real automerge URL, fetches the source, and returns it.
+The `PackagesUrlMapper` maintains a bidirectional mapping between automerge URL segments and package names. When the iframe requests a `pkg:` URL via the module loader, the host converts it back to the real automerge URL, fetches the source, and returns it.
 
 This serves two purposes:
 
