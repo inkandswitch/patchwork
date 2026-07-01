@@ -1,9 +1,13 @@
 /**
- * Generates the `srcdoc` HTML string for the isolated iframe.
+ * The isolated iframe's runtime — the code that runs *inside* the sandbox.
  *
- * The bootstrap logic is written as a typed async function (`boot`) so that
- * tsc can check it. At runtime, `boot.toString()` is embedded into the
- * srcdoc's <script> tag as an IIFE.
+ * `boot` and its injected helpers (`installFetchProxy`, `installLinkInterception`)
+ * are written as typed functions so tsc checks them, but they never execute in
+ * the host: `./srcdoc.ts` serializes each with `.toString()` into the iframe's
+ * srcdoc `<script>`. Because the iframe has no module system until es-module-shims
+ * loads (step 5), everything the iframe needs at boot must live in these
+ * functions; the helpers are passed into `boot()` rather than closed over, since
+ * `.toString()` can't capture surrounding scope.
  */
 
 // RegistryEntry is a host↔iframe wire type — see ./types.ts (the single source
@@ -47,23 +51,29 @@ interface FetchResourceResult {
   contentType: string;
 }
 
-// ---------------------------------------------------------------------------
-// Boot function — runs inside the iframe via boot.toString() + IIFE.
-// ---------------------------------------------------------------------------
+type IframeLog = (...args: unknown[]) => void;
 
-async function boot() {
-  // Minimal debug-compatible logger. The real `debug` package isn't available
-  // until modules load, but we need logging during bootstrap.
-  // Respects the same localStorage("debug") namespace convention.
-  const NAMESPACE = "patchwork:elements:isolation:iframe";
-  const peerId = "isolation-" + crypto.randomUUID().slice(0, 8);
-  let debugEnabled = false;
-  const log = (...args: unknown[]) => {
-    if (!debugEnabled) return;
-    console.debug(`%c${NAMESPACE}`, "color: #7c3aed", ...args);
-  };
+/**
+ * Injected iframe helpers. These are defined at module scope (so tsc checks
+ * them and they read on their own) but they run *inside* the iframe: each is
+ * serialized with `.toString()` and passed into `boot()`. They can't close over
+ * `boot()`'s locals, so anything they need (`hostOrigin`, `log`, the RPC
+ * `fetchResource` sender) is passed in explicitly.
+ */
+interface BootDeps {
+  installLocalStorageStub: typeof installLocalStorageStub;
+  installFetchProxy: typeof installFetchProxy;
+  installLinkInterception: typeof installLinkInterception;
+}
 
-  // 1. Stub localStorage
+/**
+ * Give the sandboxed iframe a `localStorage`. An opaque-origin iframe throws on
+ * any `localStorage` access, which would break tools (and the `debug` package)
+ * that read it. We install an in-memory no-op stub — except `getItem("debug")`,
+ * which returns `patchwork:*` so debug logging works inside the iframe when the
+ * host has it enabled. Only runs if real `localStorage` is unavailable.
+ */
+export function installLocalStorageStub(): void {
   try {
     void localStorage;
   } catch {
@@ -78,6 +88,185 @@ async function boot() {
       },
     });
   }
+}
+
+/**
+ * Install the host-origin fetch proxy. The sandboxed iframe can't reach the
+ * host's service worker, so any fetch to a host-origin URL (package resources,
+ * CSS @imports, etc.) is routed through the RPC `fetchResource` sender instead;
+ * everything else falls through to the real `fetch`. Installed after WASM init
+ * so `initializeWasm`/`initSync` aren't affected.
+ */
+export function installFetchProxy(
+  hostOrigin: string,
+  fetchResource: (url: string) => Promise<FetchResourceResult>,
+  log: IframeLog
+): void {
+  const originalFetch = self.fetch;
+  (self as any).fetch = async (
+    input: RequestInfo | URL,
+    requestInit?: RequestInit
+  ): Promise<Response> => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url.startsWith(hostOrigin)) {
+      const result = await fetchResource(url);
+      return new Response(result.body, {
+        status: 200,
+        headers: { "Content-Type": result.contentType },
+      });
+    }
+    return originalFetch(input, requestInit);
+  };
+  log("fetch proxy installed");
+}
+
+/**
+ * Intercept host-origin <link> insertions SYNCHRONOUSLY, at insertion time.
+ * Native <link> elements make direct browser requests that bypass the fetch
+ * proxy and CORS-fail from the opaque origin. Crucially, the browser begins
+ * that native request the instant the element is inserted — BEFORE any async
+ * MutationObserver callback can run — so we can't fix it after the fact by
+ * removing/replacing the node. We intervene before the node enters the DOM, by
+ * patching the DOM insertion methods. Two cases, both produced at runtime by
+ * code running inside the iframe:
+ *
+ *  - rel="modulepreload": emitted by bundler runtime (e.g. Vite's
+ *    __vitePreload) when a code-split chunk loads. Flip to "modulepreload-shim":
+ *    the browser ignores the unknown rel (no native fetch), while es-module-shims
+ *    honors it and preloads the chunk through its source hook → our RPC. (The
+ *    chunk also loads via the rewritten importShim dynamic import; this just
+ *    makes the parallel preload work instead of CORS-failing.)
+ *
+ *  - rel="stylesheet": emitted by tool code loaded inside isolation that injects
+ *    its own host-origin stylesheet <link> at runtime. Substitute a <style>
+ *    element in the link's place and fill it by fetching the CSS through the
+ *    proxy. The link itself never enters the DOM, so no native request is made.
+ *    We map the original link → its <style> so a later link.remove()/removeChild()
+ *    also removes the substituted <style>.
+ *
+ * Must run after `installFetchProxy` — the stylesheet path fetches through the
+ * patched global `fetch`.
+ */
+export function installLinkInterception(hostOrigin: string, log: IframeLog): void {
+  const styleForLink = new WeakMap<HTMLLinkElement, HTMLStyleElement>();
+
+  // Returns a replacement node to insert instead of `node`, or `node` itself
+  // (possibly mutated) when no substitution is needed.
+  const interceptInsertedNode = (node: Node): Node => {
+    if (
+      !(node instanceof HTMLLinkElement) ||
+      !node.href ||
+      !node.href.startsWith(hostOrigin)
+    ) {
+      return node;
+    }
+
+    if (node.rel === "modulepreload") {
+      log("converted modulepreload → modulepreload-shim:", node.href);
+      node.rel = "modulepreload-shim";
+      return node;
+    }
+
+    if (node.rel === "stylesheet") {
+      const href = node.href;
+      const style = document.createElement("style");
+      // Carry over data-* attributes (some tools key off them).
+      for (const attr of Array.from(node.attributes)) {
+        if (attr.name.startsWith("data-")) {
+          style.setAttribute(attr.name, attr.value);
+        }
+      }
+      styleForLink.set(node, style);
+      fetch(href)
+        .then((r) => r.text())
+        .then((css) => {
+          style.textContent = css;
+        })
+        .catch((err) => log("failed to load stylesheet:", href, err));
+      log("substituted stylesheet link → style:", href);
+      return style;
+    }
+
+    return node;
+  };
+
+  // Removal: when a substituted stylesheet <link> is removed, also remove the
+  // <style> we inserted in its place. The link itself was never inserted (we
+  // swapped in the <style>), so for a mapped link we just remove the style and
+  // skip the native call (which would throw NotFoundError). For every other
+  // node we defer to native behavior unchanged.
+  const removeSubstituteStyle = (node: Node): boolean => {
+    if (node instanceof HTMLLinkElement) {
+      const style = styleForLink.get(node);
+      if (style) {
+        style.remove();
+        styleForLink.delete(node);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Install the prototype patches once. boot() runs a single time per iframe,
+  // and the iframe (with these globals) is destroyed wholesale when the host
+  // element is torn down — so there is nothing to restore. The guard is pure
+  // defense in depth: it guarantees the wrappers can never stack even if this
+  // were somehow re-invoked.
+  const PATCH_FLAG = "__patchworkDomPatched";
+  if (!(Node.prototype as any)[PATCH_FLAG]) {
+    (Node.prototype as any)[PATCH_FLAG] = true;
+
+    const patchInsertion = (method: "appendChild" | "insertBefore") => {
+      const original = (Node.prototype as any)[method] as (
+        ...args: any[]
+      ) => Node;
+      (Node.prototype as any)[method] = function (
+        this: Node,
+        ...args: any[]
+      ): Node {
+        args[0] = interceptInsertedNode(args[0]);
+        return original.apply(this, args);
+      };
+    };
+    patchInsertion("appendChild");
+    patchInsertion("insertBefore");
+
+    const originalRemoveChild = Node.prototype.removeChild;
+    (Node.prototype as any).removeChild = function (
+      this: Node,
+      child: Node
+    ): Node {
+      if (removeSubstituteStyle(child)) return child;
+      return originalRemoveChild.call(this, child);
+    };
+    const originalRemove = Element.prototype.remove;
+    (Element.prototype as any).remove = function (this: Element): void {
+      if (removeSubstituteStyle(this)) return;
+      originalRemove.call(this);
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Boot function — runs inside the iframe via boot.toString() + IIFE.
+// ---------------------------------------------------------------------------
+
+export async function boot(deps: BootDeps) {
+  const { installLocalStorageStub, installFetchProxy, installLinkInterception } =
+    deps;
+  // Minimal debug-compatible logger. The real `debug` package isn't available
+  // until modules load, but we need logging during bootstrap.
+  // Respects the same localStorage("debug") namespace convention.
+  const NAMESPACE = "patchwork:elements:isolation:iframe";
+  const peerId = "isolation-" + crypto.randomUUID().slice(0, 8);
+  let debugEnabled = false;
+  const log = (...args: unknown[]) => {
+    if (!debugEnabled) return;
+    console.debug(`%c${NAMESPACE}`, "color: #7c3aed", ...args);
+  };
+
+  // 1. Stub localStorage (no-op in-memory; see the injected helper).
+  installLocalStorageStub();
 
   // Evaluate debug flag now that localStorage is available.
   {
@@ -301,148 +490,13 @@ async function boot() {
     await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
     log("wasm initialized");
 
-    // 9. Install fetch proxy — intercepts all host-origin fetches.
-    // The sandboxed iframe can't reach the host's service worker, so
-    // package resources (including CSS @imports) must go through RPC.
-    // Installed after WASM init so initializeWasm/initSync aren't affected.
+    // 9. Route host-origin fetches through RPC, and intercept host-origin
+    // <link> insertions that would bypass that proxy. Both run inside the
+    // iframe; see the injected helpers at module scope for the full rationale.
+    // Order matters: link interception fetches through the patched proxy.
     const hostOrigin = d.hostOrigin;
-    const originalFetch = self.fetch;
-    (self as any).fetch = async (
-      input: RequestInfo | URL,
-      requestInit?: RequestInit
-    ): Promise<Response> => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.startsWith(hostOrigin)) {
-        const result = await fetchResource(url);
-        return new Response(result.body, {
-          status: 200,
-          headers: { "Content-Type": result.contentType },
-        });
-      }
-      return originalFetch(input, requestInit);
-    };
-    log("fetch proxy installed");
-
-    // 9b. Intercept host-origin <link> insertions SYNCHRONOUSLY, at insertion
-    // time. Native <link> elements make direct browser requests that bypass
-    // the fetch proxy and CORS-fail from the opaque origin. Crucially, the
-    // browser begins that native request the instant the element is inserted —
-    // BEFORE any async MutationObserver callback can run — so we cannot fix it
-    // after the fact by removing/replacing the node. We must intervene before
-    // the node enters the DOM, by patching the DOM insertion methods. Two
-    // cases, both produced at runtime by code running inside the iframe:
-    //
-    //  - rel="modulepreload": emitted by bundler runtime (e.g. Vite's
-    //    __vitePreload) when a code-split chunk loads. Flip to
-    //    "modulepreload-shim": the browser ignores the unknown rel (no native
-    //    fetch), while es-module-shims honors it and preloads the chunk through
-    //    its source hook → our RPC. (The chunk also loads via the rewritten
-    //    importShim dynamic import; this just makes the parallel preload work
-    //    instead of CORS-failing.)
-    //
-    //  - rel="stylesheet": emitted by tool code loaded inside isolation that
-    //    injects its own host-origin stylesheet <link> at runtime. Substitute a
-    //    <style> element in the link's place and fill it by fetching the CSS
-    //    through the proxy. The link itself never enters the DOM, so no native
-    //    request is made. We map the original link → its <style> so a later
-    //    link.remove()/removeChild() also removes the substituted <style>.
-    const styleForLink = new WeakMap<HTMLLinkElement, HTMLStyleElement>();
-
-    // Returns a replacement node to insert instead of `node`, or `node` itself
-    // (possibly mutated) when no substitution is needed.
-    const interceptInsertedNode = (node: Node): Node => {
-      if (
-        !(node instanceof HTMLLinkElement) ||
-        !node.href ||
-        !node.href.startsWith(hostOrigin)
-      ) {
-        return node;
-      }
-
-      if (node.rel === "modulepreload") {
-        log("converted modulepreload → modulepreload-shim:", node.href);
-        node.rel = "modulepreload-shim";
-        return node;
-      }
-
-      if (node.rel === "stylesheet") {
-        const href = node.href;
-        const style = document.createElement("style");
-        // Carry over data-* attributes (some tools key off them).
-        for (const attr of Array.from(node.attributes)) {
-          if (attr.name.startsWith("data-")) {
-            style.setAttribute(attr.name, attr.value);
-          }
-        }
-        styleForLink.set(node, style);
-        fetch(href)
-          .then((r) => r.text())
-          .then((css) => {
-            style.textContent = css;
-          })
-          .catch((err) => log("failed to load stylesheet:", href, err));
-        log("substituted stylesheet link → style:", href);
-        return style;
-      }
-
-      return node;
-    };
-
-    // Removal: when a substituted stylesheet <link> is removed, also remove
-    // the <style> we inserted in its place. The link itself was never inserted
-    // (we swapped in the <style>), so for a mapped link we just remove the
-    // style and skip the native call (which would throw NotFoundError). For
-    // every other node we defer to native behavior unchanged.
-    const removeSubstituteStyle = (node: Node): boolean => {
-      if (node instanceof HTMLLinkElement) {
-        const style = styleForLink.get(node);
-        if (style) {
-          style.remove();
-          styleForLink.delete(node);
-          return true;
-        }
-      }
-      return false;
-    };
-
-    // Install the prototype patches once. boot() runs a single time per iframe,
-    // and the iframe (with these globals) is destroyed wholesale when the host
-    // element is torn down — so there is nothing to restore. The guard is pure
-    // defense in depth: it guarantees the wrappers can never stack even if
-    // boot() were somehow re-entered.
-    const PATCH_FLAG = "__patchworkDomPatched";
-    if (!(Node.prototype as any)[PATCH_FLAG]) {
-      (Node.prototype as any)[PATCH_FLAG] = true;
-
-      const patchInsertion = (method: "appendChild" | "insertBefore") => {
-        const original = (Node.prototype as any)[method] as (
-          ...args: any[]
-        ) => Node;
-        (Node.prototype as any)[method] = function (
-          this: Node,
-          ...args: any[]
-        ): Node {
-          args[0] = interceptInsertedNode(args[0]);
-          return original.apply(this, args);
-        };
-      };
-      patchInsertion("appendChild");
-      patchInsertion("insertBefore");
-
-      const originalRemoveChild = Node.prototype.removeChild;
-      (Node.prototype as any).removeChild = function (
-        this: Node,
-        child: Node
-      ): Node {
-        if (removeSubstituteStyle(child)) return child;
-        return originalRemoveChild.call(this, child);
-      };
-      const originalRemove = Element.prototype.remove;
-      (Element.prototype as any).remove = function (this: Element): void {
-        if (removeSubstituteStyle(this)) return;
-        originalRemove.call(this);
-      };
-    }
+    installFetchProxy(hostOrigin, fetchResource, log);
+    installLinkInterception(hostOrigin, log);
 
     // 10. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
@@ -572,92 +626,4 @@ async function boot() {
     document.body.textContent = "Failed to load tool: " + (err.message || err);
     rpcPort.postMessage({ type: "boot-error", error: String(err) });
   }
-}
-
-// ---------------------------------------------------------------------------
-// Srcdoc generator
-// ---------------------------------------------------------------------------
-
-/**
- * The host's current resolved appearance, used to paint the iframe's first
- * frame to match. Both values are resolved browser values (not theming-tool
- * variables/attributes), so this stays independent of any specific theme tool.
- */
-export interface IframeAppearance {
-  /** Resolved background color to paint before the theme CSS loads. */
-  background?: string;
-  /** Resolved `color-scheme` (so form controls/scrollbars match immediately). */
-  colorScheme?: string;
-}
-
-/**
- * Allow only characters that are safe to interpolate into the static srcdoc
- * CSS below. These values come from the host's own computed styles (a resolved
- * `rgb(...)`/`color()` string and a `color-scheme` keyword), not from tools,
- * but we sanitize anyway so nothing can break out of the <style> context.
- */
-function cssSafe(value: string): string {
-  return value.replace(/[^a-zA-Z0-9 #%(),.\-/]/g, "");
-}
-
-/**
- * Build the iframe srcdoc. The host's current background and color-scheme are
- * baked into the static markup so the iframe's *first paint* already matches
- * the host — eliminating the flash of white that otherwise shows until the
- * theming tool boots inside the iframe and applies the real theme CSS. This is
- * tool-agnostic: it mirrors whatever the host actually renders, with no
- * knowledge of how (or which tool) produced it.
- */
-export function generateIframeSrcdoc(appearance?: IframeAppearance): string {
-  const background = appearance?.background ? cssSafe(appearance.background) : "";
-  const colorScheme = appearance?.colorScheme
-    ? cssSafe(appearance.colorScheme)
-    : "";
-  const firstPaint =
-    background || colorScheme
-      ? `\n      ${colorScheme ? `color-scheme: ${colorScheme};` : ""}${
-          background ? ` background: ${background};` : ""
-        }`
-      : "";
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      display: flex;
-      flex-direction: row;${firstPaint}
-    }
-    /* Base layout for the platform elements, mirroring the host app shell's
-       global.css. Without these, patchwork-view / repo-provider default to
-       display:inline inside the iframe and any root that relies on a full-size
-       flex/height context (e.g. a frame's document column) collapses. The host
-       provides this for free via its site stylesheet; the isolated realm must
-       provide it itself since that stylesheet does not cross the boundary. */
-    repo-provider {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
-    patchwork-view {
-      display: block;
-      width: 100%;
-      height: 100%;
-      contain: layout;
-    }
-  </style>
-</head>
-<body>
-  <script>(${boot.toString()})();</script>
-</body>
-</html>`;
 }

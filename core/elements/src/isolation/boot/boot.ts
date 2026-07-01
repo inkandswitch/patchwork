@@ -35,7 +35,7 @@ import {
   resolveBridgedProviders,
   makeBridgedValueFilter,
 } from "../bridges/index.js";
-import { generateIframeSrcdoc } from "../iframe-bootstrap.js";
+import { generateIframeSrcdoc } from "../srcdoc.js";
 import type { IsolationBootSpec } from "../types.js";
 import { log } from "../log.js";
 import { fetchBootAssets } from "./assets.js";
