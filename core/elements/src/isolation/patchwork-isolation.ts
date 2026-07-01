@@ -354,15 +354,12 @@ export function registerPatchworkIsolationElement(
         // the population window (the denylist is built asynchronously).
         const denylist = getDenylist(repo);
         await denylist.whenReady();
-        if (epoch !== this.#initEpoch) return;
+        if (this.#stale(epoch)) return;
 
-        const allowlist = await buildAllowlist(
-          repo,
-          rootUrls,
-          denylist,
-          () => epoch !== this.#initEpoch
+        const allowlist = await buildAllowlist(repo, rootUrls, denylist, () =>
+          this.#stale(epoch)
         );
-        if (epoch !== this.#initEpoch) return;
+        if (this.#stale(epoch)) return;
         this.#allowlist = allowlist;
 
         // Lazily re-scan the root documents for newly-added references. Used by
@@ -486,6 +483,13 @@ export function registerPatchworkIsolationElement(
 
       // ── Helpers ─────────────────────────────────────────────────
 
+      // Whether this init run has been superseded. #init captures its epoch up
+      // front; a later #teardown or reconfigure bumps #initEpoch, so any async
+      // step can re-check this after an await and bail before mutating state.
+      #stale(epoch: number): boolean {
+        return epoch !== this.#initEpoch;
+      }
+
       // The host repo is provided by the nearest <repo-provider> ancestor (the
       // app bootloader mounts one). The intermediary repo syncs from it.
       #getRepo(): Repo | undefined {
@@ -498,7 +502,7 @@ export function registerPatchworkIsolationElement(
       async #loadAssets(epoch: number): Promise<BootAssets | undefined> {
         try {
           const assets = await fetchBootAssets();
-          if (epoch !== this.#initEpoch) return undefined;
+          if (this.#stale(epoch)) return undefined;
           return assets;
         } catch (err) {
           console.error(
@@ -534,12 +538,12 @@ export function registerPatchworkIsolationElement(
         this.#iframe = iframe;
 
         iframe.addEventListener("load", async () => {
-          if (!this.#booted || epoch !== this.#initEpoch) return;
+          if (!this.#booted || this.#stale(epoch)) return;
           if (!iframe.contentWindow) return;
           log("iframe ready");
 
           const registryEntries = await getRegistries(mapper);
-          if (!this.#booted || epoch !== this.#initEpoch) return;
+          if (!this.#booted || this.#stale(epoch)) return;
 
           const automergeWasm = assets.automergeWasm.slice(0);
           const subductionWasm = assets.subductionWasm.slice(0);
