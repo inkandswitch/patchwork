@@ -1,19 +1,19 @@
 /**
  * The isolated iframe's runtime — the code that runs *inside* the sandbox.
  *
- * `boot` and its injected helpers (`installFetchProxy`, `installLinkInterception`)
- * are written as typed functions so tsc checks them, but they never execute in
- * the host: `./srcdoc.ts` serializes each with `.toString()` into the iframe's
- * srcdoc `<script>`. Because the iframe has no module system until es-module-shims
- * loads (step 5), everything the iframe needs at boot must live in these
- * functions; the helpers are passed into `boot()` rather than closed over, since
- * `.toString()` can't capture surrounding scope.
+ * `boot` and its injected helpers (`installLocalStorageStub`, `installFetchProxy`,
+ * `installLinkInterception`) are written as typed functions so tsc checks them,
+ * but they never execute in the host: `../host/srcdoc.ts` serializes each with
+ * `.toString()` into the iframe's srcdoc `<script>`. Because the iframe has no
+ * module system until es-module-shims loads (step 5), everything the iframe needs
+ * at boot must live in these functions; the helpers are passed into `boot()`
+ * rather than closed over, since `.toString()` can't capture surrounding scope.
  */
 
-// RegistryEntry is a host↔iframe wire type — see ./types.ts (the single source
-// of truth). Imported for use in this file's type positions and re-exported for
+// RegistryEntry is a host↔iframe wire type — see ../../types.ts (the single
+// source of truth). Imported for use in this file's type positions and re-exported for
 // any importer that sources it here.
-import type { RegistryEntry } from "./types.js";
+import type { RegistryEntry } from "../../types.js";
 export type { RegistryEntry };
 
 // ---------------------------------------------------------------------------

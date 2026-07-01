@@ -1,4 +1,4 @@
-import type { IsolationBootSpec } from "../types.js";
+import type { IsolationBootSpec } from "../../types.js";
 
 /**
  * Structural equality for two boot specs. `props` is structured-clone JSON and

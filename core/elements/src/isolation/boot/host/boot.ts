@@ -34,10 +34,10 @@ import {
   startHostProvidersBridge,
   resolveBridgedProviders,
   makeBridgedValueFilter,
-} from "../bridges/index.js";
-import { generateIframeSrcdoc } from "../srcdoc.js";
-import type { IsolationBootSpec } from "../types.js";
-import { log } from "../log.js";
+} from "../../bridges/index.js";
+import { generateIframeSrcdoc } from "./srcdoc.js";
+import type { IsolationBootSpec } from "../../types.js";
+import { log } from "../../log.js";
 import { fetchBootAssets } from "./assets.js";
 import { readHostAppearance } from "./styles.js";
 import { getResolvedImportMap } from "./import-map.js";

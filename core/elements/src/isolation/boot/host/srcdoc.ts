@@ -11,7 +11,7 @@ import {
   installLocalStorageStub,
   installFetchProxy,
   installLinkInterception,
-} from "./iframe-bootstrap.js";
+} from "../iframe/main.js";
 
 /**
  * The host's current resolved appearance, used to paint the iframe's first
