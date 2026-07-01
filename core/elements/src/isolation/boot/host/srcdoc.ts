@@ -6,12 +6,12 @@
  * shell (base layout + first-paint theming).
  */
 
+import { boot } from "../iframe/main.js";
 import {
-  boot,
   installLocalStorageStub,
   installFetchProxy,
   installLinkInterception,
-} from "../iframe/main.js";
+} from "../iframe/helpers.js";
 
 /**
  * The host's current resolved appearance, used to paint the iframe's first
