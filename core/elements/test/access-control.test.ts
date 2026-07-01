@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Repo, type AutomergeUrl } from "@automerge/automerge-repo";
-import { SyncDenylist } from "../src/isolation/repo-bridge.js";
+import { SyncDenylist } from "../src/isolation/bridges/repo-bridge.js";
 import {
   populateDenylist,
   denylistIfSensitive,
-} from "../src/isolation/access-control.js";
+} from "../src/isolation/bridges/access-control.js";
 
 /**
  * Covers the two denylist vulnerabilities:
@@ -155,7 +155,9 @@ describe("getDenylist singleton", () => {
   it("returns the same instance and reports ready after population", async () => {
     // Imported lazily so the module-level singleton isn't shared with the
     // other suites' expectations.
-    const { getDenylist } = await import("../src/isolation/access-control.js");
+    const { getDenylist } = await import(
+      "../src/isolation/bridges/access-control.js"
+    );
     const repo = makeRepo();
     stubWindow({ accountUrl: repo.create<any>().url, accountDoc: {} });
 

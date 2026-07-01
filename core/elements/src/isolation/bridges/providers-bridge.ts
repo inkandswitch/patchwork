@@ -25,7 +25,7 @@
  */
 
 import { isValidAutomergeUrl } from "@automerge/automerge-repo";
-import { log } from "./patchwork-isolation.js";
+import { log } from "../log.js";
 
 /**
  * Provider subscription types that have been analyzed for security

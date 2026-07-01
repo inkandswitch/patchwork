@@ -20,8 +20,8 @@ import {
   getImportableUrlFromAutomergeUrl,
   resolvePackageExport,
 } from "@inkandswitch/patchwork-filesystem";
-import type { RegistryEntry } from "./types.js";
-import { log } from "./patchwork-isolation.js";
+import type { RegistryEntry } from "../types.js";
+import { log } from "../log.js";
 
 // ---------------------------------------------------------------------------
 // Automerge URL segment scanning (shared helpers)

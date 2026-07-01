@@ -19,7 +19,7 @@ import {
   parseAutomergeUrl,
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import { log } from "./patchwork-isolation.js";
+import { log } from "../log.js";
 
 /**
  * A set of document IDs, addable by either automerge URL or raw document ID,

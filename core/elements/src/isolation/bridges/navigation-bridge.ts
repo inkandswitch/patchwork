@@ -10,8 +10,8 @@
  */
 
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import type { OpenDocumentEventDetail } from "../events.js";
-import { log } from "./patchwork-isolation.js";
+import type { OpenDocumentEventDetail } from "../../events.js";
+import { log } from "../log.js";
 
 /**
  * Host-side navigation bridge.

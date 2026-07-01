@@ -29,7 +29,7 @@ import {
   type ModuleSettingsDoc,
 } from "@inkandswitch/patchwork-filesystem";
 import { SyncAllowlist, SyncDenylist } from "./repo-bridge.js";
-import { log } from "./patchwork-isolation.js";
+import { log } from "../log.js";
 
 // ---------------------------------------------------------------------------
 // Allowlist population
