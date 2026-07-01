@@ -91,10 +91,9 @@ export async function boot(deps: BootDeps) {
     console.debug(`%c${NAMESPACE}`, "color: #7c3aed", ...args);
   };
 
-  // 1. Stub localStorage (no-op in-memory; see the injected helper).
+  // 1. Stub localStorage (no-op in-memory; see the injected helper), then
+  // evaluate the debug flag now that localStorage is available.
   installLocalStorageStub();
-
-  // Evaluate debug flag now that localStorage is available.
   {
     const pattern = localStorage.getItem("debug") || "";
     if (pattern) {
@@ -119,10 +118,11 @@ export async function boot(deps: BootDeps) {
     _originalConsoleDebug.apply(console, args);
   };
 
-  // 2. RPC + inbound-message consumers.
+  // 2. Declare the RPC port and its inbound-message consumers.
   // The RPC client (fetch req-reply), providers bridge, and plugin registry each
   // own their own state; see ./rpc.ts, ./providers-bridge.ts, ./registry.ts. The
-  // port itself is owned here because it fans messages out to all three:
+  // port itself is owned here because it fans messages out to all three. They're
+  // created once the port arrives (step 4).
   let rpcPort: MessagePort;
   let rpc: RpcClient;
   let providers: ProvidersBridge;
@@ -135,7 +135,7 @@ export async function boot(deps: BootDeps) {
     if (registry.handle(event)) return;
   }
 
-  // 3. Wait for init message from host
+  // 3. Wait for the init ("boot") message from the host.
   const init: InitMessage = await new Promise((resolve) => {
     window.addEventListener("message", function handler(event: MessageEvent) {
       if (!event.data || event.data.type !== "boot") return;
@@ -148,6 +148,7 @@ export async function boot(deps: BootDeps) {
     });
   });
 
+  // 4. Create the message consumers and start routing the RPC port.
   rpcPort = init.rpcPort;
   rpc = createRpcClient(rpcPort);
   providers = createProvidersBridge(rpcPort, log);
@@ -155,7 +156,7 @@ export async function boot(deps: BootDeps) {
   rpcPort.addEventListener("message", handleRpcMessage);
   rpcPort.start();
 
-  // Navigation bridge: forward patchwork:open-document events to host.
+  // 5. Navigation bridge: forward patchwork:open-document events to host.
   // We do NOT stopPropagation — the event still bubbles within the iframe
   // so that providers (e.g. SelectedDocProvider) inside the iframe can
   // observe it. The host's SelectedDocProvider deduplicates by URL, so
@@ -176,7 +177,7 @@ export async function boot(deps: BootDeps) {
   const d = init.data;
   log("init", { root: d.rootComponentId });
 
-  // Inject host page stylesheets so tools render with the same CSS
+  // 6. Inject host page stylesheets so tools render with the same CSS
   // framework (Tailwind, DaisyUI, etc.) as on the host.
   if (d.hostStyles) {
     const style = document.createElement("style");
@@ -185,7 +186,7 @@ export async function boot(deps: BootDeps) {
   }
 
   try {
-    // 4-6. Stand up es-module-shims (source hook → RPC, import map). All module
+    // 7. Stand up es-module-shims (source hook → RPC, import map). All module
     // loading below goes through the returned importShim. See ./es-module-shims.ts.
     const importShim = await setupEsModuleShims({
       esmsSource: d.esmsSource,
@@ -194,7 +195,7 @@ export async function boot(deps: BootDeps) {
       log,
     });
 
-    // 7. Import core runtime modules
+    // 8. Import core runtime modules
     const [
       automerge,
       automergeSubduction,
@@ -215,20 +216,20 @@ export async function boot(deps: BootDeps) {
 
     log("modules loaded");
 
-    // 8. Initialize WASM from transferred ArrayBuffers
+    // 9. Initialize WASM from transferred ArrayBuffers
     automergeSubduction.initSync(new Uint8Array(d.subductionWasm));
     await automerge.initializeWasm(new Uint8Array(d.automergeWasm));
     log("wasm initialized");
 
-    // 9. Route host-origin fetches through RPC, and intercept host-origin
-    // <link> insertions that would bypass that proxy. Both run inside the
-    // iframe; see the injected helpers at module scope for the full rationale.
-    // Order matters: link interception fetches through the patched proxy.
+    // 10. Route host-origin fetches through RPC, and intercept host-origin
+    // <link> insertions that would bypass that proxy. See ./fetch-proxy.ts and
+    // ./link-interception.ts. Order matters: link interception fetches through
+    // the patched proxy.
     const hostOrigin = d.hostOrigin;
     installFetchProxy(hostOrigin, rpc.fetchResource, log);
     installLinkInterception(hostOrigin, log);
 
-    // 10. Create in-memory Repo
+    // 11. Create in-memory Repo
     const syncAdapter = new messagechannel.MessageChannelNetworkAdapter(
       init.syncPort
     );
@@ -239,22 +240,21 @@ export async function boot(deps: BootDeps) {
     (window as any).repo = repo;
     log("repo connected");
 
-    // 11. Register patchwork-view and repo-provider
+    // 12. Register the patchwork-view and repo-provider custom elements, then
+    // create the root <repo-provider> wrapper — mirrors the host bootloader
+    // pattern. It answers `repo:handle-descriptor` subscriptions so
+    // OverlayRepo.find() doesn't hang.
     patchworkElements.registerPatchworkViewElement({ repo });
     patchworkProviders.registerRepoProviderElement(repo);
-
-    // 11b. Create <repo-provider> as root wrapper — mirrors the host
-    // bootloader pattern. It answers `repo:handle-descriptor` subscriptions
-    // so OverlayRepo.find() doesn't hang.
     const repoProvider = document.createElement("repo-provider");
     document.body.appendChild(repoProvider);
 
-    // 12. Register plugins (initial set + drain any queued live pushes, then go
+    // 13. Register plugins (initial set + drain any queued live pushes, then go
     // live). Now that importShim + the plugins module exist, hand them to the
     // registry created above. See ./registry.ts.
     registry.start(importShim, patchworkPlugins, d.registryEntries);
 
-    // 13. Mount the isolated root component.
+    // 14. Mount the isolated root component.
     // The root is an ordinary patchwork:component named by the boot spec; the
     // normal <patchwork-view component=...> path resolves and mounts it from the
     // iframe's own registry (incl. the not-yet-loaded and hot-reload cases). Its
@@ -271,7 +271,7 @@ export async function boot(deps: BootDeps) {
     rootView.appendChild(propsScript);
     repoProvider.appendChild(rootView);
 
-    // 14. Providers bridge — forward unclaimed patchwork:subscribe events to
+    // 15. Providers bridge — forward unclaimed patchwork:subscribe events to
     // the host so host-side providers can answer them (see ./providers-bridge.ts).
     providers.install();
 
