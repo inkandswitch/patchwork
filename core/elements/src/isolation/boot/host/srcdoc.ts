@@ -12,6 +12,7 @@ import { installFetchProxy } from "../iframe/fetch-proxy.js";
 import { installLinkInterception } from "../iframe/link-interception.js";
 import { createRpcClient } from "../iframe/rpc.js";
 import { createProvidersBridge } from "../iframe/providers-bridge.js";
+import { setupEsModuleShims } from "../iframe/es-module-shims.js";
 
 /**
  * The host's current resolved appearance, used to paint the iframe's first
@@ -102,6 +103,7 @@ export function generateIframeSrcdoc(appearance?: IframeAppearance): string {
       installLinkInterception: ${installLinkInterception.toString()},
       createRpcClient: ${createRpcClient.toString()},
       createProvidersBridge: ${createProvidersBridge.toString()},
+      setupEsModuleShims: ${setupEsModuleShims.toString()},
     });
   </script>
 </body>

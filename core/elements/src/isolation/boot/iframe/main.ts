@@ -27,15 +27,11 @@ import type {
   createProvidersBridge,
   ProvidersBridge,
 } from "./providers-bridge.js";
+import type { setupEsModuleShims } from "./es-module-shims.js";
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
 // ---------------------------------------------------------------------------
-
-interface ImportShim {
-  (specifier: string): Promise<any>;
-  addImportMap(map: { imports?: Record<string, string>; scopes?: any }): void;
-}
 
 interface InitMessage {
   rpcPort: MessagePort;
@@ -65,6 +61,7 @@ interface BootDeps {
   installLinkInterception: typeof installLinkInterception;
   createRpcClient: typeof createRpcClient;
   createProvidersBridge: typeof createProvidersBridge;
+  setupEsModuleShims: typeof setupEsModuleShims;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,6 +75,7 @@ export async function boot(deps: BootDeps) {
     installLinkInterception,
     createRpcClient,
     createProvidersBridge,
+    setupEsModuleShims,
   } = deps;
   // Minimal debug-compatible logger. The real `debug` package isn't available
   // until modules load, but we need logging during bootstrap.
@@ -192,47 +190,14 @@ export async function boot(deps: BootDeps) {
   }
 
   try {
-    // 4. Configure es-module-shims with source hook
-    (self as any).esmsInitOptions = {
-      shimMode: true,
-      async source(
-        url: string,
-        _fetchOpts: any,
-        _parent: string,
-        _defaultSource: Function
-      ) {
-        log("source hook:", url);
-        const result = await rpc.fetchModule(url);
-        // Rewrite class methods literally named `import` to bracket notation.
-        // es-module-shims' lexer misreads a method named `import` as a dynamic
-        // `import()` expression and throws a parse error. This is a live case,
-        // not vestigial: @automerge/automerge-repo's Repo class has an
-        // `import(binary, args) { … }` method, and Repo loads into every iframe.
-        const source = result.source.replace(
-          /^(\s+)import\s*\(([^)]*)\)\s*\{/gm,
-          '$1["import"]($2) {'
-        );
-        return { source, url: result.resolvedUrl, type: "js" };
-      },
-    };
-
-    // 5. Inline es-module-shims source and wait for initialization
-    const esmsScript = document.createElement("script");
-    esmsScript.textContent = d.esmsSource;
-    document.head.appendChild(esmsScript);
-
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-    const importShim: ImportShim = (self as any).importShim;
-    if (!importShim) {
-      throw new Error("es-module-shims failed to initialize");
-    }
-
-    // 6. Add the host's import map
-    if (d.importMap) {
-      importShim.addImportMap(d.importMap);
-    }
-    log("importmap configured");
+    // 4-6. Stand up es-module-shims (source hook → RPC, import map). All module
+    // loading below goes through the returned importShim. See ./es-module-shims.ts.
+    const importShim = await setupEsModuleShims({
+      esmsSource: d.esmsSource,
+      importMap: d.importMap,
+      fetchModule: rpc.fetchModule,
+      log,
+    });
 
     // 7. Import core runtime modules
     const [
