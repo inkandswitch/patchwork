@@ -24,6 +24,7 @@
  *   iframe → host:  { type: "providers-bridge-unsubscribe", id }
  */
 
+import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import { log } from "./patchwork-isolation.js";
 
 /**
@@ -45,6 +46,32 @@ export const ALLOWED_PROVIDERS = new Set([
   "patchwork:selected-doc",
 ]);
 
+/**
+ * Resolve the set of provider types to bridge for one isolation instance: the
+ * intersection of the element's `shared-providers` attribute (comma-separated,
+ * host-set) and `ALLOWED_PROVIDERS`. Types requested but not in the hard
+ * allowlist are dropped with a console warning — they need independent security
+ * analysis before being added. No providers are bridged unless opted in.
+ */
+export function resolveBridgedProviders(element: HTMLElement): string[] {
+  const requested = (element.getAttribute("shared-providers") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const bridged: string[] = [];
+  for (const type of requested) {
+    if (ALLOWED_PROVIDERS.has(type)) {
+      bridged.push(type);
+    } else {
+      console.warn(
+        `[patchwork-isolation] shared-providers: "${type}" is not in ALLOWED_PROVIDERS. ` +
+          `New provider types need independent security analysis before being added.`
+      );
+    }
+  }
+  return bridged;
+}
+
 interface ActiveSubscription {
   port: MessagePort;
   cleanup: () => void;
@@ -62,6 +89,44 @@ export type BridgeValueFilter = (
   selectorType: string,
   value: unknown
 ) => Promise<unknown | undefined> | unknown | undefined;
+
+/**
+ * Build a {@link BridgeValueFilter} that vets every automerge URL a bridged
+ * value carries before it crosses to the iframe, delegating the per-URL
+ * decision to `checkUrl` (which the isolation element implements against its
+ * allowlist, with an optional prompt).
+ *
+ * Handles the value shapes a provider can emit: a single automerge-URL string
+ * (suppressed entirely if `checkUrl` rejects it), or an array (each automerge-
+ * URL element kept only if allowed; non-URL elements passed through). Any other
+ * value is relayed unchanged. The traversal is generic; all policy lives in
+ * `checkUrl`.
+ */
+export function makeBridgedValueFilter(
+  checkUrl: (url: string, selectorType: string) => Promise<boolean>
+): BridgeValueFilter {
+  return async (selectorType, value) => {
+    // Single automerge URL value
+    if (typeof value === "string" && isValidAutomergeUrl(value)) {
+      return (await checkUrl(value, selectorType)) ? value : undefined;
+    }
+
+    // Array of values (may contain automerge URLs)
+    if (Array.isArray(value)) {
+      const result: unknown[] = [];
+      for (const item of value) {
+        if (typeof item === "string" && isValidAutomergeUrl(item)) {
+          if (await checkUrl(item, selectorType)) result.push(item);
+        } else {
+          result.push(item);
+        }
+      }
+      return result;
+    }
+
+    return value;
+  };
+}
 
 /**
  * Start the host-side providers bridge.

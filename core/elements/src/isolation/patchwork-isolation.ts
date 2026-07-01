@@ -30,7 +30,6 @@
  */
 
 import type { AutomergeUrl, DocumentId, Repo } from "@automerge/automerge-repo";
-import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import type { RepoProviderElement } from "@inkandswitch/patchwork-providers";
 import {
   createIntermediaryRepo,
@@ -50,7 +49,11 @@ import {
   denylistIfSensitive,
 } from "./access-control.js";
 import { startHostNavigationBridge } from "./navigation-bridge.js";
-import { startHostProvidersBridge, ALLOWED_PROVIDERS } from "./providers-bridge.js";
+import {
+  startHostProvidersBridge,
+  resolveBridgedProviders,
+  makeBridgedValueFilter,
+} from "./providers-bridge.js";
 import { generateIframeSrcdoc } from "./iframe-bootstrap.js";
 import type { IsolationBootSpec } from "./types.js";
 import debug from "debug";
@@ -428,23 +431,42 @@ export function registerPatchworkIsolationElement(
         log("intermediary repo and allowlist ready");
 
         // ── Bridged providers ────────────────────────────────────
-        // Read the shared-providers attribute and intersect with
-        // ALLOWED_PROVIDERS to get the effective set for this instance.
-        const requestedProviders = (this.getAttribute("shared-providers") ?? "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-        const bridgedProviders: string[] = [];
-        for (const type of requestedProviders) {
-          if (ALLOWED_PROVIDERS.has(type)) {
-            bridgedProviders.push(type);
-          } else {
-            console.warn(
-              `[patchwork-isolation] shared-providers: "${type}" is not in ALLOWED_PROVIDERS. ` +
-                `New provider types need independent security analysis before being added.`
-            );
+        // The effective set for this instance: shared-providers ∩
+        // ALLOWED_PROVIDERS (see providers-bridge).
+        const bridgedProviders = resolveBridgedProviders(this);
+
+        // Per-URL access check for bridged values. Delegated to by
+        // makeBridgedValueFilter, which handles the value-shape traversal.
+        //
+        // For patchwork:selected-doc: silently filter non-allowlisted URLs.
+        // The semantic is "which of my allowlisted documents is selected" —
+        // not "give me access to the selected document." This avoids spurious
+        // prompts when the user navigates to a new document (the old iframe is
+        // about to be torn down).
+        //
+        // For other types: prompt the user for unknown URLs.
+        const checkBridgedUrl = async (
+          url: string,
+          selectorType: string
+        ): Promise<boolean> => {
+          if (allowlist.hasUrl(url as AutomergeUrl)) return true;
+          if (selectorType === "patchwork:selected-doc") return false;
+          // Re-scan root documents in case the URL was added recently
+          await refreshRoots();
+          if (allowlist.hasUrl(url as AutomergeUrl)) return true;
+          const approved = window.confirm(
+            `A bridged provider wants to share a document URL:\n\n` +
+              `URL: ${url}\n` +
+              `Provider: ${selectorType}\n\n` +
+              `Allow access?`
+          );
+          if (approved) {
+            allowlist.add(url as AutomergeUrl);
+            return true;
           }
-        }
+          return false;
+        };
+        const bridgedValueFilter = makeBridgedValueFilter(checkBridgedUrl);
 
         // ── Host-side RPC ───────────────────────────────────────
         const rpcChannel = new MessageChannel();
@@ -461,68 +483,24 @@ export function registerPatchworkIsolationElement(
             this.#hostRpcPort,
             this,
             bridgedProviders,
-            async (selectorType, value) => {
-              // Check bridged values for automerge URLs that the iframe
-              // doesn't already have access to.
-              //
-              // For patchwork:selected-doc: silently filter non-allowlisted
-              // URLs. The semantic is "which of my allowlisted documents is
-              // selected" — not "give me access to the selected document."
-              // This avoids spurious prompts when the user navigates to a
-              // new document (the old iframe is about to be torn down).
-              //
-              // For other types: prompt the user for unknown URLs.
-              const silent = selectorType === "patchwork:selected-doc";
-
-              async function checkUrl(url: string): Promise<boolean> {
-                if (allowlist.hasUrl(url as AutomergeUrl)) return true;
-                if (silent) return false;
-                // Re-scan root documents in case the URL was added recently
-                await refreshRoots();
-                if (allowlist.hasUrl(url as AutomergeUrl)) return true;
-                const approved = window.confirm(
-                  `A bridged provider wants to share a document URL:\n\n` +
-                    `URL: ${url}\n` +
-                    `Provider: ${selectorType}\n\n` +
-                    `Allow access?`
-                );
-                if (approved) {
-                  allowlist.add(url as AutomergeUrl);
-                  return true;
-                }
-                return false;
-              }
-
-              // Single automerge URL value
-              if (typeof value === "string" && isValidAutomergeUrl(value)) {
-                return (await checkUrl(value)) ? value : undefined;
-              }
-
-              // Array of values (may contain automerge URLs)
-              if (Array.isArray(value)) {
-                const result: unknown[] = [];
-                for (const item of value) {
-                  if (typeof item === "string" && isValidAutomergeUrl(item)) {
-                    if (await checkUrl(item)) result.push(item);
-                  } else {
-                    result.push(item);
-                  }
-                }
-                return result;
-              }
-
-              return value;
-            }
+            bridgedValueFilter
           ),
           watchRegistries(this.#hostRpcPort, mapper)
         );
 
         // ── Iframe ──────────────────────────────────────────────
-        this.#createIframe(epoch, rpcChannel.port2, this.#intermediary.iframePort, mapper, assets, {
-          rootComponentId: spec.rootComponentId,
-          props: spec.props,
-          importMap,
-        });
+        this.#createIframe(
+          epoch,
+          rpcChannel.port2,
+          this.#intermediary.iframePort,
+          mapper,
+          assets,
+          {
+            rootComponentId: spec.rootComponentId,
+            props: spec.props,
+            importMap,
+          }
+        );
 
         this.#booted = true;
       }
