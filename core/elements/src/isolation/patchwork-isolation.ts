@@ -371,15 +371,6 @@ export function registerPatchworkIsolationElement(
         }
         if (epoch !== this.#initEpoch) return;
 
-        // Allowlist the user's contact document so the patchwork:contact
-        // bridge can relay it without prompting.
-        const accountHandle = (window as any).accountDocHandle;
-        const contactUrl = accountHandle?.doc()?.contactUrl;
-        if (contactUrl && isValidAutomergeUrl(contactUrl)) {
-          allowlist.add(contactUrl);
-          log(`allowlisted contact ${contactUrl}`);
-        }
-
         // One-shot scan of the root documents to seed the allowlist with
         // everything they transitively reference. Not a live subscription —
         // later references are picked up lazily on access (see refreshRoots).

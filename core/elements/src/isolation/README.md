@@ -198,7 +198,7 @@ The denylist also watches plugin registries for new registrations (denylisting t
 
 #### Allowlist
 
-The allowlist is seeded from the boot spec's `rootUrls` (computed from host state), plus the user's contact document URL (read from the account doc), which we include as a special case. It is expanded through two mechanisms:
+The allowlist is seeded from the boot spec's `rootUrls`. It is expanded through two mechanisms:
 
 1. **Transitive discovery.** Each root document's content is scanned for embedded automerge URLs (recursively walking objects, arrays, and strings). All discovered URLs are added to the allowlist (unless denylisted). This reflects the assumption that if the user opened a document, its referenced children are authorized for the tool rendering it.
 
@@ -274,7 +274,7 @@ DOM events do not cross iframe boundaries, so provider subscriptions (`patchwork
 
 **Analyzed types:**
 
-- **`patchwork:contact`** — returns the user's contact document URL. Leaks minimal information (the user's own contact doc, which is auto-allowlisted as a special case). Used by comments-view and codemirror-base to tag comments with the current user.
+- **`patchwork:contact`** — returns the user's contact document URL. Leaks minimal information (the user's own contact doc), and will only be bridged when the host opts in via `shared-providers`. Used by tools such as comments-view and codemirror-base to tag comments with the current user.
 - **`patchwork:selected-doc`** — returns the currently selected document URLs. Used by history-view to know which document to show history for. Values are silently filtered to only include URLs already on the document allowlist (no prompting) — the semantic is "which of my allowlisted documents is selected," not "give me access to the selected document."
 
 **All other subscription types are rejected.** Bridging additional providers could leak document URLs or other sensitive information to the isolated context.
