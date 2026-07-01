@@ -28,6 +28,7 @@ import type {
   ProvidersBridge,
 } from "./providers-bridge.js";
 import type { setupEsModuleShims } from "./es-module-shims.js";
+import type { createRegistry, Registry } from "./registry.js";
 
 // ---------------------------------------------------------------------------
 // Type declarations for runtime globals available inside the iframe.
@@ -62,6 +63,7 @@ interface BootDeps {
   createRpcClient: typeof createRpcClient;
   createProvidersBridge: typeof createProvidersBridge;
   setupEsModuleShims: typeof setupEsModuleShims;
+  createRegistry: typeof createRegistry;
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +78,7 @@ export async function boot(deps: BootDeps) {
     createRpcClient,
     createProvidersBridge,
     setupEsModuleShims,
+    createRegistry,
   } = deps;
   // Minimal debug-compatible logger. The real `debug` package isn't available
   // until modules load, but we need logging during bootstrap.
@@ -116,29 +119,20 @@ export async function boot(deps: BootDeps) {
     _originalConsoleDebug.apply(console, args);
   };
 
-  // 2. RPC + inbound-message state.
-  // The RPC client (fetch req-reply) and the providers bridge each own their own
-  // state; see ./rpc.ts and ./providers-bridge.ts. The port itself is owned here
-  // because it fans messages out to all three consumers, and the registry queue
-  // (live plugin registrations) stays local to boot():
+  // 2. RPC + inbound-message consumers.
+  // The RPC client (fetch req-reply), providers bridge, and plugin registry each
+  // own their own state; see ./rpc.ts, ./providers-bridge.ts, ./registry.ts. The
+  // port itself is owned here because it fans messages out to all three:
   let rpcPort: MessagePort;
   let rpc: RpcClient;
   let providers: ProvidersBridge;
-  const pendingPluginUpdates: any[] = [];
+  let registry: Registry;
 
-  // Route an inbound RPC message: let the RPC client and providers bridge each
-  // consume the messages they own, then handle the registry pushes boot() owns.
+  // Route an inbound RPC message to whichever consumer owns it.
   function handleRpcMessage(event: MessageEvent) {
     if (rpc.handle(event)) return;
     if (providers.handle(event)) return;
-    const msg = event.data;
-    if (!msg) return;
-
-    if (msg.type === "plugin-registered") {
-      // Live registry update from host — register the plugin in the
-      // iframe's registry so new tools/datatypes are available.
-      pendingPluginUpdates.push(msg.entry);
-    }
+    if (registry.handle(event)) return;
   }
 
   // 3. Wait for init message from host
@@ -157,6 +151,7 @@ export async function boot(deps: BootDeps) {
   rpcPort = init.rpcPort;
   rpc = createRpcClient(rpcPort);
   providers = createProvidersBridge(rpcPort, log);
+  registry = createRegistry(log);
   rpcPort.addEventListener("message", handleRpcMessage);
   rpcPort.start();
 
@@ -254,54 +249,10 @@ export async function boot(deps: BootDeps) {
     const repoProvider = document.createElement("repo-provider");
     document.body.appendChild(repoProvider);
 
-    // 12. Register plugins with lazy loading via importShim
-    // Plugin importUrls are pkg: URLs (converted by host before boot)
-    function registerEntry(entry: RegistryEntry) {
-      const plugin = {
-        ...entry,
-        load: entry.importUrl
-          ? async () => {
-              const mod = await importShim(entry.importUrl!);
-              if (Array.isArray(mod.plugins)) {
-                const match = mod.plugins.find(
-                  (p: any) => p.id === entry.id && p.type === entry.type
-                );
-                if (match && typeof match.load === "function") {
-                  return match.load();
-                }
-              }
-              return mod.default || mod;
-            }
-          : undefined,
-      };
-      patchworkPlugins.registerPlugins([plugin], entry.importUrl || "");
-    }
-
-    if (d.registryEntries) {
-      for (const entry of d.registryEntries) {
-        registerEntry(entry);
-      }
-      log("plugins registered:", d.registryEntries.length);
-    }
-
-    // Live plugin registrations (plugin-registered RPC pushes) can arrive
-    // before boot finishes registering the initial set. handleRpcMessage queues
-    // those early arrivals by pushing them onto `pendingPluginUpdates`. Now that
-    // the registry is ready, drain the queue...
-    for (const entry of pendingPluginUpdates) {
-      log("registering deferred plugin update:", entry.id);
-      registerEntry(entry);
-    }
-    pendingPluginUpdates.length = 0;
-
-    // ...then replace the array's `push` so any *future* arrival registers
-    // immediately instead of queuing. This keeps handleRpcMessage's call site
-    // unchanged (it always just `.push()`es) while flipping queue → live.
-    pendingPluginUpdates.push = function (entry: any) {
-      log("registering live plugin update:", entry.id);
-      registerEntry(entry);
-      return 0;
-    };
+    // 12. Register plugins (initial set + drain any queued live pushes, then go
+    // live). Now that importShim + the plugins module exist, hand them to the
+    // registry created above. See ./registry.ts.
+    registry.start(importShim, patchworkPlugins, d.registryEntries);
 
     // 13. Mount the isolated root component.
     // The root is an ordinary patchwork:component named by the boot spec; the
