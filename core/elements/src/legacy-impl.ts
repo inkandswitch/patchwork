@@ -490,7 +490,11 @@ export class LegacyImpl {
       }
       this.#state = fallingBack ? "fallback" : "rendered";
       this.#element.dispatchEvent(
-        new MountedEvent({ url: this.#docUrl, toolId })
+        new MountedEvent({
+          url: this.#docUrl,
+          toolId,
+          importUrl: this.#tool.importUrl,
+        })
       );
     } catch (error) {
       this.#element.append(
@@ -557,15 +561,8 @@ export class LegacyImpl {
 
   #notool(): void {
     if (!this.#docUrl || !this.#handle) return;
-    const suggestedImportUrl =
-      this.#handle.doc()?.["@patchwork"]?.suggestedImportUrl;
-    if (
-      !suggestedImportUrl ||
-      this.#requestedToolImports.has(suggestedImportUrl)
-    ) {
-      return;
-    }
-    this.#requestedToolImports.add(suggestedImportUrl);
+    if (this.#requestedToolImports.has(this.#docUrl)) return;
+    this.#requestedToolImports.add(this.#docUrl);
 
     log("dispatching patchwork:no-tool for", this.#docUrl);
     this.#element.dispatchEvent(new NoToolEvent({ url: this.#docUrl }));

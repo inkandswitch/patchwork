@@ -238,13 +238,6 @@ export class ModuleWatcher {
     });
   }
 
-  async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
-    const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
-    const doc = handle.doc();
-    const url = doc["@patchwork"]?.suggestedImportUrl;
-    return url && (await this.loadModules([url]));
-  }
-
   private async importModuleSafe(importName: string): Promise<any | null> {
     try {
       const valid = isValidAutomergeUrl(importName);

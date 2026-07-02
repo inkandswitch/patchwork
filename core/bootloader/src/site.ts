@@ -22,7 +22,6 @@ import {
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocumentId,
-  type UrlHeads,
 } from "@automerge/vanillajs/slim";
 import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import * as Automerge from "@automerge/automerge/slim";
@@ -499,10 +498,8 @@ function primeRootElement(
   const initialParams = new URLSearchParams(location.hash.slice(1));
   if (initialParams.has("frame")) {
     rootElement.setAttribute("tool-id", initialParams.get("frame")!);
-    const docId = initialParams.get("doc")?.replace(/^automerge:/, "");
-    const docUrl = docId
-      ? stringifyAutomergeUrl({ documentId: docId as DocumentId })
-      : accountDocHandle.url;
+    const docUrl =
+      docParamToUrl(initialParams.get("doc")) ?? accountDocHandle.url;
     rootElement.setAttribute("doc-url", docUrl);
   } else {
     rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
@@ -594,6 +591,43 @@ async function uncache(match: string): Promise<void> {
   }
 }
 
+// Keys whose values are automerge URLs — we keep the `:` (and any `#`/`|`
+// heads) literal rather than percent-encoding them so links stay readable.
+const RAW_HASH_KEYS = new Set(["doc", "package"]);
+// Emit hash params in a stable order so re-serializing the same logical
+// params yields a byte-identical string (avoids spurious `hashchange`).
+const HASH_KEY_ORDER = ["doc", "package", "tool", "type", "title", "frame"];
+
+function serializeHashParams(params: URLSearchParams): string {
+  const emitted = new Set<string>();
+  const parts: string[] = [];
+  const emit = (key: string) => {
+    if (emitted.has(key)) return;
+    const value = params.get(key);
+    if (!value) return;
+    emitted.add(key);
+    parts.push(`${key}=${RAW_HASH_KEYS.has(key) ? value : encodeURIComponent(value)}`);
+  };
+  for (const key of HASH_KEY_ORDER) emit(key);
+  for (const key of params.keys()) emit(key);
+  return parts.join("&");
+}
+
+/**
+ * Coerce a `doc=` hash param to a full automerge URL. Accepts a full URL
+ * (`automerge:<id>[#heads]`) or a bare document id for backwards
+ * compatibility with older links.
+ */
+function docParamToUrl(docParam: string | null): AutomergeUrl | undefined {
+  if (!docParam) return undefined;
+  if (isValidAutomergeUrl(docParam as AutomergeUrl)) return docParam as AutomergeUrl;
+  const documentId = docParam.replace(/^automerge:/, "");
+  if (isValidDocumentId(documentId)) {
+    return stringifyAutomergeUrl({ documentId: documentId as DocumentId });
+  }
+  return undefined;
+}
+
 interface HashRoutingParams {
   rootElement: HTMLElement;
   repo: Repo;
@@ -606,10 +640,6 @@ function installHashRouting(params: HashRoutingParams): void {
   const { rootElement, repo, accountDocHandle, moduleWatcher, titleSuffix } =
     params;
 
-  rootElement.addEventListener("patchwork:no-tool", (event) => {
-    moduleWatcher.loadSuggestedImportUrl(event.detail.url);
-  });
-
   rootElement.addEventListener("patchwork:open-document", async (event) => {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const { url, toolId, type, title } = event.detail as {
@@ -618,22 +648,21 @@ function installHashRouting(params: HashRoutingParams): void {
       type?: string;
       title?: string;
     };
-    const { documentId, heads } = parseAutomergeUrl(url);
-    params.set("doc", documentId);
-    if (heads) params.set("heads", heads.join("|"));
-    else params.delete("heads");
+    // `doc` is now the full automerge URL (heads, if any, live in it). The
+    // in-use package is recorded separately in `package=` when a tool mounts.
+    params.delete("heads");
+    params.set("doc", url);
     if (toolId) params.set("tool", toolId);
     else params.delete("tool");
     if (title) params.set("title", title);
     else params.delete("title");
     if (type) params.set("type", type);
     else params.delete("type");
-    window.location.hash = params.toString();
+    window.location.hash = serializeHashParams(params);
 
     try {
-      const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
-        stringifyAutomergeUrl({ documentId, heads })
-      );
+      const docHandle =
+        await repo.find<{ "@patchwork"?: { type?: string } }>(url);
       const doc = docHandle.doc();
       const docType = type || doc?.["@patchwork"]?.type;
       if (!docType) return;
@@ -651,6 +680,29 @@ function installHashRouting(params: HashRoutingParams): void {
     }
   });
 
+  // When a tool mounts we know the package actually rendering the top-level
+  // document, so record its (heads-pinned) importUrl in `package=`.
+  const recordInUsePackage = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    if (!detail || !("url" in detail) || !detail.importUrl) return;
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const docUrl = docParamToUrl(params.get("doc"));
+    if (!docUrl) return;
+    // Ignore nested branch / side-by-side views: only the top-level doc's
+    // package belongs in the hash.
+    if (
+      parseAutomergeUrl(docUrl).documentId !==
+      parseAutomergeUrl(detail.url as AutomergeUrl).documentId
+    ) {
+      return;
+    }
+    if (params.get("package") === detail.importUrl) return;
+    params.set("package", detail.importUrl);
+    // Replace rather than push: recording the in-use package shouldn't add a
+    // back-button entry (and replaceState avoids a `hashchange` round-trip).
+    history.replaceState(null, "", `#${serializeHashParams(params)}`);
+  };
+
   let firstMount = true;
   const reveal = () => {
     if (!firstMount) return;
@@ -660,6 +712,7 @@ function installHashRouting(params: HashRoutingParams): void {
   };
 
   rootElement.addEventListener("patchwork:mounted", (event) => {
+    recordInUsePackage(event);
     handleHashChange();
     if (event.target !== rootElement) return;
     console.info("root element mounted");
@@ -687,39 +740,40 @@ function installHashRouting(params: HashRoutingParams): void {
 
     // Bare automerge URL in hash: /#automerge:<documentId>
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
-      const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
+      const url = hash as AutomergeUrl;
       window.location.hash = "";
-      openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
+      openDocument(rootElement, url);
       return;
     }
 
     const params = new URLSearchParams(hash);
-    const documentId = params.get("doc")?.replace(/^automerge:/, "");
-    const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
+    const docUrl = docParamToUrl(params.get("doc"));
+    const packageUrl = params.get("package");
     const toolId = params.get("tool");
     const title = params.get("title");
     const type = params.get("type");
     const frame = params.get("frame");
+
+    // Load the package that produced this document so its tool is available
+    // even when it isn't in the user's module settings.
+    if (packageUrl) {
+      void moduleWatcher.loadModules([packageUrl]);
+    }
+
     if (frame) {
-      const docUrl =
-        params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
+      const frameDocUrl = docUrl ?? accountDocHandle.url;
       if (
         rootElement.getAttribute("tool-id") !== frame ||
-        rootElement.getAttribute("doc-url") !== docUrl
+        rootElement.getAttribute("doc-url") !== frameDocUrl
       ) {
         rootElement.setAttribute("tool-id", frame);
-        rootElement.setAttribute("doc-url", docUrl);
+        rootElement.setAttribute("doc-url", frameDocUrl);
       }
     }
-    if (isValidDocumentId(documentId)) {
+    if (docUrl) {
       rootElement.dispatchEvent(
         new CustomEvent("patchwork:open-document", {
-          detail: {
-            url: stringifyAutomergeUrl({ documentId, heads }),
-            toolId,
-            title,
-            type,
-          },
+          detail: { url: docUrl, toolId, title, type },
         })
       );
     }
