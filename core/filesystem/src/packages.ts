@@ -46,7 +46,12 @@ export async function importModuleFromFolderDocUrl(
 /**
  * Import the entry point of a package (at `folderDocUrl`, which should be
  * pinned to heads) and return the loaded implementation of a single one of the
- * plugins it exports, selected by `pluginId`.
+ * plugins it exports, selected by its `pluginType` and `pluginId`.
+ *
+ * A plugin `id` is only unique *within* a plugin type (there is a separate
+ * registry per type), so a package can export e.g. a `patchwork:datatype` and
+ * a `patchwork:tool` that both have id `"x"`. Both `type` and `id` are needed
+ * to pick out the right one.
  *
  * This is the main-thread counterpart to discovering a package's plugin
  * descriptors in a worker: the worker reports *which* plugins a package
@@ -57,16 +62,19 @@ export async function importModuleFromFolderDocUrl(
  */
 export async function importPluginFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
+  pluginType: string,
   pluginId: string,
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
   const mod = await importModuleFromFolderDocUrl(folderDocUrl, subpath, conditions);
   const plugins: any[] = Array.isArray(mod?.plugins) ? mod.plugins : [];
-  const plugin = plugins.find((p) => p?.id === pluginId);
+  const plugin = plugins.find(
+    (p) => p?.type === pluginType && p?.id === pluginId
+  );
   if (!plugin) {
     throw new Error(
-      `No plugin "${pluginId}" exported by the package at ${folderDocUrl}`
+      `No plugin "${pluginType}:${pluginId}" exported by the package at ${folderDocUrl}`
     );
   }
   if (typeof plugin.load === "function") {
@@ -76,7 +84,7 @@ export async function importPluginFromFolderDocUrl(
     return import(/* @vite-ignore */ plugin.import);
   }
   throw new Error(
-    `Plugin "${pluginId}" at ${folderDocUrl} has no load() function or import URL`
+    `Plugin "${pluginType}:${pluginId}" at ${folderDocUrl} has no load() function or import URL`
   );
 }
 

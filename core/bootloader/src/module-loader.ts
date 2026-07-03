@@ -10,7 +10,7 @@
 import { importPluginFromFolderDocUrl } from "@inkandswitch/patchwork-filesystem";
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 
-type Descriptor = Record<string, unknown> & { id?: string };
+type Descriptor = Record<string, unknown> & { id?: string; type?: string };
 
 type WorkerReply =
   | { type: "descriptors"; id: number; descriptors: Descriptor[] }
@@ -72,11 +72,13 @@ export async function importAutomergeModuleViaWorker(
   const url = urlAtHeads as AutomergeUrl;
   const descriptors = await discoverDescriptors(url);
   const plugins = descriptors.map((descriptor) => {
-    const id = descriptor.id;
-    if (typeof id !== "string") return descriptor;
+    const { id, type } = descriptor;
+    // A plugin id is only unique within a plugin type, so both are needed to
+    // re-select the right plugin when its load() re-imports the package.
+    if (typeof id !== "string" || typeof type !== "string") return descriptor;
     return {
       ...descriptor,
-      load: () => importPluginFromFolderDocUrl(url, id),
+      load: () => importPluginFromFolderDocUrl(url, type, id),
     };
   });
   return { plugins };
