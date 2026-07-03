@@ -14,6 +14,10 @@ const workers = [
     specifier: "@inkandswitch/patchwork-bootloader/automerge-worker",
     fileName: "automerge-worker.js",
   },
+  {
+    specifier: "@inkandswitch/patchwork-bootloader/module-loader-worker",
+    fileName: "module-loader-worker.js",
+  },
 ];
 
 export function serviceworker(): Plugin {
