@@ -1,25 +1,13 @@
 import { type AutomergeUrl } from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import debug from "debug";
-import { getImportableUrlFromAutomergeUrl } from "./urls.js";
+import {
+  documentBaseOrigin,
+  getImportableUrlFromAutomergeUrl,
+} from "./urls.js";
 const log = debug("patchwork:filesystem");
 
 export const defaultImportConditions = ["patchwork", "browser", "import"];
-
-// The origin to resolve service-worker module URLs against. `location.origin`
-// is the string "null" inside a srcdoc/sandboxed frame — an invalid URL base —
-// whereas `document.baseURI` is the document's proper base URL (the embedder's
-// URL for a srcdoc frame, and the page URL for a normal document), so its origin
-// is valid in both cases. Reached via `globalThis` so this also works inside a
-// worker (where `document`/`window` are undefined but `self.location` is the
-// site origin the service worker serves module URLs from).
-function documentBaseOrigin(): string {
-  try {
-    return new URL(globalThis.document.baseURI).origin;
-  } catch {
-    return globalThis.location.origin;
-  }
-}
 
 export async function importModuleFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
