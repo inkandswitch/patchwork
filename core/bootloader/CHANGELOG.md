@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.3.2
+
+### Patch Changes
+
+- 0e1eb95: add syncstate info shape
+
 ## 0.3.1
 
 ### Patch Changes
