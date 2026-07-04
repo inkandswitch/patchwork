@@ -310,8 +310,6 @@ function getRepoHive() {
             }
           ).toHex(),
         };
-        console.log("[patchwork] shared-worker subduction identity:", identity);
-
         const repo = new Repo({
           storage: new IndexedDBWorkerStorageAdapter(),
           signer,
@@ -325,6 +323,13 @@ function getRepoHive() {
           enableRemoteHeadsGossiping: true,
           subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
         });
+
+        console.log(
+          "[patchwork] shared-worker subduction identity:",
+          identity,
+          "networkSubsystem.adapters:",
+          repo.networkSubsystem.adapters.length
+        );
 
         (self as any).repo = repo;
         (self as any).syncIdentity = identity;
