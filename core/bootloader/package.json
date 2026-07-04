@@ -1,6 +1,6 @@
 {
   "name": "@inkandswitch/patchwork-bootloader",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "chee",
   "type": "module",
   "license": "MIT",
@@ -29,6 +29,10 @@
     "./automerge-worker": {
       "import": "./dist/automerge-worker.js",
       "types": "./dist/automerge-worker.d.ts"
+    },
+    "./module-loader-worker": {
+      "import": "./dist/module-loader-worker.js",
+      "types": "./dist/module-loader-worker.d.ts"
     },
     "./site": {
       "import": "./dist/site.js",

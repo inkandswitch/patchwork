@@ -189,6 +189,8 @@ export type ServiceWorkerRepoChannelListener = (
 ) => void | Promise<void>;
 
 export type SetupServiceWorkerResult = {
+  shared?: SharedWorker;
+  kill?: () => void;
   /** Open a classic Automerge sync WebSocket from the automerge worker. */
   connectClassicSync: (server?: string) => Promise<void>;
   subscribeToRepoChannel: (

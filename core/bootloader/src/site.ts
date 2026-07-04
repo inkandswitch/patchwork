@@ -13,7 +13,6 @@
  */
 import {
   type DocHandle,
-  IndexedDBStorageAdapter,
   initializeWasm,
   isValidAutomergeUrl,
   isValidDocumentId,
@@ -25,6 +24,7 @@ import {
   type DocumentId,
   type UrlHeads,
 } from "@automerge/vanillajs/slim";
+import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import * as Automerge from "@automerge/automerge/slim";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim";
 import {
@@ -50,6 +50,7 @@ const useKeyhiveSyncServer =
   typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
+import { importAutomergeModuleViaWorker } from "./module-loader.js";
 import {
   openDocument,
   registerPatchworkViewElement,
@@ -66,7 +67,10 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-import setupServiceWorker from "./setup.js";
+import setupServiceWorker, {
+  getAutomergeWorker,
+  lifecycleLoggingEnabled,
+} from "./setup.js";
 import type {
   ServiceWorkerRepoChannelListener,
   SyncStateDocMessage,
@@ -193,11 +197,14 @@ export async function bootPatchworkSite(
   const defaultModuleSources = resolveDefaultModules(config);
   showLoadingAnimation();
   log(`booting`, config);
+  installLifecycleLogging();
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
+  log("enabling workers");
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
+  log("workers ready");
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
@@ -208,6 +215,7 @@ export async function bootPatchworkSite(
   // realm-local Repo, so we share the same documents and sync/keyhive context.
   // Otherwise create our own below.
   if (window.repo) {
+    log("using existing Repo from window");
     repo = window.repo;
     hive = window.hive;
   } else {
@@ -217,15 +225,18 @@ export async function bootPatchworkSite(
     const portPromise = new Promise<MessagePort>((r) => {
       resolvePort = r;
     });
+    log("subscribing to repo channel");
     await sw.subscribeToRepoChannel(resolvePort);
+    log("repo channel subscribed");
     const workerPort = await portPromise;
 
     if (config.keyhive) {
+      log("setting up keyhive");
       initKeyhiveWasm();
 
       ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
         createRepo: (config) => new Repo(config),
-        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix: siteName + Math.random().toString(36).slice(2),
         networkAdapter: new MessageChannelNetworkAdapter(workerPort),
         automaticArchiveIngestion: true,
@@ -235,11 +246,13 @@ export async function bootPatchworkSite(
         // Defaults to "subduction".
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           enableRemoteHeadsGossiping: true,
         },
       }));
+      log("keyhive setup complete");
     } else {
+      log("creating repo");
       // Pass an explicit signer (instead of the Repo's internal default) so we
       // can expose tab signer identity on window.patchwork for dev inspection.
       // The tab never connects via Subduction (no endpoints/adapters), so this
@@ -247,7 +260,7 @@ export async function bootPatchworkSite(
       const tabSigner = new MemorySigner();
       repo = new Repo({
         network: [new MessageChannelNetworkAdapter(workerPort)],
-        storage: new IndexedDBStorageAdapter(),
+        storage: new IndexedDBWorkerStorageAdapter(),
         signer: tabSigner,
         async sharePolicy(peerId) {
           return peerId.includes("automerge-worker");
@@ -265,9 +278,16 @@ export async function bootPatchworkSite(
         ).toHex(),
       };
       console.log("[patchwork] tab subduction identity:", tabSignerIdentity);
+      log("repo created");
     }
   }
+  log("popping repo on window");
+  window.repo = repo;
+  log("await repo.networkSubsystem.whenReady()");
+
   await repo.networkSubsystem.whenReady();
+  log("networkSubsystem ready");
+
   if (hive) {
     (hive.networkAdapter as any).syncKeyhive?.();
   }
@@ -298,7 +318,10 @@ export async function bootPatchworkSite(
     repo,
     buildSystemSources(defaultModuleSources),
     onModuleLoaded,
-    unregisterPlugins
+    unregisterPlugins,
+    // Discover an Automerge package's plugin descriptors off the main thread;
+    // each plugin's load() re-imports the package (at heads) on this thread.
+    importAutomergeModuleViaWorker
   );
 
   const accountDocHandle = (await resolveAccountHandle(repo, {
@@ -362,10 +385,7 @@ function isValidModuleSource(source: string): boolean {
  * built-in default bundle).
  */
 function resolveDefaultModules(config: SiteConfig): string[] {
-  const builtin =
-    config.defaultModules ??
-    config.defaultModulesUrl ??
-    [];
+  const builtin = config.defaultModules ?? config.defaultModulesUrl ?? [];
   const builtinList = (Array.isArray(builtin) ? builtin : [builtin]).filter(
     Boolean
   );
@@ -420,6 +440,46 @@ function installDevConsoleGlobals(
     window.hive = hive;
   }
   window.getRepoChannel = getRepoChannel;
+}
+
+/**
+ * Log this tab's Page Lifecycle + connectivity transitions (visibility,
+ * freeze, bfcache, online/offline) so they line up against the SharedWorker's
+ * sync-socket reaps. [lifecycle]-tagged, on by default.
+ */
+function installLifecycleLogging(): void {
+  if (typeof document === "undefined") return;
+  const opts = { capture: true } as const;
+  const note = (label: string, extra?: unknown) => {
+    if (!lifecycleLoggingEnabled()) return;
+    const msg = `[lifecycle] ${new Date().toISOString()} ${label}`;
+    if (extra === undefined) console.info(msg);
+    else console.info(msg, extra);
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    () => note(`visibilitychange → ${document.visibilityState}`),
+    opts
+  );
+  document.addEventListener("freeze", () => note("freeze (tab suspended)"), opts);
+  document.addEventListener("resume", () => note("resume (tab unsuspended)"), opts);
+  window.addEventListener(
+    "pageshow",
+    e => note("pageshow", { persisted: (e as PageTransitionEvent).persisted }),
+    opts
+  );
+  window.addEventListener(
+    "pagehide",
+    e => note("pagehide", { persisted: (e as PageTransitionEvent).persisted }),
+    opts
+  );
+  window.addEventListener("online", () => note("online"), opts);
+  window.addEventListener("offline", () => note("offline"), opts);
+
+  note(
+    `lifecycle logging installed (visibilityState=${document.visibilityState}, hasFocus=${document.hasFocus()})`
+  );
 }
 
 function onModuleLoaded(name: string, mod: any): void {
@@ -663,10 +723,7 @@ function installHashRouting(params: HashRoutingParams): void {
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
       const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
       window.location.hash = "";
-      openDocument(
-        rootElement,
-        stringifyAutomergeUrl({ documentId, heads })
-      );
+      openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
       return;
     }
 
@@ -678,7 +735,8 @@ function installHashRouting(params: HashRoutingParams): void {
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
-      const docUrl = params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
+      const docUrl =
+        params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
       if (
         rootElement.getAttribute("tool-id") !== frame ||
         rootElement.getAttribute("doc-url") !== docUrl

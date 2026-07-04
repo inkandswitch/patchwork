@@ -32,9 +32,9 @@ import {
 import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 
 // Small adapters — bundled directly into the worker
-import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
+import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
+import { WebSocketWorkerClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import {
   initializeAutomergeRepoKeyhiveRustWithRepo,
   initKeyhiveWasm,
@@ -59,6 +59,12 @@ declare const __KEYHIVE__: boolean;
 declare const __KEYHIVE_SYNC_SERVER__: boolean;
 
 let debugging = false;
+
+// Per-boot identity so a tab can detect a worker *restart*: a fresh instance
+// means a new repo peerId + cold in-memory state, so the tab's docs must be
+// re-subscribed. Sent in `hello` (on connect) and every `pong`.
+const WORKER_INSTANCE_ID = Math.random().toString(36).slice(2);
+const WORKER_BOOT_TIME = Date.now();
 
 // ── Forward console output + uncaught errors to the main thread ─────────
 // The SharedWorker has its own console that's a pain to find (chrome://inspect
@@ -162,6 +168,35 @@ self.addEventListener("unhandledrejection", (event) => {
   ]);
 });
 
+// Boot marker, buffered until the first tab connects. A new instance id means
+// the worker restarted (fresh peerId + cold state).
+console.warn(
+  `[lifecycle] ${new Date(WORKER_BOOT_TIME).toISOString()} automerge ` +
+    `SharedWorker started (instance ${WORKER_INSTANCE_ID})`
+);
+
+// ── Suspension watchdog ─────────────────────────────────────────────────
+// A SharedWorker gets no lifecycle events, so infer freeze/suspend from timer
+// drift. A large gap means keepalive pongs stalled and the server may have
+// reaped us.
+const WATCHDOG_TICK_MS = 5_000;
+const WATCHDOG_GAP_FACTOR = 2;
+let watchdogLast = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const gap = now - watchdogLast;
+  watchdogLast = now;
+  if (gap > WATCHDOG_TICK_MS * WATCHDOG_GAP_FACTOR) {
+    console.warn(
+      `[lifecycle] worker resumed after ~${Math.round(gap / 1000)}s gap ` +
+        `(timer expected every ${WATCHDOG_TICK_MS / 1000}s) — likely ` +
+        `suspended/frozen/throttled; WebSocket keepalive pongs were not sent ` +
+        `during this window, so the sync server may have reaped us. at ` +
+        `${new Date(now).toISOString()}`
+    );
+  }
+}, WATCHDOG_TICK_MS);
+
 // Sync server selection. Sub is the default. Build with KEYHIVE_SYNC_SERVER=true
 // to target keyhive.sync.automerge.org.
 const useKeyhiveSyncServer =
@@ -194,7 +229,7 @@ const RESYNC_REVIEW_INTERVAL_MS = 5_000; // how often stuck docs are re-checked
 const DEFAULT_CLASSIC_SYNC_SERVER = "wss://sync3.automerge.org";
 
 let classicSyncServer = DEFAULT_CLASSIC_SYNC_SERVER;
-let classicSyncAdapter: WebSocketClientAdapter | null = null;
+let classicSyncAdapter: WebSocketWorkerClientAdapter | null = null;
 let classicSyncConnectPromise: Promise<void> | null = null;
 
 async function connectClassicSyncNetwork(server: string): Promise<void> {
@@ -213,7 +248,7 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
   classicSyncConnectPromise = (async () => {
     const { repo } = await getRepoHive();
     if (!classicSyncAdapter) {
-      classicSyncAdapter = new WebSocketClientAdapter(url);
+      classicSyncAdapter = new WebSocketWorkerClientAdapter(url);
       repo.networkSubsystem.addNetworkAdapter(classicSyncAdapter);
     }
     await classicSyncAdapter.whenReady();
@@ -278,7 +313,7 @@ function getRepoHive() {
         console.log("[patchwork] shared-worker subduction identity:", identity);
 
         const repo = new Repo({
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           signer,
           peerId: ("automerge-worker-" +
             Math.random()
@@ -308,7 +343,7 @@ function getRepoHive() {
       // ARK variant for talking to the keyhive-enabled subduction sync server.
       const { hive, repo } = await initializeAutomergeRepoKeyhiveRustWithRepo({
         createRepo: (config) => new Repo(config),
-        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix:
           `${siteName}-worker` + Math.random().toString(36).slice(2),
         automaticArchiveIngestion: true,
@@ -318,7 +353,7 @@ function getRepoHive() {
         // defaults to "subduction".
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
           enableRemoteHeadsGossiping: true,
         },
@@ -798,6 +833,13 @@ function handleControlMessage(
         });
         replyPort?.close();
       });
+  } else if (data?.type === "ping") {
+    // Heartbeat: reply so the tab can detect our death or restart.
+    controlPort.postMessage({
+      type: "pong",
+      id: data.id,
+      instanceId: WORKER_INSTANCE_ID,
+    });
   }
 }
 
@@ -820,6 +862,14 @@ self.addEventListener("connect", (event) => {
   });
 
   controlPort.start();
+
+  // Greet the tab with our per-boot instance id so it can detect a restart
+  // (a different id than last seen) even if no port "close" fired.
+  controlPort.postMessage({
+    type: "hello",
+    instanceId: WORKER_INSTANCE_ID,
+    bootTime: WORKER_BOOT_TIME,
+  });
 
   // Start forwarding console output to this tab, and flush anything buffered
   // while no tab was connected (e.g. boot-time logs) to the first arrival.

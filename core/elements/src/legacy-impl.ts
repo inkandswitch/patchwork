@@ -66,17 +66,14 @@ type HostElement = HTMLElement & {
 };
 
 /**
- * `doc-url`/`tool-id`-driven legacy view behavior, hosted on a
- * `<patchwork-view>` in legacy mode. The view is the rendering surface
- * itself (not a wrapper around a child element) so that events
- * dispatched on `<patchwork-view>` and listeners attached by the
- * mounted tool land on the same DOM node.
- *
- * Lifecycle methods mirror the custom-element callbacks the host needs
- * to forward into the impl.
+ * `doc-url`/`tool-id`-driven legacy view behavior for `<patchwork-view>`. The
+ * tool renders into an inner `.patchwork-view-content` element (the only thing
+ * wiped on re-render); the host stays the identity/event node, leaving safe
+ * sibling space for augmentations a tool's re-render can't trample.
  */
 export class LegacyImpl {
   #element: HostElement;
+  #content: HostElement;
   #repo: Repo;
   #docUrl: AutomergeUrl | null = null;
   #toolId: string | null = null;
@@ -97,6 +94,15 @@ export class LegacyImpl {
     this.#element = element as HostElement;
     this.#repo = params.repo;
     this.#element.hive = params.hive;
+
+    // `height: 100%` makes the wrapper fill the host so tools that size/measure
+    // their root element see the host's box (the wrapper carries the
+    // `repo`/`hive` surface tools read off the element they're handed).
+    this.#content = document.createElement("div") as HostElement;
+    this.#content.className = "patchwork-view-content";
+    this.#content.style.width = "100%";
+    this.#content.style.height = "100%";
+    this.#content.hive = params.hive;
   }
 
   get docUrl(): AutomergeUrl | null {
@@ -127,6 +133,7 @@ export class LegacyImpl {
 
   connectedCallback(): void {
     this.#capturedParent = this.#element.parentElement;
+    this.#element.appendChild(this.#content);
     this.#docUrl = this.#element.getAttribute(
       ATTRS.docUrl
     ) as AutomergeUrl | null;
@@ -134,8 +141,9 @@ export class LegacyImpl {
     void this.#init();
   }
 
-  disconnectedCallback(): Promise<void> {
-    return this.#teardown();
+  async disconnectedCallback(): Promise<void> {
+    await this.#teardown();
+    this.#content.remove();
   }
 
   connectedMoveCallback(): void {
@@ -277,6 +285,7 @@ export class LegacyImpl {
 
     const repo = this.#repo;
     this.#element.repo = repo;
+    this.#content.repo = repo;
 
     let handle: DocHandle<HasPatchworkMetadata>;
     try {
@@ -320,7 +329,7 @@ export class LegacyImpl {
     this.#handle = null;
     this.#tool = null;
     this.#requestedToolImports.clear();
-    this.#element.textContent = "";
+    this.#content.textContent = "";
     this.#state = State.none;
 
     if (wasMounted && mountedUrl && mountedToolId) {
@@ -477,11 +486,11 @@ export class LegacyImpl {
     }
 
     try {
-      // `#init` set `this.#element.repo` before reaching `#queueRender`, so
-      // the host now satisfies `ToolElement`'s non-optional `repo`.
+      // `#init` set the content element's `repo` before reaching `#queueRender`,
+      // so it satisfies `ToolElement`'s non-optional `repo`.
       const cleanup = this.#tool.module(
         this.#handle,
-        this.#element as ToolElement
+        this.#content as ToolElement
       );
       if (typeof cleanup === "function") {
         this.#teardowns.add(cleanup);
@@ -493,7 +502,7 @@ export class LegacyImpl {
         new MountedEvent({ url: this.#docUrl, toolId })
       );
     } catch (error) {
-      this.#element.append(
+      this.#content.append(
         Object.assign(document.createElement("div"), {
           innerHTML: /* html */ `
             <p>oh no!</p>
@@ -532,7 +541,7 @@ export class LegacyImpl {
         animation: pw-loading-pulse 2s ease-in-out infinite;
       "></div>
     `;
-    this.#element.append(div);
+    this.#content.append(div);
     const timer = setTimeout(() => {
       div.style.opacity = "1";
     }, 2000);
@@ -549,7 +558,7 @@ export class LegacyImpl {
     div.innerHTML = /* html */ `
       <details style="display: flex"><summary></summary><pre style="white-space: pre-wrap;"><code>${error}</code></pre></details>
     `;
-    this.#element.append(div);
+    this.#content.append(div);
     setTimeout(() => {
       div.style.opacity = "1";
     });
@@ -572,8 +581,6 @@ export class LegacyImpl {
   }
 
   #resetDisplay = () => {
-    this.#element.replaceChildren();
-    this.#element.style.alignItems = "";
-    this.#element.style.justifyContent = "";
+    this.#content.replaceChildren();
   };
 }
