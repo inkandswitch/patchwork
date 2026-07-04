@@ -2,6 +2,7 @@ import type {
   ServiceWorkerRepoChannelListener,
   SetupServiceWorkerOptions,
   SetupServiceWorkerResult,
+  SyncStateDocMessage,
 } from "./types.js";
 import {
   readClassicSyncServer,
@@ -107,6 +108,10 @@ export function getAutomergeWorker(): SharedWorker {
     // Surface the SharedWorker's console output and uncaught errors in this
     // tab's console (it has its own console that's awkward to find otherwise).
     automergeWorker.port.addEventListener("message", (event: MessageEvent) => {
+      if (event.data?.type === "sync-state") {
+        dispatchSyncState(event.data as SyncStateDocMessage);
+        return;
+      }
       if (event.data?.type !== "console") return;
       const { level, args } = event.data;
       // Gate forwarded [lifecycle] logs on the toggle too.
@@ -203,6 +208,53 @@ function installWorkerDeathDetection(worker: SharedWorker): void {
       );
     }
   }, HEARTBEAT_MS);
+}
+
+// ── Sync-state subscriptions ────────────────────────────────────────────
+// The automerge worker pushes per-document heads only to the tabs that ask for
+// them (see SyncStateDocMessage). We ref-count locally so several callers in
+// this tab can watch the same doc with a single worker subscription, and tear
+// the worker subscription down when the last local watcher drops.
+type SyncStateListener = (update: SyncStateDocMessage) => void;
+const syncStateListeners = new Map<string, Set<SyncStateListener>>();
+
+function dispatchSyncState(update: SyncStateDocMessage): void {
+  const listeners = syncStateListeners.get(update.documentId);
+  if (!listeners) return;
+  for (const listener of listeners) {
+    try {
+      listener(update);
+    } catch (err) {
+      console.error("sync-state listener threw", err);
+    }
+  }
+}
+
+export function subscribeSyncState(
+  documentId: string,
+  listener: SyncStateListener
+): () => void {
+  const worker = getAutomergeWorker();
+  let listeners = syncStateListeners.get(documentId);
+  if (!listeners) {
+    syncStateListeners.set(documentId, (listeners = new Set()));
+    // First local watcher for this doc — ask the worker to start pushing it.
+    worker.port.postMessage({ type: "sync-sub", documentId });
+  }
+  listeners.add(listener);
+
+  let active = true;
+  return () => {
+    if (!active) return; // idempotent
+    active = false;
+    const set = syncStateListeners.get(documentId);
+    if (!set) return;
+    set.delete(listener);
+    if (set.size === 0) {
+      syncStateListeners.delete(documentId);
+      worker.port.postMessage({ type: "sync-unsub", documentId });
+    }
+  };
 }
 
 export function connectClassicSync(
@@ -367,6 +419,7 @@ export default async function setupServiceWorker(
     shared,
     connectClassicSync,
     getRepoChannel,
+    subscribeSyncState,
     async subscribeToRepoChannel(listener: ServiceWorkerRepoChannelListener) {
       // The automerge worker outlives the page, so unlike the old in-service-
       // worker repo there's nothing to reconnect: one port, handed over once.

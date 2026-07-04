@@ -35,6 +35,7 @@ import {
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
 declare const __SITE_NAME__: string;
 const siteName =
@@ -70,7 +71,10 @@ import setupServiceWorker, {
   getAutomergeWorker,
   lifecycleLoggingEnabled,
 } from "./setup.js";
-import type { ServiceWorkerRepoChannelListener } from "./types.js";
+import type {
+  ServiceWorkerRepoChannelListener,
+  SyncStateDocMessage,
+} from "./types.js";
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
 
@@ -87,11 +91,19 @@ declare global {
       packages: ModuleWatcher;
       plugins: typeof plugins;
       accountDocHandle: DocHandle<AccountDoc>;
+      signer?: {
+        peerId: string;
+        verifyingKey: string;
+      };
       sw: {
         connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
           listener: ServiceWorkerRepoChannelListener
         ) => Promise<() => void>;
+        subscribeSyncState: (
+          documentId: string,
+          listener: (update: SyncStateDocMessage) => void
+        ) => () => void;
       };
     };
     uncache: (match: string) => Promise<void>;
@@ -196,6 +208,7 @@ export async function bootPatchworkSite(
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
+  let tabSignerIdentity: { peerId: string; verifyingKey: string } | undefined;
 
   // If a Repo is already on `window` — an embedding context provided one before
   // this entry ran — reuse it and its keyhive instead of standing up a fresh
@@ -240,9 +253,15 @@ export async function bootPatchworkSite(
       log("keyhive setup complete");
     } else {
       log("creating repo");
+      // Pass an explicit signer (instead of the Repo's internal default) so we
+      // can expose tab signer identity on window.patchwork for dev inspection.
+      // The tab never connects via Subduction (no endpoints/adapters), so this
+      // id never goes on the wire.
+      const tabSigner = new MemorySigner();
       repo = new Repo({
         network: [new MessageChannelNetworkAdapter(workerPort)],
         storage: new IndexedDBWorkerStorageAdapter(),
+        signer: tabSigner,
         async sharePolicy(peerId) {
           return peerId.includes("automerge-worker");
         },
@@ -250,6 +269,15 @@ export async function bootPatchworkSite(
         peerId:
           `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
       });
+      tabSignerIdentity = {
+        peerId: tabSigner.peerId().toString(),
+        verifyingKey: (
+          tabSigner.verifyingKey() as Uint8Array<ArrayBufferLike> & {
+            toHex(): string;
+          }
+        ).toHex(),
+      };
+      console.log("[patchwork] tab subduction identity:", tabSignerIdentity);
       log("repo created");
     }
   }
@@ -315,9 +343,11 @@ export async function bootPatchworkSite(
     packages: moduleWatcher,
     plugins,
     accountDocHandle,
+    ...(tabSignerIdentity ? { signer: tabSignerIdentity } : {}),
     sw: {
       connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
+      subscribeSyncState: sw.subscribeSyncState,
     },
   };
   window.uncache = uncache;
