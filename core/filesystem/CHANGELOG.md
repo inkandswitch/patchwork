@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-filesystem
 
+## 0.1.2
+
+### Patch Changes
+
+- 923ad66: Resolve importable URLs against `globalThis.document.baseURI` (falling back to `globalThis.origin`) so they are absolute rather than root-relative.
+
 ## 0.1.1
 
 ### Patch Changes
