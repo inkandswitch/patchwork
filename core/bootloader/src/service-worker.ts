@@ -286,24 +286,43 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           log(`serving ${handoffURL} from cache ${cachename} after handoff`);
           return withSpecialHeaders(cached);
         } else {
-          const response = await fetch(request).catch(() => null);
-          if (response) {
+          // fetch() rejects on network error / abort rather than resolving;
+          // keep the error so we can surface it in the 503 body below.
+          const result = await fetch(request).catch((error: unknown) =>
+            error instanceof Error ? error : new Error(String(error))
+          );
+          if (result instanceof Response) {
+            const response = result;
+            // Tool subresources (<link>/<script>) are requested from srcdoc
+            // frames whose origin is "null", so they come back as opaque
+            // cross-origin `no-cors` responses: status 0 and an empty url. They
+            // render fine while online but were being excluded from the cache,
+            // so e.g. a theme stylesheet vanished on an offline refresh. Opaque
+            // responses are cacheable and replay to the same no-cors consumer,
+            // so treat status 0 as cacheable and gate the scheme on request.url
+            // (an opaque response's own url is "").
             if (
-              cacheableStatuses.includes(response.status) &&
-              response.url.match(/^https?\:/)
+              (response.status === 0 ||
+                cacheableStatuses.includes(response.status)) &&
+              /^https?:/.test(request.url)
             ) {
               await cache.put(request, response.clone()).catch((error) => {
                 log(`error caching ${request.url} in ${cachename}`, error);
               });
             } else {
               log(
-                `skipping uncacheable response code from cache: ${response.status} for ${response.url}`
+                `skipping uncacheable response code from cache: ${response.status} for ${request.url}`
               );
             }
             return response;
           }
           if (match) return match;
-          return new Response("couldnt fetch and no stale", { status: 503 });
+          return new Response(
+            `couldnt fetch ${request.url} and no stale copy in ${cachename}\n\n${
+              result.stack ?? result.message
+            }`,
+            { status: 503, headers: { "content-type": "text/plain" } }
+          );
         }
       } catch (error) {
         const message =
