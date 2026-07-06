@@ -279,10 +279,15 @@ export class OverlayRepo implements RepoLike {
       const apply = async (descriptor: DocHandleDescriptor) => {
         const mySeq = ++seq;
         const backingRoot = descriptor.cloneUrl ?? descriptor.url;
+        // A remapper may pin the backing to specific heads (e.g. the draft
+        // overlay freezing a doc at a checkpoint) by stamping them onto the
+        // returned url. Honor those as a fallback; heads on the presented url
+        // still win.
+        const parsedBacking = parseAutomergeUrl(backingRoot);
         const backingUrl = stringifyAutomergeUrl({
-          documentId: parseAutomergeUrl(backingRoot).documentId,
+          documentId: parsedBacking.documentId,
           segments,
-          heads,
+          heads: heads ?? parsedBacking.heads,
         });
         if (this.#backingUrls.get(presented) === backingUrl) return;
 
