@@ -42,6 +42,7 @@ function installServiceWorkerLogForwarding(): void {
 }
 
 const key = "patchworkServiceWorkerCacheVersion";
+const defaultServiceWorkerCacheName = "patchwork";
 let nextRepoChannelId = 0;
 
 function bumpServiceWorkerCacheVersion() {
@@ -54,19 +55,13 @@ function getServiceWorkerCacheVersion() {
   return localStorage.getItem(key);
 }
 
-function getOrCreateServiceWorkerCacheVersion() {
-  const existing = getServiceWorkerCacheVersion();
-  if (existing) return existing;
-  return bumpServiceWorkerCacheVersion();
-}
-
 function setServiceWorkerCacheName(sw: ServiceWorker | null) {
   if (!sw) {
     throw new Error("no service worker!");
   }
   sw.postMessage({
     type: "cachename",
-    cachename: getOrCreateServiceWorkerCacheVersion(),
+    cachename: getServiceWorkerCacheVersion() ?? defaultServiceWorkerCacheName,
   });
 }
 
@@ -82,8 +77,10 @@ export function bumpServiceWorkerCache(
 function configureServiceWorker(sw: ServiceWorker | null) {
   if (!sw) return;
   sw.postMessage({ type: "debug", debug: serviceWorkerDebugging });
-  const cachename = getServiceWorkerCacheVersion();
-  if (cachename) sw.postMessage({ type: "cachename", cachename });
+  sw.postMessage({
+    type: "cachename",
+    cachename: getServiceWorkerCacheVersion() ?? defaultServiceWorkerCacheName,
+  });
 }
 
 // ── The automerge worker ───────────────────────────────────────────────
@@ -363,6 +360,7 @@ export default async function setupServiceWorker(
   // Attach the SW→tab [lifecycle] log bridge as early as possible so boot /
   // install / activate markers from the controlling worker are rendered here.
   installServiceWorkerLogForwarding();
+  localStorage.removeItem(key);
 
   if (options?.workerPath) automergeWorkerPath = options.workerPath;
 
