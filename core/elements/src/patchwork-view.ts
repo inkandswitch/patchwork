@@ -191,7 +191,13 @@ export function registerPatchworkViewElement(
       }
 
       disconnectedCallback() {
-        void this.#teardown();
+        // The overlay repo (and its live descriptor subscriptions) survives
+        // attribute-driven teardowns/re-syncs; only a real disconnect releases
+        // it. Detach synchronously so a re-connect gets a fresh shim, then
+        // dispose once the teardown has run.
+        const overlayRepo = this.#overlayRepo;
+        this.#overlayRepo = null;
+        void this.#teardown().then(() => overlayRepo?.dispose());
       }
 
       connectedMoveCallback() {
