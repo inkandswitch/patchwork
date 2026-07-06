@@ -980,11 +980,10 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
       ? (new Uint8Array(resolved.content) as BlobPart)
       : resolved.content;
 
-  const headers = new Headers({ "content-type": resolved.type });
-  headers.set("cross-origin-embedder-policy", "credentialless");
-  headers.set("cross-origin-resource-policy", "cross-origin");
-
-  return new Response(body, { status: 200, headers });
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": resolved.type },
+  });
 }
 
 // ── Handoff: resolve special URLs for the service worker ──────────────

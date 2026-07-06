@@ -46,18 +46,8 @@ export default defineConfig({
     format: "es",
     plugins: () => [wasm()],
   },
-  server: {
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "credentialless",
-    },
-  },
   preview: {
     port: process.env.PORT ? +process.env.PORT : 5173,
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "credentialless",
-    },
   },
   resolve: {
     alias: {

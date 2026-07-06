@@ -224,17 +224,14 @@ function handoff(
   });
 }
 
-function withSpecialHeaders(response: {
+function makeResponse(response: {
   body?: BodyInit | ReadableStream<Uint8Array> | null;
   status?: number;
   headers?: HeadersInit;
 }): Response {
-  const headers = new Headers(response.headers);
-  headers.set("cross-origin-embedder-policy", "credentialless");
-  headers.set("cross-origin-resource-policy", "cross-origin");
   return new Response(response.body ?? null, {
     status: response.status ?? 200,
-    headers,
+    headers: response.headers,
   });
 }
 
@@ -298,7 +295,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
         if (handoffURL) {
           if (match) {
             log(`serving ${handoffURL} from cache ${cachename}`);
-            return withSpecialHeaders(match);
+            return match;
           }
 
           log(`handing ${handoffURL} off to the automerge worker`);
@@ -309,7 +306,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           if (reply.type === "response") {
             // errors, redirects and other things that shouldn't be cached
             log(`serving handed-off response for ${handoffURL}`, reply);
-            return withSpecialHeaders(reply.response);
+            return makeResponse(reply.response);
           }
 
           // reply.type === "cached": the automerge worker has put the
@@ -322,7 +319,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             );
           }
           log(`serving ${handoffURL} from cache ${cachename} after handoff`);
-          return withSpecialHeaders(cached);
+          return cached;
         } else {
           // fetch() rejects on network error / abort rather than resolving;
           // keep the error so we can surface it in the 503 body below.
