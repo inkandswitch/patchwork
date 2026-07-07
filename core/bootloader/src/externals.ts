@@ -6,8 +6,8 @@ const externals = [
   "@automerge/automerge/slim",
   "@automerge/automerge-repo",
   "@automerge/automerge-repo/slim",
-  // Proxy entry spawned as a nested worker by the automerge worker's
-  // WorkerWebSocketEndpoint (see automerge-worker.ts).
+  // Proxy entry for the nested dedicated worker used by WorkerWebSocketEndpoint
+  // (spawned manually in automerge-worker.ts).
   "@automerge/automerge-repo/subduction-websocket-worker",
   "@automerge/automerge-repo-network-messagechannel",
   "@automerge/automerge-repo-network-websocket",
