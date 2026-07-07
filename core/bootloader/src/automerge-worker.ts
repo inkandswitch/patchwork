@@ -21,6 +21,7 @@ import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
 
 import {
   Repo,
+  WorkerWebSocketEndpoint,
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
@@ -211,11 +212,34 @@ if (useKeyhiveSyncServer) {
   };
 }
 
-const SUBDUCTION_ENDPOINTS = [
-  useKeyhiveSyncServer
-    ? "wss://keyhive.sync.automerge.org"
-    : "wss://subduction.sync.inkandswitch.com",
-];
+const SUBDUCTION_SYNC_URL = useKeyhiveSyncServer
+  ? "wss://keyhive.sync.automerge.org"
+  : "wss://subduction.sync.inkandswitch.com";
+
+// The subduction WebSocket lives in a nested dedicated worker so socket I/O
+// (and keepalive pongs) keep flowing even when this SharedWorker's thread is
+// busy syncing. We spawn the proxy entry ourselves from its own emitted chunk
+// (see externals.ts) instead of letting WorkerWebSocketEndpoint auto-spawn:
+// the auto-spawn resolves worker-entry.js relative to import.meta.url, which
+// doesn't survive our externalized /packages/... bundling.
+const SUBDUCTION_WEBSOCKET_WORKER_URL =
+  "/packages/@automerge/automerge-repo/subduction-websocket-worker.js";
+
+// Memoized so a repo-construction retry (getRepoHive clears its promise on
+// failure) reuses the same proxy worker instead of leaking one per attempt.
+let subductionEndpoints: WorkerWebSocketEndpoint[] | null = null;
+function getSubductionEndpoints(): WorkerWebSocketEndpoint[] {
+  if (!subductionEndpoints) {
+    const worker = new Worker(SUBDUCTION_WEBSOCKET_WORKER_URL, {
+      type: "module",
+      name: "subduction-websocket",
+    });
+    subductionEndpoints = [
+      new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, { worker }),
+    ];
+  }
+  return subductionEndpoints;
+}
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // Backoff re-sync of stuck/diverged docs. Only this worker is connected to the
@@ -321,7 +345,7 @@ function getRepoHive() {
             return peerId.includes("storage-server");
           },
           enableRemoteHeadsGossiping: true,
-          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          subductionWebsocketEndpoints: getSubductionEndpoints(),
         });
 
         console.log(
@@ -359,7 +383,7 @@ function getRepoHive() {
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
           storage: new IndexedDBWorkerStorageAdapter(),
-          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          subductionWebsocketEndpoints: getSubductionEndpoints(),
           enableRemoteHeadsGossiping: true,
         },
       });
@@ -722,10 +746,14 @@ function dropRepoChannel(repo: Repo, channel: RepoChannel) {
   // wrapper: make sure the underlying port is disconnected and closed too.
   try {
     channel.mcAdapter.disconnect();
-  } catch {}
+  } catch {
+    // Already disconnected by removeNetworkAdapter above.
+  }
   try {
     channel.port.close();
-  } catch {}
+  } catch {
+    // Port already closed by the departing tab.
+  }
 }
 
 async function dropConnection(connection: Connection) {
