@@ -75,6 +75,35 @@ const WORKER_BOOT_TIME = Date.now();
 
 const controlPorts = new Set<MessagePort>();
 
+// ── Keepalive-drift probe (bench instrumentation) ───────────────────────
+// Measures how late a 1s timer fires on this thread — i.e. how late an
+// in-thread keepalive would be under sync/wasm load. Cheap (one Date.now()
+// per second); samples are batched to every connected tab as drift-samples
+// messages, which setup.ts accumulates on window.__driftSamples for the
+// Playwright bench (e2e/tests/bench-ws.spec.ts).
+const DRIFT_INTERVAL_MS = 1_000;
+const DRIFT_BATCH_SIZE = 5;
+{
+  let expected = Date.now() + DRIFT_INTERVAL_MS;
+  let batch: number[] = [];
+  setInterval(() => {
+    const now = Date.now();
+    batch.push(Math.max(0, now - expected));
+    expected = now + DRIFT_INTERVAL_MS;
+    if (batch.length >= DRIFT_BATCH_SIZE) {
+      const samples = batch;
+      batch = [];
+      for (const port of controlPorts) {
+        try {
+          port.postMessage({ type: "drift-samples", samples });
+        } catch {
+          // Port torn down mid-iteration — its close handler cleans up.
+        }
+      }
+    }
+  }, DRIFT_INTERVAL_MS);
+}
+
 // ── Per-tab sync-state subscriptions ────────────────────────────────────
 // Each tab's control port subscribes to the documents it cares about; we push
 // only those docs' heads back down that port (addressed — tab A never sees tab
@@ -226,16 +255,30 @@ const SUBDUCTION_SYNC_URL = useKeyhiveSyncServer
 // current, healing across late arrival and proxy-worker restarts.
 const subductionPortProvider = makePortProvider();
 
+// A/B bench toggle: the tab appends ?ws-mode=inline to our URL (SharedWorker
+// scope has no localStorage; see getAutomergeWorker in setup.ts). "inline"
+// passes the bare URL string so the socket lives on this thread — the
+// pre-worker behaviour — as the control arm for benchmarking the
+// worker-based endpoint. Default: "worker".
+const WS_MODE =
+  new URL(self.location.href).searchParams.get("ws-mode") === "inline"
+    ? "inline"
+    : "worker";
+
 // Memoized so a repo-construction retry (getRepoHive clears its promise on
 // failure) reuses the same endpoint instead of leaking one per attempt.
-let subductionEndpoints: WorkerWebSocketEndpoint[] | null = null;
-function getSubductionEndpoints(): WorkerWebSocketEndpoint[] {
+let subductionEndpoints: (WorkerWebSocketEndpoint | string)[] | null = null;
+function getSubductionEndpoints(): (WorkerWebSocketEndpoint | string)[] {
   if (!subductionEndpoints) {
-    subductionEndpoints = [
-      new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
-        worker: subductionPortProvider.source,
-      }),
-    ];
+    log(`subduction websocket mode: ${WS_MODE}`);
+    subductionEndpoints =
+      WS_MODE === "inline"
+        ? [SUBDUCTION_SYNC_URL]
+        : [
+            new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
+              worker: subductionPortProvider.source,
+            }),
+          ];
   }
   return subductionEndpoints;
 }
