@@ -20,6 +20,12 @@
       pnpm-pkg = pkgs.pnpm;
       pnpm' = "${pnpm-pkg}/bin/pnpm";
 
+      # Pin Playwright's browsers to the Nix-provided driver so E2E runs are
+      # reproducible and need no `playwright install` download. The npm
+      # `@playwright/test` version in e2e/package.json must match
+      # `playwright-driver`'s (check `nix eval nixpkgs#playwright-driver.version`).
+      playwrightBrowsers = pkgs.playwright-driver.browsers;
+
       asModule = command-utils.asModule.${system};
       cmd = command-utils.cmd.${system};
       pnpm = command-utils.pnpm.${system};
@@ -39,6 +45,8 @@
           "format" = cmd "Format code" "${pnpm'} format";
           "format:check" = cmd "Check code formatting" "${pnpm'} format:check";
           "preview" = cmd "Preview production build" "${pnpm'} preview";
+          "test:e2e" = cmd "Run browser/SW E2E tests (Playwright)" "${pnpm'} test:e2e";
+          "bench:ws" = cmd "Bench inline vs worker WebSocket (Playwright)" "${pnpm'} bench:ws";
           "publish:packages" = cmd "Publish packages" "${pnpm'} publish-packages";
           "tsc" = cmd "Run TypeScript compiler" "${pnpm'} tsc";
         })
@@ -57,6 +65,10 @@
           pkgs.typescript-language-server
           pnpm-pkg
         ] ++ menu;
+
+        # Make Playwright use the Nix-provided browsers (no download needed).
+        PLAYWRIGHT_BROWSERS_PATH = playwrightBrowsers;
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
 
         shellHook = ''
           menu

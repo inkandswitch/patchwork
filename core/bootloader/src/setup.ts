@@ -102,9 +102,26 @@ let automergeWorker: SharedWorker | undefined;
 const SUBDUCTION_IO_WORKER_URL =
   "/packages/@automerge/automerge-repo/subduction-websocket-worker-shared.js";
 
+// A/B bench toggle for the subduction socket (see getSubductionEndpoints in
+// automerge-worker.ts). Set localStorage["patchwork:ws-mode"] = "inline" to
+// run the socket on the worker thread (control arm). Passed as a query param
+// because SharedWorker scope has no localStorage — which also gives each mode
+// its own worker instance, so arms can't share state.
+function wsMode(): string | null {
+  try {
+    return globalThis.localStorage?.getItem("patchwork:ws-mode");
+  } catch {
+    return null;
+  }
+}
+
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
-    automergeWorker = new SharedWorker(automergeWorkerPath, {
+    const mode = wsMode();
+    const workerUrl = mode
+      ? `${automergeWorkerPath}?ws-mode=${encodeURIComponent(mode)}`
+      : automergeWorkerPath;
+    automergeWorker = new SharedWorker(workerUrl, {
       name: "patchwork-automerge",
       type: "module",
     });
@@ -116,6 +133,14 @@ export function getAutomergeWorker(): SharedWorker {
     automergeWorker.port.addEventListener("message", (event: MessageEvent) => {
       if (event.data?.type === "sync-state") {
         dispatchSyncState(event.data as SyncStateDocMessage);
+        return;
+      }
+      if (event.data?.type === "drift-samples") {
+        // Keepalive-drift samples from the worker's bench probe. Kept on a
+        // bounded window global for the Playwright bench to harvest.
+        const sink = ((window as any).__driftSamples ??= []) as number[];
+        sink.push(...event.data.samples);
+        if (sink.length > 10_000) sink.splice(0, sink.length - 10_000);
         return;
       }
       if (event.data?.type !== "console") return;

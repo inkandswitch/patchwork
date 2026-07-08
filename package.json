@@ -20,6 +20,8 @@
     "preview": "pnpm --filter gaios preview",
     "publish-packages": "pnpm -r publish --access=public",
     "test": "pnpm --filter \"./os\" test",
+    "test:e2e": "pnpm --filter tiny-patchwork build && pnpm --filter @patchwork/e2e test:e2e",
+    "bench:ws": "pnpm --filter tiny-patchwork build && pnpm --filter @patchwork/e2e bench",
     "tsc": "pnpm -r exec tsc"
   },
   "keywords": [],

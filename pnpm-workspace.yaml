@@ -1,5 +1,6 @@
 packages:
   - core/*
+  - e2e
   - packages/*
   - packages/annotations/**/*
   - packages/providers/**/*
