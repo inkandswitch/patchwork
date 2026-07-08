@@ -9,6 +9,7 @@ import {
   DEFAULT_CLASSIC_SYNC_SERVER,
 } from "./sync-config.js";
 import debug from "debug";
+import { donatePort } from "@automerge/automerge-repo/worker-port";
 
 const serviceWorkerDebugging = debug.enabled("patchwork:serviceworker");
 const workerDebugging = debug.enabled("patchwork:automergeworker");
@@ -93,6 +94,14 @@ function configureServiceWorker(sw: ServiceWorker | null) {
 let automergeWorkerPath = "/automerge-worker.js";
 let automergeWorker: SharedWorker | undefined;
 
+// SharedWorker proxy entry that owns the subduction WebSocket. Chrome can't
+// spawn workers from inside a SharedWorker, so each tab offers this proxy's
+// port to the automerge worker (which requests one via its port provider).
+// Being a SharedWorker itself, the proxy — and the donated worker↔worker
+// port — outlives the donor tab. Emitted at /packages/... via externals.ts.
+const SUBDUCTION_IO_WORKER_URL =
+  "/packages/@automerge/automerge-repo/subduction-websocket-worker-shared.js";
+
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
     automergeWorker = new SharedWorker(automergeWorkerPath, {
@@ -131,6 +140,16 @@ export function getAutomergeWorker(): SharedWorker {
       }
     });
     automergeWorker.port.postMessage({ type: "debug", debug: workerDebugging });
+
+    // Offer the subduction io proxy's port; the worker's port provider pulls
+    // it when (re)constructing its WorkerWebSocketEndpoint.
+    donatePort(automergeWorker.port, () => {
+      const io = new SharedWorker(SUBDUCTION_IO_WORKER_URL, {
+        type: "module",
+        name: "subduction-websocket",
+      });
+      return io.port;
+    });
 
     installWorkerDeathDetection(automergeWorker);
   }
