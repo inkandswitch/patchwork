@@ -9,16 +9,18 @@ packages:
 
 overrides:
   "@automerge/automerge": "catalog:"
-  "@automerge/automerge-repo": "catalog:"
+  # TEMPORARY: link: overrides to local automerge-repo checkout for pre-publish
+  # Chrome testing. Revert to "catalog:" once published to npm (see ADR-006/014).
+  "@automerge/automerge-repo": "link:/home/expede/Desktop/automerge-repo/packages/automerge-repo"
   "@automerge/automerge-repo-keyhive": "catalog:"
-  "@automerge/automerge-repo-network-messagechannel": "catalog:"
-  "@automerge/automerge-repo-network-websocket": "catalog:"
-  "@automerge/automerge-repo-react-hooks": "catalog:"
+  "@automerge/automerge-repo-network-messagechannel": "link:/home/expede/Desktop/automerge-repo/packages/automerge-repo-network-messagechannel"
+  "@automerge/automerge-repo-network-websocket": "link:/home/expede/Desktop/automerge-repo/packages/automerge-repo-network-websocket"
+  "@automerge/automerge-repo-react-hooks": "link:/home/expede/Desktop/automerge-repo/packages/automerge-repo-react-hooks"
   "@automerge/automerge-repo-solid-primitives": "catalog:"
-  "@automerge/automerge-repo-storage-indexeddb": "catalog:"
+  "@automerge/automerge-repo-storage-indexeddb": "link:/home/expede/Desktop/automerge-repo/packages/automerge-repo-storage-indexeddb"
   "@automerge/automerge-subduction": "catalog:"
-  "@automerge/react": "catalog:"
-  "@automerge/vanillajs": "catalog:"
+  "@automerge/react": "link:/home/expede/Desktop/automerge-repo/packages/automerge-react"
+  "@automerge/vanillajs": "link:/home/expede/Desktop/automerge-repo/packages/automerge-vanillajs"
   "@keyhive/keyhive": "catalog:"
 
 minimumReleaseAgeExclude:

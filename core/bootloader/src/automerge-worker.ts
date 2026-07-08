@@ -18,6 +18,7 @@ import { initializeWasm, hasHeads } from "@automerge/automerge/slim";
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
 import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
+import { makePortProvider } from "@automerge/automerge-repo/worker-port";
 
 import {
   Repo,
@@ -216,26 +217,24 @@ const SUBDUCTION_SYNC_URL = useKeyhiveSyncServer
   ? "wss://keyhive.sync.automerge.org"
   : "wss://subduction.sync.inkandswitch.com";
 
-// The subduction WebSocket lives in a nested dedicated worker so socket I/O
-// (and keepalive pongs) keep flowing even when this SharedWorker's thread is
-// busy syncing. We spawn the proxy entry ourselves from its own emitted chunk
-// (see externals.ts) instead of letting WorkerWebSocketEndpoint auto-spawn:
-// the auto-spawn resolves worker-entry.js relative to import.meta.url, which
-// doesn't survive our externalized /packages/... bundling.
-const SUBDUCTION_WEBSOCKET_WORKER_URL =
-  "/packages/@automerge/automerge-repo/subduction-websocket-worker.js";
+// The subduction WebSocket lives in its own worker so socket I/O (and
+// keepalive pongs) keep flowing even when this SharedWorker's thread is busy
+// syncing. We can't spawn that worker ourselves — Chrome doesn't expose the
+// Worker constructor inside SharedWorkerGlobalScope — so tabs spawn the
+// shipped SharedWorker proxy entry and donate its port to us (donatePort in
+// setup.ts). The provider hands WorkerWebSocketEndpoint whichever port is
+// current, healing across late arrival and proxy-worker restarts.
+const subductionPortProvider = makePortProvider();
 
 // Memoized so a repo-construction retry (getRepoHive clears its promise on
-// failure) reuses the same proxy worker instead of leaking one per attempt.
+// failure) reuses the same endpoint instead of leaking one per attempt.
 let subductionEndpoints: WorkerWebSocketEndpoint[] | null = null;
 function getSubductionEndpoints(): WorkerWebSocketEndpoint[] {
   if (!subductionEndpoints) {
-    const worker = new Worker(SUBDUCTION_WEBSOCKET_WORKER_URL, {
-      type: "module",
-      name: "subduction-websocket",
-    });
     subductionEndpoints = [
-      new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, { worker }),
+      new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
+        worker: subductionPortProvider.source,
+      }),
     ];
   }
   return subductionEndpoints;
@@ -883,6 +882,11 @@ self.addEventListener("connect", (event) => {
   controlPort.addEventListener("message", (messageEvent) => {
     handleControlMessage(messageEvent as MessageEvent, controlPort, connection);
   });
+
+  // Let the subduction port provider negotiate over this tab's control port
+  // (the tab side runs donatePort; the messages are channel-tagged so they
+  // coexist with our control protocol above).
+  subductionPortProvider.attachClient(controlPort);
 
   // Fires when the owning page is destroyed. Browsers without the close
   // event fall back to the adapters' lazy useWeakRef cleanup.
