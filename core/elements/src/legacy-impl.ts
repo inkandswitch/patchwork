@@ -660,8 +660,9 @@ export class LegacyImpl {
     toast.setAttribute("role", "status");
     Object.assign(toast.style, {
       position: "absolute",
-      bottom: "16px",
-      right: "16px",
+      top: "16px",
+      left: "50%",
+      transform: "translateX(-50%)",
       zIndex: "2147483000",
       maxWidth: "min(360px, calc(100% - 32px))",
       boxSizing: "border-box",
