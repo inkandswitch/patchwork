@@ -10,11 +10,7 @@
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "paths": {
-      "react": ["../../../../node_modules/@types/react"],
-      "react-dom": ["../../../../node_modules/@types/react-dom"]
-    }
+    "jsx": "react-jsx"
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]
