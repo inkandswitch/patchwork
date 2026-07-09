@@ -9,7 +9,10 @@ import {
   DEFAULT_CLASSIC_SYNC_SERVER,
 } from "./sync-config.js";
 import debug from "debug";
-import { donatePort } from "@automerge/automerge-repo/worker-port";
+import {
+  donatePort,
+  isWorkerErrorMessage,
+} from "@automerge/automerge-repo/worker-port";
 
 const serviceWorkerDebugging = debug.enabled("patchwork:serviceworker");
 const workerDebugging = debug.enabled("patchwork:automergeworker");
@@ -102,25 +105,33 @@ let automergeWorker: SharedWorker | undefined;
 const SUBDUCTION_IO_WORKER_URL =
   "/packages/@automerge/automerge-repo/subduction-websocket-worker-shared.js";
 
-// A/B bench toggle for the subduction socket (see getSubductionEndpoints in
-// automerge-worker.ts). Set localStorage["patchwork:ws-mode"] = "inline" to
-// run the socket on the worker thread (control arm). Passed as a query param
-// because SharedWorker scope has no localStorage — which also gives each mode
-// its own worker instance, so arms can't share state.
-function wsMode(): string | null {
+// Bench toggles for the subduction socket (see getSubductionEndpoints in
+// automerge-worker.ts), passed as query params because SharedWorker scope
+// has no localStorage — which also gives each configuration its own worker
+// instance, so bench arms can't share state.
+//   localStorage["patchwork:ws-mode"] = "inline"  → socket on worker thread
+//   localStorage["patchwork:ws-window"] = "16"    → WorkerWebSocketEndpoint
+//                                                    windowFrames override
+function workerBenchParams(): string {
+  const params = new URLSearchParams();
   try {
-    return globalThis.localStorage?.getItem("patchwork:ws-mode");
+    for (const [key, param] of [
+      ["patchwork:ws-mode", "ws-mode"],
+      ["patchwork:ws-window", "ws-window"],
+    ] as const) {
+      const value = globalThis.localStorage?.getItem(key);
+      if (value) params.set(param, value);
+    }
   } catch {
-    return null;
+    // No localStorage (shouldn't happen in a tab) — use defaults.
   }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
 }
 
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
-    const mode = wsMode();
-    const workerUrl = mode
-      ? `${automergeWorkerPath}?ws-mode=${encodeURIComponent(mode)}`
-      : automergeWorkerPath;
+    const workerUrl = `${automergeWorkerPath}${workerBenchParams()}`;
     automergeWorker = new SharedWorker(workerUrl, {
       name: "patchwork-automerge",
       type: "module",
@@ -133,6 +144,13 @@ export function getAutomergeWorker(): SharedWorker {
     automergeWorker.port.addEventListener("message", (event: MessageEvent) => {
       if (event.data?.type === "sync-state") {
         dispatchSyncState(event.data as SyncStateDocMessage);
+        return;
+      }
+      if (isWorkerErrorMessage(event.data)) {
+        // Crash/skew reports relayed from the subduction io proxy (e.g.
+        // protocol-mismatch from a stale SW-cached worker chunk). Surface
+        // loudly — these otherwise only exist in chrome://inspect.
+        console.error("[subduction-io]", event.data);
         return;
       }
       if (event.data?.type === "drift-samples") {

@@ -37,6 +37,10 @@ const ITERATIONS = Number(process.env.BENCH_ITERATIONS ?? 3);
 const LOAD_DOCS = Number(process.env.BENCH_LOAD_DOCS ?? 4);
 const SYNC_DOCS = Number(process.env.BENCH_SYNC_DOCS ?? 40);
 const SYNC_DOC_KB = Number(process.env.BENCH_SYNC_DOC_KB ?? 25);
+// Optional WorkerWebSocketEndpoint windowFrames override (worker arm only;
+// endpoint default 128). Set e.g. BENCH_WS_WINDOW=16 to A/B the io proxy's
+// credit window.
+const WS_WINDOW = process.env.BENCH_WS_WINDOW ?? "";
 const RESULTS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
   "..",
@@ -187,9 +191,13 @@ for (const mode of ["inline", "worker"] as const) {
     // Fresh context per arm: SharedWorkers outlive pages, and the ws-mode
     // query param means each arm gets its own worker instance anyway.
     const context: BrowserContext = await browser.newContext();
-    await context.addInitScript((m) => {
-      localStorage.setItem("patchwork:ws-mode", m);
-    }, mode);
+    await context.addInitScript(
+      ([m, win]) => {
+        localStorage.setItem("patchwork:ws-mode", m);
+        if (win) localStorage.setItem("patchwork:ws-window", win);
+      },
+      [mode, WS_WINDOW] as const
+    );
 
     const wsEvents: string[] = [];
     const watchConsole = (page: Page) => {
@@ -254,9 +262,13 @@ for (const mode of ["inline", "worker"] as const) {
     await writer.waitForTimeout(10_000);
 
     const syncContext = await browser.newContext();
-    await syncContext.addInitScript((m) => {
-      localStorage.setItem("patchwork:ws-mode", m);
-    }, mode);
+    await syncContext.addInitScript(
+      ([m, win]) => {
+        localStorage.setItem("patchwork:ws-mode", m);
+        if (win) localStorage.setItem("patchwork:ws-window", win);
+      },
+      [mode, WS_WINDOW] as const
+    );
     const syncPage = await syncContext.newPage();
     watchConsole(syncPage);
     await syncPage.goto("/");
@@ -320,6 +332,7 @@ for (const mode of ["inline", "worker"] as const) {
       loadSeconds: LOAD_SECONDS,
       iterations: ITERATIONS,
       loadDocs: LOAD_DOCS,
+      wsWindow: WS_WINDOW || "default(128)",
       edits,
       boot: { cold: bootCold, secondTab: bootSecondTab },
       syncDocs: {
