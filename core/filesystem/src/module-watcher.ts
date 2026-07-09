@@ -5,7 +5,10 @@ import {
   isValidAutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo/slim";
-import { importModuleFromFolderDocUrl } from "./packages.js";
+import {
+  importModuleFromFolderDocUrl,
+  importModuleFromHttpUrl,
+} from "./packages.js";
 import {
   getSuggestedImportUrl,
   getType,
@@ -21,6 +24,14 @@ export type ModuleSettingsDoc = {
   };
 
 const DEFAULT_BRANCH = "default";
+
+// A single pushwork sync commits a burst of changes to a folder doc — the
+// file-list write, an optional pin refresh, and a trailing `lastSyncAt` stamp —
+// and the file docs it references sync as independent documents. Coalesce that
+// burst into one reload by waiting for the folder doc's heads to stop moving
+// for this long before re-importing, so we pin to the settled, consistent
+// snapshot instead of an intermediate one.
+const RELOAD_DEBOUNCE_MS = 250;
 
 function getDocumentBaseUrl(): string {
   // `document.baseURI` is the document's proper base URL — for a srcdoc/sandboxed
@@ -190,7 +201,7 @@ export class ModuleWatcher {
         return;
       }
     } else {
-      await import(importName)
+      await importModuleFromHttpUrl(importName);
     }
     this.setDocWatcher(importName);
     await this.announce(importName);
@@ -267,7 +278,7 @@ export class ModuleWatcher {
         const urlAtHeads = handle.view(handle.heads()).url;
         return await this.importAutomergeModule(urlAtHeads);
       }
-      return await import(/* @vite-ignore */ importName);
+      return await importModuleFromHttpUrl(importName);
     } catch (error) {
       console.error(
         `%c Failed to import ${importName}`,
@@ -312,17 +323,29 @@ export class ModuleWatcher {
     if (!docUrl) return;
 
     this.repo.find<FolderDoc>(docUrl).then((handle) => {
-      let previousSyncAtTime = handle.doc().lastSyncAt || 0;
+      // Reload when the folder doc's heads actually change, debounced to the
+      // trailing edge so a push's burst of changes collapses into one import at
+      // the settled heads. This reacts to real content changes (including
+      // offline `save`, which never stamps lastSyncAt) rather than a magic
+      // timestamp field.
+      let importedHeads = handle.heads().join(",");
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
       handle.on("change", () => {
-        const lastSyncAt = handle.doc().lastSyncAt || 0;
-        if (lastSyncAt <= previousSyncAtTime) {
-          console.log("handle updated but not lastSyncAt");
-          return;
-        }
-        previousSyncAtTime = lastSyncAt;
-        const versionedImport = handle.view(handle.heads()).url;
-        console.log(`change in ${importName}, reloading at ${versionedImport}`);
-        this.announce(versionedImport);
+        if (handle.heads().join(",") === importedHeads) return;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = undefined;
+          const heads = handle.heads();
+          const key = heads.join(",");
+          if (key === importedHeads) return;
+          importedHeads = key;
+          const versionedImport = handle.view(heads).url;
+          console.log(
+            `change in ${importName}, reloading at ${versionedImport}`
+          );
+          this.announce(versionedImport);
+        }, RELOAD_DEBOUNCE_MS);
       });
     });
   }

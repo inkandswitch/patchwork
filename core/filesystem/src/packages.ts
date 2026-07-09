@@ -32,6 +32,80 @@ export async function importModuleFromFolderDocUrl(
 }
 
 /**
+ * Import a module from a plain HTTP(S) URL — the non-Automerge counterpart to
+ * {@link importModuleFromFolderDocUrl}.
+ *
+ * The URL may point straight at a module entry file (e.g. `.../index.js`), in
+ * which case it's imported as-is, or at a package/site root that serves a
+ * `package.json`, in which case the manifest is fetched and its entry point
+ * (`exports`/`main`) resolved and imported.
+ */
+export async function importModuleFromHttpUrl(
+  url: string,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+) {
+  const entryPointUrl = await httpEntryPointUrl(url, subpath, conditions);
+  log(`importing ${entryPointUrl.slice(-60)}`);
+  return await import(/* @vite-ignore */ entryPointUrl);
+}
+
+// Module file extensions that mark a URL as a direct entry point rather than a
+// package/site root to look for a `package.json` in.
+const MODULE_FILE_EXTENSION = /\.(mjs|cjs|js|mts|cts|ts|jsx|tsx)$/;
+
+/**
+ * Resolve the URL to actually import for a plain HTTP(S) module URL.
+ *
+ * A URL that already names a module file (`.../foo.js`, `.mjs`, `.ts`, …) is
+ * returned unchanged. Otherwise the URL is treated as a package/site root:
+ * `package.json` is fetched relative to it and its entry point resolved. If
+ * there's no manifest, the URL is imported directly, so a bare directory that
+ * happens to serve an `index.js` still works as before.
+ */
+async function httpEntryPointUrl(
+  url: string,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+): Promise<string> {
+  // Absolute URLs (http(s), data:, blob:) resolve on their own; only a relative
+  // URL needs the document base, which isn't available off the main thread.
+  let resolved: URL;
+  try {
+    resolved = new URL(url);
+  } catch {
+    resolved = new URL(url, documentBaseOrigin());
+  }
+  // Only probe http(s) directories for a package.json. A URL that already names
+  // a module file, or one on another scheme (e.g. a `data:`/`blob:` module), is
+  // imported exactly as given.
+  const isHttp =
+    resolved.protocol === "http:" || resolved.protocol === "https:";
+  if (!isHttp || MODULE_FILE_EXTENSION.test(resolved.pathname)) {
+    return resolved.href;
+  }
+
+  // Treat the URL as a directory: resolve `package.json` against it with a
+  // trailing slash so its last path segment isn't dropped.
+  const base = resolved.href.endsWith("/") ? resolved.href : `${resolved.href}/`;
+  const packageJsonUrl = new URL("package.json", base).href;
+
+  log(`fetching ${packageJsonUrl.slice(-60)}`);
+  let pkgJson: Record<string, any> | undefined;
+  try {
+    const response = await fetch(packageJsonUrl);
+    if (response.ok) pkgJson = await response.json();
+  } catch {
+    // Network/parse failure — fall back to importing the URL directly below.
+  }
+
+  if (!pkgJson) return resolved.href;
+
+  const entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
+  return new URL(entryPoint, base).href;
+}
+
+/**
  * Import the entry point of a package (at `folderDocUrl`, which should be
  * pinned to heads) and return the loaded implementation of a single one of the
  * plugins it exports, selected by its `pluginType` and `pluginId`.

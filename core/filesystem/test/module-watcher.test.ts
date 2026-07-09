@@ -112,3 +112,87 @@ describe("ModuleWatcher static manifest sources", () => {
     expect(ids).toEqual(new Set(["a", "b"]));
   });
 });
+
+describe("ModuleWatcher http package resolution", () => {
+  it("resolves a trailing-slash directory module via its package.json exports", async () => {
+    const manifestUrl = "http://example.test/modules.json";
+    const packageUrl = "https://cdn.example.test/mytool/";
+    const entryModule = dataModule(
+      "export const plugins = [{ type: 'patchwork:tool', id: 'pkg' }]"
+    );
+    stubFetchManifest({
+      [manifestUrl]: { modules: [packageUrl] },
+      "https://cdn.example.test/mytool/package.json": {
+        exports: { ".": entryModule },
+      },
+    });
+
+    const loaded: Array<{ name: string; mod: any }> = [];
+    const watcher = new ModuleWatcher(
+      {} as unknown as Repo,
+      { system: manifestUrl },
+      (name, mod) => loaded.push({ name, mod })
+    );
+    await watcher.doneLoading;
+
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].mod.plugins).toEqual([
+      { type: "patchwork:tool", id: "pkg" },
+    ]);
+  });
+
+  it("treats a directory URL without a trailing slash as a package root and falls back to `main`", async () => {
+    const manifestUrl = "http://example.test/modules.json";
+    const packageUrl = "https://cdn.example.test/mytool";
+    const entryModule = dataModule(
+      "export const plugins = [{ type: 'patchwork:tool', id: 'main' }]"
+    );
+    stubFetchManifest({
+      [manifestUrl]: { modules: [packageUrl] },
+      "https://cdn.example.test/mytool/package.json": { main: entryModule },
+    });
+
+    const loaded: Array<{ name: string; mod: any }> = [];
+    const watcher = new ModuleWatcher(
+      {} as unknown as Repo,
+      { system: manifestUrl },
+      (name, mod) => loaded.push({ name, mod })
+    );
+    await watcher.doneLoading;
+
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].mod.plugins).toEqual([
+      { type: "patchwork:tool", id: "main" },
+    ]);
+  });
+
+  it("imports a direct module-file URL as-is, without probing for a package.json", async () => {
+    const manifestUrl = "http://example.test/modules.json";
+    const moduleUrl = "https://cdn.example.test/mytool/index.js";
+    const fetch = vi.fn(async (input: string) => {
+      const url = String(input);
+      if (url === manifestUrl) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ modules: [moduleUrl] }),
+        } as Response;
+      }
+      return { ok: false, status: 404 } as Response;
+    });
+    vi.stubGlobal("fetch", fetch);
+
+    // A `.js` URL never triggers a package.json lookup — importing the URL
+    // directly is left to the loader (which rejects the http scheme in node).
+    const watcher = new ModuleWatcher(
+      {} as unknown as Repo,
+      { system: manifestUrl },
+      () => {}
+    );
+    await watcher.doneLoading;
+
+    expect(
+      fetch.mock.calls.some(([u]) => String(u).endsWith("package.json"))
+    ).toBe(false);
+  });
+});
