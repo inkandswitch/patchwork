@@ -5,6 +5,7 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import {
+  getSuggestedImportUrl,
   getType,
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
@@ -446,6 +447,14 @@ export class LegacyImpl {
 
     if (!toolId) {
       this.#state = "unable";
+      // The doc's datatype has no registered tool and no explicit tool was
+      // requested. If the doc points at a module to import, kick that off and
+      // wait — the registry listeners re-render once it registers a supporting
+      // tool. Otherwise there's genuinely nothing to open.
+      if (this.#notool()) {
+        this.#displayLoading("");
+        return;
+      }
       const hasPatchworkMetadata = doc && "@patchwork" in doc;
       if (!hasPatchworkMetadata) {
         console.warn(`Document ${this.#docUrl} is missing @patchwork metadata`);
@@ -462,12 +471,14 @@ export class LegacyImpl {
     this.#tool = getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
     if (!this.#tool) {
-      this.#notool();
-    }
-
-    if (!this.#tool) {
       this.#state = "unable";
-      this.#displayError(`I couldn't find the tool with id ${toolId}.`);
+      // The requested tool isn't loaded. If the doc suggests a module to import
+      // it from, wait for that; otherwise there's nothing more to try.
+      if (this.#notool()) {
+        this.#displayLoading(toolId);
+      } else {
+        this.#displayError(`I couldn't find the tool with id ${toolId}.`);
+      }
       return;
     }
 
@@ -564,20 +575,26 @@ export class LegacyImpl {
     });
   };
 
-  #notool(): void {
-    if (!this.#docUrl || !this.#handle) return;
-    const suggestedImportUrl =
-      this.#handle.doc()?.["@patchwork"]?.suggestedImportUrl;
+  /**
+   * When no tool is available for the current doc, ask the host to import the
+   * module the doc suggests (`patchwork:no-tool`). Returns whether an import
+   * was kicked off, so the caller can show a loading state instead of an error
+   * while the module loads and the registry listeners re-render.
+   */
+  #notool(): boolean {
+    if (!this.#docUrl || !this.#handle) return false;
+    const suggestedImportUrl = getSuggestedImportUrl(this.#handle.doc());
     if (
       !suggestedImportUrl ||
       this.#requestedToolImports.has(suggestedImportUrl)
     ) {
-      return;
+      return false;
     }
     this.#requestedToolImports.add(suggestedImportUrl);
 
     log("dispatching patchwork:no-tool for", this.#docUrl);
     this.#element.dispatchEvent(new NoToolEvent({ url: this.#docUrl }));
+    return true;
   }
 
   #resetDisplay = () => {

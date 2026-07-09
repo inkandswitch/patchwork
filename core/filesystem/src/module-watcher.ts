@@ -6,7 +6,11 @@ import {
   type Repo,
 } from "@automerge/automerge-repo/slim";
 import { importModuleFromFolderDocUrl } from "./packages.js";
-import { getType, type HasPatchworkMetadata } from "./metadata.js";
+import {
+  getSuggestedImportUrl,
+  getType,
+  type HasPatchworkMetadata,
+} from "./metadata.js";
 import { BranchesDoc, FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
@@ -250,8 +254,7 @@ export class ModuleWatcher {
 
   async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
     const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
-    const doc = handle.doc();
-    const url = doc["@patchwork"]?.suggestedImportUrl;
+    const url = getSuggestedImportUrl(handle.doc());
     return url && (await this.loadModules([url]));
   }
 

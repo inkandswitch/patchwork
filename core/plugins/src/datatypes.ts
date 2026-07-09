@@ -1,16 +1,13 @@
-import {
-  isValidAutomergeUrl,
-  parseAutomergeUrl,
-  stringifyAutomergeUrl,
-  type DocHandle,
-  type Repo,
-} from "@automerge/automerge-repo";
+import { type DocHandle, type Repo } from "@automerge/automerge-repo";
 import type {
   LoadablePlugin,
   LoadedPlugin,
   PluginDescription,
 } from "./registry/types.js";
-import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
+import {
+  isHttpUrl,
+  type HasPatchworkMetadata,
+} from "@inkandswitch/patchwork-filesystem";
 import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 // Datatype implementation interface
@@ -53,19 +50,13 @@ export const createDocOfDatatype2 = async <D>(
   }
   handle.change((doc: D & HasPatchworkMetadata) => {
     datatype.module.init(doc, repo);
-    let importUrl = datatype.importUrl;
-    if (isValidAutomergeUrl(importUrl)) {
-      const parsed = parseAutomergeUrl(importUrl);
-      if (parsed.heads) {
-        console.warn(
-          `stripping heads from importUrl for ${datatype.id} for new document`
-        );
-      }
-      importUrl = stringifyAutomergeUrl(parsed.documentId);
-    }
+    // Only record an `http:`/`https:` import URL, so `suggestedImportUrl` is
+    // always a directly-importable module and never an automerge/other-scheme
+    // URL. See `isHttpUrl`.
+    const importUrl = datatype.importUrl;
     (doc as any)["@patchwork"] = {
       type: datatype.id,
-      suggestedImportUrl: importUrl,
+      ...(isHttpUrl(importUrl) ? { suggestedImportUrl: importUrl } : {}),
     };
     if (change) {
       change(doc);
