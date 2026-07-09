@@ -60,8 +60,13 @@ const MODULE_FILE_EXTENSION = /\.(mjs|cjs|js|mts|cts|ts|jsx|tsx)$/;
  * A URL that already names a module file (`.../foo.js`, `.mjs`, `.ts`, …) is
  * returned unchanged. Otherwise the URL is treated as a package/site root:
  * `package.json` is fetched relative to it and its entry point resolved. If
- * there's no manifest, the URL is imported directly, so a bare directory that
- * happens to serve an `index.js` still works as before.
+ * there's no manifest (a 404 or other non-ok response), the URL is imported
+ * directly, so a bare directory that happens to serve an `index.js` still works
+ * as before.
+ *
+ * A fetch that *rejects* — a network error or, most often, a cross-origin
+ * request blocked by missing CORS headers — is not treated as "no manifest":
+ * it throws, because the same failure would block the eventual module import.
  */
 async function httpEntryPointUrl(
   url: string,
@@ -91,15 +96,55 @@ async function httpEntryPointUrl(
   const packageJsonUrl = new URL("package.json", base).href;
 
   log(`fetching ${packageJsonUrl.slice(-60)}`);
-  let pkgJson: Record<string, any> | undefined;
+
+  // A rejected fetch (a TypeError) is a genuine failure — offline, DNS, or, most
+  // commonly here, a cross-origin request blocked because the host sends no
+  // `Access-Control-Allow-Origin`. That's distinct from "there's no package.json
+  // here" (a non-ok *response*, handled below): don't silently fall back to
+  // importing the bare URL, because the same wall blocks the eventual module
+  // `import()` too, so the URL is unusable until the host is fixed. Surface it,
+  // keeping the original error as `cause`.
+  let response: Response;
   try {
-    const response = await fetch(packageJsonUrl);
-    if (response.ok) pkgJson = await response.json();
-  } catch {
-    // Network/parse failure — fall back to importing the URL directly below.
+    response = await fetch(packageJsonUrl);
+  } catch (cause) {
+    // Determining the document origin can itself throw off the main thread
+    // (no `document`/`location`); guard it so building a helpful error never
+    // masks the real `cause`.
+    let origin: string | undefined;
+    try {
+      origin = documentBaseOrigin();
+    } catch {
+      // origin unknown — fall back to the generic hint below.
+    }
+    const crossOrigin = origin !== undefined && resolved.origin !== origin;
+    const hint = crossOrigin
+      ? `This is a cross-origin request (${origin} → ${resolved.origin}), so it's most likely blocked by CORS: the host must send an \`Access-Control-Allow-Origin\` header, and a cross-origin module can't be imported without one.`
+      : `This is usually a network error (offline/unreachable) or a cross-origin request blocked by CORS (a missing \`Access-Control-Allow-Origin\` header).`;
+    throw new Error(
+      `Couldn't fetch ${packageJsonUrl} to resolve the module entry point. ${hint}`,
+      { cause }
+    );
   }
 
-  if (!pkgJson) return resolved.href;
+  // A non-ok response (typically 404) means this URL isn't a package root, so
+  // import it directly — a bare directory that serves an `index.js` still works
+  // as before.
+  if (!response.ok) {
+    log(
+      `no package.json at ${packageJsonUrl} (HTTP ${response.status}); importing ${resolved.href} directly`
+    );
+    return resolved.href;
+  }
+
+  let pkgJson: Record<string, any>;
+  try {
+    pkgJson = await response.json();
+  } catch (cause) {
+    throw new Error(`Fetched ${packageJsonUrl} but couldn't parse it as JSON`, {
+      cause,
+    });
+  }
 
   const entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
   return new URL(entryPoint, base).href;

@@ -356,7 +356,6 @@ export async function bootPatchworkSite(
     rootElement,
     repo,
     accountDocHandle,
-    moduleWatcher,
     titleSuffix: config.titleSuffix,
   });
 
@@ -632,17 +631,11 @@ interface HashRoutingParams {
   rootElement: HTMLElement;
   repo: Repo;
   accountDocHandle: DocHandle<AccountDoc>;
-  moduleWatcher: ModuleWatcher;
   titleSuffix: string;
 }
 
 function installHashRouting(params: HashRoutingParams): void {
-  const { rootElement, repo, accountDocHandle, moduleWatcher, titleSuffix } =
-    params;
-
-  rootElement.addEventListener("patchwork:no-tool", (event) => {
-    moduleWatcher.loadSuggestedImportUrl(event.detail.url);
-  });
+  const { rootElement, repo, accountDocHandle, titleSuffix } = params;
 
   rootElement.addEventListener("patchwork:open-document", async (event) => {
     const params = new URLSearchParams(window.location.hash.slice(1));

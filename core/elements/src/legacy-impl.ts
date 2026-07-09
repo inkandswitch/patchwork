@@ -7,12 +7,14 @@ import {
 import {
   getSuggestedImportUrl,
   getType,
+  importModuleFromHttpUrl,
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
 import {
   getFallbackTool,
   getRegistry,
   isLoadablePlugin,
+  registerPlugins,
   type LoadedTool,
   type ToolElement,
 } from "@inkandswitch/patchwork-plugins";
@@ -21,7 +23,7 @@ import {
   docIdFromAutomergeUrl,
   type initializeAutomergeRepoKeyhive,
 } from "@automerge/automerge-repo-keyhive";
-import { MountedEvent, NoToolEvent, UnmountedEvent } from "./events.js";
+import { MountedEvent, UnmountedEvent } from "./events.js";
 
 const log = debug("patchwork:elements:legacy");
 
@@ -576,10 +578,16 @@ export class LegacyImpl {
   };
 
   /**
-   * When no tool is available for the current doc, ask the host to import the
-   * module the doc suggests (`patchwork:no-tool`). Returns whether an import
-   * was kicked off, so the caller can show a loading state instead of an error
-   * while the module loads and the registry listeners re-render.
+   * When no tool is available for the current doc, import the module the doc
+   * suggests (its `suggestedImportUrl`) and register its plugins, so the tool
+   * registry gains a supporting tool and this view's registry listeners
+   * re-render. Returns whether an import was kicked off, so the caller can show
+   * a loading state instead of an error while the module loads.
+   *
+   * The import runs in this element's own realm rather than being delegated to
+   * a single top-level handler, so a `<patchwork-view>` nested in an embedded
+   * context (e.g. an iframe an event couldn't bubble out of) still resolves its
+   * own tool.
    */
   #notool(): boolean {
     if (!this.#docUrl || !this.#handle) return false;
@@ -591,10 +599,22 @@ export class LegacyImpl {
       return false;
     }
     this.#requestedToolImports.add(suggestedImportUrl);
-
-    log("dispatching patchwork:no-tool for", this.#docUrl);
-    this.#element.dispatchEvent(new NoToolEvent({ url: this.#docUrl }));
+    void this.#importSuggestedModule(suggestedImportUrl);
     return true;
+  }
+
+  async #importSuggestedModule(url: string): Promise<void> {
+    log("importing suggested module", url);
+    try {
+      const mod = await importModuleFromHttpUrl(url);
+      if (Array.isArray(mod?.plugins)) {
+        registerPlugins(mod.plugins, url);
+      } else {
+        console.warn(`suggested module ${url} has no plugins array`);
+      }
+    } catch (error) {
+      console.error(`Failed to import suggested module ${url}`, error);
+    }
   }
 
   #resetDisplay = () => {

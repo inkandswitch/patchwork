@@ -43,32 +43,16 @@ export class UnmountedEvent extends CustomEvent<UnmountedEventDetail> {
   }
 }
 
-export interface NoToolEventDetail {
-  url: AutomergeUrl;
-}
-
-export class NoToolEvent extends CustomEvent<NoToolEventDetail> {
-  constructor(detail: NoToolEventDetail) {
-    super("patchwork:no-tool", {
-      detail,
-      composed: true,
-      bubbles: true,
-    });
-  }
-}
-
 declare global {
   interface ShadowRootEventMap extends ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
     "patchwork:unmounted": UnmountedEvent;
-    "patchwork:no-tool": NoToolEvent;
   }
   interface ElementEventMap {
     "patchwork:open-document": OpenDocumentEvent;
     "patchwork:mounted": MountedEvent;
     "patchwork:unmounted": UnmountedEvent;
-    "patchwork:no-tool": NoToolEvent;
   }
 }
 

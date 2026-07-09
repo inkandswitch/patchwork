@@ -9,11 +9,7 @@ import {
   importModuleFromFolderDocUrl,
   importModuleFromHttpUrl,
 } from "./packages.js";
-import {
-  getSuggestedImportUrl,
-  getType,
-  type HasPatchworkMetadata,
-} from "./metadata.js";
+import { getType, type HasPatchworkMetadata } from "./metadata.js";
 import { BranchesDoc, FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
@@ -261,12 +257,6 @@ export class ModuleWatcher {
         this.processBranchesEntry(branchesDocUrl).catch(console.error);
       });
     });
-  }
-
-  async loadSuggestedImportUrl(docUrl: AutomergeUrl) {
-    const handle = await this.repo.find<Partial<HasPatchworkMetadata>>(docUrl);
-    const url = getSuggestedImportUrl(handle.doc());
-    return url && (await this.loadModules([url]));
   }
 
   private async importModuleSafe(importName: string): Promise<any | null> {
