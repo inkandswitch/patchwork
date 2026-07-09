@@ -27,6 +27,20 @@ import { MountedEvent, UnmountedEvent } from "./events.js";
 
 const log = debug("patchwork:elements:legacy");
 
+/**
+ * Whether `tool` supports `type` only through a `*` wildcard rather than by
+ * naming the datatype explicitly. A wildcard-only match means the tool is a
+ * generic fallback (e.g. a raw viewer), not a tool built for this datatype.
+ */
+function isWildcardOnlyMatch(
+  tool: LoadedTool,
+  type: string | undefined
+): boolean {
+  const datatypes = tool.supportedDatatypes;
+  const list = datatypes === "*" ? ["*"] : datatypes;
+  return list.includes("*") && (type === undefined || !list.includes(type));
+}
+
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
 >;
@@ -92,6 +106,8 @@ export class LegacyImpl {
   #handlingKeyhiveSync = false;
   #pendingKeyhiveSync = false;
   #unableNoAccess = false;
+  #toast: HTMLElement | null = null;
+  #toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(element: HTMLElement, params: LegacyImplParams) {
     this.#element = element as HostElement;
@@ -327,6 +343,7 @@ export class LegacyImpl {
     }
 
     this.#teardowns.clear();
+    this.#dismissToast(true);
     this.#keyhiveRetrySetup = false;
     this.#unableNoAccess = false;
     this.#handle = null;
@@ -439,12 +456,29 @@ export class LegacyImpl {
     this.#resetDisplay();
 
     const doc = this.#handle.doc();
-    this.#fallbackId = getFallbackTool(doc)?.id;
+    const fallbackTool = getFallbackTool(doc);
+    this.#fallbackId = fallbackTool?.id;
     const fallingBack = !this.#toolId;
     const toolId = this.#toolId || this.#fallbackId;
 
+    // A wildcard fallback tool (`supportedDatatypes: ["*"]`) supports this doc
+    // only generically, not because it's built for the doc's datatype — it's a
+    // stopgap we render while we try to load something better.
+    const mountingWildcardStopgap =
+      fallingBack &&
+      !!fallbackTool &&
+      isWildcardOnlyMatch(fallbackTool, getType(doc));
+
     if (fallingBack) {
       console.warn(`falling back to default tool for ${this.#docUrl}`);
+      // For a wildcard stopgap, also kick off the doc's suggested import so a
+      // datatype-specific tool can load, at which point the registry listeners
+      // above swap it in (it sorts ahead of the wildcard as the new fallback).
+      // We still render the wildcard tool in the meantime; `#notool` dedupes so
+      // re-renders don't re-import.
+      if (mountingWildcardStopgap) {
+        this.#notool();
+      }
     }
 
     if (!toolId) {
@@ -510,6 +544,10 @@ export class LegacyImpl {
       } else {
         console.warn(`return a cleanup function from ${toolId}`);
       }
+      // Mounting a datatype-specific tool (or an explicitly chosen one) means an
+      // editor was found, so retire the "loading suggested import" toast. A
+      // wildcard stopgap keeps it up — we're still waiting on the real tool.
+      if (!mountingWildcardStopgap) this.#dismissToast();
       this.#state = fallingBack ? "fallback" : "rendered";
       this.#element.dispatchEvent(
         new MountedEvent({ url: this.#docUrl, toolId })
@@ -599,8 +637,107 @@ export class LegacyImpl {
       return false;
     }
     this.#requestedToolImports.add(suggestedImportUrl);
+    this.#showToast("No editor found", `Loading ${suggestedImportUrl}`);
     void this.#importSuggestedModule(suggestedImportUrl);
     return true;
+  }
+
+  /**
+   * A small o-message-style toast, floated over the view, announcing that we're
+   * fetching the doc's suggested import because no built-in editor matched. It's
+   * appended to the host element (never `#content`, which a tool's re-render
+   * wipes) and retired by `#dismissToast` once a real tool mounts or on
+   * teardown; a timer clears it if the import never resolves.
+   */
+  #showToast(title: string, body: string): void {
+    this.#dismissToast(true);
+
+    // Give the absolutely-positioned toast a containing block without
+    // clobbering an inline position the host author may have set.
+    if (!this.#element.style.position) this.#element.style.position = "relative";
+
+    const toast = document.createElement("div");
+    toast.setAttribute("role", "status");
+    Object.assign(toast.style, {
+      position: "absolute",
+      bottom: "16px",
+      right: "16px",
+      zIndex: "2147483000",
+      maxWidth: "min(360px, calc(100% - 32px))",
+      boxSizing: "border-box",
+      display: "flex",
+      gap: "10px",
+      padding: "12px 14px",
+      borderRadius: "6px",
+      background: "#eaf1fb",
+      color: "#1a1a1a",
+      borderLeft: "4px solid #1e5fbf",
+      boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18)",
+      font: "13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      opacity: "0",
+      transition: "opacity 0.25s ease",
+      pointerEvents: "none",
+    } as Partial<CSSStyleDeclaration>);
+
+    const dot = document.createElement("div");
+    Object.assign(dot.style, {
+      flex: "0 0 auto",
+      width: "8px",
+      height: "8px",
+      marginTop: "4px",
+      borderRadius: "50%",
+      background: "#1e5fbf",
+    });
+    dot.animate(
+      [
+        { opacity: "0.3", transform: "scale(0.6)" },
+        { opacity: "1", transform: "scale(1)" },
+        { opacity: "0.3", transform: "scale(0.6)" },
+      ],
+      { duration: 1400, iterations: Infinity, easing: "ease-in-out" }
+    );
+
+    const inner = document.createElement("div");
+    inner.style.minWidth = "0";
+
+    const titleEl = document.createElement("div");
+    titleEl.textContent = title;
+    titleEl.style.fontWeight = "600";
+
+    const bodyEl = document.createElement("div");
+    bodyEl.textContent = body;
+    Object.assign(bodyEl.style, {
+      marginTop: "2px",
+      opacity: "0.75",
+      overflowWrap: "anywhere",
+    } as Partial<CSSStyleDeclaration>);
+
+    inner.append(titleEl, bodyEl);
+    toast.append(dot, inner);
+    this.#element.append(toast);
+    this.#toast = toast;
+
+    requestAnimationFrame(() => {
+      toast.style.opacity = "1";
+    });
+
+    this.#toastTimer = setTimeout(() => this.#dismissToast(), 8000);
+  }
+
+  #dismissToast(immediate = false): void {
+    if (this.#toastTimer) {
+      clearTimeout(this.#toastTimer);
+      this.#toastTimer = null;
+    }
+    const toast = this.#toast;
+    if (!toast) return;
+    this.#toast = null;
+    if (immediate) {
+      toast.remove();
+      return;
+    }
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
   }
 
   async #importSuggestedModule(url: string): Promise<void> {
