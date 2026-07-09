@@ -265,6 +265,12 @@ const WS_MODE =
     ? "inline"
     : "worker";
 
+// Optional windowFrames override (bench knob — max un-acked frames the io
+// proxy delivers before pausing; endpoint default is 128).
+const WS_WINDOW_FRAMES =
+  Number(new URL(self.location.href).searchParams.get("ws-window")) ||
+  undefined;
+
 // Memoized so a repo-construction retry (getRepoHive clears its promise on
 // failure) reuses the same endpoint instead of leaking one per attempt.
 let subductionEndpoints: (WorkerWebSocketEndpoint | string)[] | null = null;
@@ -277,6 +283,9 @@ function getSubductionEndpoints(): (WorkerWebSocketEndpoint | string)[] {
         : [
             new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
               worker: subductionPortProvider.source,
+              ...(WS_WINDOW_FRAMES
+                ? { windowFrames: WS_WINDOW_FRAMES }
+                : {}),
             }),
           ];
   }
