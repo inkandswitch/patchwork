@@ -82,6 +82,125 @@ type HostElement = HTMLElement & {
   hive?: AutomergeRepoKeyhive;
 };
 
+const ERROR_STYLE_ID = "patchwork-view-error-style";
+
+// One shared stylesheet for every view's error UI. Colours/fonts/radii come
+// from ../base/theming (the `--studio-*` custom properties) with plain
+// fallbacks so the error still reads sensibly outside a themed context.
+function ensureErrorStyles() {
+  if (document.getElementById(ERROR_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = ERROR_STYLE_ID;
+  style.textContent = /* css */ `
+    .pw-error {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      height: 100%;
+      min-height: 2.5em;
+      padding: 1rem;
+      box-sizing: border-box;
+      font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
+      font-size: 0.8125rem;
+      color: var(--studio-danger-text, #c2415f);
+    }
+    .pw-error__face {
+      font-size: 1.15em;
+      opacity: 0.9;
+      user-select: none;
+    }
+    .pw-error__msg {
+      opacity: 0.85;
+      max-width: 40ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pw-error__btn {
+      flex: none;
+      font: inherit;
+      color: var(--studio-danger-text, #c2415f);
+      background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 92%);
+      border: 1px solid color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 65%);
+      border-radius: var(--studio-radius-sm, 4px);
+      padding: 0.15em 0.55em;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .pw-error__btn:hover {
+      background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 82%);
+      border-color: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 40%);
+    }
+    .pw-error__btn:active { transform: translateY(0.5px); }
+
+    .pw-error-dialog {
+      border: none;
+      border-radius: var(--studio-radius-md, 8px);
+      padding: 0;
+      width: min(90vw, 640px);
+      max-height: 80vh;
+      color: var(--studio-line, #1a1a1a);
+      background: var(--studio-fill, white);
+      box-shadow: var(--studio-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.3));
+    }
+    .pw-error-dialog::backdrop {
+      background: color-mix(in oklch, var(--studio-line, black), transparent 72%);
+      backdrop-filter: blur(2px);
+    }
+    .pw-error-dialog__head {
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.6rem 0.9rem;
+      background: var(--studio-fill, white);
+      border-bottom: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+      font-family: var(--studio-family-ui, var(--studio-family, system-ui));
+    }
+    .pw-error-dialog__title {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--studio-danger-text, #c2415f);
+    }
+    .pw-error-dialog__close {
+      flex: none;
+      font: inherit;
+      font-size: 1.2rem;
+      line-height: 1;
+      border: none;
+      background: transparent;
+      color: var(--studio-line, #1a1a1a);
+      opacity: 0.55;
+      cursor: pointer;
+      padding: 0.05em 0.3em;
+      border-radius: var(--studio-radius-sm, 4px);
+    }
+    .pw-error-dialog__close:hover {
+      opacity: 1;
+      background: var(--studio-fill-offset-20, rgba(0, 0, 0, 0.06));
+    }
+    .pw-error-dialog__body {
+      margin: 0;
+      padding: 0.9rem 1rem;
+      overflow: auto;
+      max-height: calc(80vh - 3rem);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
+      font-size: 0.75rem;
+      line-height: 1.55;
+      color: var(--studio-danger-text, #c2415f);
+    }
+  `;
+  document.head.append(style);
+}
+
 /**
  * `doc-url`/`tool-id`-driven legacy view behavior for `<patchwork-view>`. The
  * tool renders into an inner `.patchwork-view-content` element (the only thing
@@ -553,16 +672,11 @@ export class LegacyImpl {
         new MountedEvent({ url: this.#docUrl, toolId })
       );
     } catch (error) {
-      this.#content.append(
-        Object.assign(document.createElement("div"), {
-          innerHTML: /* html */ `
-            <p>oh no!</p>
-            <details>
-              <summary>${(error as Error).message ?? error}</summary>
-              <pre style="white-space: pre-wrap;">${(error as Error).stack ?? ""}</pre>
-            </details>
-          `,
-        })
+      const err = error as Error;
+      this.#displayError(
+        err?.message ?? String(error),
+        err?.stack,
+        error
       );
       console.error(error);
       this.#state = "error";
@@ -599,19 +713,66 @@ export class LegacyImpl {
     this.#teardowns.add(() => clearTimeout(timer));
   };
 
-  #displayError = (error: string) => {
-    const div = document.createElement("div");
-    div.style.display = "flex";
-    div.style.alignItems = "center";
-    div.style.justifyContent = "center";
-    div.style.transition = "opacity 2s linear 2s";
-    div.style.opacity = "0";
-    div.innerHTML = /* html */ `
-      <details style="display: flex"><summary></summary><pre style="white-space: pre-wrap;"><code>${error}</code></pre></details>
-    `;
-    this.#content.append(div);
-    setTimeout(() => {
-      div.style.opacity = "1";
+  // A collapsed `:( <summary> [see error]` line instead of a bare details
+  // triangle. `detail` (e.g. a stack) and the full text live in a modal dialog
+  // the button pops open; `original` is what gets re-logged on that click so
+  // it's easy to grab from the console again.
+  #displayError = (summary: string, detail?: string, original?: unknown) => {
+    ensureErrorStyles();
+
+    const full = detail ? `${summary}\n\n${detail}` : summary;
+
+    const dialog = document.createElement("dialog");
+    dialog.className = "pw-error-dialog";
+    const head = document.createElement("div");
+    head.className = "pw-error-dialog__head";
+    const title = document.createElement("div");
+    title.className = "pw-error-dialog__title";
+    title.textContent = ":( something went wrong";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "pw-error-dialog__close";
+    close.textContent = "×";
+    close.setAttribute("aria-label", "close");
+    head.append(title, close);
+    const body = document.createElement("pre");
+    body.className = "pw-error-dialog__body";
+    body.textContent = full;
+    dialog.append(head, body);
+
+    const wrap = document.createElement("div");
+    wrap.className = "pw-error";
+    wrap.style.opacity = "0";
+    wrap.style.transition = "opacity 0.4s ease";
+
+    const face = document.createElement("span");
+    face.className = "pw-error__face";
+    face.textContent = ":(";
+
+    const msg = document.createElement("span");
+    msg.className = "pw-error__msg";
+    msg.textContent = summary;
+    msg.title = summary;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pw-error__btn";
+    btn.textContent = "see error";
+    btn.addEventListener("click", () => {
+      console.error(original ?? full);
+      dialog.showModal();
+    });
+
+    close.addEventListener("click", () => dialog.close());
+    // Click on the backdrop (i.e. the dialog element itself) dismisses it.
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+
+    wrap.append(face, msg, btn, dialog);
+    this.#content.append(wrap);
+    requestAnimationFrame(() => {
+      wrap.style.opacity = "1";
     });
   };
 
