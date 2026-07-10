@@ -84,6 +84,10 @@ type HostElement = HTMLElement & {
 
 const ERROR_STYLE_ID = "patchwork-view-error-style";
 
+// Distinct ids so each view's `:(` can point its `popovertarget` at its own
+// flyout.
+let errorFlyoutSeq = 0;
+
 // One shared stylesheet for every view's error UI. Colours/fonts/radii come
 // from ../base/theming (the `--studio-*` custom properties) with plain
 // fallbacks so the error still reads sensibly outside a themed context.
@@ -124,68 +128,63 @@ function ensureErrorStyles() {
     }
     .pw-error__face[aria-expanded="true"] { transform: rotate(90deg); }
 
-    .pw-error-dialog {
-      border: none;
-      border-radius: var(--studio-radius-md, 8px);
+    /* Flyout: a Popover-API callout (top layer, so it escapes any overflow
+       clipping) positioned under the button in JS, with a caret + shadow. */
+    .pw-error-flyout {
+      position: fixed;
+      margin: 0;
+      inset: auto;
+      width: max-content;
+      max-width: min(360px, 92vw);
       padding: 0;
-      width: min(90vw, 640px);
-      max-height: 80vh;
-      color: var(--studio-line, #1a1a1a);
+      border: none;
+      background: transparent;
+      overflow: visible;
+      opacity: 0;
+      transform: scale(0.97);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .pw-error-flyout.is-shown { opacity: 1; transform: scale(1); }
+    .pw-error-flyout.is-below { transform-origin: top center; }
+    .pw-error-flyout.is-above { transform-origin: bottom center; }
+    .pw-error-flyout__box {
+      overflow: hidden;
+      border-radius: var(--studio-radius-md, 8px);
+      border: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
       background: var(--studio-fill, white);
       box-shadow: var(--studio-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.3));
     }
-    .pw-error-dialog::backdrop {
-      background: color-mix(in oklch, var(--studio-line, black), transparent 72%);
-      backdrop-filter: blur(2px);
-    }
-    .pw-error-dialog__head {
-      position: sticky;
-      top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0.6rem 0.9rem;
-      background: var(--studio-fill, white);
-      border-bottom: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
-      font-family: var(--studio-family-ui, var(--studio-family, system-ui));
-    }
-    .pw-error-dialog__title {
-      display: flex;
-      align-items: center;
-      gap: 0.4em;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--studio-danger-text, #c2415f);
-    }
-    .pw-error-dialog__close {
-      flex: none;
-      font: inherit;
-      font-size: 1.2rem;
-      line-height: 1;
-      border: none;
-      background: transparent;
-      color: var(--studio-line, #1a1a1a);
-      opacity: 0.55;
-      cursor: pointer;
-      padding: 0.05em 0.3em;
-      border-radius: var(--studio-radius-sm, 4px);
-    }
-    .pw-error-dialog__close:hover {
-      opacity: 1;
-      background: var(--studio-fill-offset-20, rgba(0, 0, 0, 0.06));
-    }
-    .pw-error-dialog__body {
+    .pw-error-flyout__body {
       margin: 0;
-      padding: 0.9rem 1rem;
+      padding: 0.6rem 0.7rem;
       overflow: auto;
-      max-height: calc(80vh - 3rem);
+      max-height: min(40vh, 320px);
       white-space: pre-wrap;
       word-break: break-word;
       font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
-      font-size: 0.75rem;
-      line-height: 1.55;
+      font-size: 0.7rem;
+      line-height: 1.5;
       color: var(--studio-danger-text, #c2415f);
+    }
+    /* A rotated square whose two outer edges are bordered, so it reads as a
+       little triangle poking out of the box. JS sets its left; the direction
+       class picks which edge it sits on. */
+    .pw-error-flyout__caret {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      background: var(--studio-fill, white);
+      transform: rotate(45deg);
+    }
+    .pw-error-flyout.is-below .pw-error-flyout__caret {
+      top: -6px;
+      border-top: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+      border-left: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+    }
+    .pw-error-flyout.is-above .pw-error-flyout__caret {
+      bottom: -6px;
+      border-right: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+      border-bottom: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
     }
   `;
   document.head.append(style);
@@ -704,9 +703,9 @@ export class LegacyImpl {
   };
 
   // A lone `:(` that fades in instead of a bare details triangle. Clicking it
-  // rotates it 90° and pops the full error (message + stack) in a modal dialog;
-  // `original` is what gets re-logged on that click so it's easy to grab from
-  // the console again.
+  // rotates it 90° and pops the full error (message + stack) as a caret flyout
+  // under the button; `original` is what gets re-logged when it opens so it's
+  // easy to grab from the console again.
   #displayError = (summary: string, detail?: string, original?: unknown) => {
     ensureErrorStyles();
 
@@ -717,28 +716,28 @@ export class LegacyImpl {
         ? `${summary}\n\n${detail}`
         : (detail ?? summary);
 
-    const dialog = document.createElement("dialog");
-    dialog.className = "pw-error-dialog";
-    const head = document.createElement("div");
-    head.className = "pw-error-dialog__head";
-    const title = document.createElement("div");
-    title.className = "pw-error-dialog__title";
-    title.textContent = ":( something went wrong";
-    const close = document.createElement("button");
-    close.type = "button";
-    close.className = "pw-error-dialog__close";
-    close.textContent = "×";
-    close.setAttribute("aria-label", "close");
-    head.append(title, close);
+    const flyoutId = `pw-error-flyout-${++errorFlyoutSeq}`;
+    // A `popover` renders in the top layer, so the flyout floats above (and
+    // escapes the overflow clipping of) whatever the view is nested in.
+    const flyout = document.createElement("div");
+    flyout.className = "pw-error-flyout";
+    flyout.id = flyoutId;
+    flyout.setAttribute("popover", "auto");
+    const box = document.createElement("div");
+    box.className = "pw-error-flyout__box";
     const body = document.createElement("pre");
-    body.className = "pw-error-dialog__body";
+    body.className = "pw-error-flyout__body";
     body.textContent = full;
-    dialog.append(head, body);
+    box.append(body);
+    const caret = document.createElement("div");
+    caret.className = "pw-error-flyout__caret";
+    flyout.append(box, caret);
 
     const wrap = document.createElement("div");
     wrap.className = "pw-error";
     wrap.style.opacity = "0";
-    wrap.style.transition = "opacity 0.6s ease";
+    // Stay invisible for 0.5s, then fade in over 1s.
+    wrap.style.transition = "opacity 1s ease 0.5s";
 
     const face = document.createElement("button");
     face.type = "button";
@@ -747,24 +746,62 @@ export class LegacyImpl {
     face.title = summary;
     face.setAttribute("aria-label", "see error");
     face.setAttribute("aria-expanded", "false");
-    face.addEventListener("click", () => {
-      console.error(original ?? full);
-      face.setAttribute("aria-expanded", "true");
-      dialog.showModal();
+    // Let the browser own the open/close (toggle + light-dismiss on click-out
+    // or Esc); we just react to it below.
+    face.setAttribute("popovertarget", flyoutId);
+
+    // Place the flyout under the button, centred on it, flipping above when
+    // there isn't room below and clamping to the viewport. The caret always
+    // points back at the button's centre.
+    const GAP = 9;
+    const MARGIN = 8;
+    const position = () => {
+      const r = face.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+      const fw = flyout.offsetWidth;
+      const fh = flyout.offsetHeight;
+
+      const below =
+        r.bottom + GAP + fh + MARGIN <= vh || r.top - GAP - fh - MARGIN < 0;
+      const top = below ? r.bottom + GAP : r.top - GAP - fh;
+
+      const centerX = r.left + r.width / 2;
+      const left = Math.max(MARGIN, Math.min(centerX - fw / 2, vw - MARGIN - fw));
+
+      flyout.style.top = `${top}px`;
+      flyout.style.left = `${left}px`;
+      flyout.classList.toggle("is-below", below);
+      flyout.classList.toggle("is-above", !below);
+
+      const caretX = Math.max(12, Math.min(centerX - left, fw - 12));
+      caret.style.left = `${caretX - 5.5}px`;
+    };
+
+    const reposition = () => {
+      if (flyout.matches(":popover-open")) position();
+    };
+
+    flyout.addEventListener("toggle", (event) => {
+      const open = (event as ToggleEvent).newState === "open";
+      face.setAttribute("aria-expanded", String(open));
+      if (open) {
+        console.error(original ?? full);
+        position();
+        requestAnimationFrame(() => flyout.classList.add("is-shown"));
+      } else {
+        flyout.classList.remove("is-shown");
+      }
     });
 
-    close.addEventListener("click", () => dialog.close());
-    // Click on the backdrop (i.e. the dialog element itself) dismisses it.
-    dialog.addEventListener("click", (event) => {
-      if (event.target === dialog) dialog.close();
-    });
-    // Rotation follows the dialog's open state, so :( turns back on any close
-    // (button, backdrop, or Esc).
-    dialog.addEventListener("close", () => {
-      face.setAttribute("aria-expanded", "false");
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    this.#teardowns.add(() => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
     });
 
-    wrap.append(face, dialog);
+    wrap.append(face, flyout);
     this.#content.append(wrap);
     requestAnimationFrame(() => {
       wrap.style.opacity = "1";
