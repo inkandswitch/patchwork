@@ -9,6 +9,10 @@ import {
   DEFAULT_CLASSIC_SYNC_SERVER,
 } from "./sync-config.js";
 import debug from "debug";
+import {
+  donatePort,
+  isWorkerErrorMessage,
+} from "@automerge/automerge-repo/worker-port";
 
 const serviceWorkerDebugging = debug.enabled("patchwork:serviceworker");
 const workerDebugging = debug.enabled("patchwork:automergeworker");
@@ -42,6 +46,7 @@ function installServiceWorkerLogForwarding(): void {
 }
 
 const key = "patchworkServiceWorkerCacheVersion";
+const defaultServiceWorkerCacheName = "patchwork";
 let nextRepoChannelId = 0;
 
 function bumpServiceWorkerCacheVersion() {
@@ -54,19 +59,13 @@ function getServiceWorkerCacheVersion() {
   return localStorage.getItem(key);
 }
 
-function getOrCreateServiceWorkerCacheVersion() {
-  const existing = getServiceWorkerCacheVersion();
-  if (existing) return existing;
-  return bumpServiceWorkerCacheVersion();
-}
-
 function setServiceWorkerCacheName(sw: ServiceWorker | null) {
   if (!sw) {
     throw new Error("no service worker!");
   }
   sw.postMessage({
     type: "cachename",
-    cachename: getOrCreateServiceWorkerCacheVersion(),
+    cachename: getServiceWorkerCacheVersion() ?? defaultServiceWorkerCacheName,
   });
 }
 
@@ -82,8 +81,10 @@ export function bumpServiceWorkerCache(
 function configureServiceWorker(sw: ServiceWorker | null) {
   if (!sw) return;
   sw.postMessage({ type: "debug", debug: serviceWorkerDebugging });
-  const cachename = getServiceWorkerCacheVersion();
-  if (cachename) sw.postMessage({ type: "cachename", cachename });
+  sw.postMessage({
+    type: "cachename",
+    cachename: getServiceWorkerCacheVersion() ?? defaultServiceWorkerCacheName,
+  });
 }
 
 // ── The automerge worker ───────────────────────────────────────────────
@@ -96,9 +97,42 @@ function configureServiceWorker(sw: ServiceWorker | null) {
 let automergeWorkerPath = "/automerge-worker.js";
 let automergeWorker: SharedWorker | undefined;
 
+// SharedWorker proxy entry that owns the subduction WebSocket. Chrome can't
+// spawn workers from inside a SharedWorker, so each tab offers this proxy's
+// port to the automerge worker (which requests one via its port provider).
+// Being a SharedWorker itself, the proxy — and the donated worker↔worker
+// port — outlives the donor tab. Emitted at /packages/... via externals.ts.
+const SUBDUCTION_IO_WORKER_URL =
+  "/packages/@automerge/automerge-repo/subduction-websocket-worker-shared.js";
+
+// Bench toggles for the subduction socket (see getSubductionEndpoints in
+// automerge-worker.ts), passed as query params because SharedWorker scope
+// has no localStorage — which also gives each configuration its own worker
+// instance, so bench arms can't share state.
+//   localStorage["patchwork:ws-mode"] = "inline"  → socket on worker thread
+//   localStorage["patchwork:ws-window"] = "16"    → WorkerWebSocketEndpoint
+//                                                    windowFrames override
+function workerBenchParams(): string {
+  const params = new URLSearchParams();
+  try {
+    for (const [key, param] of [
+      ["patchwork:ws-mode", "ws-mode"],
+      ["patchwork:ws-window", "ws-window"],
+    ] as const) {
+      const value = globalThis.localStorage?.getItem(key);
+      if (value) params.set(param, value);
+    }
+  } catch {
+    // No localStorage (shouldn't happen in a tab) — use defaults.
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
-    automergeWorker = new SharedWorker(automergeWorkerPath, {
+    const workerUrl = `${automergeWorkerPath}${workerBenchParams()}`;
+    automergeWorker = new SharedWorker(workerUrl, {
       name: "patchwork-automerge",
       type: "module",
     });
@@ -110,6 +144,21 @@ export function getAutomergeWorker(): SharedWorker {
     automergeWorker.port.addEventListener("message", (event: MessageEvent) => {
       if (event.data?.type === "sync-state") {
         dispatchSyncState(event.data as SyncStateDocMessage);
+        return;
+      }
+      if (isWorkerErrorMessage(event.data)) {
+        // Crash/skew reports relayed from the subduction io proxy (e.g.
+        // protocol-mismatch from a stale SW-cached worker chunk). Surface
+        // loudly — these otherwise only exist in chrome://inspect.
+        console.error("[subduction-io]", event.data);
+        return;
+      }
+      if (event.data?.type === "drift-samples") {
+        // Keepalive-drift samples from the worker's bench probe. Kept on a
+        // bounded window global for the Playwright bench to harvest.
+        const sink = ((window as any).__driftSamples ??= []) as number[];
+        sink.push(...event.data.samples);
+        if (sink.length > 10_000) sink.splice(0, sink.length - 10_000);
         return;
       }
       if (event.data?.type !== "console") return;
@@ -134,6 +183,16 @@ export function getAutomergeWorker(): SharedWorker {
       }
     });
     automergeWorker.port.postMessage({ type: "debug", debug: workerDebugging });
+
+    // Offer the subduction io proxy's port; the worker's port provider pulls
+    // it when (re)constructing its WorkerWebSocketEndpoint.
+    donatePort(automergeWorker.port, () => {
+      const io = new SharedWorker(SUBDUCTION_IO_WORKER_URL, {
+        type: "module",
+        name: "subduction-websocket",
+      });
+      return io.port;
+    });
 
     installWorkerDeathDetection(automergeWorker);
   }
@@ -363,6 +422,7 @@ export default async function setupServiceWorker(
   // Attach the SW→tab [lifecycle] log bridge as early as possible so boot /
   // install / activate markers from the controlling worker are rendered here.
   installServiceWorkerLogForwarding();
+  localStorage.removeItem(key);
 
   if (options?.workerPath) automergeWorkerPath = options.workerPath;
 

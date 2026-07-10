@@ -17,12 +17,10 @@ import {
   isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
-  parseAutomergeUrl,
   Repo,
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocumentId,
-  type UrlHeads,
 } from "@automerge/vanillajs/slim";
 import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import * as Automerge from "@automerge/automerge/slim";
@@ -173,9 +171,12 @@ export interface BootResult {
   accountDocHandle: DocHandle<AccountDoc>;
 }
 
-// Legacy big-patchwork hash shape: `slug--<documentId>[?=type]`.
+// Legacy big-patchwork hash shape: `<slug>--<documentId>[?…]`. The slug can
+// contain characters we don't otherwise permit (e.g. `drawing-(branch-1)`), so
+// we anchor on the `--` before the base58 document id and allow any non-query
+// characters ahead of it rather than a strict slug charset.
 const BIG_PATCHWORK_HASH_REGEX =
-  /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
+  /^(?<title>[^=&?/#]*)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
 
 const [automergeWasm, subductionWasm] = await Promise.all([
   fetch("/automerge.wasm?main").then((r) => r.bytes()),
@@ -356,7 +357,6 @@ export async function bootPatchworkSite(
     rootElement,
     repo,
     accountDocHandle,
-    moduleWatcher,
     titleSuffix: config.titleSuffix,
   });
 
@@ -533,10 +533,8 @@ function primeRootElement(
   const initialParams = new URLSearchParams(location.hash.slice(1));
   if (initialParams.has("frame")) {
     rootElement.setAttribute("tool-id", initialParams.get("frame")!);
-    const docId = initialParams.get("doc")?.replace(/^automerge:/, "");
-    const docUrl = docId
-      ? stringifyAutomergeUrl({ documentId: docId as DocumentId })
-      : accountDocHandle.url;
+    const docUrl =
+      docParamToUrl(initialParams.get("doc")) ?? accountDocHandle.url;
     rootElement.setAttribute("doc-url", docUrl);
   } else {
     rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
@@ -628,21 +626,56 @@ async function uncache(match: string): Promise<void> {
   }
 }
 
+// The `doc=` value is an automerge URL — we keep its `:` (and any `#`/`|`
+// heads) literal rather than percent-encoding it so links stay readable.
+const RAW_HASH_KEYS = new Set(["doc"]);
+// Emit hash params in a stable order so re-serializing the same logical params
+// yields a byte-identical string (avoids spurious `hashchange` round-trips).
+const HASH_KEY_ORDER = ["doc", "tool", "type", "title", "frame"];
+
+function serializeHashParams(params: URLSearchParams): string {
+  const emitted = new Set<string>();
+  const parts: string[] = [];
+  const emit = (key: string) => {
+    if (emitted.has(key)) return;
+    const value = params.get(key);
+    if (!value) return;
+    emitted.add(key);
+    parts.push(
+      `${key}=${RAW_HASH_KEYS.has(key) ? value : encodeURIComponent(value)}`
+    );
+  };
+  for (const key of HASH_KEY_ORDER) emit(key);
+  for (const key of params.keys()) emit(key);
+  return parts.join("&");
+}
+
+/**
+ * Coerce a `doc=` hash param to a full automerge URL. Accepts a full URL
+ * (`automerge:<id>[#heads]`) or a bare document id for backwards compatibility
+ * with older links.
+ */
+function docParamToUrl(docParam: string | null): AutomergeUrl | undefined {
+  if (!docParam) return undefined;
+  if (isValidAutomergeUrl(docParam as AutomergeUrl)) {
+    return docParam as AutomergeUrl;
+  }
+  const documentId = docParam.replace(/^automerge:/, "");
+  if (isValidDocumentId(documentId)) {
+    return stringifyAutomergeUrl({ documentId: documentId as DocumentId });
+  }
+  return undefined;
+}
+
 interface HashRoutingParams {
   rootElement: HTMLElement;
   repo: Repo;
   accountDocHandle: DocHandle<AccountDoc>;
-  moduleWatcher: ModuleWatcher;
   titleSuffix: string;
 }
 
 function installHashRouting(params: HashRoutingParams): void {
-  const { rootElement, repo, accountDocHandle, moduleWatcher, titleSuffix } =
-    params;
-
-  rootElement.addEventListener("patchwork:no-tool", (event) => {
-    moduleWatcher.loadSuggestedImportUrl(event.detail.url);
-  });
+  const { rootElement, repo, accountDocHandle, titleSuffix } = params;
 
   rootElement.addEventListener("patchwork:open-document", async (event) => {
     const params = new URLSearchParams(window.location.hash.slice(1));
@@ -652,21 +685,21 @@ function installHashRouting(params: HashRoutingParams): void {
       type?: string;
       title?: string;
     };
-    const { documentId, heads } = parseAutomergeUrl(url);
-    params.set("doc", documentId);
-    if (heads) params.set("heads", heads.join("|"));
-    else params.delete("heads");
+    // `doc` is now the full automerge URL — heads, if any, live inside it, so
+    // the separate `heads=` param is gone.
+    params.delete("heads");
+    params.set("doc", url);
     if (toolId) params.set("tool", toolId);
     else params.delete("tool");
     if (title) params.set("title", title);
     else params.delete("title");
     if (type) params.set("type", type);
     else params.delete("type");
-    window.location.hash = params.toString();
+    window.location.hash = serializeHashParams(params);
 
     try {
       const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
-        stringifyAutomergeUrl({ documentId, heads })
+        url
       );
       const doc = docHandle.doc();
       const docType = type || doc?.["@patchwork"]?.type;
@@ -709,51 +742,48 @@ function installHashRouting(params: HashRoutingParams): void {
 
   const handleHashChange = async () => {
     const hash = window.location.hash.slice(1);
-    const legacy = BIG_PATCHWORK_HASH_REGEX.exec(hash);
 
-    if (legacy) {
-      const documentId = legacy.groups?.docId;
-      if (isValidDocumentId(documentId)) {
-        openDocument(rootElement, stringifyAutomergeUrl({ documentId }));
-      }
+    // Legacy big-patchwork link (`<slug>--<docId>?…`): if the hash carries a
+    // `--` followed by a valid document id, normalize it to the canonical
+    // `#doc=automerge:<docId>` form and let routing re-run on the hashchange.
+    const legacyDocId = BIG_PATCHWORK_HASH_REGEX.exec(hash)?.groups?.docId;
+    if (legacyDocId && isValidDocumentId(legacyDocId)) {
+      window.location.hash = serializeHashParams(
+        new URLSearchParams({
+          doc: stringifyAutomergeUrl({ documentId: legacyDocId as DocumentId }),
+        })
+      );
       return;
     }
 
     // Bare automerge URL in hash: /#automerge:<documentId>
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
-      const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
+      const url = hash as AutomergeUrl;
       window.location.hash = "";
-      openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
+      openDocument(rootElement, url);
       return;
     }
 
     const params = new URLSearchParams(hash);
-    const documentId = params.get("doc")?.replace(/^automerge:/, "");
-    const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
+    const docUrl = docParamToUrl(params.get("doc"));
     const toolId = params.get("tool");
     const title = params.get("title");
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
-      const docUrl =
-        params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
+      const frameDocUrl = docUrl ?? accountDocHandle.url;
       if (
         rootElement.getAttribute("tool-id") !== frame ||
-        rootElement.getAttribute("doc-url") !== docUrl
+        rootElement.getAttribute("doc-url") !== frameDocUrl
       ) {
         rootElement.setAttribute("tool-id", frame);
-        rootElement.setAttribute("doc-url", docUrl);
+        rootElement.setAttribute("doc-url", frameDocUrl);
       }
     }
-    if (isValidDocumentId(documentId)) {
+    if (docUrl) {
       rootElement.dispatchEvent(
         new CustomEvent("patchwork:open-document", {
-          detail: {
-            url: stringifyAutomergeUrl({ documentId, heads }),
-            toolId,
-            title,
-            type,
-          },
+          detail: { url: docUrl, toolId, title, type },
         })
       );
     }

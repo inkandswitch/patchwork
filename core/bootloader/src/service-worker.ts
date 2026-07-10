@@ -13,10 +13,13 @@ import {
   type HandoffRequestMessage,
 } from "./types.js";
 
-let cachename = "default";
+const DEFAULT_CACHE_NAME = "patchwork";
+
+let cachename = DEFAULT_CACHE_NAME;
 let debugging = false;
 
-const cacheableStatuses = [200, 203, 204];
+// 0 is an opaque response, that also needs cached
+const cacheableStatuses = [0, 200, 203, 204];
 
 // The automerge worker times its own resolution out after 30s and replies
 // with an error, so this only fires when nobody is listening at all.
@@ -82,22 +85,19 @@ self.addEventListener("install", (event) => {
   (event as ExtendableEvent).waitUntil(self.skipWaiting());
 });
 
-async function clearOldCaches() {
-  const cacheWhitelist = [cachename];
-  const cacheNames = await caches.keys();
-  const deletePromises = cacheNames.map((cacheName) => {
-    if (!cacheWhitelist.includes(cacheName)) {
-      return caches.delete(cacheName);
-    }
-  });
-  await Promise.all(deletePromises);
+async function clearOtherCaches() {
+  await Promise.all(
+    (await caches.keys()).map((cacheName) => {
+      if (cacheName !== cachename) return caches.delete(cacheName);
+    })
+  );
 }
 
 self.addEventListener("activate", (event) => {
   lifecycle("info", "activate (claiming clients)");
   (event as ExtendableEvent).waitUntil(
     (async () => {
-      await clearOldCaches();
+      await clearOtherCaches();
       await self.clients.claim();
       // Pre-cache pages of already-open clients so they survive going offline
       // before the next navigation.
@@ -110,7 +110,7 @@ self.addEventListener("activate", (event) => {
             if (!existing) {
               const response = await fetch(client.url);
               if (cacheableStatuses.includes(response.status)) {
-                await cache.put(client.url, response);
+                await cachePage(cache, client.url, response);
               }
             }
           } catch {
@@ -128,11 +128,19 @@ self.addEventListener("message", async (event) => {
     if (cachename == nextCachename) {
       return;
     }
-    console.info(
-      `deleting ${cachename} and setting cache name to ${nextCachename}`
-    );
-    caches.delete(cachename);
+    console.info(`moving from cache ${cachename} to ${nextCachename}`);
+    if (cachename === DEFAULT_CACHE_NAME) {
+      const defaultCache = await caches.open(cachename);
+      const nextCache = await caches.open(nextCachename);
+      await Promise.all(
+        (await defaultCache.keys()).map(async (request) => {
+          const response = await defaultCache.match(request);
+          if (response) await nextCache.put(request, response);
+        })
+      );
+    }
     cachename = nextCachename;
+    await clearOtherCaches();
   } else if (event.data.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
@@ -216,18 +224,45 @@ function handoff(
   });
 }
 
-function withSpecialHeaders(response: {
+function makeResponse(response: {
   body?: BodyInit | ReadableStream<Uint8Array> | null;
   status?: number;
   headers?: HeadersInit;
 }): Response {
-  const headers = new Headers(response.headers);
-  headers.set("cross-origin-embedder-policy", "credentialless");
-  headers.set("cross-origin-resource-policy", "cross-origin");
   return new Response(response.body ?? null, {
     status: response.status ?? 200,
-    headers,
+    headers: response.headers,
   });
+}
+
+function indexRequestFor(request: Request | string): Request | undefined {
+  const url = new URL(typeof request === "string" ? request : request.url);
+  if (url.origin !== self.location.origin) return undefined;
+  url.pathname = "/index.html";
+  url.search = "";
+  url.hash = "";
+  return new Request(url.href);
+}
+
+function rootRequestFor(request: Request | string): Request | undefined {
+  const url = new URL(typeof request === "string" ? request : request.url);
+  if (url.origin !== self.location.origin) return undefined;
+  url.pathname = "/";
+  url.search = "";
+  url.hash = "";
+  return new Request(url.href);
+}
+
+async function cachePage(
+  cache: Cache,
+  request: Request | string,
+  response: Response
+) {
+  const indexRequest = indexRequestFor(request);
+  if (indexRequest) await cache.put(indexRequest, response.clone());
+  const rootRequest = rootRequestFor(request);
+  if (rootRequest) await cache.put(rootRequest, response.clone());
+  await cache.put(request, response);
 }
 
 // ── Fetch handler ──────────────────────────────────────────────────────
@@ -260,7 +295,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
         if (handoffURL) {
           if (match) {
             log(`serving ${handoffURL} from cache ${cachename}`);
-            return withSpecialHeaders(match);
+            return match;
           }
 
           log(`handing ${handoffURL} off to the automerge worker`);
@@ -271,7 +306,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           if (reply.type === "response") {
             // errors, redirects and other things that shouldn't be cached
             log(`serving handed-off response for ${handoffURL}`, reply);
-            return withSpecialHeaders(reply.response);
+            return makeResponse(reply.response);
           }
 
           // reply.type === "cached": the automerge worker has put the
@@ -284,7 +319,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
             );
           }
           log(`serving ${handoffURL} from cache ${cachename} after handoff`);
-          return withSpecialHeaders(cached);
+          return cached;
         } else {
           // fetch() rejects on network error / abort rather than resolving;
           // keep the error so we can surface it in the 503 body below.
@@ -306,7 +341,13 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
                 cacheableStatuses.includes(response.status)) &&
               /^https?:/.test(request.url)
             ) {
-              await cache.put(request, response.clone()).catch((error) => {
+              const cachedResponse = response.clone();
+              await (
+                request.mode === "navigate" ||
+                request.destination === "document"
+                  ? cachePage(cache, request, cachedResponse)
+                  : cache.put(request, cachedResponse)
+              ).catch((error) => {
                 log(`error caching ${request.url} in ${cachename}`, error);
               });
             } else {

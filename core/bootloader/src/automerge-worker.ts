@@ -18,9 +18,11 @@ import { initializeWasm, hasHeads } from "@automerge/automerge/slim";
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
 import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
+import { makePortProvider } from "@automerge/automerge-repo/worker-port";
 
 import {
   Repo,
+  WorkerWebSocketEndpoint,
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
@@ -72,6 +74,35 @@ const WORKER_BOOT_TIME = Date.now();
 // post back over every connected tab's control port, tagged [automerge-worker].
 
 const controlPorts = new Set<MessagePort>();
+
+// ── Keepalive-drift probe (bench instrumentation) ───────────────────────
+// Measures how late a 1s timer fires on this thread — i.e. how late an
+// in-thread keepalive would be under sync/wasm load. Cheap (one Date.now()
+// per second); samples are batched to every connected tab as drift-samples
+// messages, which setup.ts accumulates on window.__driftSamples for the
+// Playwright bench (e2e/tests/bench-ws.spec.ts).
+const DRIFT_INTERVAL_MS = 1_000;
+const DRIFT_BATCH_SIZE = 5;
+{
+  let expected = Date.now() + DRIFT_INTERVAL_MS;
+  let batch: number[] = [];
+  setInterval(() => {
+    const now = Date.now();
+    batch.push(Math.max(0, now - expected));
+    expected = now + DRIFT_INTERVAL_MS;
+    if (batch.length >= DRIFT_BATCH_SIZE) {
+      const samples = batch;
+      batch = [];
+      for (const port of controlPorts) {
+        try {
+          port.postMessage({ type: "drift-samples", samples });
+        } catch {
+          // Port torn down mid-iteration — its close handler cleans up.
+        }
+      }
+    }
+  }, DRIFT_INTERVAL_MS);
+}
 
 // ── Per-tab sync-state subscriptions ────────────────────────────────────
 // Each tab's control port subscribes to the documents it cares about; we push
@@ -211,11 +242,55 @@ if (useKeyhiveSyncServer) {
   };
 }
 
-const SUBDUCTION_ENDPOINTS = [
-  useKeyhiveSyncServer
-    ? "wss://keyhive.sync.automerge.org"
-    : "wss://subduction.sync.inkandswitch.com",
-];
+const SUBDUCTION_SYNC_URL = useKeyhiveSyncServer
+  ? "wss://keyhive.sync.automerge.org"
+  : "wss://subduction.sync.inkandswitch.com";
+
+// The subduction WebSocket lives in its own worker so socket I/O (and
+// keepalive pongs) keep flowing even when this SharedWorker's thread is busy
+// syncing. We can't spawn that worker ourselves — Chrome doesn't expose the
+// Worker constructor inside SharedWorkerGlobalScope — so tabs spawn the
+// shipped SharedWorker proxy entry and donate its port to us (donatePort in
+// setup.ts). The provider hands WorkerWebSocketEndpoint whichever port is
+// current, healing across late arrival and proxy-worker restarts.
+const subductionPortProvider = makePortProvider();
+
+// A/B bench toggle: the tab appends ?ws-mode=inline to our URL (SharedWorker
+// scope has no localStorage; see getAutomergeWorker in setup.ts). "inline"
+// passes the bare URL string so the socket lives on this thread — the
+// pre-worker behaviour — as the control arm for benchmarking the
+// worker-based endpoint. Default: "worker".
+const WS_MODE =
+  new URL(self.location.href).searchParams.get("ws-mode") === "inline"
+    ? "inline"
+    : "worker";
+
+// Optional windowFrames override (bench knob — max un-acked frames the io
+// proxy delivers before pausing; endpoint default is 128).
+const WS_WINDOW_FRAMES =
+  Number(new URL(self.location.href).searchParams.get("ws-window")) ||
+  undefined;
+
+// Memoized so a repo-construction retry (getRepoHive clears its promise on
+// failure) reuses the same endpoint instead of leaking one per attempt.
+let subductionEndpoints: (WorkerWebSocketEndpoint | string)[] | null = null;
+function getSubductionEndpoints(): (WorkerWebSocketEndpoint | string)[] {
+  if (!subductionEndpoints) {
+    log(`subduction websocket mode: ${WS_MODE}`);
+    subductionEndpoints =
+      WS_MODE === "inline"
+        ? [SUBDUCTION_SYNC_URL]
+        : [
+            new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
+              worker: subductionPortProvider.source,
+              ...(WS_WINDOW_FRAMES
+                ? { windowFrames: WS_WINDOW_FRAMES }
+                : {}),
+            }),
+          ];
+  }
+  return subductionEndpoints;
+}
 const RESOLVE_TIMEOUT_MS = 30_000;
 
 // Backoff re-sync of stuck/diverged docs. Only this worker is connected to the
@@ -321,7 +396,7 @@ function getRepoHive() {
             return peerId.includes("storage-server");
           },
           enableRemoteHeadsGossiping: true,
-          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          subductionWebsocketEndpoints: getSubductionEndpoints(),
         });
 
         console.log(
@@ -359,7 +434,7 @@ function getRepoHive() {
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
           storage: new IndexedDBWorkerStorageAdapter(),
-          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          subductionWebsocketEndpoints: getSubductionEndpoints(),
           enableRemoteHeadsGossiping: true,
         },
       });
@@ -722,10 +797,14 @@ function dropRepoChannel(repo: Repo, channel: RepoChannel) {
   // wrapper: make sure the underlying port is disconnected and closed too.
   try {
     channel.mcAdapter.disconnect();
-  } catch {}
+  } catch {
+    // Already disconnected by removeNetworkAdapter above.
+  }
   try {
     channel.port.close();
-  } catch {}
+  } catch {
+    // Port already closed by the departing tab.
+  }
 }
 
 async function dropConnection(connection: Connection) {
@@ -856,6 +935,11 @@ self.addEventListener("connect", (event) => {
     handleControlMessage(messageEvent as MessageEvent, controlPort, connection);
   });
 
+  // Let the subduction port provider negotiate over this tab's control port
+  // (the tab side runs donatePort; the messages are channel-tagged so they
+  // coexist with our control protocol above).
+  subductionPortProvider.attachClient(controlPort);
+
   // Fires when the owning page is destroyed. Browsers without the close
   // event fall back to the adapters' lazy useWeakRef cleanup.
   controlPort.addEventListener("close", () => {
@@ -980,11 +1064,10 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
       ? (new Uint8Array(resolved.content) as BlobPart)
       : resolved.content;
 
-  const headers = new Headers({ "content-type": resolved.type });
-  headers.set("cross-origin-embedder-policy", "credentialless");
-  headers.set("cross-origin-resource-policy", "cross-origin");
-
-  return new Response(body, { status: 200, headers });
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": resolved.type },
+  });
 }
 
 // ── Handoff: resolve special URLs for the service worker ──────────────
