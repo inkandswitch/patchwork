@@ -720,7 +720,12 @@ export class LegacyImpl {
   #displayError = (summary: string, detail?: string, original?: unknown) => {
     ensureErrorStyles();
 
-    const full = detail ? `${summary}\n\n${detail}` : summary;
+    // Stacks usually begin with the message already; only prepend the summary
+    // as a headline when the detail doesn't lead with it.
+    const full =
+      detail && !detail.startsWith(summary)
+        ? `${summary}\n\n${detail}`
+        : (detail ?? summary);
 
     const dialog = document.createElement("dialog");
     dialog.className = "pw-error-dialog";
