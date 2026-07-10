@@ -96,43 +96,33 @@ function ensureErrorStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5em;
       height: 100%;
       min-height: 2.5em;
       padding: 1rem;
       box-sizing: border-box;
-      font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
-      font-size: 0.8125rem;
-      color: var(--studio-danger-text, #c2415f);
     }
+    /* A single clickable :( in a little box that turns 90° when open. */
     .pw-error__face {
-      font-size: 1.15em;
-      opacity: 0.9;
-      user-select: none;
-    }
-    .pw-error__msg {
-      opacity: 0.85;
-      max-width: 40ch;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .pw-error__btn {
-      flex: none;
-      font: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
+      font-size: 1.25rem;
+      line-height: 1;
       color: var(--studio-danger-text, #c2415f);
       background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 92%);
-      border: 1px solid color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 65%);
-      border-radius: var(--studio-radius-sm, 4px);
-      padding: 0.15em 0.55em;
+      border: 1px solid color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 60%);
+      border-radius: var(--studio-radius-md, 8px);
+      padding: 0.25em 0.4em;
       cursor: pointer;
-      transition: background 0.12s ease, border-color 0.12s ease;
+      user-select: none;
+      transition: transform 0.25s ease, background 0.12s ease, border-color 0.12s ease;
     }
-    .pw-error__btn:hover {
-      background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 82%);
+    .pw-error__face:hover {
+      background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 84%);
       border-color: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 40%);
     }
-    .pw-error__btn:active { transform: translateY(0.5px); }
+    .pw-error__face[aria-expanded="true"] { transform: rotate(90deg); }
 
     .pw-error-dialog {
       border: none;
@@ -713,10 +703,10 @@ export class LegacyImpl {
     this.#teardowns.add(() => clearTimeout(timer));
   };
 
-  // A collapsed `:( <summary> [see error]` line instead of a bare details
-  // triangle. `detail` (e.g. a stack) and the full text live in a modal dialog
-  // the button pops open; `original` is what gets re-logged on that click so
-  // it's easy to grab from the console again.
+  // A lone `:(` that fades in instead of a bare details triangle. Clicking it
+  // rotates it 90° and pops the full error (message + stack) in a modal dialog;
+  // `original` is what gets re-logged on that click so it's easy to grab from
+  // the console again.
   #displayError = (summary: string, detail?: string, original?: unknown) => {
     ensureErrorStyles();
 
@@ -748,23 +738,18 @@ export class LegacyImpl {
     const wrap = document.createElement("div");
     wrap.className = "pw-error";
     wrap.style.opacity = "0";
-    wrap.style.transition = "opacity 0.4s ease";
+    wrap.style.transition = "opacity 0.6s ease";
 
-    const face = document.createElement("span");
+    const face = document.createElement("button");
+    face.type = "button";
     face.className = "pw-error__face";
     face.textContent = ":(";
-
-    const msg = document.createElement("span");
-    msg.className = "pw-error__msg";
-    msg.textContent = summary;
-    msg.title = summary;
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "pw-error__btn";
-    btn.textContent = "see error";
-    btn.addEventListener("click", () => {
+    face.title = summary;
+    face.setAttribute("aria-label", "see error");
+    face.setAttribute("aria-expanded", "false");
+    face.addEventListener("click", () => {
       console.error(original ?? full);
+      face.setAttribute("aria-expanded", "true");
       dialog.showModal();
     });
 
@@ -773,8 +758,13 @@ export class LegacyImpl {
     dialog.addEventListener("click", (event) => {
       if (event.target === dialog) dialog.close();
     });
+    // Rotation follows the dialog's open state, so :( turns back on any close
+    // (button, backdrop, or Esc).
+    dialog.addEventListener("close", () => {
+      face.setAttribute("aria-expanded", "false");
+    });
 
-    wrap.append(face, msg, btn, dialog);
+    wrap.append(face, dialog);
     this.#content.append(wrap);
     requestAnimationFrame(() => {
       wrap.style.opacity = "1";
