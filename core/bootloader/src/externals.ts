@@ -29,6 +29,7 @@ const externals = [
   "@codemirror/state",
   "@codemirror/view",
   "@codemirror/language",
+  "@codemirror/commands",
 
   // rip
   "solid-js",
