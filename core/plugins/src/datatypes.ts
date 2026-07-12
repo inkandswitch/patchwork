@@ -56,7 +56,7 @@ export const createDocOfDatatype2 = async <D>(
     const importUrl = datatype.importUrl;
     (doc as any)["@patchwork"] = {
       type: datatype.id,
-      ...(isHttpUrl(importUrl) ? { suggestedImportUrl: importUrl } : {}),
+      suggestedImportUrl: importUrl
     };
     if (change) {
       change(doc);
