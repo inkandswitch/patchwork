@@ -4,10 +4,7 @@ import type {
   LoadedPlugin,
   PluginDescription,
 } from "./registry/types.js";
-import {
-  isHttpUrl,
-  type HasPatchworkMetadata,
-} from "@inkandswitch/patchwork-filesystem";
+import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 // Datatype implementation interface
