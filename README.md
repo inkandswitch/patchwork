@@ -9,5 +9,13 @@ git clone https://github.com/inkandswitch/patchwork
 cd patchwork
 pnpm install
 pnpm build
-SITE=patchwork pnpm dev
+pnpm dev
 ```
+
+For a specific site run
+
+```shell
+SITE=tiny-patchwork pnpm dev
+```
+
+The development server will be running at [localhost:5173](http://localhost:5173/).
