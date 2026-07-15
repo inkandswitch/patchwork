@@ -13,18 +13,16 @@
  */
 import {
   type DocHandle,
-  IndexedDBStorageAdapter,
   initializeWasm,
   isValidAutomergeUrl,
   isValidDocumentId,
   MessageChannelNetworkAdapter,
-  parseAutomergeUrl,
   Repo,
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocumentId,
-  type UrlHeads,
 } from "@automerge/vanillajs/slim";
+import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import * as Automerge from "@automerge/automerge/slim";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim";
 import {
@@ -35,6 +33,7 @@ import {
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
+import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
 declare const __SITE_NAME__: string;
 const siteName =
@@ -49,6 +48,7 @@ const useKeyhiveSyncServer =
   typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
+import { importAutomergeModuleViaWorker } from "./module-loader.js";
 import {
   openDocument,
   registerPatchworkViewElement,
@@ -65,6 +65,7 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
+<<<<<<< HEAD
 import setupServiceWorker from "./setup.js";
 import { initTabDiagnostics, type TabDiagnostics } from "./diagnostics.js";
 import {
@@ -73,6 +74,16 @@ import {
   type DropResult,
 } from "./idb-maintenance.js";
 import type { ServiceWorkerRepoChannelListener } from "./types.js";
+=======
+import setupServiceWorker, {
+  getAutomergeWorker,
+  lifecycleLoggingEnabled,
+} from "./setup.js";
+import type {
+  ServiceWorkerRepoChannelListener,
+  SyncStateDocMessage,
+} from "./types.js";
+>>>>>>> origin/main
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
 
@@ -127,11 +138,19 @@ declare global {
       packages: ModuleWatcher;
       plugins: typeof plugins;
       accountDocHandle: DocHandle<AccountDoc>;
+      signer?: {
+        peerId: string;
+        verifyingKey: string;
+      };
       sw: {
         connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
           listener: ServiceWorkerRepoChannelListener
         ) => Promise<() => void>;
+        subscribeSyncState: (
+          documentId: string,
+          listener: (update: SyncStateDocMessage) => void
+        ) => () => void;
       };
     };
     uncache: (match: string) => Promise<void>;
@@ -220,9 +239,12 @@ export interface BootResult {
   accountDocHandle: DocHandle<AccountDoc>;
 }
 
-// Legacy big-patchwork hash shape: `slug--<documentId>[?=type]`.
+// Legacy big-patchwork hash shape: `<slug>--<documentId>[?…]`. The slug can
+// contain characters we don't otherwise permit (e.g. `drawing-(branch-1)`), so
+// we anchor on the `--` before the base58 document id and allow any non-query
+// characters ahead of it rather than a strict slug charset.
 const BIG_PATCHWORK_HASH_REGEX =
-  /(?<title>[A-Za-z0-9-]+)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)(?<type>\?=[^&?]+)?/;
+  /^(?<title>[^=&?/#]*)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
 
 const [automergeWasm, subductionWasm] = await Promise.all([
   fetch("/automerge.wasm?main").then((r) => r.bytes()),
@@ -246,12 +268,15 @@ export async function bootPatchworkSite(
   tabDiagnostics.breadcrumb("boot-start");
   showLoadingAnimation();
   log(`booting`, config);
+  installLifecycleLogging();
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
   tabDiagnostics.breadcrumb("wasm-initialized");
 
+  log("enabling workers");
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
+<<<<<<< HEAD
   tabDiagnostics.breadcrumb("service-worker-setup");
 
   let hive: AutomergeRepoKeyhive | undefined;
@@ -265,39 +290,92 @@ export async function bootPatchworkSite(
   const workerPort = await portPromise;
   tabDiagnostics.breadcrumb("worker-port-ready");
 
-  let repo: Repo;
-  if (config.keyhive) {
-    initKeyhiveWasm();
+=======
+  log("workers ready");
 
-    ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
-      createRepo: (config) => new Repo(config),
-      storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
-      peerIdSuffix: siteName + Math.random().toString(36).slice(2),
-      networkAdapter: new MessageChannelNetworkAdapter(workerPort),
-      automaticArchiveIngestion: true,
-      cachingMode: "periodic",
-      onlyShareWithHardcodedServerPeerId: false,
-      // ARK selects the relay via `syncServer` ("keyhive" | "subduction").
-      // Defaults to "subduction".
-      ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
-      repo: {
-        storage: new IndexedDBStorageAdapter(),
-        enableRemoteHeadsGossiping: true,
-      },
-    }));
+  let hive: AutomergeRepoKeyhive | undefined;
+>>>>>>> origin/main
+  let repo: Repo;
+  let tabSignerIdentity: { peerId: string; verifyingKey: string } | undefined;
+
+  // If a Repo is already on `window` — an embedding context provided one before
+  // this entry ran — reuse it and its keyhive instead of standing up a fresh
+  // realm-local Repo, so we share the same documents and sync/keyhive context.
+  // Otherwise create our own below.
+  if (window.repo) {
+    log("using existing Repo from window");
+    repo = window.repo;
+    hive = window.hive;
   } else {
-    repo = new Repo({
-      network: [new MessageChannelNetworkAdapter(workerPort)],
-      storage: new IndexedDBStorageAdapter(),
-      async sharePolicy(peerId) {
-        return peerId.includes("automerge-worker");
-      },
-      enableRemoteHeadsGossiping: true,
-      peerId:
-        `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+    // Get the initial automerge-worker port via subscribeToRepoChannel,
+    // then pass it to keyhive init which wraps it in its own network adapter.
+    let resolvePort!: (port: MessagePort) => void;
+    const portPromise = new Promise<MessagePort>((r) => {
+      resolvePort = r;
     });
+    log("subscribing to repo channel");
+    await sw.subscribeToRepoChannel(resolvePort);
+    log("repo channel subscribed");
+    const workerPort = await portPromise;
+
+    if (config.keyhive) {
+      log("setting up keyhive");
+      initKeyhiveWasm();
+
+      ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
+        createRepo: (config) => new Repo(config),
+        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
+        peerIdSuffix: siteName + Math.random().toString(36).slice(2),
+        networkAdapter: new MessageChannelNetworkAdapter(workerPort),
+        automaticArchiveIngestion: true,
+        cachingMode: "periodic",
+        onlyShareWithHardcodedServerPeerId: false,
+        // ARK selects the relay via `syncServer` ("keyhive" | "subduction").
+        // Defaults to "subduction".
+        ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+        repo: {
+          storage: new IndexedDBWorkerStorageAdapter(),
+          enableRemoteHeadsGossiping: true,
+        },
+      }));
+      log("keyhive setup complete");
+    } else {
+      log("creating repo");
+      // Pass an explicit signer (instead of the Repo's internal default) so we
+      // can expose tab signer identity on window.patchwork for dev inspection.
+      // The tab never connects via Subduction (no endpoints/adapters), so this
+      // id never goes on the wire.
+      const tabSigner = new MemorySigner();
+      repo = new Repo({
+        network: [new MessageChannelNetworkAdapter(workerPort)],
+        storage: new IndexedDBWorkerStorageAdapter(),
+        signer: tabSigner,
+        async sharePolicy(peerId) {
+          return peerId.includes("automerge-worker");
+        },
+        enableRemoteHeadsGossiping: true,
+        peerId:
+          `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+      });
+      tabSignerIdentity = {
+        peerId: tabSigner.peerId().toString(),
+        verifyingKey: (
+          tabSigner.verifyingKey() as Uint8Array<ArrayBufferLike> & {
+            toHex(): string;
+          }
+        ).toHex(),
+      };
+      console.log("[patchwork] tab subduction identity:", tabSignerIdentity);
+      log("repo created");
+    }
   }
+  log("popping repo on window");
+  window.repo = repo;
+  log("await repo.networkSubsystem.whenReady()");
+
   await repo.networkSubsystem.whenReady();
+  log("networkSubsystem ready");
+
   if (hive) {
     (hive.networkAdapter as any).syncKeyhive?.();
   }
@@ -336,7 +414,10 @@ export async function bootPatchworkSite(
     repo,
     buildSystemSources(defaultModuleSources),
     onModuleLoaded,
-    unregisterPlugins
+    unregisterPlugins,
+    // Discover an Automerge package's plugin descriptors off the main thread;
+    // each plugin's load() re-imports the package (at heads) on this thread.
+    importAutomergeModuleViaWorker
   );
   tabDiagnostics.setModuleWatcher(moduleWatcher);
 
@@ -361,9 +442,11 @@ export async function bootPatchworkSite(
     packages: moduleWatcher,
     plugins,
     accountDocHandle,
+    ...(tabSignerIdentity ? { signer: tabSignerIdentity } : {}),
     sw: {
       connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
+      subscribeSyncState: sw.subscribeSyncState,
     },
   };
   window.uncache = uncache;
@@ -372,7 +455,6 @@ export async function bootPatchworkSite(
     rootElement,
     repo,
     accountDocHandle,
-    moduleWatcher,
     titleSuffix: config.titleSuffix,
   });
 
@@ -458,6 +540,46 @@ function installDevConsoleGlobals(
   window.getRepoChannel = getRepoChannel;
 }
 
+/**
+ * Log this tab's Page Lifecycle + connectivity transitions (visibility,
+ * freeze, bfcache, online/offline) so they line up against the SharedWorker's
+ * sync-socket reaps. [lifecycle]-tagged, on by default.
+ */
+function installLifecycleLogging(): void {
+  if (typeof document === "undefined") return;
+  const opts = { capture: true } as const;
+  const note = (label: string, extra?: unknown) => {
+    if (!lifecycleLoggingEnabled()) return;
+    const msg = `[lifecycle] ${new Date().toISOString()} ${label}`;
+    if (extra === undefined) console.info(msg);
+    else console.info(msg, extra);
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    () => note(`visibilitychange → ${document.visibilityState}`),
+    opts
+  );
+  document.addEventListener("freeze", () => note("freeze (tab suspended)"), opts);
+  document.addEventListener("resume", () => note("resume (tab unsuspended)"), opts);
+  window.addEventListener(
+    "pageshow",
+    e => note("pageshow", { persisted: (e as PageTransitionEvent).persisted }),
+    opts
+  );
+  window.addEventListener(
+    "pagehide",
+    e => note("pagehide", { persisted: (e as PageTransitionEvent).persisted }),
+    opts
+  );
+  window.addEventListener("online", () => note("online"), opts);
+  window.addEventListener("offline", () => note("offline"), opts);
+
+  note(
+    `lifecycle logging installed (visibilityState=${document.visibilityState}, hasFocus=${document.hasFocus()})`
+  );
+}
+
 function onModuleLoaded(name: string, mod: any): void {
   if (Array.isArray(mod.plugins)) {
     log(
@@ -509,10 +631,8 @@ function primeRootElement(
   const initialParams = new URLSearchParams(location.hash.slice(1));
   if (initialParams.has("frame")) {
     rootElement.setAttribute("tool-id", initialParams.get("frame")!);
-    const docId = initialParams.get("doc")?.replace(/^automerge:/, "");
-    const docUrl = docId
-      ? stringifyAutomergeUrl({ documentId: docId as DocumentId })
-      : accountDocHandle.url;
+    const docUrl =
+      docParamToUrl(initialParams.get("doc")) ?? accountDocHandle.url;
     rootElement.setAttribute("doc-url", docUrl);
   } else {
     rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
@@ -604,21 +724,56 @@ async function uncache(match: string): Promise<void> {
   }
 }
 
+// The `doc=` value is an automerge URL — we keep its `:` (and any `#`/`|`
+// heads) literal rather than percent-encoding it so links stay readable.
+const RAW_HASH_KEYS = new Set(["doc"]);
+// Emit hash params in a stable order so re-serializing the same logical params
+// yields a byte-identical string (avoids spurious `hashchange` round-trips).
+const HASH_KEY_ORDER = ["doc", "tool", "type", "title", "frame"];
+
+function serializeHashParams(params: URLSearchParams): string {
+  const emitted = new Set<string>();
+  const parts: string[] = [];
+  const emit = (key: string) => {
+    if (emitted.has(key)) return;
+    const value = params.get(key);
+    if (!value) return;
+    emitted.add(key);
+    parts.push(
+      `${key}=${RAW_HASH_KEYS.has(key) ? value : encodeURIComponent(value)}`
+    );
+  };
+  for (const key of HASH_KEY_ORDER) emit(key);
+  for (const key of params.keys()) emit(key);
+  return parts.join("&");
+}
+
+/**
+ * Coerce a `doc=` hash param to a full automerge URL. Accepts a full URL
+ * (`automerge:<id>[#heads]`) or a bare document id for backwards compatibility
+ * with older links.
+ */
+function docParamToUrl(docParam: string | null): AutomergeUrl | undefined {
+  if (!docParam) return undefined;
+  if (isValidAutomergeUrl(docParam as AutomergeUrl)) {
+    return docParam as AutomergeUrl;
+  }
+  const documentId = docParam.replace(/^automerge:/, "");
+  if (isValidDocumentId(documentId)) {
+    return stringifyAutomergeUrl({ documentId: documentId as DocumentId });
+  }
+  return undefined;
+}
+
 interface HashRoutingParams {
   rootElement: HTMLElement;
   repo: Repo;
   accountDocHandle: DocHandle<AccountDoc>;
-  moduleWatcher: ModuleWatcher;
   titleSuffix: string;
 }
 
 function installHashRouting(params: HashRoutingParams): void {
-  const { rootElement, repo, accountDocHandle, moduleWatcher, titleSuffix } =
-    params;
-
-  rootElement.addEventListener("patchwork:no-tool", (event) => {
-    moduleWatcher.loadSuggestedImportUrl(event.detail.url);
-  });
+  const { rootElement, repo, accountDocHandle, titleSuffix } = params;
 
   rootElement.addEventListener("patchwork:open-document", async (event) => {
     const params = new URLSearchParams(window.location.hash.slice(1));
@@ -628,21 +783,21 @@ function installHashRouting(params: HashRoutingParams): void {
       type?: string;
       title?: string;
     };
-    const { documentId, heads } = parseAutomergeUrl(url);
-    params.set("doc", documentId);
-    if (heads) params.set("heads", heads.join("|"));
-    else params.delete("heads");
+    // `doc` is now the full automerge URL — heads, if any, live inside it, so
+    // the separate `heads=` param is gone.
+    params.delete("heads");
+    params.set("doc", url);
     if (toolId) params.set("tool", toolId);
     else params.delete("tool");
     if (title) params.set("title", title);
     else params.delete("title");
     if (type) params.set("type", type);
     else params.delete("type");
-    window.location.hash = params.toString();
+    window.location.hash = serializeHashParams(params);
 
     try {
       const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
-        stringifyAutomergeUrl({ documentId, heads })
+        url
       );
       const doc = docHandle.doc();
       const docType = type || doc?.["@patchwork"]?.type;
@@ -685,51 +840,57 @@ function installHashRouting(params: HashRoutingParams): void {
 
   const handleHashChange = async () => {
     const hash = window.location.hash.slice(1);
-    const legacy = BIG_PATCHWORK_HASH_REGEX.exec(hash);
 
-    if (legacy) {
-      const documentId = legacy.groups?.docId;
-      if (isValidDocumentId(documentId)) {
-        openDocument(rootElement, stringifyAutomergeUrl({ documentId }));
-      }
+    // Legacy big-patchwork link (`<slug>--<docId>?…`): if the hash carries a
+    // `--` followed by a valid document id, normalize it to the canonical
+    // `#doc=automerge:<docId>` form and let routing re-run on the hashchange.
+    const legacyDocId = BIG_PATCHWORK_HASH_REGEX.exec(hash)?.groups?.docId;
+    if (legacyDocId && isValidDocumentId(legacyDocId)) {
+      window.location.hash = serializeHashParams(
+        new URLSearchParams({
+          doc: stringifyAutomergeUrl({ documentId: legacyDocId as DocumentId }),
+        })
+      );
       return;
     }
 
     // Bare automerge URL in hash: /#automerge:<documentId>
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
-      const { documentId, heads } = parseAutomergeUrl(hash as AutomergeUrl);
+      const url = hash as AutomergeUrl;
       window.location.hash = "";
+<<<<<<< HEAD
       openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
+=======
+      openDocument(rootElement, url);
+>>>>>>> origin/main
       return;
     }
 
     const params = new URLSearchParams(hash);
-    const documentId = params.get("doc")?.replace(/^automerge:/, "");
-    const heads = params.get("heads")?.split("|") as UrlHeads | undefined;
+    const docUrl = docParamToUrl(params.get("doc"));
     const toolId = params.get("tool");
     const title = params.get("title");
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
+<<<<<<< HEAD
       const docUrl =
         params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
+=======
+      const frameDocUrl = docUrl ?? accountDocHandle.url;
+>>>>>>> origin/main
       if (
         rootElement.getAttribute("tool-id") !== frame ||
-        rootElement.getAttribute("doc-url") !== docUrl
+        rootElement.getAttribute("doc-url") !== frameDocUrl
       ) {
         rootElement.setAttribute("tool-id", frame);
-        rootElement.setAttribute("doc-url", docUrl);
+        rootElement.setAttribute("doc-url", frameDocUrl);
       }
     }
-    if (isValidDocumentId(documentId)) {
+    if (docUrl) {
       rootElement.dispatchEvent(
         new CustomEvent("patchwork:open-document", {
-          detail: {
-            url: stringifyAutomergeUrl({ documentId, heads }),
-            toolId,
-            title,
-            type,
-          },
+          detail: { url: docUrl, toolId, title, type },
         })
       );
     }

@@ -5,13 +5,18 @@ import {
   type Repo,
 } from "@automerge/automerge-repo";
 import {
+  getSuggestedImportUrl,
   getType,
+  importModuleFromFolderDocUrl,
+  importModuleFromHttpUrl,
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
+import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import {
   getFallbackTool,
   getRegistry,
   isLoadablePlugin,
+  registerPlugins,
   type LoadedTool,
   type ToolElement,
 } from "@inkandswitch/patchwork-plugins";
@@ -20,9 +25,23 @@ import {
   docIdFromAutomergeUrl,
   type initializeAutomergeRepoKeyhive,
 } from "@automerge/automerge-repo-keyhive";
-import { MountedEvent, NoToolEvent, UnmountedEvent } from "./events.js";
+import { MountedEvent, UnmountedEvent } from "./events.js";
 
 const log = debug("patchwork:elements:legacy");
+
+/**
+ * Whether `tool` supports `type` only through a `*` wildcard rather than by
+ * naming the datatype explicitly. A wildcard-only match means the tool is a
+ * generic fallback (e.g. a raw viewer), not a tool built for this datatype.
+ */
+function isWildcardOnlyMatch(
+  tool: LoadedTool,
+  type: string | undefined
+): boolean {
+  const datatypes = tool.supportedDatatypes;
+  const list = datatypes === "*" ? ["*"] : datatypes;
+  return list.includes("*") && (type === undefined || !list.includes(type));
+}
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
@@ -65,18 +84,123 @@ type HostElement = HTMLElement & {
   hive?: AutomergeRepoKeyhive;
 };
 
+const ERROR_STYLE_ID = "patchwork-view-error-style";
+
+// Distinct ids so each view's `:(` can point its `popovertarget` at its own
+// flyout.
+let errorFlyoutSeq = 0;
+
+// One shared stylesheet for every view's error UI. Colours/fonts/radii come
+// from ../base/theming (the `--studio-*` custom properties) with plain
+// fallbacks so the error still reads sensibly outside a themed context.
+function ensureErrorStyles() {
+  if (document.getElementById(ERROR_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = ERROR_STYLE_ID;
+  style.textContent = /* css */ `
+    .pw-error {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 2.5em;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    /* A single clickable :( in a little box that turns 90° when open. */
+    .pw-error__face {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--studio-danger-text, #c2415f);
+      background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 92%);
+      border: 1px solid color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 60%);
+      border-radius: var(--studio-radius-md, 8px);
+      padding: 0.25em 0.4em;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.25s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+    .pw-error__face:hover {
+      background: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 84%);
+      border-color: color-mix(in oklch, var(--studio-danger-text, #c2415f), transparent 40%);
+    }
+    .pw-error__face[aria-expanded="true"] { transform: rotate(90deg); }
+
+    /* Flyout: a Popover-API callout (top layer, so it escapes any overflow
+       clipping) positioned under the button in JS, with a caret + shadow. */
+    .pw-error-flyout {
+      position: fixed;
+      margin: 0;
+      inset: auto;
+      width: max-content;
+      max-width: min(360px, 92vw);
+      padding: 0;
+      border: none;
+      background: transparent;
+      overflow: visible;
+      opacity: 0;
+      transform: scale(0.97);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .pw-error-flyout.is-shown { opacity: 1; transform: scale(1); }
+    .pw-error-flyout.is-below { transform-origin: top center; }
+    .pw-error-flyout.is-above { transform-origin: bottom center; }
+    .pw-error-flyout__box {
+      overflow: hidden;
+      border-radius: var(--studio-radius-md, 8px);
+      border: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+      background: var(--studio-fill, white);
+      box-shadow: var(--studio-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.3));
+    }
+    .pw-error-flyout__body {
+      margin: 0;
+      padding: 0.6rem 0.7rem;
+      overflow: auto;
+      max-height: min(40vh, 320px);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--studio-family-code, ui-monospace, "SF Mono", Menlo, monospace);
+      font-size: 0.7rem;
+      line-height: 1.5;
+      color: var(--studio-danger-text, #c2415f);
+    }
+    /* A rotated square whose two outer edges are bordered, so it reads as a
+       little triangle poking out of the box. JS sets its left; the direction
+       class picks which edge it sits on. */
+    .pw-error-flyout__caret {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      background: var(--studio-fill, white);
+      transform: rotate(45deg);
+    }
+    .pw-error-flyout.is-below .pw-error-flyout__caret {
+      top: -6px;
+      border-top: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+      border-left: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+    }
+    .pw-error-flyout.is-above .pw-error-flyout__caret {
+      bottom: -6px;
+      border-right: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+      border-bottom: 1px solid var(--studio-fill-offset-30, rgba(0, 0, 0, 0.12));
+    }
+  `;
+  document.head.append(style);
+}
+
 /**
- * `doc-url`/`tool-id`-driven legacy view behavior, hosted on a
- * `<patchwork-view>` in legacy mode. The view is the rendering surface
- * itself (not a wrapper around a child element) so that events
- * dispatched on `<patchwork-view>` and listeners attached by the
- * mounted tool land on the same DOM node.
- *
- * Lifecycle methods mirror the custom-element callbacks the host needs
- * to forward into the impl.
+ * `doc-url`/`tool-id`-driven legacy view behavior for `<patchwork-view>`. The
+ * tool renders into an inner `.patchwork-view-content` element (the only thing
+ * wiped on re-render); the host stays the identity/event node, leaving safe
+ * sibling space for augmentations a tool's re-render can't trample.
  */
 export class LegacyImpl {
   #element: HostElement;
+  #content: HostElement;
   #repo: Repo;
   #docUrl: AutomergeUrl | null = null;
   #toolId: string | null = null;
@@ -92,11 +216,22 @@ export class LegacyImpl {
   #handlingKeyhiveSync = false;
   #pendingKeyhiveSync = false;
   #unableNoAccess = false;
+  #toast: HTMLElement | null = null;
+  #toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(element: HTMLElement, params: LegacyImplParams) {
     this.#element = element as HostElement;
     this.#repo = params.repo;
     this.#element.hive = params.hive;
+
+    // `height: 100%` makes the wrapper fill the host so tools that size/measure
+    // their root element see the host's box (the wrapper carries the
+    // `repo`/`hive` surface tools read off the element they're handed).
+    this.#content = document.createElement("div") as HostElement;
+    this.#content.className = "patchwork-view-content";
+    this.#content.style.width = "100%";
+    this.#content.style.height = "100%";
+    this.#content.hive = params.hive;
   }
 
   get docUrl(): AutomergeUrl | null {
@@ -127,6 +262,7 @@ export class LegacyImpl {
 
   connectedCallback(): void {
     this.#capturedParent = this.#element.parentElement;
+    this.#element.appendChild(this.#content);
     this.#docUrl = this.#element.getAttribute(
       ATTRS.docUrl
     ) as AutomergeUrl | null;
@@ -134,8 +270,9 @@ export class LegacyImpl {
     void this.#init();
   }
 
-  disconnectedCallback(): Promise<void> {
-    return this.#teardown();
+  async disconnectedCallback(): Promise<void> {
+    await this.#teardown();
+    this.#content.remove();
   }
 
   connectedMoveCallback(): void {
@@ -277,6 +414,7 @@ export class LegacyImpl {
 
     const repo = this.#repo;
     this.#element.repo = repo;
+    this.#content.repo = repo;
 
     let handle: DocHandle<HasPatchworkMetadata>;
     try {
@@ -315,12 +453,13 @@ export class LegacyImpl {
     }
 
     this.#teardowns.clear();
+    this.#dismissToast(true);
     this.#keyhiveRetrySetup = false;
     this.#unableNoAccess = false;
     this.#handle = null;
     this.#tool = null;
     this.#requestedToolImports.clear();
-    this.#element.textContent = "";
+    this.#content.textContent = "";
     this.#state = State.none;
 
     if (wasMounted && mountedUrl && mountedToolId) {
@@ -427,16 +566,41 @@ export class LegacyImpl {
     this.#resetDisplay();
 
     const doc = this.#handle.doc();
-    this.#fallbackId = getFallbackTool(doc)?.id;
+    const fallbackTool = getFallbackTool(doc);
+    this.#fallbackId = fallbackTool?.id;
     const fallingBack = !this.#toolId;
     const toolId = this.#toolId || this.#fallbackId;
 
+    // A wildcard fallback tool (`supportedDatatypes: ["*"]`) supports this doc
+    // only generically, not because it's built for the doc's datatype — it's a
+    // stopgap we render while we try to load something better.
+    const mountingWildcardStopgap =
+      fallingBack &&
+      !!fallbackTool &&
+      isWildcardOnlyMatch(fallbackTool, getType(doc));
+
     if (fallingBack) {
       console.warn(`falling back to default tool for ${this.#docUrl}`);
+      // For a wildcard stopgap, also kick off the doc's suggested import so a
+      // datatype-specific tool can load, at which point the registry listeners
+      // above swap it in (it sorts ahead of the wildcard as the new fallback).
+      // We still render the wildcard tool in the meantime; `#notool` dedupes so
+      // re-renders don't re-import.
+      if (mountingWildcardStopgap) {
+        this.#notool();
+      }
     }
 
     if (!toolId) {
       this.#state = "unable";
+      // The doc's datatype has no registered tool and no explicit tool was
+      // requested. If the doc points at a module to import, kick that off and
+      // wait — the registry listeners re-render once it registers a supporting
+      // tool. Otherwise there's genuinely nothing to open.
+      if (this.#notool()) {
+        this.#displayLoading("");
+        return;
+      }
       const hasPatchworkMetadata = doc && "@patchwork" in doc;
       if (!hasPatchworkMetadata) {
         console.warn(`Document ${this.#docUrl} is missing @patchwork metadata`);
@@ -453,12 +617,14 @@ export class LegacyImpl {
     this.#tool = getRegistry<LoadedTool>("patchwork:tool").get(toolId) ?? null;
 
     if (!this.#tool) {
-      this.#notool();
-    }
-
-    if (!this.#tool) {
       this.#state = "unable";
-      this.#displayError(`I couldn't find the tool with id ${toolId}.`);
+      // The requested tool isn't loaded. If the doc suggests a module to import
+      // it from, wait for that; otherwise there's nothing more to try.
+      if (this.#notool()) {
+        this.#displayLoading(toolId);
+      } else {
+        this.#displayError(`I couldn't find the tool with id ${toolId}.`);
+      }
       return;
     }
 
@@ -477,32 +643,31 @@ export class LegacyImpl {
     }
 
     try {
-      // `#init` set `this.#element.repo` before reaching `#queueRender`, so
-      // the host now satisfies `ToolElement`'s non-optional `repo`.
+      // `#init` set the content element's `repo` before reaching `#queueRender`,
+      // so it satisfies `ToolElement`'s non-optional `repo`.
       const cleanup = this.#tool.module(
         this.#handle,
-        this.#element as ToolElement
+        this.#content as ToolElement
       );
       if (typeof cleanup === "function") {
         this.#teardowns.add(cleanup);
       } else {
         console.warn(`return a cleanup function from ${toolId}`);
       }
+      // Mounting a datatype-specific tool (or an explicitly chosen one) means an
+      // editor was found, so retire the "loading suggested import" toast. A
+      // wildcard stopgap keeps it up — we're still waiting on the real tool.
+      if (!mountingWildcardStopgap) this.#dismissToast();
       this.#state = fallingBack ? "fallback" : "rendered";
       this.#element.dispatchEvent(
         new MountedEvent({ url: this.#docUrl, toolId })
       );
     } catch (error) {
-      this.#element.append(
-        Object.assign(document.createElement("div"), {
-          innerHTML: /* html */ `
-            <p>oh no!</p>
-            <details>
-              <summary>${(error as Error).message ?? error}</summary>
-              <pre style="white-space: pre-wrap;">${(error as Error).stack ?? ""}</pre>
-            </details>
-          `,
-        })
+      const err = error as Error;
+      this.#displayError(
+        err?.message ?? String(error),
+        err?.stack,
+        error
       );
       console.error(error);
       this.#state = "error";
@@ -532,48 +697,264 @@ export class LegacyImpl {
         animation: pw-loading-pulse 2s ease-in-out infinite;
       "></div>
     `;
-    this.#element.append(div);
+    this.#content.append(div);
     const timer = setTimeout(() => {
       div.style.opacity = "1";
     }, 2000);
     this.#teardowns.add(() => clearTimeout(timer));
   };
 
-  #displayError = (error: string) => {
-    const div = document.createElement("div");
-    div.style.display = "flex";
-    div.style.alignItems = "center";
-    div.style.justifyContent = "center";
-    div.style.transition = "opacity 2s linear 2s";
-    div.style.opacity = "0";
-    div.innerHTML = /* html */ `
-      <details style="display: flex"><summary></summary><pre style="white-space: pre-wrap;"><code>${error}</code></pre></details>
-    `;
-    this.#element.append(div);
-    setTimeout(() => {
-      div.style.opacity = "1";
+  // A lone `:(` that fades in instead of a bare details triangle. Clicking it
+  // rotates it 90° and pops the full error (message + stack) as a caret flyout
+  // under the button; `original` is what gets re-logged when it opens so it's
+  // easy to grab from the console again.
+  #displayError = (summary: string, detail?: string, original?: unknown) => {
+    ensureErrorStyles();
+
+    // Stacks usually begin with the message already; only prepend the summary
+    // as a headline when the detail doesn't lead with it.
+    const full =
+      detail && !detail.startsWith(summary)
+        ? `${summary}\n\n${detail}`
+        : (detail ?? summary);
+
+    const flyoutId = `pw-error-flyout-${++errorFlyoutSeq}`;
+    // A `popover` renders in the top layer, so the flyout floats above (and
+    // escapes the overflow clipping of) whatever the view is nested in.
+    const flyout = document.createElement("div");
+    flyout.className = "pw-error-flyout";
+    flyout.id = flyoutId;
+    flyout.setAttribute("popover", "auto");
+    const box = document.createElement("div");
+    box.className = "pw-error-flyout__box";
+    const body = document.createElement("pre");
+    body.className = "pw-error-flyout__body";
+    body.textContent = full;
+    box.append(body);
+    const caret = document.createElement("div");
+    caret.className = "pw-error-flyout__caret";
+    flyout.append(box, caret);
+
+    const wrap = document.createElement("div");
+    wrap.className = "pw-error";
+    wrap.style.opacity = "0";
+    // Stay invisible for 0.5s, then fade in over 1s.
+    wrap.style.transition = "opacity 1s ease 0.5s";
+
+    const face = document.createElement("button");
+    face.type = "button";
+    face.className = "pw-error__face";
+    face.textContent = ":(";
+    face.title = summary;
+    face.setAttribute("aria-label", "see error");
+    face.setAttribute("aria-expanded", "false");
+    // Let the browser own the open/close (toggle + light-dismiss on click-out
+    // or Esc); we just react to it below.
+    face.setAttribute("popovertarget", flyoutId);
+
+    // Place the flyout under the button, centred on it, flipping above when
+    // there isn't room below and clamping to the viewport. The caret always
+    // points back at the button's centre.
+    const GAP = 9;
+    const MARGIN = 8;
+    const position = () => {
+      const r = face.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+      const fw = flyout.offsetWidth;
+      const fh = flyout.offsetHeight;
+
+      const below =
+        r.bottom + GAP + fh + MARGIN <= vh || r.top - GAP - fh - MARGIN < 0;
+      const top = below ? r.bottom + GAP : r.top - GAP - fh;
+
+      const centerX = r.left + r.width / 2;
+      const left = Math.max(MARGIN, Math.min(centerX - fw / 2, vw - MARGIN - fw));
+
+      flyout.style.top = `${top}px`;
+      flyout.style.left = `${left}px`;
+      flyout.classList.toggle("is-below", below);
+      flyout.classList.toggle("is-above", !below);
+
+      const caretX = Math.max(12, Math.min(centerX - left, fw - 12));
+      caret.style.left = `${caretX - 5.5}px`;
+    };
+
+    const reposition = () => {
+      if (flyout.matches(":popover-open")) position();
+    };
+
+    flyout.addEventListener("toggle", (event) => {
+      const open = (event as ToggleEvent).newState === "open";
+      face.setAttribute("aria-expanded", String(open));
+      if (open) {
+        console.error(original ?? full);
+        position();
+        requestAnimationFrame(() => flyout.classList.add("is-shown"));
+      } else {
+        flyout.classList.remove("is-shown");
+      }
+    });
+
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    this.#teardowns.add(() => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    });
+
+    wrap.append(face, flyout);
+    this.#content.append(wrap);
+    requestAnimationFrame(() => {
+      wrap.style.opacity = "1";
     });
   };
 
-  #notool(): void {
-    if (!this.#docUrl || !this.#handle) return;
-    const suggestedImportUrl =
-      this.#handle.doc()?.["@patchwork"]?.suggestedImportUrl;
+  /**
+   * When no tool is available for the current doc, import the module the doc
+   * suggests (its `suggestedImportUrl`) and register its plugins, so the tool
+   * registry gains a supporting tool and this view's registry listeners
+   * re-render. Returns whether an import was kicked off, so the caller can show
+   * a loading state instead of an error while the module loads.
+   *
+   * The import runs in this element's own realm rather than being delegated to
+   * a single top-level handler, so a `<patchwork-view>` nested in an embedded
+   * context (e.g. an iframe an event couldn't bubble out of) still resolves its
+   * own tool.
+   */
+  #notool(): boolean {
+    if (!this.#docUrl || !this.#handle) return false;
+    const suggestedImportUrl = getSuggestedImportUrl(this.#handle.doc());
     if (
       !suggestedImportUrl ||
       this.#requestedToolImports.has(suggestedImportUrl)
     ) {
-      return;
+      return false;
     }
     this.#requestedToolImports.add(suggestedImportUrl);
+    this.#showToast("No editor found", `Loading ${suggestedImportUrl}`);
+    void this.#importSuggestedModule(suggestedImportUrl);
+    return true;
+  }
 
-    log("dispatching patchwork:no-tool for", this.#docUrl);
-    this.#element.dispatchEvent(new NoToolEvent({ url: this.#docUrl }));
+  /**
+   * A small o-message-style toast, floated over the view, announcing that we're
+   * fetching the doc's suggested import because no built-in editor matched. It's
+   * appended to the host element (never `#content`, which a tool's re-render
+   * wipes) and retired by `#dismissToast` once a real tool mounts or on
+   * teardown; a timer clears it if the import never resolves.
+   */
+  #showToast(title: string, body: string): void {
+    this.#dismissToast(true);
+
+    // Give the absolutely-positioned toast a containing block without
+    // clobbering an inline position the host author may have set.
+    if (!this.#element.style.position) this.#element.style.position = "relative";
+
+    const toast = document.createElement("div");
+    toast.setAttribute("role", "status");
+    Object.assign(toast.style, {
+      position: "absolute",
+      top: "16px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      zIndex: "2147483000",
+      maxWidth: "min(360px, calc(100% - 32px))",
+      boxSizing: "border-box",
+      display: "flex",
+      gap: "10px",
+      padding: "12px 14px",
+      borderRadius: "6px",
+      background: "#eaf1fb",
+      color: "#1a1a1a",
+      borderLeft: "4px solid #1e5fbf",
+      boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18)",
+      font: "13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      opacity: "0",
+      transition: "opacity 0.25s ease",
+      pointerEvents: "none",
+    } as Partial<CSSStyleDeclaration>);
+
+    const dot = document.createElement("div");
+    Object.assign(dot.style, {
+      flex: "0 0 auto",
+      width: "8px",
+      height: "8px",
+      marginTop: "4px",
+      borderRadius: "50%",
+      background: "#1e5fbf",
+    });
+    dot.animate(
+      [
+        { opacity: "0.3", transform: "scale(0.6)" },
+        { opacity: "1", transform: "scale(1)" },
+        { opacity: "0.3", transform: "scale(0.6)" },
+      ],
+      { duration: 1400, iterations: Infinity, easing: "ease-in-out" }
+    );
+
+    const inner = document.createElement("div");
+    inner.style.minWidth = "0";
+
+    const titleEl = document.createElement("div");
+    titleEl.textContent = title;
+    titleEl.style.fontWeight = "600";
+
+    const bodyEl = document.createElement("div");
+    bodyEl.textContent = body;
+    Object.assign(bodyEl.style, {
+      marginTop: "2px",
+      opacity: "0.75",
+      overflowWrap: "anywhere",
+    } as Partial<CSSStyleDeclaration>);
+
+    inner.append(titleEl, bodyEl);
+    toast.append(dot, inner);
+    this.#element.append(toast);
+    this.#toast = toast;
+
+    requestAnimationFrame(() => {
+      toast.style.opacity = "1";
+    });
+
+    this.#toastTimer = setTimeout(() => this.#dismissToast(), 8000);
+  }
+
+  #dismissToast(immediate = false): void {
+    if (this.#toastTimer) {
+      clearTimeout(this.#toastTimer);
+      this.#toastTimer = null;
+    }
+    const toast = this.#toast;
+    if (!toast) return;
+    this.#toast = null;
+    if (immediate) {
+      toast.remove();
+      return;
+    }
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
+  }
+
+  async #importSuggestedModule(url: string): Promise<void> {
+    log("importing suggested module", url);
+    try {
+      // A `suggestedImportUrl` can be an `automerge:` URL — a folder doc served
+      // through the service worker — as well as a plain HTTP(S) module bundle.
+      const mod = isValidAutomergeUrl(url)
+        ? await importModuleFromFolderDocUrl(url)
+        : await importModuleFromHttpUrl(url);
+      if (Array.isArray(mod?.plugins)) {
+        registerPlugins(mod.plugins, url);
+      } else {
+        console.warn(`suggested module ${url} has no plugins array`);
+      }
+    } catch (error) {
+      console.error(`Failed to import suggested module ${url}`, error);
+    }
   }
 
   #resetDisplay = () => {
-    this.#element.replaceChildren();
-    this.#element.style.alignItems = "";
-    this.#element.style.justifyContent = "";
+    this.#content.replaceChildren();
   };
 }

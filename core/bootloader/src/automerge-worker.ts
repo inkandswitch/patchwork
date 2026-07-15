@@ -18,21 +18,25 @@ import { initializeWasm, hasHeads } from "@automerge/automerge/slim";
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
 import { WebCryptoSigner } from "@automerge/automerge-subduction/slim";
+import { makePortProvider } from "@automerge/automerge-repo/worker-port";
 
 import {
   Repo,
+  WorkerWebSocketEndpoint,
   isValidAutomergeUrl,
   parseAutomergeUrl,
   stringifyAutomergeUrl,
   type AutomergeUrl,
   type DocHandle,
+  type DocumentId,
+  type UrlHeads,
 } from "@automerge/automerge-repo/slim";
 import { resolvePath } from "@inkandswitch/patchwork-filesystem";
 
 // Small adapters — bundled directly into the worker
-import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
+import { IndexedDBWorkerStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb/IndexedDBWorkerStorageAdapter";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
-import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
+import { WebSocketWorkerClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import {
   initializeAutomergeRepoKeyhiveRustWithRepo,
   initKeyhiveWasm,
@@ -41,12 +45,19 @@ import {
 
 import {
   HANDOFF_CHANNEL,
+  SYNCSTATE_CHANNEL,
   type HandoffCachedMessage,
   type HandoffOnlineMessage,
   type HandoffRequest,
   type HandoffRequestMessage,
   type HandoffResponseMessage,
+<<<<<<< HEAD
   type WorkerDiagnostics,
+=======
+  type SyncStateBroadcast,
+  type SyncStateDocMessage,
+  type SyncStateRequestMessage,
+>>>>>>> origin/main
 } from "./types.js";
 import { RingLogger } from "./logger.js";
 
@@ -71,12 +82,87 @@ function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// Per-boot identity so a tab can detect a worker *restart*: a fresh instance
+// means a new repo peerId + cold in-memory state, so the tab's docs must be
+// re-subscribed. Sent in `hello` (on connect) and every `pong`.
+const WORKER_INSTANCE_ID = Math.random().toString(36).slice(2);
+const WORKER_BOOT_TIME = Date.now();
+
 // ── Forward console output + uncaught errors to the main thread ─────────
 // The SharedWorker has its own console that's a pain to find (chrome://inspect
 // → shared workers). Patch console.* and the global error handlers to also
 // post back over every connected tab's control port, tagged [automerge-worker].
 
 const controlPorts = new Set<MessagePort>();
+
+// ── Keepalive-drift probe (bench instrumentation) ───────────────────────
+// Measures how late a 1s timer fires on this thread — i.e. how late an
+// in-thread keepalive would be under sync/wasm load. Cheap (one Date.now()
+// per second); samples are batched to every connected tab as drift-samples
+// messages, which setup.ts accumulates on window.__driftSamples for the
+// Playwright bench (e2e/tests/bench-ws.spec.ts).
+const DRIFT_INTERVAL_MS = 1_000;
+const DRIFT_BATCH_SIZE = 5;
+{
+  let expected = Date.now() + DRIFT_INTERVAL_MS;
+  let batch: number[] = [];
+  setInterval(() => {
+    const now = Date.now();
+    batch.push(Math.max(0, now - expected));
+    expected = now + DRIFT_INTERVAL_MS;
+    if (batch.length >= DRIFT_BATCH_SIZE) {
+      const samples = batch;
+      batch = [];
+      for (const port of controlPorts) {
+        try {
+          port.postMessage({ type: "drift-samples", samples });
+        } catch {
+          // Port torn down mid-iteration — its close handler cleans up.
+        }
+      }
+    }
+  }, DRIFT_INTERVAL_MS);
+}
+
+// ── Per-tab sync-state subscriptions ────────────────────────────────────
+// Each tab's control port subscribes to the documents it cares about; we push
+// only those docs' heads back down that port (addressed — tab A never sees tab
+// B's docs), and drop a port's whole subscription set when it closes (the tab
+// went away), so there's nothing to reference-count or time out. The global
+// connection/whoami signals still go over SYNCSTATE_CHANNEL.
+const syncWatchers = new Map<MessagePort, Set<string>>();
+
+// Installed by setupSyncStateBroadcast once the repo's snapshot exists, so a
+// fresh `sync-sub` can be replayed the doc's current heads immediately. Null
+// until then; subscriptions taken during boot are replayed when it installs.
+let replaySyncForPort:
+  | ((documentId: string, port: MessagePort) => void)
+  | null = null;
+
+function syncSubscribe(port: MessagePort, documentId: string): void {
+  let docs = syncWatchers.get(port);
+  if (!docs) syncWatchers.set(port, (docs = new Set()));
+  if (docs.has(documentId)) return;
+  docs.add(documentId);
+  replaySyncForPort?.(documentId, port);
+}
+
+function syncUnsubscribe(port: MessagePort, documentId: string): void {
+  syncWatchers.get(port)?.delete(documentId);
+}
+
+// Push one document's heads to every control port currently watching it.
+function pushSyncState(message: SyncStateDocMessage): void {
+  for (const [port, docs] of syncWatchers) {
+    if (!docs.has(message.documentId)) continue;
+    try {
+      port.postMessage(message);
+    } catch {
+      // Port already gone; its close handler will reap the entry.
+    }
+  }
+}
+
 // Logs emitted before any tab has connected (e.g. during wasm boot) would
 // otherwise be lost — buffer a bounded number and flush on first connect.
 const preConnectBuffer: Array<{ level: string; args: string[] }> = [];
@@ -146,6 +232,35 @@ self.addEventListener("unhandledrejection", (event) => {
   ]);
 });
 
+// Boot marker, buffered until the first tab connects. A new instance id means
+// the worker restarted (fresh peerId + cold state).
+console.warn(
+  `[lifecycle] ${new Date(WORKER_BOOT_TIME).toISOString()} automerge ` +
+    `SharedWorker started (instance ${WORKER_INSTANCE_ID})`
+);
+
+// ── Suspension watchdog ─────────────────────────────────────────────────
+// A SharedWorker gets no lifecycle events, so infer freeze/suspend from timer
+// drift. A large gap means keepalive pongs stalled and the server may have
+// reaped us.
+const WATCHDOG_TICK_MS = 5_000;
+const WATCHDOG_GAP_FACTOR = 2;
+let watchdogLast = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const gap = now - watchdogLast;
+  watchdogLast = now;
+  if (gap > WATCHDOG_TICK_MS * WATCHDOG_GAP_FACTOR) {
+    console.warn(
+      `[lifecycle] worker resumed after ~${Math.round(gap / 1000)}s gap ` +
+        `(timer expected every ${WATCHDOG_TICK_MS / 1000}s) — likely ` +
+        `suspended/frozen/throttled; WebSocket keepalive pongs were not sent ` +
+        `during this window, so the sync server may have reaped us. at ` +
+        `${new Date(now).toISOString()}`
+    );
+  }
+}, WATCHDOG_TICK_MS);
+
 // Sync server selection. Sub is the default. Build with KEYHIVE_SYNC_SERVER=true
 // to target keyhive.sync.automerge.org.
 const useKeyhiveSyncServer =
@@ -160,17 +275,69 @@ if (useKeyhiveSyncServer) {
   };
 }
 
-const SUBDUCTION_ENDPOINTS = [
-  useKeyhiveSyncServer
-    ? "wss://keyhive.sync.automerge.org"
-    : "wss://subduction.sync.inkandswitch.com",
-];
+const SUBDUCTION_SYNC_URL = useKeyhiveSyncServer
+  ? "wss://keyhive.sync.automerge.org"
+  : "wss://subduction.sync.inkandswitch.com";
+
+// The subduction WebSocket lives in its own worker so socket I/O (and
+// keepalive pongs) keep flowing even when this SharedWorker's thread is busy
+// syncing. We can't spawn that worker ourselves — Chrome doesn't expose the
+// Worker constructor inside SharedWorkerGlobalScope — so tabs spawn the
+// shipped SharedWorker proxy entry and donate its port to us (donatePort in
+// setup.ts). The provider hands WorkerWebSocketEndpoint whichever port is
+// current, healing across late arrival and proxy-worker restarts.
+const subductionPortProvider = makePortProvider();
+
+// A/B bench toggle: the tab appends ?ws-mode=inline to our URL (SharedWorker
+// scope has no localStorage; see getAutomergeWorker in setup.ts). "inline"
+// passes the bare URL string so the socket lives on this thread — the
+// pre-worker behaviour — as the control arm for benchmarking the
+// worker-based endpoint. Default: "worker".
+const WS_MODE =
+  new URL(self.location.href).searchParams.get("ws-mode") === "inline"
+    ? "inline"
+    : "worker";
+
+// Optional windowFrames override (bench knob — max un-acked frames the io
+// proxy delivers before pausing; endpoint default is 128).
+const WS_WINDOW_FRAMES =
+  Number(new URL(self.location.href).searchParams.get("ws-window")) ||
+  undefined;
+
+// Memoized so a repo-construction retry (getRepoHive clears its promise on
+// failure) reuses the same endpoint instead of leaking one per attempt.
+let subductionEndpoints: (WorkerWebSocketEndpoint | string)[] | null = null;
+function getSubductionEndpoints(): (WorkerWebSocketEndpoint | string)[] {
+  if (!subductionEndpoints) {
+    log(`subduction websocket mode: ${WS_MODE}`);
+    subductionEndpoints =
+      WS_MODE === "inline"
+        ? [SUBDUCTION_SYNC_URL]
+        : [
+            new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
+              worker: subductionPortProvider.source,
+              ...(WS_WINDOW_FRAMES
+                ? { windowFrames: WS_WINDOW_FRAMES }
+                : {}),
+            }),
+          ];
+  }
+  return subductionEndpoints;
+}
 const RESOLVE_TIMEOUT_MS = 30_000;
+
+// Backoff re-sync of stuck/diverged docs. Only this worker is connected to the
+// sync server, so it's the only place that can notice a doc whose heads have
+// settled out of sync with the server and re-arm a sync round for it.
+const RESYNC_GRACE_MS = 8_000; // must be *stably* diverged this long first
+const RESYNC_INITIAL_DELAY_MS = 5_000; // first backoff cooldown after a resync
+const RESYNC_MAX_DELAY_MS = 60_000; // backoff cap
+const RESYNC_REVIEW_INTERVAL_MS = 5_000; // how often stuck docs are re-checked
 
 const DEFAULT_CLASSIC_SYNC_SERVER = "wss://sync3.automerge.org";
 
 let classicSyncServer = DEFAULT_CLASSIC_SYNC_SERVER;
-let classicSyncAdapter: WebSocketClientAdapter | null = null;
+let classicSyncAdapter: WebSocketWorkerClientAdapter | null = null;
 let classicSyncConnectPromise: Promise<void> | null = null;
 
 async function connectClassicSyncNetwork(server: string): Promise<void> {
@@ -189,7 +356,7 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
   classicSyncConnectPromise = (async () => {
     const { repo } = await getRepoHive();
     if (!classicSyncAdapter) {
-      classicSyncAdapter = new WebSocketClientAdapter(url);
+      classicSyncAdapter = new WebSocketWorkerClientAdapter(url);
       repo.networkSubsystem.addNetworkAdapter(classicSyncAdapter);
     }
     await classicSyncAdapter.whenReady();
@@ -248,11 +415,22 @@ function getRepoHive() {
 
       if (!useKeyhive) {
         const signer = await WebCryptoSigner.setup();
+<<<<<<< HEAD
         // Retain so the diagnostics handler can read the public verifying key.
         workerSigner = signer;
 
+=======
+        const identity = {
+          peerId: signer.peerId().toString(),
+          verifyingKey: (
+            signer.verifyingKey() as Uint8Array<ArrayBufferLike> & {
+              toHex(): string;
+            }
+          ).toHex(),
+        };
+>>>>>>> origin/main
         const repo = new Repo({
-          storage: new IndexedDBStorageAdapter(),
+          storage: new IndexedDBWorkerStorageAdapter(),
           signer,
           peerId: ("automerge-worker-" +
             Math.random()
@@ -262,10 +440,19 @@ function getRepoHive() {
             return peerId.includes("storage-server");
           },
           enableRemoteHeadsGossiping: true,
-          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          subductionWebsocketEndpoints: getSubductionEndpoints(),
         });
 
+        console.log(
+          "[patchwork] shared-worker subduction identity:",
+          identity,
+          "networkSubsystem.adapters:",
+          repo.networkSubsystem.adapters.length
+        );
+
         (self as any).repo = repo;
+        (self as any).syncIdentity = identity;
+        setupSyncStateBroadcast(repo, identity);
         log("repo constructed (no keyhive), waiting for network subsystem");
 
         repo.networkSubsystem.whenReady().then(() => {
@@ -283,7 +470,7 @@ function getRepoHive() {
       // ARK variant for talking to the keyhive-enabled subduction sync server.
       const { hive, repo } = await initializeAutomergeRepoKeyhiveRustWithRepo({
         createRepo: (config) => new Repo(config),
-        storage: new IndexedDBStorageAdapter(`${siteName}-keyhive`),
+        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix:
           `${siteName}-worker` + Math.random().toString(36).slice(2),
         automaticArchiveIngestion: true,
@@ -293,14 +480,15 @@ function getRepoHive() {
         // defaults to "subduction".
         ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
         repo: {
-          storage: new IndexedDBStorageAdapter(),
-          subductionWebsocketEndpoints: SUBDUCTION_ENDPOINTS,
+          storage: new IndexedDBWorkerStorageAdapter(),
+          subductionWebsocketEndpoints: getSubductionEndpoints(),
           enableRemoteHeadsGossiping: true,
         },
       });
 
       (self as any).repo = repo;
       (self as any).hive = hive;
+      setupSyncStateBroadcast(repo);
       log("repo constructed, waiting for network subsystem");
 
       // Don't block getRepoHive() on whenReady() — the network subsystem starts
@@ -326,6 +514,306 @@ function getRepoHive() {
     });
   }
   return repoHivePromise;
+}
+
+// ── Sync-state broadcast ───────────────────────────────────────────────
+//
+// Only this worker is directly connected to the sync server, so it's the only
+// place that learns the server's heads (the repo's "subduction-remote-heads"
+// event, keyed by each Subduction peer's verifying-key storageId) and whether
+// the server link is up ("subduction-connection"). We rebroadcast both on
+// SYNCSTATE_CHANNEL so every tab can render a sync indicator without holding
+// its own server connection. A tab that opens mid-stream posts {type:"request"}
+// to get the current snapshot replayed.
+
+let syncStateWired = false;
+
+function setupSyncStateBroadcast(
+  repo: Repo,
+  identity?: { peerId: string; verifyingKey: string }
+): void {
+  if (syncStateWired) return;
+  syncStateWired = true;
+
+  const channel = new BroadcastChannel(SYNCSTATE_CHANNEL);
+  // documentId -> storageId (verifying key) -> last-known heads
+  const snapshot = new Map<
+    string,
+    Map<string, { heads: string[]; timestamp: number }>
+  >();
+  let connected = repo.isSubductionConnected();
+  // Directly-connected sync-server peer ids (verifying keys). Stable once
+  // known; tabs use this to judge "synced" against the server specifically.
+  let serverPeerIds: string[] = [];
+
+  const postWhoAmI = () => {
+    if (!identity) return;
+    channel.postMessage({
+      type: "whoami",
+      peerId: identity.peerId,
+      verifyingKey: identity.verifyingKey,
+    } satisfies SyncStateBroadcast);
+  };
+  // Announce our identity so tabs can label which peer rows are this worker.
+  postWhoAmI();
+
+  // Heads are addressed, not broadcast: push a doc's heads only to the control
+  // ports that subscribed to it (see syncWatchers / pushSyncState).
+  const postHeads = (
+    documentId: string,
+    storageId: string,
+    heads: string[],
+    timestamp: number
+  ) =>
+    pushSyncState({
+      type: "sync-state",
+      documentId,
+      storageId,
+      heads,
+      timestamp,
+    });
+
+  // Let a `sync-sub` (which may have arrived while the repo was still booting)
+  // replay this doc's current snapshot to the subscribing port immediately.
+  const replayDoc = (documentId: string, port: MessagePort) => {
+    const byStorage = snapshot.get(documentId);
+    if (!byStorage) return;
+    for (const [storageId, { heads, timestamp }] of byStorage) {
+      try {
+        port.postMessage({
+          type: "sync-state",
+          documentId,
+          storageId,
+          heads,
+          timestamp,
+        } satisfies SyncStateDocMessage);
+      } catch {
+        // Port gone; its close handler reaps it.
+      }
+    }
+  };
+  replaySyncForPort = replayDoc;
+  // Catch up any ports that subscribed before this wiring existed.
+  for (const [port, docs] of syncWatchers) {
+    for (const documentId of docs) replayDoc(documentId, port);
+  }
+
+  const postConnection = () =>
+    channel.postMessage({
+      type: "connection",
+      connected,
+      serverPeerIds,
+    } satisfies SyncStateBroadcast);
+
+  // Learn (and re-announce) which connected Subduction peer is the sync server.
+  // The peer list is empty until the handshake finishes, so retry briefly.
+  const refreshServerPeers = async () => {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        const ids = await repo.connectedSubductionPeerIds();
+        if (ids.length > 0) {
+          serverPeerIds = ids;
+          postConnection();
+          return;
+        }
+      } catch {
+        // repo has no subduction source / not ready yet
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  };
+
+  // Advertise the worker's OWN heads for every doc it holds (keyed by our
+  // verifying key), so the worker hop is visible on every document.
+  //
+  // Docs pushed in by Subduction that this worker never explicitly opened don't
+  // surface via the repo's "document" event, so we discover them by re-scanning
+  // repo.handles (on a tick, and whenever the server reports a doc) and attach a
+  // heads-changed listener once per doc. No-op when there's no identity (keyhive
+  // path).
+  const ownTracked = new Set<string>();
+  const broadcastOwnHeads = (handle: {
+    documentId: string;
+    heads: () => string[];
+  }) => {
+    if (!identity) return;
+    const documentId = handle.documentId;
+    let heads: string[];
+    try {
+      heads = [...handle.heads()];
+    } catch {
+      return; // handle not ready yet
+    }
+    const timestamp = Date.now();
+    let byStorage = snapshot.get(documentId);
+    if (!byStorage) {
+      byStorage = new Map();
+      snapshot.set(documentId, byStorage);
+    }
+    byStorage.set(identity.peerId, { heads, timestamp });
+    postHeads(documentId, identity.peerId, heads, timestamp);
+    reviewResync(documentId);
+  };
+  const trackOwnHandle = (handle: {
+    documentId: string;
+    heads: () => string[];
+    on: (ev: "heads-changed", cb: () => void) => void;
+  }) => {
+    if (!identity || ownTracked.has(handle.documentId)) return;
+    ownTracked.add(handle.documentId);
+    handle.on("heads-changed", () => broadcastOwnHeads(handle));
+    broadcastOwnHeads(handle);
+  };
+  const scanOwnHandles = () => {
+    if (!identity) return;
+    for (const handle of Object.values(repo.handles)) {
+      trackOwnHandle(handle as never);
+    }
+  };
+
+  // ── Backoff re-sync of stuck/diverged docs ──────────────────────────
+  //
+  // Subduction sync is event-driven and only retries syncs it observed *fail*;
+  // a doc that settles missing commits the server holds — or whose heal retries
+  // were exhausted — is otherwise never retried. When we're behind and the
+  // server's advertised heads haven't advanced for a grace window (so it's
+  // genuinely stuck, not just lagging a live edit), we re-arm its sync round
+  // with per-doc exponential backoff. Convergence clears the state.
+  const serverHeadSetsFor = (documentId: string): string[][] => {
+    const byStorage = snapshot.get(documentId);
+    if (!byStorage) return [];
+    const sets: string[][] = [];
+    for (const [storageId, { heads }] of byStorage) {
+      if (serverPeerIds.includes(storageId)) sets.push(heads);
+    }
+    return sets;
+  };
+  const resyncState = new Map<
+    string,
+    { serverSig: string; since: number; delay: number; lastResyncAt: number }
+  >();
+  // Inspectable from the SharedWorker console as `self.patchworkResync` to see
+  // whether/how often a doc is being re-synced and against which server heads.
+  const resyncDiag: { fires: number; byDoc: Record<string, unknown> } =
+    ((self as any).patchworkResync ??= { fires: 0, byDoc: {} });
+  const reviewResync = (documentId: string) => {
+    if (!identity || !connected) {
+      resyncState.delete(documentId);
+      return;
+    }
+    const handle = repo.handles[documentId as DocumentId];
+    if (!handle) return;
+    const serverSets = serverHeadSetsFor(documentId);
+    if (serverSets.length === 0) {
+      resyncState.delete(documentId); // no server signal to compare against
+      return;
+    }
+    // The server advertises subduction *sedimentree* heads (loose-commit +
+    // fragment-boundary commit ids), which are NOT the Automerge frontier — so
+    // never compare them to handle.heads() for equality. Instead ask whether we
+    // already hold every commit the server advertises (`DocHandle.containsHeads`).
+    // If we do, the server has nothing we're missing → caught up. If not, we're
+    // genuinely behind and a re-sync can pull the rest.
+    const serverHeadsUrl = [...new Set(serverSets.flat())] as UrlHeads;
+    let haveAll: boolean;
+    try {
+      haveAll = handle.containsHeads(serverHeadsUrl);
+    } catch {
+      return; // doc not ready, or an undecodable head
+    }
+    if (haveAll) {
+      resyncState.delete(documentId); // we hold everything the server has
+      return;
+    }
+    // Behind. "Stuck" = the server's advertised set hasn't advanced (no
+    // progress) for a while. Key the grace timer on the server heads only, so
+    // your own edits churning don't keep resetting it.
+    const serverSig = [...serverHeadsUrl].sort().join(",");
+    const now = Date.now();
+    const prev = resyncState.get(documentId);
+    if (!prev || prev.serverSig !== serverSig) {
+      // First sighting, or the server advanced its view (progress): restart.
+      resyncState.set(documentId, {
+        serverSig,
+        since: now,
+        delay: RESYNC_INITIAL_DELAY_MS,
+        lastResyncAt: 0,
+      });
+      return;
+    }
+    if (now - prev.since < RESYNC_GRACE_MS) return; // not stuck long enough yet
+    if (now - prev.lastResyncAt < prev.delay) return; // within backoff cooldown
+    log("re-syncing behind doc", documentId, { serverSets });
+    resyncDiag.fires++;
+    resyncDiag.byDoc[documentId] = {
+      at: now,
+      count:
+        ((resyncDiag.byDoc[documentId] as { count?: number } | undefined)
+          ?.count ?? 0) + 1,
+      serverSets,
+    };
+    try {
+      repo.resyncSubduction(documentId as DocumentId);
+    } catch (e) {
+      log("resyncSubduction failed", e);
+    }
+    prev.lastResyncAt = now;
+    prev.delay = Math.min(prev.delay * 2, RESYNC_MAX_DELAY_MS);
+  };
+  const reviewAllResync = () => {
+    if (!identity) return;
+    for (const documentId of snapshot.keys()) reviewResync(documentId);
+    for (const id of [...resyncState.keys()]) {
+      if (!snapshot.has(id)) resyncState.delete(id);
+    }
+  };
+
+  repo.on(
+    "subduction-remote-heads",
+    ({ documentId, storageId, heads, timestamp }) => {
+      const headsCopy = [...heads];
+      let byStorage = snapshot.get(documentId);
+      if (!byStorage) {
+        byStorage = new Map();
+        snapshot.set(documentId, byStorage);
+      }
+      byStorage.set(storageId, { heads: headsCopy, timestamp });
+      postHeads(documentId, storageId, headsCopy, timestamp);
+      // A doc the server reported is one we hold — make sure we're advertising
+      // our own heads for it too.
+      scanOwnHandles();
+      reviewResync(documentId);
+    }
+  );
+
+  repo.on("subduction-connection", ({ connected: isConnected }) => {
+    connected = isConnected;
+    postConnection();
+    if (isConnected) void refreshServerPeers();
+  });
+
+  // A BroadcastChannel never receives its own posts, so this only sees tabs'
+  // requests, never our own broadcasts. We replay just the global signals here;
+  // a late tab gets per-doc heads by subscribing (sync-sub), not from this.
+  channel.addEventListener("message", (event: MessageEvent) => {
+    const data = event.data as SyncStateRequestMessage;
+    if (data?.type !== "request") return;
+    postWhoAmI();
+    postConnection();
+  });
+
+  // In case we're already connected by the time this wires up.
+  void refreshServerPeers();
+
+  // Discover the worker's docs by re-scanning repo.handles initially and on a
+  // tick (Subduction-pushed docs don't surface via the "document" event).
+  scanOwnHandles();
+  if (identity) setInterval(scanOwnHandles, 3000);
+
+  // Drive the backoff re-sync of stuck/diverged docs. A tick is essential here:
+  // the "stuck" case is precisely when no head events are firing, so the
+  // grace/backoff timers can only advance on a timer.
+  if (identity) setInterval(reviewAllResync, RESYNC_REVIEW_INTERVAL_MS);
 }
 
 // ── Tab connections ────────────────────────────────────────────────────
@@ -357,10 +845,14 @@ function dropRepoChannel(repo: Repo, channel: RepoChannel) {
   // wrapper: make sure the underlying port is disconnected and closed too.
   try {
     channel.mcAdapter.disconnect();
-  } catch {}
+  } catch {
+    // Already disconnected by removeNetworkAdapter above.
+  }
   try {
     channel.port.close();
-  } catch {}
+  } catch {
+    // Port already closed by the departing tab.
+  }
 }
 
 async function dropConnection(connection: Connection) {
@@ -442,6 +934,14 @@ function handleControlMessage(
         });
       }
     );
+  } else if (data?.type === "sync-sub") {
+    if (typeof data.documentId === "string") {
+      syncSubscribe(controlPort, data.documentId);
+    }
+  } else if (data?.type === "sync-unsub") {
+    if (typeof data.documentId === "string") {
+      syncUnsubscribe(controlPort, data.documentId);
+    }
   } else if (data?.type === "debug") {
     debugging = data.debug;
     log("automerge worker debugging enabled");
@@ -465,6 +965,7 @@ function handleControlMessage(
         });
         replyPort?.close();
       });
+<<<<<<< HEAD
   } else if (data?.type === "diagnostics") {
     const [replyPort] = event.ports;
     void collectWorkerDiagnostics().then((diagnostics) => {
@@ -479,6 +980,14 @@ function handleControlMessage(
       try {
         replyPort?.close();
       } catch {}
+=======
+  } else if (data?.type === "ping") {
+    // Heartbeat: reply so the tab can detect our death or restart.
+    controlPort.postMessage({
+      type: "pong",
+      id: data.id,
+      instanceId: WORKER_INSTANCE_ID,
+>>>>>>> origin/main
     });
   }
 }
@@ -590,14 +1099,30 @@ self.addEventListener("connect", (event) => {
     handleControlMessage(messageEvent as MessageEvent, controlPort, connection);
   });
 
+  // Let the subduction port provider negotiate over this tab's control port
+  // (the tab side runs donatePort; the messages are channel-tagged so they
+  // coexist with our control protocol above).
+  subductionPortProvider.attachClient(controlPort);
+
   // Fires when the owning page is destroyed. Browsers without the close
   // event fall back to the adapters' lazy useWeakRef cleanup.
   controlPort.addEventListener("close", () => {
     controlPorts.delete(controlPort);
+    // The tab is gone — drop its sync subscriptions wholesale so we stop
+    // pushing it heads (no per-doc unsub needed, no leak).
+    syncWatchers.delete(controlPort);
     void dropConnection(connection);
   });
 
   controlPort.start();
+
+  // Greet the tab with our per-boot instance id so it can detect a restart
+  // (a different id than last seen) even if no port "close" fired.
+  controlPort.postMessage({
+    type: "hello",
+    instanceId: WORKER_INSTANCE_ID,
+    bootTime: WORKER_BOOT_TIME,
+  });
 
   // Start forwarding console output to this tab, and flush anything buffered
   // while no tab was connected (e.g. boot-time logs) to the first arrival.
@@ -703,11 +1228,10 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
       ? (new Uint8Array(resolved.content) as BlobPart)
       : resolved.content;
 
-  const headers = new Headers({ "content-type": resolved.type });
-  headers.set("cross-origin-embedder-policy", "credentialless");
-  headers.set("cross-origin-resource-policy", "cross-origin");
-
-  return new Response(body, { status: 200, headers });
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": resolved.type },
+  });
 }
 
 // ── Handoff: resolve special URLs for the service worker ──────────────

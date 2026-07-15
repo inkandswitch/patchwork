@@ -1,5 +1,35 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.4.0
+
+### Minor Changes
+
+- b1bd763: Hash routing: `doc=` now holds the full (un-encoded) automerge URL — heads, if
+  any, live inside it — and the separate `heads=` param is gone. `doc=` values
+  that are a bare document id are still accepted for backwards compatibility, and
+  legacy big-patchwork links (`<slug>--<docId>?…`, including slugs with
+  characters like `drawing-(branch-1)`) are normalized to `#doc=automerge:<docId>`.
+
+## 0.3.2
+
+### Patch Changes
+
+- 0e1eb95: add syncstate info shape
+
+## 0.3.1
+
+### Patch Changes
+
+- 099e931: Discover a package's plugin descriptors in a dedicated module worker off the
+  main thread, then re-import the package (pinned to the same heads) on the main
+  thread to run each plugin's real loader. Adds
+  `importPluginFromFolderDocUrl(folderDocUrl, pluginType, pluginId)`, which selects
+  the plugin by both its `type` and `id` — a plugin `id` is only unique within a
+  plugin type, so a package may export e.g. a `patchwork:datatype` and a
+  `patchwork:tool` that share the same id.
+- Updated dependencies [099e931]
+  - @inkandswitch/patchwork-filesystem@0.1.1
+
 ## 0.2.8
 
 ### Patch Changes

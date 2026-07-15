@@ -1,10 +1,4 @@
-import {
-  isValidAutomergeUrl,
-  parseAutomergeUrl,
-  stringifyAutomergeUrl,
-  type DocHandle,
-  type Repo,
-} from "@automerge/automerge-repo";
+import { type DocHandle, type Repo } from "@automerge/automerge-repo";
 import type {
   LoadablePlugin,
   LoadedPlugin,
@@ -53,19 +47,13 @@ export const createDocOfDatatype2 = async <D>(
   }
   handle.change((doc: D & HasPatchworkMetadata) => {
     datatype.module.init(doc, repo);
-    let importUrl = datatype.importUrl;
-    if (isValidAutomergeUrl(importUrl)) {
-      const parsed = parseAutomergeUrl(importUrl);
-      if (parsed.heads) {
-        console.warn(
-          `stripping heads from importUrl for ${datatype.id} for new document`
-        );
-      }
-      importUrl = stringifyAutomergeUrl(parsed.documentId);
-    }
+    // Record the datatype's import URL so a viewer with no built-in tool can
+    // load one. It may be an `http:`/`https:` module bundle or an `automerge:`
+    // folder-doc URL; both are honored on read via `getSuggestedImportUrl`.
+    const importUrl = datatype.importUrl;
     (doc as any)["@patchwork"] = {
       type: datatype.id,
-      suggestedImportUrl: importUrl,
+      suggestedImportUrl: importUrl
     };
     if (change) {
       change(doc);
