@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-providers
 
+## 0.4.0
+
+### Minor Changes
+
+- 2d39c84: `accept`'s `respond` callback now takes an optional `Transferable[]` second argument, forwarded to `MessagePort.postMessage` so a provider can transfer objects (e.g. a `MessagePort` or `ArrayBuffer`) to the consumer instead of structured-cloning them.
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [2d39c84]
+  - @inkandswitch/patchwork-providers@0.4.0
+  - @inkandswitch/patchwork-elements@3.0.0
+
 ## 0.4.0
 
 ### Minor Changes
