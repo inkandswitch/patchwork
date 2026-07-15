@@ -13,7 +13,7 @@ Patchwork runs across three browser contexts (a tab, a SharedWorker, and a servi
 Open the browser devtools console on the affected tab and run:
 
 ```js
-await window.patchworkDiagnostics.export();
+await window.patchwork.diagnostics.export();
 ```
 
 This collects state from all three contexts, packages it into a single `.zip`, and downloads it to your Downloads folder as `patchwork-diagnostics-<site>-<keyprefix>-<timestamp>.zip`. Send that file to whoever is debugging.
@@ -23,8 +23,8 @@ This collects state from all three contexts, packages it into a single `.zip`, a
 
 Notes:
 
-- `window.patchworkDiagnostics` is installed _early_ in boot — before the steps that can hang — so the exporter still works when the app is wedged on a blank page.
-- If the download was blocked (some browsers throttle programmatic downloads), re-trigger it with `window.patchworkDiagnostics.redownload()`.
+- `window.patchwork.diagnostics` is installed _early_ in boot — before the steps that can hang — so the exporter still works when the app is wedged on a blank page.
+- If the download was blocked (some browsers throttle programmatic downloads), re-trigger it with `window.patchwork.diagnostics.redownload()`.
 - The export reads the whole local store, so on a large profile it can pause the tab for several seconds (it scales with how much you have stored). This is expected.
 
 ## Host diagnostics
@@ -58,7 +58,7 @@ Things to try:
 
 What to attach:
 
-- [ ] Diagnostics bundle — `await window.patchworkDiagnostics.export()` (see [Capture a bundle](#capture-a-bundle)).
+- [ ] Diagnostics bundle — `await window.patchwork.diagnostics.export()` (see [Capture a bundle](#capture-a-bundle)).
 - [ ] Host diagnostics — `scripts/host-diagnostics.sh`, if it might be machine-related (slow, low memory or disk). Safe to share.
 
 Copy-paste report template:
@@ -82,13 +82,13 @@ Two console commands selectively clear the local Automerge store (`automerge/doc
 Drop Subduction's store (loose commits, blobs, fragments). It accumulates to hundreds of MB and slows hydration, so if a bundle shows `idb/automerge.documents` dominated by `subduction/*` records this reclaims that space. The data re-fetches from the sync server, so it is recoverable, and your documents are left intact:
 
 ```js
-await window.dropSubductionStorage();
+await window.patchwork.dropSubductionStorage();
 ```
 
 Drop the Automerge document chunks (the materialized document data), leaving the Subduction log intact so synced documents re-materialize from it and the sync server on reload. Use this to reset corrupt local document state:
 
 ```js
-await window.dropAutomergeStorage();
+await window.patchwork.dropAutomergeStorage();
 ```
 
 > [!WARNING]

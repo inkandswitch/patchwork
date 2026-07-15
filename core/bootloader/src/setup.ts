@@ -3,11 +3,8 @@ import type {
   ServiceWorkerRepoChannelListener,
   SetupServiceWorkerOptions,
   SetupServiceWorkerResult,
-<<<<<<< HEAD
   WorkerDiagnostics,
-=======
   SyncStateDocMessage,
->>>>>>> origin/main
 } from "./types.js";
 import {
   readClassicSyncServer,
@@ -562,12 +559,9 @@ export default async function setupServiceWorker(
     shared,
     connectClassicSync,
     getRepoChannel,
-<<<<<<< HEAD
     requestWorkerDiagnostics,
     requestServiceWorkerDiagnostics,
-=======
     subscribeSyncState,
->>>>>>> origin/main
     async subscribeToRepoChannel(listener: ServiceWorkerRepoChannelListener) {
       // The automerge worker outlives the page, so unlike the old in-service-
       // worker repo there's nothing to reconnect: one port, handed over once.

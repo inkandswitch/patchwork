@@ -65,31 +65,26 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-<<<<<<< HEAD
-import setupServiceWorker from "./setup.js";
+import setupServiceWorker, {
+  getAutomergeWorker,
+  lifecycleLoggingEnabled,
+} from "./setup.js";
 import { initTabDiagnostics, type TabDiagnostics } from "./diagnostics.js";
 import {
   dropAutomergeStorage,
   dropSubductionStorage,
   type DropResult,
 } from "./idb-maintenance.js";
-import type { ServiceWorkerRepoChannelListener } from "./types.js";
-=======
-import setupServiceWorker, {
-  getAutomergeWorker,
-  lifecycleLoggingEnabled,
-} from "./setup.js";
 import type {
   ServiceWorkerRepoChannelListener,
   SyncStateDocMessage,
 } from "./types.js";
->>>>>>> origin/main
 import debug from "debug";
 const log = debug("patchwork:bootloader:site");
 
 // Install the diagnostics surface as early as possible — before the top-level
 // wasm fetch and the boot awaits that can hang — so the console one-liner
-// `window.patchworkDiagnostics.export()` and persistent log capture exist even
+// `window.patchwork.diagnostics.export()` and persistent log capture exist even
 // when boot wedges (a wedged boot/dead worker is exactly when it's needed).
 const tabDiagnostics: TabDiagnostics = initTabDiagnostics({ siteName });
 
@@ -97,7 +92,7 @@ const tabDiagnostics: TabDiagnostics = initTabDiagnostics({ siteName });
 // bloated store is making boot slow. Each drops only one record namespace from
 // automerge/documents; the signing key and logs are separate databases and are
 // never touched. Reload afterwards so the worker rehydrates.
-window.dropSubductionStorage = async () => {
+const dropSubductionStorageCommand = async (): Promise<DropResult> => {
   console.warn(
     "[patchwork] Dropping Subduction sync records from IndexedDB " +
       "(automerge/documents). Documents, signing key, and logs are left intact."
@@ -110,7 +105,7 @@ window.dropSubductionStorage = async () => {
   return result;
 };
 
-window.dropAutomergeStorage = async () => {
+const dropAutomergeStorageCommand = async (): Promise<DropResult> => {
   console.warn(
     "[patchwork] Dropping Automerge document chunks from IndexedDB " +
       "(automerge/documents). DESTRUCTIVE: this removes materialized document " +
@@ -125,6 +120,15 @@ window.dropAutomergeStorage = async () => {
   return result;
 };
 
+// Seed window.patchwork early so diagnostics (and maintenance commands) are
+// reachable before boot() completes. boot() will overwrite with the full
+// object (including repo, packages, etc.) while preserving these properties.
+window.patchwork = {
+  diagnostics: tabDiagnostics,
+  dropSubductionStorage: dropSubductionStorageCommand,
+  dropAutomergeStorage: dropAutomergeStorageCommand,
+};
+
 declare global {
   interface Window {
     accountDocHandle: DocHandle<AccountDoc>;
@@ -134,15 +138,15 @@ declare global {
     hive?: AutomergeRepoKeyhive;
     getRepoChannel: () => MessagePort;
     patchwork: {
-      repo: Repo;
-      packages: ModuleWatcher;
-      plugins: typeof plugins;
-      accountDocHandle: DocHandle<AccountDoc>;
+      repo?: Repo;
+      packages?: ModuleWatcher;
+      plugins?: typeof plugins;
+      accountDocHandle?: DocHandle<AccountDoc>;
       signer?: {
         peerId: string;
         verifyingKey: string;
       };
-      sw: {
+      sw?: {
         connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
           listener: ServiceWorkerRepoChannelListener
@@ -152,27 +156,27 @@ declare global {
           listener: (update: SyncStateDocMessage) => void
         ) => () => void;
       };
+      /**
+       * Diagnostics export. Installed early in boot (before the awaits that
+       * can hang), so the console one-liner exists even when boot wedges:
+       * `await window.patchwork.diagnostics.export()`.
+       */
+      diagnostics: TabDiagnostics;
+      /**
+       * Maintenance: drop Subduction's accumulated sync records from IndexedDB
+       * (`automerge/documents`), leaving documents, the signing key, and logs
+       * intact. Reload afterwards. `await window.patchwork.dropSubductionStorage()`.
+       */
+      dropSubductionStorage: () => Promise<DropResult>;
+      /**
+       * Maintenance: drop the Automerge document chunks from IndexedDB
+       * (`automerge/documents`), leaving the Subduction log, signing key, and
+       * logs intact. Destructive — reload afterwards to re-materialize from
+       * Subduction and the sync server. `await window.patchwork.dropAutomergeStorage()`.
+       */
+      dropAutomergeStorage: () => Promise<DropResult>;
     };
     uncache: (match: string) => Promise<void>;
-    /**
-     * Diagnostics export. Installed early in boot (before the awaits that can
-     * hang), so the console one-liner exists even when boot wedges:
-     * `await window.patchworkDiagnostics.export()`.
-     */
-    patchworkDiagnostics: TabDiagnostics;
-    /**
-     * Maintenance: drop Subduction's accumulated sync records from IndexedDB
-     * (`automerge/documents`), leaving documents, the signing key, and logs
-     * intact. Reload afterwards. `await window.dropSubductionStorage()`.
-     */
-    dropSubductionStorage: () => Promise<DropResult>;
-    /**
-     * Maintenance: drop the Automerge document chunks from IndexedDB
-     * (`automerge/documents`), leaving the Subduction log, signing key, and
-     * logs intact. Destructive — reload afterwards to re-materialize from
-     * Subduction and the sync server. `await window.dropAutomergeStorage()`.
-     */
-    dropAutomergeStorage: () => Promise<DropResult>;
   }
 }
 
@@ -276,25 +280,10 @@ export async function bootPatchworkSite(
   log("enabling workers");
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
-<<<<<<< HEAD
   tabDiagnostics.breadcrumb("service-worker-setup");
-
-  let hive: AutomergeRepoKeyhive | undefined;
-  // Get the initial automerge-worker port via subscribeToRepoChannel,
-  // then pass it to keyhive init which wraps it in its own network adapter.
-  let resolvePort!: (port: MessagePort) => void;
-  const portPromise = new Promise<MessagePort>((r) => {
-    resolvePort = r;
-  });
-  await sw.subscribeToRepoChannel(resolvePort);
-  const workerPort = await portPromise;
-  tabDiagnostics.breadcrumb("worker-port-ready");
-
-=======
   log("workers ready");
 
   let hive: AutomergeRepoKeyhive | undefined;
->>>>>>> origin/main
   let repo: Repo;
   let tabSignerIdentity: { peerId: string; verifyingKey: string } | undefined;
 
@@ -438,6 +427,9 @@ export async function bootPatchworkSite(
   logToolRegistryWhenLoaded(moduleWatcher);
 
   window.patchwork = {
+    diagnostics: tabDiagnostics,
+    dropSubductionStorage: dropSubductionStorageCommand,
+    dropAutomergeStorage: dropAutomergeStorageCommand,
     repo,
     packages: moduleWatcher,
     plugins,
@@ -858,11 +850,7 @@ function installHashRouting(params: HashRoutingParams): void {
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
       const url = hash as AutomergeUrl;
       window.location.hash = "";
-<<<<<<< HEAD
-      openDocument(rootElement, stringifyAutomergeUrl({ documentId, heads }));
-=======
       openDocument(rootElement, url);
->>>>>>> origin/main
       return;
     }
 
@@ -873,12 +861,7 @@ function installHashRouting(params: HashRoutingParams): void {
     const type = params.get("type");
     const frame = params.get("frame");
     if (frame) {
-<<<<<<< HEAD
-      const docUrl =
-        params.get("doc")?.replace(/^automerge:/, "") ?? accountDocHandle.url;
-=======
       const frameDocUrl = docUrl ?? accountDocHandle.url;
->>>>>>> origin/main
       if (
         rootElement.getAttribute("tool-id") !== frame ||
         rootElement.getAttribute("doc-url") !== frameDocUrl

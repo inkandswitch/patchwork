@@ -260,7 +260,6 @@ export type SetupServiceWorkerResult = {
   /** Open a fresh repo sync port to the automerge worker (dev console). */
   getRepoChannel: () => MessagePort;
   /**
-<<<<<<< HEAD
    * Ask the automerge SharedWorker for its diagnostics snapshot. Resolves
    * `null` if it doesn't reply within `timeoutMs` (so a wedged worker can't
    * hang the export).
@@ -275,7 +274,7 @@ export type SetupServiceWorkerResult = {
   requestServiceWorkerDiagnostics: (
     timeoutMs?: number
   ) => Promise<ServiceWorkerDiagnostics | null>;
-=======
+  /**
    * Watch one document's sync heads (this tab's own and each Subduction peer's,
    * as the worker learns them). Calls `listener` on every update for that doc,
    * replaying the current state on subscribe. Returns an unsubscribe function;
@@ -286,5 +285,4 @@ export type SetupServiceWorkerResult = {
     documentId: string,
     listener: (update: SyncStateDocMessage) => void
   ) => () => void;
->>>>>>> origin/main
 };

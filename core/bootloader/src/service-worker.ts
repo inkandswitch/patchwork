@@ -15,13 +15,14 @@ import {
 } from "./types.js";
 import { RingLogger } from "./logger.js";
 
-<<<<<<< HEAD
-let cachename = "default";
+const DEFAULT_CACHE_NAME = "patchwork";
+
+let cachename = DEFAULT_CACHE_NAME;
 // Whether to PRINT service-worker logs to the console. Defaults on; the main
 // thread can flip it via the "debug" message (see setup.ts). Gates console
 // *display* only — the persistent ring logger below captures every log() call
 // regardless, so the diagnostics bundle is complete either way.
-let debugging = true;
+let debugging = false;
 
 // Persistent log capture for the diagnostics bundle, in its own
 // `patchwork-logs-sw` database. The service worker doesn't touch the
@@ -56,12 +57,6 @@ self.addEventListener("unhandledrejection", (event) => {
     reason instanceof Error ? reason.stack || reason.message : reason,
   ]);
 });
-=======
-const DEFAULT_CACHE_NAME = "patchwork";
-
-let cachename = DEFAULT_CACHE_NAME;
-let debugging = false;
->>>>>>> origin/main
 
 // 0 is an opaque response, that also needs cached
 const cacheableStatuses = [0, 200, 203, 204];

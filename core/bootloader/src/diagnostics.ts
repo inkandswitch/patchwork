@@ -1,11 +1,11 @@
 /**
  * Tab-side diagnostics bundle orchestrator.
  *
- * Exposed as `window.patchworkDiagnostics` — installed early in boot (before
+ * Exposed as `window.patchwork.diagnostics` — installed early in boot (before
  * the awaits that can hang) so the console one-liner exists even when boot
  * wedges:
  *
- *     await window.patchworkDiagnostics.export()
+ *     await window.patchwork.diagnostics.export()
  *
  * collects everything we know across all three execution contexts and downloads
  * a single `.zip` the user can send for offline analysis:
@@ -273,7 +273,7 @@ class TabDiagnosticsImpl implements TabDiagnostics {
     });
     console.info(
       `[patchwork] diagnostics bundle ready: ${filename} (${formatBytes(zipped.byteLength)}). ` +
-        `If the download didn't start, run window.patchworkDiagnostics.redownload().`
+        `If the download didn't start, run window.patchwork.diagnostics.redownload().`
     );
 
     return { filename, bytes: zipped.byteLength };
@@ -308,7 +308,8 @@ export function initTabDiagnostics(options: {
 
   singleton = new TabDiagnosticsImpl(options.siteName, log);
   try {
-    (globalThis as any).patchworkDiagnostics = singleton;
+    if (!(globalThis as any).patchwork) (globalThis as any).patchwork = {};
+    (globalThis as any).patchwork.diagnostics = singleton;
   } catch {
     // non-window context — ignore
   }
@@ -601,7 +602,7 @@ function triggerDownload(blob: Blob, filename: string): void {
   } catch (err) {
     console.error(
       "[patchwork] diagnostics download failed; the bundle is on " +
-        "window.patchworkDiagnostics — call redownload() to retry",
+        "window.patchwork.diagnostics — call redownload() to retry",
       err
     );
   }

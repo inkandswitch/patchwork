@@ -51,13 +51,10 @@ import {
   type HandoffRequest,
   type HandoffRequestMessage,
   type HandoffResponseMessage,
-<<<<<<< HEAD
   type WorkerDiagnostics,
-=======
   type SyncStateBroadcast,
   type SyncStateDocMessage,
   type SyncStateRequestMessage,
->>>>>>> origin/main
 } from "./types.js";
 import { RingLogger } from "./logger.js";
 
@@ -415,11 +412,9 @@ function getRepoHive() {
 
       if (!useKeyhive) {
         const signer = await WebCryptoSigner.setup();
-<<<<<<< HEAD
         // Retain so the diagnostics handler can read the public verifying key.
         workerSigner = signer;
 
-=======
         const identity = {
           peerId: signer.peerId().toString(),
           verifyingKey: (
@@ -428,7 +423,6 @@ function getRepoHive() {
             }
           ).toHex(),
         };
->>>>>>> origin/main
         const repo = new Repo({
           storage: new IndexedDBWorkerStorageAdapter(),
           signer,
@@ -965,7 +959,6 @@ function handleControlMessage(
         });
         replyPort?.close();
       });
-<<<<<<< HEAD
   } else if (data?.type === "diagnostics") {
     const [replyPort] = event.ports;
     void collectWorkerDiagnostics().then((diagnostics) => {
@@ -980,14 +973,13 @@ function handleControlMessage(
       try {
         replyPort?.close();
       } catch {}
-=======
+    });
   } else if (data?.type === "ping") {
     // Heartbeat: reply so the tab can detect our death or restart.
     controlPort.postMessage({
       type: "pong",
       id: data.id,
       instanceId: WORKER_INSTANCE_ID,
->>>>>>> origin/main
     });
   }
 }
@@ -1078,7 +1070,9 @@ async function collectWorkerDiagnostics(): Promise<WorkerDiagnostics> {
   return {
     collectedAt: Date.now(),
     keyhive: useKeyhive,
-    endpoints: SUBDUCTION_ENDPOINTS,
+    endpoints: (subductionEndpoints ?? []).map((e) =>
+      typeof e === "string" ? e : String(e)
+    ),
     classicSync: classicSyncAdapter
       ? { server: classicSyncServer, connected: true }
       : null,
