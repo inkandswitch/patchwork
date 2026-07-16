@@ -48,7 +48,7 @@ const useKeyhiveSyncServer =
   typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
-import { importAutomergeModuleViaWorker } from "./module-loader.js";
+import { importAutomergePackageViaWorker } from "./module-loader.js";
 import {
   openDocument,
   registerPatchworkViewElement,
@@ -322,7 +322,7 @@ export async function bootPatchworkSite(
     unregisterPlugins,
     // Discover an Automerge package's plugin descriptors off the main thread;
     // each plugin's load() re-imports the package (at heads) on this thread.
-    importAutomergeModuleViaWorker
+    importAutomergePackageViaWorker
   );
 
   const accountDocHandle = (await resolveAccountHandle(repo, {

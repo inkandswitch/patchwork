@@ -35,7 +35,7 @@ export async function importPackageFromFolderDocUrl(
 }
 
 /**
- * Import a module from a plain HTTP(S) URL — the non-Automerge counterpart to
+ * Import a package from a plain HTTP(S) URL — the non-Automerge counterpart to
  * {@link importPackageFromFolderDocUrl}.
  *
  * The URL may point straight at a module entry file (e.g. `.../index.js`), in
@@ -54,7 +54,7 @@ export async function importPackageFromHttpUrl(
 }
 
 /**
- * Import a module from a URL that may name either an `automerge:` folder doc
+ * Import a package from a URL that may name either an `automerge:` folder doc
  * (served through the service worker) or a plain HTTP(S) module bundle.
  * Dispatches to {@link importPackageFromFolderDocUrl} or
  * {@link importPackageFromHttpUrl} accordingly.

@@ -107,21 +107,21 @@ export class ModuleWatcher {
    * to run the entry point in a worker for descriptor discovery and rebuild the
    * `{ plugins }` shape with main-thread `load()` functions.
    */
-  importAutomergeModule: (urlAtHeads: string) => Promise<any>;
+  importAutomergePackage: (urlAtHeads: string) => Promise<any>;
 
   constructor(
     repo: Repo,
     urls: Record<string, string>,
     callback: (name: string, mod: any) => void,
     onUnload?: (name: string) => void,
-    importAutomergeModule: (urlAtHeads: string) => Promise<any> = (url) =>
+    importAutomergePackage: (urlAtHeads: string) => Promise<any> = (url) =>
       importPackageFromFolderDocUrl(url as AutomergeUrl)
   ) {
     this.repo = repo;
     this.urls = { ...urls };
     this.onLoad = callback;
     this.onUnload = onUnload;
-    this.importAutomergeModule = importAutomergeModule;
+    this.importAutomergePackage = importAutomergePackage;
     this.doneLoading = this.init();
   }
 
@@ -266,7 +266,7 @@ export class ModuleWatcher {
         // resolve against the exact same version of the folder doc.
         const handle = await this.repo.find(importName as AutomergeUrl);
         const urlAtHeads = handle.view(handle.heads()).url;
-        return await this.importAutomergeModule(urlAtHeads);
+        return await this.importAutomergePackage(urlAtHeads);
       }
       return await importPackageFromHttpUrl(importName);
     } catch (error) {
