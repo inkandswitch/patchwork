@@ -31,7 +31,7 @@ export function isHttpUrl(url: string | undefined): url is string {
  * A `suggestedImportUrl` is only honored when it names a directly-importable
  * module: either an `http:`/`https:` URL (a module bundle served over the
  * network) or an `automerge:` URL (a folder doc imported via the service
- * worker, like {@link importModuleFromFolderDocUrl}). Anything else is ignored
+ * worker, like {@link importPackageFromFolderDocUrl}). Anything else is ignored
  * so a stray value is never treated as a module.
  */
 export function isImportableSuggestedUrl(

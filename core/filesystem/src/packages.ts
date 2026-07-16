@@ -1,4 +1,7 @@
-import { type AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  isValidAutomergeUrl,
+  type AutomergeUrl,
+} from "@automerge/automerge-repo";
 import { resolve } from "resolve.exports";
 import debug from "debug";
 import {
@@ -9,12 +12,12 @@ const log = debug("patchwork:filesystem");
 
 export const defaultImportConditions = ["patchwork", "browser", "import"];
 
-export async function importModuleFromFolderDocUrl(
+export async function importPackageFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
-  log(`importModule ${folderDocUrl}... (subpath: ${subpath})`);
+  log(`importPackage ${folderDocUrl}... (subpath: ${subpath})`);
   const entryPointUrl = await packageEntryPointUrl(
     folderDocUrl,
     subpath,
@@ -33,14 +36,14 @@ export async function importModuleFromFolderDocUrl(
 
 /**
  * Import a module from a plain HTTP(S) URL — the non-Automerge counterpart to
- * {@link importModuleFromFolderDocUrl}.
+ * {@link importPackageFromFolderDocUrl}.
  *
  * The URL may point straight at a module entry file (e.g. `.../index.js`), in
  * which case it's imported as-is, or at a package/site root that serves a
  * `package.json`, in which case the manifest is fetched and its entry point
  * (`exports`/`main`) resolved and imported.
  */
-export async function importModuleFromHttpUrl(
+export async function importPackageFromHttpUrl(
   url: string,
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
@@ -48,6 +51,26 @@ export async function importModuleFromHttpUrl(
   const entryPointUrl = await httpEntryPointUrl(url, subpath, conditions);
   log(`importing ${entryPointUrl.slice(-60)}`);
   return await import(/* @vite-ignore */ entryPointUrl);
+}
+
+/**
+ * Import a module from a URL that may name either an `automerge:` folder doc
+ * (served through the service worker) or a plain HTTP(S) module bundle.
+ * Dispatches to {@link importPackageFromFolderDocUrl} or
+ * {@link importPackageFromHttpUrl} accordingly.
+ *
+ * Note: an `automerge:` URL is imported as-is, without pinning to heads —
+ * callers that need a deterministic version (e.g. {@link ModuleWatcher}) should
+ * resolve the handle and pin before importing.
+ */
+export async function importPackage(
+  url: string,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+) {
+  return isValidAutomergeUrl(url)
+    ? importPackageFromFolderDocUrl(url, subpath, conditions)
+    : importPackageFromHttpUrl(url, subpath, conditions);
 }
 
 // Module file extensions that mark a URL as a direct entry point rather than a
@@ -174,7 +197,7 @@ export async function importPluginFromFolderDocUrl(
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
-  const mod = await importModuleFromFolderDocUrl(folderDocUrl, subpath, conditions);
+  const mod = await importPackageFromFolderDocUrl(folderDocUrl, subpath, conditions);
   const plugins: any[] = Array.isArray(mod?.plugins) ? mod.plugins : [];
   const plugin = plugins.find(
     (p) => p?.type === pluginType && p?.id === pluginId

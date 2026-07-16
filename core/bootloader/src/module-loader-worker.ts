@@ -11,7 +11,7 @@
 // Created with type:"module"; its dynamic `import()` of `/<automergeUrl>/…`
 // entry points is served by the service worker that controls this worker.
 
-import { importModuleFromFolderDocUrl } from "@inkandswitch/patchwork-filesystem";
+import { importPackageFromFolderDocUrl } from "@inkandswitch/patchwork-filesystem";
 import type { AutomergeUrl } from "@automerge/automerge-repo/slim";
 
 type DiscoverRequest = {
@@ -45,7 +45,7 @@ self.addEventListener("message", (event: MessageEvent) => {
   if (!isDiscoverRequest(data)) return;
   const { id, url } = data;
 
-  importModuleFromFolderDocUrl(url)
+  importPackageFromFolderDocUrl(url)
     .then((mod) => {
       const plugins: any[] = Array.isArray(mod?.plugins) ? mod.plugins : [];
       const descriptors = plugins.map(toDescriptor);

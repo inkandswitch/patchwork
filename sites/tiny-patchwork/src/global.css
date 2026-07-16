@@ -49,6 +49,12 @@ patchwork-view {
   contain: layout;
 }
 
+patchwork-view#root {
+  height: initial;
+  flex: 1;
+  min-height: 0;
+}
+
 .sidebar-toggle {
   height: 100%;
   padding: 0;

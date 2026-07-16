@@ -6,8 +6,8 @@ import {
   type Repo,
 } from "@automerge/automerge-repo/slim";
 import {
-  importModuleFromFolderDocUrl,
-  importModuleFromHttpUrl,
+  importPackageFromFolderDocUrl,
+  importPackageFromHttpUrl,
 } from "./packages.js";
 import { getType, type HasPatchworkMetadata } from "./metadata.js";
 import { BranchesDoc, FolderDoc } from "./types.js";
@@ -115,7 +115,7 @@ export class ModuleWatcher {
     callback: (name: string, mod: any) => void,
     onUnload?: (name: string) => void,
     importAutomergeModule: (urlAtHeads: string) => Promise<any> = (url) =>
-      importModuleFromFolderDocUrl(url as AutomergeUrl)
+      importPackageFromFolderDocUrl(url as AutomergeUrl)
   ) {
     this.repo = repo;
     this.urls = { ...urls };
@@ -197,7 +197,7 @@ export class ModuleWatcher {
         return;
       }
     } else {
-      await importModuleFromHttpUrl(importName);
+      await importPackageFromHttpUrl(importName);
     }
     this.setDocWatcher(importName);
     await this.announce(importName);
@@ -259,7 +259,7 @@ export class ModuleWatcher {
     });
   }
 
-  private async importModuleSafe(importName: string): Promise<any | null> {
+  private async importPackageSafe(importName: string): Promise<any | null> {
     try {
       if (isValidAutomergeUrl(importName)) {
         // Pin to heads so descriptor discovery and any later main-thread load
@@ -268,7 +268,7 @@ export class ModuleWatcher {
         const urlAtHeads = handle.view(handle.heads()).url;
         return await this.importAutomergeModule(urlAtHeads);
       }
-      return await importModuleFromHttpUrl(importName);
+      return await importPackageFromHttpUrl(importName);
     } catch (error) {
       console.error(
         `%c Failed to import ${importName}`,
@@ -295,7 +295,7 @@ export class ModuleWatcher {
   }
 
   private async announce(importName: string) {
-    const mod = await this.importModuleSafe(importName);
+    const mod = await this.importPackageSafe(importName);
     mod && this.onLoad(importName, mod);
   }
 

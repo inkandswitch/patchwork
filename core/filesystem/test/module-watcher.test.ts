@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Repo } from "@automerge/automerge-repo/slim";
 import { ModuleWatcher } from "../src/module-watcher.js";
-import { importModuleFromHttpUrl } from "../src/packages.js";
+import { importPackageFromHttpUrl } from "../src/packages.js";
 
 /**
  * These tests exercise the static-HTTP-manifest source support added to
@@ -198,7 +198,7 @@ describe("ModuleWatcher http package resolution", () => {
   });
 });
 
-describe("importModuleFromHttpUrl error handling", () => {
+describe("importPackageFromHttpUrl error handling", () => {
   it("rethrows a rejected package.json fetch (network/CORS) with the original error as cause", async () => {
     // A CORS-blocked or offline fetch rejects with a TypeError rather than
     // resolving to a non-ok response. That must surface (not silently fall back
@@ -211,7 +211,7 @@ describe("importModuleFromHttpUrl error handling", () => {
       })
     );
 
-    const err = await importModuleFromHttpUrl(
+    const err = await importPackageFromHttpUrl(
       "https://cdn.example.test/mytool/"
     ).catch((e) => e);
 
@@ -234,7 +234,7 @@ describe("importModuleFromHttpUrl error handling", () => {
       }))
     );
 
-    const err = await importModuleFromHttpUrl(
+    const err = await importPackageFromHttpUrl(
       "https://cdn.example.test/mytool/"
     ).catch((e) => e);
 

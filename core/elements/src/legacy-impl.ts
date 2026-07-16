@@ -7,11 +7,9 @@ import {
 import {
   getSuggestedImportUrl,
   getType,
-  importModuleFromFolderDocUrl,
-  importModuleFromHttpUrl,
+  importPackage,
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
-import { isValidAutomergeUrl } from "@automerge/automerge-repo";
 import {
   getFallbackTool,
   getRegistry,
@@ -939,11 +937,9 @@ export class LegacyImpl {
   async #importSuggestedModule(url: string): Promise<void> {
     log("importing suggested module", url);
     try {
-      // A `suggestedImportUrl` can be an `automerge:` URL — a folder doc served
-      // through the service worker — as well as a plain HTTP(S) module bundle.
-      const mod = isValidAutomergeUrl(url)
-        ? await importModuleFromFolderDocUrl(url)
-        : await importModuleFromHttpUrl(url);
+      // A `suggestedImportUrl` can be an `automerge:` folder doc served through
+      // the service worker as well as a plain HTTP(S) module bundle.
+      const mod = await importPackage(url);
       if (Array.isArray(mod?.plugins)) {
         registerPlugins(mod.plugins, url);
       } else {
