@@ -1,5 +1,12 @@
 # @inkandswitch/patchwork-react
 
+## 1.0.0
+
+### Patch Changes
+
+- Updated dependencies [82bee46]
+  - @inkandswitch/patchwork-plugins@1.0.0
+
 ## 0.0.5
 
 ### Patch Changes
