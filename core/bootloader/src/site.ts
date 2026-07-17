@@ -126,7 +126,7 @@ export interface SiteConfig {
    * folder docs or plain HTTP(S) bundles, so deployment targets can be freely
    * mixed.
    *
-   * Can be overridden at runtime by setting `localStorage.defaultToolsUrl` to
+   * Can be overridden at runtime by setting `localStorage.systemPackageListURL` to
    * another `automerge:` URL or manifest URL — useful for local development
    * against an unpublished tool set.
    */
@@ -381,7 +381,7 @@ function isValidModuleSource(source: string): boolean {
 
 /**
  * Resolve the site's default module-list sources, honouring the
- * `localStorage.defaultToolsUrl` dev override (which replaces the entire
+ * `localStorage.systemPackageListURL` dev override (which replaces the entire
  * built-in default bundle).
  */
 function resolveDefaultModules(config: SiteConfig): string[] {
@@ -390,18 +390,22 @@ function resolveDefaultModules(config: SiteConfig): string[] {
     Boolean
   );
 
-  const override = globalThis.localStorage?.getItem("defaultToolsUrl");
+  const storage = globalThis.localStorage;
+  // `defaultToolsUrl` is the pre-rename key, still honoured for existing browsers.
+  const override =
+    storage?.getItem("systemPackageListURL") ??
+    storage?.getItem("defaultToolsUrl");
   if (override) {
     if (isValidModuleSource(override)) {
       if (!builtinList.includes(override)) {
         console.info(
-          `using defaultToolsUrl override from localStorage: ${override}`
+          `using systemPackageListURL override from localStorage: ${override}`
         );
       }
       return [override];
     }
     console.warn(
-      `ignoring invalid defaultToolsUrl in localStorage: ${override}; using built-in default`
+      `ignoring invalid systemPackageListURL in localStorage: ${override}; using built-in default`
     );
   }
 

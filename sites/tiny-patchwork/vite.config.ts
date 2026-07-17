@@ -19,6 +19,9 @@ const subductionDir = dirname(
 );
 
 export default defineConfig({
+  // PATCHWORK_ joins Vite's default VITE_ prefix so
+  // PATCHWORK_SYSTEM_PACKAGE_LIST_URL reaches client code via import.meta.env.
+  envPrefix: ["VITE_", "PATCHWORK_"],
   define: {
     __SITE_NAME__: JSON.stringify("tiny-patchwork"),
     __KEYHIVE__: JSON.stringify(process.env.KEYHIVE === "true"),
