@@ -18,11 +18,16 @@ Reliability and boot-speed fixes:
   HTTP cache, the SW cache, and the sites' preload — the ~3MB body downloaded
   twice).
 - Tabs now recover when the automerge SharedWorker dies or its connection is
-  stranded: heartbeat/first-contact detection recreates the worker, replays
-  sync-state subscriptions, and re-wires every subscriber's repo onto a fresh
-  port. Previously death was only logged and tabs silently stopped syncing
-  until reload. A connection that never delivers `hello` is recovered within
-  ~5s, which also rescues boots whose initial SharedWorker port comes up deaf.
+  stranded. Previously death was only logged and tabs silently stopped syncing
+  until reload. Silence alone never tears anything down (a slow-booting or
+  busy worker delivers everything queued once it catches up): a silent port
+  first starts a non-destructive probe — a second connection to the same
+  instance — and only when the probe gets a `hello` while the original port
+  stays silent (proving a live instance with a stranded port) is the worker
+  handle recreated, with sync-state subscriptions replayed and every
+  subscriber's repo re-wired onto a fresh port. This rescues boots whose
+  initial SharedWorker port comes up deaf (~6s), including in hidden
+  background tabs; a port `close` event still recovers immediately.
 - The worker no longer rescans every doc handle on every
   `subduction-remote-heads` event (quadratic during sync bursts); it tracks
   just the reported doc.

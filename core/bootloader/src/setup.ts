@@ -401,7 +401,11 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
       : HEARTBEAT_TIMEOUT_MS;
     const visible =
       typeof document === "undefined" || document.visibilityState === "visible";
-    if (silentMs > timeoutMs && visible) {
+    // First contact probes regardless of visibility: SharedWorkers don't
+    // suspend with tab visibility, boots in background tabs must still get
+    // rescued, and the probe destroys nothing. Post-contact silence defers to
+    // visibility, since a hidden page's own throttling can fake it.
+    if (silentMs > timeoutMs && (neverHeard || visible)) {
       const reason = neverHeard
         ? `no hello ~${Math.round(silentMs / 1000)}s after connecting`
         : `no pong for ~${Math.round(silentMs / 1000)}s`;
