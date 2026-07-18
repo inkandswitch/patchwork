@@ -15,12 +15,12 @@ import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
 //      boot from an Automerge module-settings doc instead, set
 //      PATCHWORK_SYSTEM_PACKAGE_LIST_URL (or localStorage.systemPackageListURL)
 //      to an `automerge:` URL.
-const DEFAULT_MODULES = "https://patchwork-base.netlify.app/modules.json";
+const DEFAULT_PACKAGE_LIST = "https://patchwork-base.netlify.app/modules.json";
 
 const defaultModules = (
-  import.meta.env.PATCHWORK_SYSTEM_PACKAGE_LIST_URL ??
-  import.meta.env.VITE_DEFAULT_MODULES ??
-  DEFAULT_MODULES
+  import.meta.env.PATCHWORK_SYSTEM_PACKAGE_LIST_URL ||
+  import.meta.env.VITE_DEFAULT_MODULES ||
+  DEFAULT_PACKAGE_LIST
 )
   .split(",")
   .map((source) => source.trim())
