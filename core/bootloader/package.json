@@ -5,7 +5,6 @@
   "type": "module",
   "license": "MIT",
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "catalog:",
     "esbuild": "^0.23.1",
     "rollup": "^4.61.1"
   },
@@ -46,11 +45,16 @@
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-keyhive": "catalog:",
     "@automerge/automerge-repo-network-messagechannel": "catalog:",
     "@automerge/automerge-repo-network-websocket": "catalog:",
     "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
     "@automerge/vanillajs": "catalog:",
+    "@codemirror/commands": "catalog:",
+    "@codemirror/language": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/view": "catalog:",
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
@@ -60,6 +64,7 @@
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
+    "solid-js": "catalog:",
     "tinyargs": "^0.1.4"
   },
   "peerDependencies": {
@@ -67,6 +72,12 @@
     "@automerge/automerge-repo": "catalog:",
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@automerge/vanillajs": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@automerge/automerge": { "optional": true },
+    "@automerge/automerge-repo": { "optional": true },
+    "@automerge/automerge-repo-keyhive": { "optional": true },
+    "@automerge/vanillajs": { "optional": true }
   },
   "scripts": {
     "build": "tsc",

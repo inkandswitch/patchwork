@@ -5,6 +5,7 @@ import type {
 } from "./patchwork-plugin.js";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 
 /**
@@ -17,6 +18,36 @@ export const builtins = externals.reduce(
   (builtins, name) => ((builtins[name] = `/packages/${name}.js`), builtins),
   {} as Record<string, string>
 );
+
+/**
+ * pretend the import came from inside this package, so node_modules resolution
+ * walks up from *our* directory and finds our copy of each external. that's why
+ * a consuming site never has to install them or agree with us about versions.
+ */
+const self = fileURLToPath(import.meta.url);
+
+/**
+ * resolve an external from our node_modules rather than the site's.
+ *
+ * this goes through rollup's resolver rather than import.meta.resolve or
+ * require.resolve because those apply node's conditions: subduction (and
+ * others) would hand us `dist/esm/node.js`, which imports node:path and blows
+ * up at bundle time. rollup applies the browser conditions vite configured.
+ */
+async function resolveExternal(
+  this: import("rollup").PluginContext,
+  name: string
+) {
+  const resolved = await this.resolve(name, self, { skipSelf: true });
+  if (!resolved) {
+    throw new Error(
+      `@patchwork/vite: couldn't resolve the external "${name}" from ` +
+        `@inkandswitch/patchwork-bootloader. it should be one of the ` +
+        `bootloader's own dependencies.`
+    );
+  }
+  return resolved.id;
+}
 
 /**
  * merge the importmap option with our builtins
@@ -40,7 +71,7 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         this.emitFile({
           type: "chunk",
           fileName: fileName.slice(1),
-          id,
+          id: await resolveExternal.call(this, id),
           preserveSignature: "strict",
         });
       }
@@ -72,8 +103,14 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         source: readFileSync(subdWasmPath),
       });
     },
-    resolveId(id) {
-      if (id in importmap.imports && !(id in builtins)) {
+    async resolveId(id) {
+      if (id in builtins) {
+        // point the site's own imports at the same copy we emit as a chunk,
+        // otherwise rollup bundles a second one out of the site's node_modules
+        // and you end up with two automerges racing to init the same wasm
+        return resolveExternal.call(this, id);
+      }
+      if (id in importmap.imports) {
         return { id: importmap.imports[id], external: true };
       }
     },
