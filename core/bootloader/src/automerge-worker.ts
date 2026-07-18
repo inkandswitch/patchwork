@@ -869,6 +869,16 @@ function handleControlMessage(
   connection: Connection
 ) {
   const data = event.data;
+  // Tally of control messages received, readable from the SharedWorker console
+  // as `self.patchworkControl`. Not using log(): that's gated on `debugging`,
+  // which is only enabled by a {type:"debug"} message arriving over this same
+  // channel.
+  const stats = ((self as any).patchworkControl ??= {
+    connects: 0,
+    byType: {} as Record<string, number>,
+  });
+  stats.byType[String(data?.type ?? "<untyped>")] =
+    (stats.byType[String(data?.type ?? "<untyped>")] ?? 0) + 1;
   if (data?.type === "port") {
     log("received repo channel");
     const [repoPort] = event.ports;
@@ -929,6 +939,7 @@ function handleControlMessage(
 self.addEventListener("connect", (event) => {
   const controlPort = (event as MessageEvent).ports[0];
   const connection: Connection = { channels: new Set() };
+  ((self as any).patchworkControl ??= { connects: 0, byType: {} }).connects++;
 
   controlPort.addEventListener("message", (messageEvent) => {
     handleControlMessage(messageEvent as MessageEvent, controlPort, connection);
