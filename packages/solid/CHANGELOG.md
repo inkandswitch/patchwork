@@ -1,5 +1,12 @@
 # @inkandswitch/patchwork-solid
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [82bee46]
+  - @inkandswitch/patchwork-plugins@1.0.0
+
 ## 0.1.0
 
 ### Minor Changes
