@@ -89,13 +89,85 @@ function configureServiceWorker(sw: ServiceWorker | null) {
 
 // ── The automerge worker ───────────────────────────────────────────────
 // The automerge repo lives in a SharedWorker (not the service worker). One
-// instance is shared by every tab and lives exactly as long as any tab
-// does, so there's no keepalive ping and no restart detection: if we're
-// alive, it's alive. Repo sync ports are passed to it over its connect
-// port; it talks to the service worker over a BroadcastChannel.
+// instance is shared by every tab and normally lives as long as any tab
+// does — but browsers do reap SharedWorkers under memory pressure, so we
+// heartbeat it and rebuild everything if it dies (see
+// recoverAutomergeWorker). Repo sync ports are passed to it over its
+// connect port; it talks to the service worker over a BroadcastChannel.
 
 let automergeWorkerPath = "/automerge-worker.js";
 let automergeWorker: SharedWorker | undefined;
+// Bumped whenever a new SharedWorker is constructed. A repo port opened
+// against instance N is stale once instance N+1 exists (its channel ends in
+// a dead worker), so deliveries are guarded on the generation they started in.
+let workerGeneration = 0;
+// Tears down the current worker's heartbeat when it's replaced.
+let disposeWorkerDeathDetection: (() => void) | undefined;
+// Every subscribeToRepoChannel listener, kept so a recovered worker can hand
+// each subscriber a fresh repo port.
+const repoChannelListeners = new Set<ServiceWorkerRepoChannelListener>();
+let recoveringWorker = false;
+let lastWorkerRecoveryAt = 0;
+// Below this spacing, skip: if the fresh worker is dead too, its own
+// heartbeat re-triggers recovery later rather than spinning in a tight loop.
+const RECOVERY_MIN_INTERVAL_MS = 15_000;
+
+/**
+ * The automerge SharedWorker died (browser reaped it, or it crashed): build a
+ * replacement and re-wire everything a live tab holds against it — console
+ * forwarding and the io-proxy port donation (both re-done by
+ * getAutomergeWorker), the per-doc sync-state subscriptions, and every
+ * subscriber's repo sync port. The new instance boots with cold state; its
+ * repo is reconstructed on the first port we send.
+ */
+async function recoverAutomergeWorker(
+  reason: string,
+  deadWorker: SharedWorker
+): Promise<void> {
+  if (deadWorker !== automergeWorker) return; // already replaced
+  if (recoveringWorker) return;
+  const now = Date.now();
+  if (now - lastWorkerRecoveryAt < RECOVERY_MIN_INTERVAL_MS) return;
+  recoveringWorker = true;
+  lastWorkerRecoveryAt = now;
+  console.warn(
+    `[lifecycle] ${new Date().toISOString()} recreating the automerge ` +
+      `SharedWorker (${reason})`
+  );
+  try {
+    disposeWorkerDeathDetection?.();
+    disposeWorkerDeathDetection = undefined;
+    automergeWorker = undefined;
+    try {
+      deadWorker.port.close();
+    } catch {
+      // Port already dead.
+    }
+    const fresh = getAutomergeWorker();
+    // The fresh instance knows nothing — replay every doc subscription.
+    for (const documentId of syncStateListeners.keys()) {
+      fresh.port.postMessage({ type: "sync-sub", documentId });
+    }
+    // Hand every repo-channel subscriber a fresh port so their repos sync
+    // again (the old adapters sit on dead MessagePorts).
+    for (const listener of repoChannelListeners) {
+      try {
+        const generation = workerGeneration;
+        const port = await openRepoChannel();
+        // Replaced again while we waited — the newer recovery re-delivers.
+        if (generation !== workerGeneration) break;
+        await listener(port);
+      } catch (err) {
+        console.error(
+          "failed to re-wire a repo channel after worker recovery",
+          err
+        );
+      }
+    }
+  } finally {
+    recoveringWorker = false;
+  }
+}
 
 // SharedWorker proxy entry that owns the subduction WebSocket. Chrome can't
 // spawn workers from inside a SharedWorker, so each tab offers this proxy's
@@ -131,6 +203,7 @@ function workerBenchParams(): string {
 
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
+    workerGeneration++;
     const workerUrl = `${automergeWorkerPath}${workerBenchParams()}`;
     automergeWorker = new SharedWorker(workerUrl, {
       name: "patchwork-automerge",
@@ -194,7 +267,7 @@ export function getAutomergeWorker(): SharedWorker {
       return io.port;
     });
 
-    installWorkerDeathDetection(automergeWorker);
+    disposeWorkerDeathDetection = installWorkerDeathDetection(automergeWorker);
   }
   return automergeWorker;
 }
@@ -203,8 +276,10 @@ export function getAutomergeWorker(): SharedWorker {
  * Detect when the automerge SharedWorker dies or restarts: control-port close,
  * worker error, changed instance id, or an unanswered heartbeat while the tab
  * is visible (a miss while hidden is more likely suspension). [lifecycle]-tagged.
+ * Death triggers recoverAutomergeWorker. Returns a dispose that stops the
+ * heartbeat (called when this worker is replaced).
  */
-function installWorkerDeathDetection(worker: SharedWorker): void {
+function installWorkerDeathDetection(worker: SharedWorker): () => void {
   const stamp = () => new Date().toISOString();
   const warn = (msg: string) => {
     if (lifecycleLoggingEnabled()) console.warn(`[lifecycle] ${stamp()} ${msg}`);
@@ -239,6 +314,7 @@ function installWorkerDeathDetection(worker: SharedWorker): void {
   // Fires when the SharedWorker is destroyed (where supported).
   worker.port.addEventListener("close", () => {
     warn("automerge SharedWorker control port closed");
+    void recoverAutomergeWorker("control port closed", worker);
   });
 
   worker.addEventListener("error", event => {
@@ -247,26 +323,45 @@ function installWorkerDeathDetection(worker: SharedWorker): void {
 
   // A missed pong while the tab is visible means the worker likely died (an
   // active tab keeps it alive); a miss while hidden is more likely suspension.
-  const HEARTBEAT_MS = 10_000;
+  // Before first contact the budget is much tighter: a healthy connection
+  // delivers `hello` within milliseconds of connecting (posted from the
+  // worker's connect handler, before any wasm/repo work), so a port that has
+  // never said hello after a few seconds is a stranded connection — observed
+  // in the wild as a connect that goes permanently deaf while a second
+  // SharedWorker to the same instance works immediately.
+  const HEARTBEAT_MS = 5_000;
   const HEARTBEAT_TIMEOUT_MS = 25_000;
+  const FIRST_CONTACT_TIMEOUT_MS = 4_000;
   let seq = 0;
-  setInterval(() => {
+  const heartbeat = setInterval(() => {
     try {
       worker.port.postMessage({ type: "ping", id: ++seq });
     } catch {
       // Port already torn down — the "close" handler covers that case.
     }
+    const neverHeard = instanceId === undefined;
     const silentMs = Date.now() - lastPongAt;
+    const timeoutMs = neverHeard
+      ? FIRST_CONTACT_TIMEOUT_MS
+      : HEARTBEAT_TIMEOUT_MS;
     const visible =
       typeof document === "undefined" || document.visibilityState === "visible";
-    if (silentMs > HEARTBEAT_TIMEOUT_MS && visible && !warnedUnresponsive) {
-      warnedUnresponsive = true;
-      warn(
-        `automerge SharedWorker no pong for ~${Math.round(silentMs / 1000)}s ` +
-          `(tab visible)`
-      );
+    if (silentMs > timeoutMs && visible) {
+      const reason = neverHeard
+        ? `no hello ~${Math.round(silentMs / 1000)}s after connecting`
+        : `no pong for ~${Math.round(silentMs / 1000)}s`;
+      if (!warnedUnresponsive) {
+        warnedUnresponsive = true;
+        warn(`automerge SharedWorker ${reason} (tab visible)`);
+      }
+      // If the worker is merely busy (not dead), the recovery's fresh
+      // SharedWorker resolves to the same live instance — wasteful but
+      // harmless. recoverAutomergeWorker rate-limits itself.
+      void recoverAutomergeWorker(`${reason} with tab visible`, worker);
     }
   }, HEARTBEAT_MS);
+
+  return () => clearInterval(heartbeat);
 }
 
 // ── Sync-state subscriptions ────────────────────────────────────────────
@@ -311,7 +406,10 @@ export function subscribeSyncState(
     set.delete(listener);
     if (set.size === 0) {
       syncStateListeners.delete(documentId);
-      worker.port.postMessage({ type: "sync-unsub", documentId });
+      // The worker may have been replaced since we subscribed (recovery
+      // replays subscriptions onto the new instance) — unsubscribe from
+      // whichever instance is current, not the one captured above.
+      automergeWorker?.port.postMessage({ type: "sync-unsub", documentId });
     }
   };
 }
@@ -424,6 +522,12 @@ export default async function setupServiceWorker(
   installServiceWorkerLogForwarding();
   localStorage.removeItem(key);
 
+  // Ask for persistent storage so cache growth can't trip origin-wide
+  // eviction, which would take the Automerge IndexedDB — the user's documents
+  // — with it. Chrome/Safari decide silently from site engagement; Firefox may
+  // show a one-time prompt. Best-effort: denial just means default eviction.
+  void navigator.storage?.persist?.().catch(() => {});
+
   if (options?.workerPath) automergeWorkerPath = options.workerPath;
 
   // Start the automerge worker right away so it boots (wasm, repo) while the
@@ -481,10 +585,21 @@ export default async function setupServiceWorker(
     getRepoChannel,
     subscribeSyncState,
     async subscribeToRepoChannel(listener: ServiceWorkerRepoChannelListener) {
-      // The automerge worker outlives the page, so unlike the old in-service-
-      // worker repo there's nothing to reconnect: one port, handed over once.
-      await listener(await openRepoChannel());
-      return () => {};
+      // Called once with the boot port. If the automerge worker later dies
+      // and is recreated (recoverAutomergeWorker), the listener is called
+      // again with a fresh port — treat every call as "(re)wire your repo's
+      // sync onto this port".
+      repoChannelListeners.add(listener);
+      const generation = workerGeneration;
+      const port = await openRepoChannel();
+      // If the worker was replaced while this channel was opening (e.g. the
+      // port-ready wait timed out against a stranded connection and recovery
+      // already delivered a good port to this listener), drop the stale one
+      // rather than wiring the repo to a dead channel.
+      if (generation === workerGeneration) await listener(port);
+      return () => {
+        repoChannelListeners.delete(listener);
+      };
     },
   };
 }

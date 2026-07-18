@@ -65,10 +65,7 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-import setupServiceWorker, {
-  getAutomergeWorker,
-  lifecycleLoggingEnabled,
-} from "./setup.js";
+import setupServiceWorker, { lifecycleLoggingEnabled } from "./setup.js";
 import type {
   ServiceWorkerRepoChannelListener,
   SyncStateDocMessage,
@@ -179,7 +176,7 @@ const BIG_PATCHWORK_HASH_REGEX =
   /^(?<title>[^=&?/#]*)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
 
 const [automergeWasm, subductionWasm] = await Promise.all([
-  fetch("/automerge.wasm?main").then((r) => r.bytes()),
+  fetch("/automerge.wasm").then((r) => r.bytes()),
   fetch("/subduction.wasm").then((r) => r.bytes()),
 ]);
 
@@ -211,6 +208,10 @@ export async function bootPatchworkSite(
   let repo: Repo;
   let tabSignerIdentity: { peerId: string; verifyingKey: string } | undefined;
 
+  // Called with a fresh port when the automerge worker dies and is recreated
+  // (see recoverAutomergeWorker in setup.ts); assigned once the repo exists.
+  let onWorkerPortRenewed: ((port: MessagePort) => void) | undefined;
+
   // If a Repo is already on `window` — an embedding context provided one before
   // this entry ran — reuse it and its keyhive instead of standing up a fresh
   // realm-local Repo, so we share the same documents and sync/keyhive context.
@@ -222,14 +223,34 @@ export async function bootPatchworkSite(
   } else {
     // Get the initial automerge-worker port via subscribeToRepoChannel,
     // then pass it to keyhive init which wraps it in its own network adapter.
-    let resolvePort!: (port: MessagePort) => void;
-    const portPromise = new Promise<MessagePort>((r) => {
-      resolvePort = r;
+    // The listener is called again with a fresh port if the worker is ever
+    // recreated after dying.
+    let resolveFirstPort!: (port: MessagePort) => void;
+    const firstPortPromise = new Promise<MessagePort>((r) => {
+      resolveFirstPort = r;
     });
+    let seenFirstPort = false;
     log("subscribing to repo channel");
-    await sw.subscribeToRepoChannel(resolvePort);
+    // Deliberately not awaited: subscribeToRepoChannel resolves only after
+    // the boot channel's port-ready handshake, which can take its full 30s
+    // timeout against a stranded worker connection. Boot should block on the
+    // first *delivered* port instead — if the boot channel stalls, worker
+    // recovery hands the listener a good port long before that timeout.
+    void sw.subscribeToRepoChannel((port) => {
+      if (!seenFirstPort) {
+        seenFirstPort = true;
+        resolveFirstPort(port);
+      } else if (onWorkerPortRenewed) {
+        onWorkerPortRenewed(port);
+      } else {
+        console.warn(
+          "automerge worker port renewed before the repo existed; dropping it"
+        );
+      }
+    });
+    const workerPort = await firstPortPromise;
     log("repo channel subscribed");
-    const workerPort = await portPromise;
+    let workerAdapter = new MessageChannelNetworkAdapter(workerPort);
 
     if (config.keyhive) {
       log("setting up keyhive");
@@ -239,7 +260,7 @@ export async function bootPatchworkSite(
         createRepo: (config) => new Repo(config),
         storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
         peerIdSuffix: siteName + Math.random().toString(36).slice(2),
-        networkAdapter: new MessageChannelNetworkAdapter(workerPort),
+        networkAdapter: workerAdapter,
         automaticArchiveIngestion: true,
         cachingMode: "periodic",
         onlyShareWithHardcodedServerPeerId: false,
@@ -260,7 +281,7 @@ export async function bootPatchworkSite(
       // id never goes on the wire.
       const tabSigner = new MemorySigner();
       repo = new Repo({
-        network: [new MessageChannelNetworkAdapter(workerPort)],
+        network: [workerAdapter],
         storage: new IndexedDBWorkerStorageAdapter(),
         signer: tabSigner,
         async sharePolicy(peerId) {
@@ -281,6 +302,37 @@ export async function bootPatchworkSite(
       console.log("[patchwork] tab subduction identity:", tabSignerIdentity);
       log("repo created");
     }
+
+    // The worker was recreated with cold state: wire the repo onto the fresh
+    // port and drop the adapter stranded on the dead one. `repo`/`hive` are
+    // settled by the time this can fire (recovery needs a missed heartbeat).
+    const bootHive = hive;
+    onWorkerPortRenewed = (port) => {
+      const fresh = new MessageChannelNetworkAdapter(port);
+      // Mirror the boot wiring: a keyhive repo talks to the worker through a
+      // keyhive adapter wrapped around the message channel (same parameters
+      // the worker uses for its side of the pair).
+      const registered = bootHive
+        ? bootHive.createKeyhiveNetworkAdapter(fresh, false, false, 2000)
+        : fresh;
+      repo.networkSubsystem.addNetworkAdapter(registered as any);
+      for (const adapter of [...repo.networkSubsystem.adapters]) {
+        if (adapter === (registered as any)) continue;
+        // The keyhive wrapper keeps the wrapped adapter on `.networkAdapter`.
+        const base = (adapter as any).networkAdapter ?? adapter;
+        if (base !== workerAdapter) continue;
+        try {
+          repo.networkSubsystem.removeNetworkAdapter(adapter as any);
+        } catch (err) {
+          console.error("failed to remove stale worker network adapter", err);
+        }
+      }
+      workerAdapter = fresh;
+      console.warn(
+        `[lifecycle] ${new Date().toISOString()} repo re-wired to the ` +
+          `recreated automerge worker`
+      );
+    };
   }
   log("popping repo on window");
   window.repo = repo;
@@ -466,16 +518,26 @@ function installLifecycleLogging(): void {
     () => note(`visibilitychange → ${document.visibilityState}`),
     opts
   );
-  document.addEventListener("freeze", () => note("freeze (tab suspended)"), opts);
-  document.addEventListener("resume", () => note("resume (tab unsuspended)"), opts);
+  document.addEventListener(
+    "freeze",
+    () => note("freeze (tab suspended)"),
+    opts
+  );
+  document.addEventListener(
+    "resume",
+    () => note("resume (tab unsuspended)"),
+    opts
+  );
   window.addEventListener(
     "pageshow",
-    e => note("pageshow", { persisted: (e as PageTransitionEvent).persisted }),
+    (e) =>
+      note("pageshow", { persisted: (e as PageTransitionEvent).persisted }),
     opts
   );
   window.addEventListener(
     "pagehide",
-    e => note("pagehide", { persisted: (e as PageTransitionEvent).persisted }),
+    (e) =>
+      note("pagehide", { persisted: (e as PageTransitionEvent).persisted }),
     opts
   );
   window.addEventListener("online", () => note("online"), opts);
