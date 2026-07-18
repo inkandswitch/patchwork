@@ -5,7 +5,7 @@ Browser + Service-Worker end-to-end tests for the real boot/sync path.
 These complement the in-process Vitest sync tests
 (`core/filesystem/test/*.test.ts`), which only simulate Tab <-> SW with two
 Node `Repo`s over a `MessageChannel`. Here we drive a real Chromium against a
-built `tiny-patchwork` served by `vite preview`, exercising SW registration,
+built `patchwork.inkandswitch.com` served by `vite preview`, exercising SW registration,
 Wasm init, IndexedDB, and the MessageChannel relay.
 
 ## Prerequisites
@@ -13,7 +13,7 @@ Wasm init, IndexedDB, and the MessageChannel relay.
 1. Build the site (the preview server serves `dist/`):
 
    ```sh
-   pnpm --filter tiny-patchwork build
+   pnpm --filter patchwork.inkandswitch.com build
    ```
 
 2. Browsers. Either:
