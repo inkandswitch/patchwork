@@ -1,29 +1,13 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@inkandswitch/patchwork-bootloader/vite";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
-// Force a single copy of @automerge/automerge across linked packages.
-// Without this, the linked automerge-repo resolves its own node_modules copy,
-// causing `Automerge.use()` to be called on a different module instance.
-const automergeEntryDir = dirname(
-  fileURLToPath(import.meta.resolve("@automerge/automerge"))
-);
-
-// Force a single copy of @automerge/automerge-subduction. Without this,
-// automerge-repo's internal imports resolve a separate Wasm module instance,
-// causing `_assertClass` failures ("expected instance of SedimentreeId2").
-const subductionDir = dirname(
-  fileURLToPath(import.meta.resolve("@automerge/automerge-subduction"))
-);
 
 export default defineConfig({
   // PATCHWORK_ joins Vite's default VITE_ prefix so
   // PATCHWORK_SYSTEM_PACKAGE_LIST_URL reaches client code via import.meta.env.
   envPrefix: ["VITE_", "PATCHWORK_"],
   define: {
-    __SITE_NAME__: JSON.stringify("tiny-patchwork"),
+    __SITE_NAME__: JSON.stringify("patchwork.inkandswitch.com"),
     __KEYHIVE__: JSON.stringify(process.env.KEYHIVE === "true"),
     // Default sync server is sub. Build with KEYHIVE_SYNC_SERVER=true to
     // target keyhive.sync.automerge.org instead.
@@ -33,17 +17,7 @@ export default defineConfig({
   },
   plugins: [
     wasm(),
-    patchwork({
-      importmap: {
-        imports: {
-          DEV: "data:text/javascript,export%20const%20DEV%20=%20true;",
-        },
-      },
-      extraBuiltins: {
-        "@automerge/automerge-repo-keyhive":
-          "/packages/@automerge/automerge-repo-keyhive/index.js",
-      },
-    }),
+    patchwork(),
   ],
   worker: {
     format: "es",
@@ -60,26 +34,8 @@ export default defineConfig({
     port: process.env.PORT ? +process.env.PORT : 5173,
     headers: { "Access-Control-Allow-Origin": "*" },
   },
-  resolve: {
-    alias: {
-      // Subpath aliases must come before the bare specifier (longest-prefix wins).
-      "@automerge/automerge/slim": resolve(automergeEntryDir, "slim.js"),
-      "@automerge/automerge": resolve(automergeEntryDir, "fullfat_bundler.js"),
-      "@automerge/automerge-subduction/slim": resolve(subductionDir, "slim.js"),
-      "@automerge/automerge-subduction": resolve(subductionDir, "web.js"),
-    },
-  },
-  optimizeDeps: {
-    // Prevent Vite from pre-bundling automerge-subduction (which ignores the
-    // resolve alias and picks the bundler target whose .wasm import gets dropped).
-    exclude: [
-      "@automerge/automerge-subduction",
-      "@automerge/automerge-subduction/slim",
-      "@automerge/automerge-repo-keyhive",
-    ],
-  },
   build: {
-    target: "firefox137",
+    target: "firefox150",
     minify: false,
     sourcemap: true,
   },
