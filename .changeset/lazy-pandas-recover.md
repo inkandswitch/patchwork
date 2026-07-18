@@ -2,6 +2,7 @@
 "@inkandswitch/patchwork-bootloader": patch
 "@inkandswitch/patchwork-filesystem": patch
 "@inkandswitch/patchwork-plugins": patch
+"@inkandswitch/patchwork-providers": patch
 ---
 
 Reliability and boot-speed fixes:
@@ -31,3 +32,10 @@ Reliability and boot-speed fixes:
 - `resolveAccountHandle` never overwrites a valid stored account pointer when
   `repo.find` fails: it retries briefly and then throws, instead of silently
   creating a fresh account and orphaning the user's workspace.
+- `OverlayRepo` no longer memoizes rejected resolutions: a `find` that failed
+  because the doc (or its keyhive access) hadn't synced yet used to pin every
+  later `find` of that url to the same cached rejection, so the views' "retry
+  once access syncs" recovery could never reach the base repo. Rejections now
+  evict and the next `find` re-resolves. `findWithProgress().subscribe` also
+  no longer leaks its inner subscription (or fires the callback) when
+  unsubscribed before the resolution settles.

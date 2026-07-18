@@ -52,14 +52,32 @@ export async function resolveAccountHandle<D = AccountDoc>(
   const stored = storage.getItem(options.storageKey);
 
   if (stored && isValidAutomergeUrl(stored)) {
-    try {
-      return await repo.find<D & HasPatchworkMetadata>(stored as AutomergeUrl);
-    } catch (error) {
-      console.warn(
-        `resolveAccountHandle: could not open stored account ${stored}; creating a new one`,
-        error
-      );
+    // A valid stored pointer is the user's real account doc. Never fall
+    // through to creating a fresh account here: a transient find failure
+    // (sync layer still booting, doc briefly unavailable) would overwrite the
+    // pointer and silently orphan the user's whole workspace. Retry briefly,
+    // then propagate so boot fails visibly with the pointer intact.
+    let lastError: unknown;
+    for (const delay of [0, 500, 2_000]) {
+      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+      try {
+        return await repo.find<D & HasPatchworkMetadata>(
+          stored as AutomergeUrl
+        );
+      } catch (error) {
+        lastError = error;
+        console.warn(
+          `resolveAccountHandle: could not open stored account ${stored}; retrying`,
+          error
+        );
+      }
     }
+    throw new Error(
+      `resolveAccountHandle: could not open the stored account ${stored}. ` +
+        `Refusing to replace the stored account pointer; reload to retry ` +
+        `(or clear localStorage["${options.storageKey}"] to start a fresh account).`,
+      { cause: lastError }
+    );
   }
 
   const handle = await createAccount<D>(repo, options.hive);

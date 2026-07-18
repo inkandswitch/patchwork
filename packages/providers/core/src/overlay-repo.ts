@@ -139,9 +139,15 @@ export class OverlayRepo implements RepoLike {
       documentId,
       peek,
       subscribe: (callback) => {
+        // `closed` covers the unsubscribe-before-resolve race: without it the
+        // resolution settling later would still subscribe to the inner
+        // progress (leaking that subscription forever) and invoke the
+        // consumer's callback after it unsubscribed.
+        let closed = false;
         let last: string | null = null;
         let unsubscribeInner: () => void = () => {};
         const dispatch = () => {
+          if (closed) return;
           const state = peek();
           const sig =
             state.state === "failed"
@@ -152,11 +158,15 @@ export class OverlayRepo implements RepoLike {
           callback(state);
         };
         wrappedPromise.then(() => {
+          if (closed) return;
           const inner = self.#inner.get(presented);
           if (inner) unsubscribeInner = inner.subscribe(dispatch);
           dispatch();
         }, dispatch);
-        return () => unsubscribeInner();
+        return () => {
+          closed = true;
+          unsubscribeInner();
+        };
       },
       whenReady: ({ signal } = {}) => {
         const handlePromise = wrappedPromise as unknown as Promise<
@@ -235,6 +245,20 @@ export class OverlayRepo implements RepoLike {
       this.#wrapped.set(presented, wrapped as OverlayHandle<unknown>);
       return wrapped;
     })();
+
+    // Only successful resolutions stay memoized. A rejection — typically
+    // baseRepo.find reporting unavailable because the doc (or its keyhive
+    // access) hasn't synced yet — is retryable, so caching it would pin every
+    // future find() of this url to the same stale rejection and defeat the
+    // views' "retry once access syncs" recovery. Evict so the next find()
+    // re-runs the whole resolution. The identity check keeps a late-arriving
+    // cleanup from clobbering a newer in-flight attempt.
+    promise.catch(() => {
+      if (this.#resolving.get(presented) === promise) {
+        this.#resolving.delete(presented);
+        this.#inner.delete(presented);
+      }
+    });
 
     this.#resolving.set(presented, promise as Promise<OverlayHandle<unknown>>);
     return promise;

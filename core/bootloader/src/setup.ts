@@ -201,11 +201,14 @@ function workerBenchParams(): string {
   return qs ? `?${qs}` : "";
 }
 
+function automergeWorkerUrl(): string {
+  return `${automergeWorkerPath}${workerBenchParams()}`;
+}
+
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
     workerGeneration++;
-    const workerUrl = `${automergeWorkerPath}${workerBenchParams()}`;
-    automergeWorker = new SharedWorker(workerUrl, {
+    automergeWorker = new SharedWorker(automergeWorkerUrl(), {
       name: "patchwork-automerge",
       type: "module",
     });
@@ -273,11 +276,21 @@ export function getAutomergeWorker(): SharedWorker {
 }
 
 /**
- * Detect when the automerge SharedWorker dies or restarts: control-port close,
- * worker error, changed instance id, or an unanswered heartbeat while the tab
- * is visible (a miss while hidden is more likely suspension). [lifecycle]-tagged.
- * Death triggers recoverAutomergeWorker. Returns a dispose that stops the
- * heartbeat (called when this worker is replaced).
+ * Detect when the automerge SharedWorker dies or its control port goes deaf.
+ *
+ * Silence alone is NOT proof of death: the worker may still be evaluating its
+ * (large) module graph on a cold boot, or its single thread may be busy with
+ * wasm/sync work — in both cases every queued message (including the repo
+ * ports the network adapters ride on) is delivered fine once it catches up,
+ * and tearing the port down would *lose* them. So silence only starts a
+ * non-destructive PROBE: a second SharedWorker connection to the same
+ * instance. Only when the probe gets a `hello` while this port stays silent do
+ * we know the instance is alive-and-responsive but our port is stranded (a
+ * failure mode observed in the wild) — or was replaced — and recovery is
+ * warranted. A `close` event (where supported) is a definitive death signal
+ * and recovers immediately. [lifecycle]-tagged. Returns a dispose that stops
+ * the heartbeat and any outstanding probe (called when this worker is
+ * replaced).
  */
 function installWorkerDeathDetection(worker: SharedWorker): () => void {
   const stamp = () => new Date().toISOString();
@@ -289,16 +302,28 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
   };
 
   let instanceId: string | undefined;
-  let lastPongAt = Date.now();
+  let lastHeardAt = Date.now();
   let warnedUnresponsive = false;
+  let disposed = false;
+  let probe: SharedWorker | undefined;
+
+  const closeProbe = () => {
+    if (!probe) return;
+    try {
+      probe.port.close();
+    } catch {
+      // Already closed.
+    }
+    probe = undefined;
+  };
 
   worker.port.addEventListener("message", (event: MessageEvent) => {
     const data = event.data;
     if (data?.type !== "hello" && data?.type !== "pong") return;
-    if (data.type === "pong") {
-      lastPongAt = Date.now();
-      warnedUnresponsive = false;
-    }
+    lastHeardAt = Date.now();
+    warnedUnresponsive = false;
+    // The port spoke — any outstanding probe is moot.
+    closeProbe();
     if (instanceId === undefined) {
       instanceId = data.instanceId;
       info(`automerge SharedWorker instance ${data.instanceId} (via ${data.type})`);
@@ -313,6 +338,7 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
 
   // Fires when the SharedWorker is destroyed (where supported).
   worker.port.addEventListener("close", () => {
+    if (disposed) return;
     warn("automerge SharedWorker control port closed");
     void recoverAutomergeWorker("control port closed", worker);
   });
@@ -321,14 +347,43 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
     warn(`automerge SharedWorker error: ${(event as ErrorEvent).message || event}`);
   });
 
-  // A missed pong while the tab is visible means the worker likely died (an
-  // active tab keeps it alive); a miss while hidden is more likely suspension.
-  // Before first contact the budget is much tighter: a healthy connection
-  // delivers `hello` within milliseconds of connecting (posted from the
-  // worker's connect handler, before any wasm/repo work), so a port that has
-  // never said hello after a few seconds is a stranded connection — observed
-  // in the wild as a connect that goes permanently deaf while a second
-  // SharedWorker to the same instance works immediately.
+  // On probe hello, give the suspect port this long to also speak before
+  // concluding it's stranded: after a slow worker boot both connections hello
+  // at roughly the same moment and cross-port delivery order isn't guaranteed.
+  const PROBE_GRACE_MS = 500;
+  const startProbe = (reason: string) => {
+    if (probe || disposed) return;
+    warn(`automerge SharedWorker ${reason}; probing with a second connection`);
+    const startedAt = Date.now();
+    const p = new SharedWorker(automergeWorkerUrl(), {
+      name: "patchwork-automerge",
+      type: "module",
+    });
+    probe = p;
+    p.port.start();
+    p.port.addEventListener("message", (event: MessageEvent) => {
+      if (event.data?.type !== "hello") return;
+      setTimeout(() => {
+        if (disposed || probe !== p) return; // superseded or torn down
+        closeProbe();
+        // The suspect spoke while (or just after) the probe ran: it was
+        // merely slow/busy, and everything queued on it has been delivered.
+        if (lastHeardAt >= startedAt) return;
+        void recoverAutomergeWorker(
+          `port unresponsive on a live worker (${reason}; probe confirmed)`,
+          worker
+        );
+      }, PROBE_GRACE_MS);
+    });
+    // No hello on the probe means the instance is loading or busy (the probe
+    // waits indefinitely — its hello triggers the check above whenever it
+    // lands) — never tear anything down on a timer.
+  };
+
+  // A silent-too-long port while the tab is visible starts a probe (a miss
+  // while hidden is more likely suspension). Before first contact the budget
+  // is tighter: an idle worker hellos within milliseconds of connecting, so
+  // probing early costs nothing and rescues genuinely stranded boots fast.
   const HEARTBEAT_MS = 5_000;
   const HEARTBEAT_TIMEOUT_MS = 25_000;
   const FIRST_CONTACT_TIMEOUT_MS = 4_000;
@@ -340,7 +395,7 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
       // Port already torn down — the "close" handler covers that case.
     }
     const neverHeard = instanceId === undefined;
-    const silentMs = Date.now() - lastPongAt;
+    const silentMs = Date.now() - lastHeardAt;
     const timeoutMs = neverHeard
       ? FIRST_CONTACT_TIMEOUT_MS
       : HEARTBEAT_TIMEOUT_MS;
@@ -354,14 +409,15 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
         warnedUnresponsive = true;
         warn(`automerge SharedWorker ${reason} (tab visible)`);
       }
-      // If the worker is merely busy (not dead), the recovery's fresh
-      // SharedWorker resolves to the same live instance — wasteful but
-      // harmless. recoverAutomergeWorker rate-limits itself.
-      void recoverAutomergeWorker(`${reason} with tab visible`, worker);
+      startProbe(reason);
     }
   }, HEARTBEAT_MS);
 
-  return () => clearInterval(heartbeat);
+  return () => {
+    disposed = true;
+    clearInterval(heartbeat);
+    closeProbe();
+  };
 }
 
 // ── Sync-state subscriptions ────────────────────────────────────────────

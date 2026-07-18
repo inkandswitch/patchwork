@@ -98,6 +98,11 @@ export class ModuleWatcher {
   doneLoading: Promise<void>;
   #watchedModules = new Set<string>();
   #watchedBranchesDocs = new Set<AutomergeUrl>();
+  // Per-module announce generation. Bumped whenever a newer announce starts
+  // for the same module, so a stale retry chain (still backing off from a
+  // failed import of an older pinned version) abandons itself instead of
+  // eventually succeeding and rolling the registry back to that old version.
+  #announceGenerations = new Map<string, number>();
   #branchTargetByBranchesUrl = new Map<
     AutomergeUrl,
     AutomergeUrl | undefined
@@ -299,13 +304,33 @@ export class ModuleWatcher {
     await this.load();
   }
 
-  private async announce(importName: string, attempt = 0): Promise<void> {
-    const mod = await this.importPackageSafe(importName);
-    if (mod) return this.onLoad(importName, mod);
-    const delay = RETRY_DELAYS_MS[attempt];
-    if (delay === undefined) return;
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    return this.announce(importName, attempt + 1);
+  /**
+   * Import a module and hand it to `onLoad`, retrying on failure. `moduleKey`
+   * is the module's stable identity (the unversioned settings-doc entry);
+   * `importUrl` may be a version pinned to heads (the reload path). Starting
+   * an announce supersedes any announce still in flight for the same key.
+   */
+  private async announce(
+    importUrl: string,
+    moduleKey: string = importUrl
+  ): Promise<void> {
+    const generation = (this.#announceGenerations.get(moduleKey) ?? 0) + 1;
+    this.#announceGenerations.set(moduleKey, generation);
+    const current = () =>
+      this.#announceGenerations.get(moduleKey) === generation;
+
+    for (let attempt = 0; ; attempt++) {
+      const mod = await this.importPackageSafe(importUrl);
+      // A newer announce for this module started while we were importing or
+      // backing off — its result wins; announcing ours now could regress the
+      // registry to an older version.
+      if (!current()) return;
+      if (mod) return this.onLoad(importUrl, mod);
+      const delay = RETRY_DELAYS_MS[attempt];
+      if (delay === undefined) return;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      if (!current()) return;
+    }
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.
@@ -343,7 +368,9 @@ export class ModuleWatcher {
           console.log(
             `change in ${importName}, reloading at ${versionedImport}`
           );
-          this.announce(versionedImport);
+          // Keyed by the stable importName so this reload supersedes any
+          // still-retrying announce of an older version of the same module.
+          this.announce(versionedImport, importName);
         }, RELOAD_DEBOUNCE_MS);
       });
     });

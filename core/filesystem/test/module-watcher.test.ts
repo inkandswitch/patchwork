@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Repo } from "@automerge/automerge-repo/slim";
+import { Repo as AutomergeRepo, type PeerId } from "@automerge/automerge-repo";
 import { ModuleWatcher } from "../src/module-watcher.js";
 import { importPackageFromHttpUrl } from "../src/packages.js";
 
@@ -195,6 +196,77 @@ describe("ModuleWatcher http package resolution", () => {
     expect(
       fetch.mock.calls.some(([u]) => String(u).endsWith("package.json"))
     ).toBe(false);
+  });
+});
+
+describe("ModuleWatcher stale announce retries", () => {
+  const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it("a superseded retry never rolls the registry back to an older version", async () => {
+    const repo = new AutomergeRepo({ peerId: "watcher-test" as PeerId });
+    try {
+      const folder = repo.create<any>();
+      folder.change((d: any) => {
+        d["@patchwork"] = { type: "folder" };
+        d.rev = 0;
+      });
+      const settings = repo.create<any>();
+      settings.change((d: any) => {
+        d["@patchwork"] = { type: "patchwork:module-settings" };
+        d.modules = [folder.url];
+      });
+
+      // The injected importer's behaviour is swapped between phases; every
+      // versioned url it is asked for is recorded so the test can tell the
+      // module versions apart.
+      const importCalls: string[] = [];
+      let importBehavior: (url: string) => any = () => ({ plugins: [] });
+      const importAutomergePackage = async (urlAtHeads: string) => {
+        importCalls.push(urlAtHeads);
+        return importBehavior(urlAtHeads);
+      };
+
+      const announced: string[] = [];
+      const watcher = new ModuleWatcher(
+        repo,
+        { system: settings.url },
+        (name) => announced.push(name),
+        undefined,
+        importAutomergePackage
+      );
+      await watcher.doneLoading;
+      expect(announced).toHaveLength(1);
+
+      // v1: the import fails, leaving a retry chain backing off (first retry
+      // fires 1s after the failed attempt).
+      importBehavior = () => undefined;
+      folder.change((d: any) => {
+        d.rev = 1;
+      });
+      await pause(500); // > the 250ms reload debounce
+      const v1Url = importCalls[importCalls.length - 1];
+      expect(v1Url).not.toBe(folder.url); // pinned to heads
+
+      // v2: imports succeed again; this reload supersedes v1's retry chain.
+      importBehavior = () => ({ plugins: [] });
+      folder.change((d: any) => {
+        d.rev = 2;
+      });
+      await pause(500);
+      const v2Url = importCalls[importCalls.length - 1];
+      expect(v2Url).not.toBe(v1Url);
+      expect(announced[announced.length - 1]).toBe(v2Url);
+
+      // Let v1's retry window pass. A stale retry that survived would import
+      // v1 again — now successfully — and announce it *after* v2, rolling the
+      // registry back to the older version.
+      await pause(1_500);
+      expect(importCalls.filter((u) => u === v1Url)).toHaveLength(1);
+      expect(announced).not.toContain(v1Url);
+      expect(announced[announced.length - 1]).toBe(v2Url);
+    } finally {
+      await repo.shutdown().catch(() => {});
+    }
   });
 });
 
