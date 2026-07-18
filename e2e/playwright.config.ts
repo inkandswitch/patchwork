@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * Unlike the in-process Vitest sync tests (which simulate Tab <-> SW with
  * two Node Repos over a MessageChannel), these tests drive an actual
- * Chromium instance against a built `tiny-patchwork` site served by
+ * Chromium instance against a built `patchwork.inkandswitch.com` site served by
  * `vite preview`. That exercises SW registration, Wasm init, IndexedDB,
  * and the MessageChannel relay end to end.
  *
@@ -59,7 +59,7 @@ export default defineConfig({
   // deterministically. `reuseExistingServer` lets you keep a `vite preview`
   // running locally during iteration.
   webServer: {
-    command: "pnpm --filter tiny-patchwork preview",
+    command: "pnpm --filter patchwork.inkandswitch.com preview",
     url: BASE_URL,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,

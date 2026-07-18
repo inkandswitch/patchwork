@@ -15,7 +15,7 @@ pnpm dev
 For a specific site run
 
 ```shell
-SITE=tiny-patchwork pnpm dev
+SITE=patchwork.inkandswitch.com pnpm dev
 ```
 
 The development server will be running at [localhost:5173](http://localhost:5173/).

@@ -39,7 +39,7 @@
         (pnpm.test pnpm-cfg)
         (asModule {
           "clean" = cmd "Remove node_modules and dist" "rm -rf **/node_modules **/dist";
-          "dev:tiny" = cmd "Start dev server (tiny-patchwork)" "${pnpm'} dev";
+          "dev:tiny" = cmd "Start dev server (patchwork.inkandswitch.com)" "${pnpm'} dev";
           "dev:gaios" = cmd "Start dev server for Gaios" "SITE=gaios ${pnpm'} dev";
           "dev:hive" = cmd "Start dev server for Hive" "SITE=hive ${pnpm'} dev";
           "format" = cmd "Format code" "${pnpm'} format";
