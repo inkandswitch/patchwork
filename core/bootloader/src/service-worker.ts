@@ -259,10 +259,34 @@ async function cachePage(
   response: Response
 ) {
   const indexRequest = indexRequestFor(request);
-  if (indexRequest) await cache.put(indexRequest, response.clone());
   const rootRequest = rootRequestFor(request);
-  if (rootRequest) await cache.put(rootRequest, response.clone());
-  await cache.put(request, response);
+  await Promise.all([
+    indexRequest && cache.put(indexRequest, response.clone()),
+    rootRequest && cache.put(rootRequest, response.clone()),
+    cache.put(request, response),
+  ]);
+}
+
+// Write to the cache without blocking the response: cache.put only resolves
+// once the whole body has been consumed and persisted, so awaiting it before
+// returning would turn time-to-first-byte into time-to-last-byte-plus-disk
+// for every proxied asset. waitUntil keeps the worker alive for the write.
+function cacheInBackground(
+  fetchEvent: FetchEvent,
+  cache: Cache,
+  request: Request,
+  response: Response
+) {
+  fetchEvent.waitUntil(
+    (request.mode === "navigate" || request.destination === "document"
+      ? cachePage(cache, request, response)
+      : cache.put(request, response)
+    ).catch((error) => {
+      // Always loud (not gated on debugging): a QuotaExceededError here is
+      // the first sign the origin is under storage pressure.
+      console.warn(`error caching ${request.url} in ${cachename}`, error);
+    })
+  );
 }
 
 // ── Fetch handler ──────────────────────────────────────────────────────
@@ -270,7 +294,9 @@ async function cachePage(
 self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
   log("fetch event", fetchEvent.request.url);
   const request = fetchEvent.request;
-  if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
+  // Not calling respondWith at all lets the browser handle non-GETs natively
+  // instead of proxying their bodies through this worker.
+  if (request.method !== "GET") return;
   const url = new URL(fetchEvent.request.url);
 
   let handoffURL: URL | undefined;
@@ -341,15 +367,7 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
                 cacheableStatuses.includes(response.status)) &&
               /^https?:/.test(request.url)
             ) {
-              const cachedResponse = response.clone();
-              await (
-                request.mode === "navigate" ||
-                request.destination === "document"
-                  ? cachePage(cache, request, cachedResponse)
-                  : cache.put(request, cachedResponse)
-              ).catch((error) => {
-                log(`error caching ${request.url} in ${cachename}`, error);
-              });
+              cacheInBackground(fetchEvent, cache, request, response.clone());
             } else {
               log(
                 `skipping uncacheable response code from cache: ${response.status} for ${request.url}`
