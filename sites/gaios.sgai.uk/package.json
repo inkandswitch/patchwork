@@ -1,16 +1,9 @@
 {
-  "name": "aria-gaios",
+  "name": "gaios.sgai.uk",
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "catalog:",
-    "@eslint/js": "^9.39.4",
     "@inkandswitch/patchwork-bootloader": "workspace:^",
-    "@keyhive/keyhive": "catalog:",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "globals": "^16.5.0",
-    "typescript-eslint": "^8.60.1",
     "vite": "^7.3.5",
     "vite-plugin-wasm": "^3.6.0"
   },
@@ -20,24 +13,5 @@
     "build": "vite build",
     "preview": "vite preview",
     "sync": "vite build && pushwork sync"
-  },
-  "dependencies": {
-    "@automerge/automerge": "catalog:",
-    "@automerge/automerge-repo": "catalog:",
-    "@automerge/automerge-repo-network-messagechannel": "catalog:",
-    "@automerge/automerge-repo-network-websocket": "catalog:",
-    "@automerge/automerge-repo-react-hooks": "catalog:",
-    "@automerge/automerge-repo-storage-indexeddb": "catalog:",
-    "@automerge/automerge-subduction": "catalog:",
-    "@automerge/vanillajs": "catalog:",
-    "@codemirror/commands": "^6.10.4",
-    "@codemirror/language": "^6.12.4",
-    "@codemirror/state": "^6.7.1",
-    "@codemirror/view": "^6.43.6",
-    "@inkandswitch/patchwork-elements": "workspace:^",
-    "@inkandswitch/patchwork-filesystem": "workspace:^",
-    "@inkandswitch/patchwork-plugins": "workspace:^",
-    "@inkandswitch/patchwork-providers": "workspace:^",
-    "solid-js": "^1.9.13"
   }
 }
