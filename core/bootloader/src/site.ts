@@ -37,7 +37,7 @@ import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
 declare const __SITE_NAME__: string;
 const siteName =
-  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
+  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "patchwork.inkandswitch.com";
 
 // Sync-server selection for keyhive. Defaults to "subduction". Build with
 // KEYHIVE_SYNC_SERVER=true to target keyhive.sync.automerge.org. This must match

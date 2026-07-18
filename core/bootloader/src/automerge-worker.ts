@@ -337,7 +337,7 @@ async function connectClassicSyncNetwork(server: string): Promise<void> {
 }
 
 const siteName =
-  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "tiny-patchwork";
+  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "patchwork.inkandswitch.com";
 
 const cacheableStatuses = [200, 203, 204];
 
