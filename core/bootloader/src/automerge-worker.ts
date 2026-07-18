@@ -219,11 +219,9 @@ setInterval(() => {
   watchdogLast = now;
   if (gap > WATCHDOG_TICK_MS * WATCHDOG_GAP_FACTOR) {
     console.warn(
-      `[lifecycle] worker resumed after ~${Math.round(gap / 1000)}s gap ` +
-        `(timer expected every ${WATCHDOG_TICK_MS / 1000}s) — likely ` +
-        `suspended/frozen/throttled; WebSocket keepalive pongs were not sent ` +
-        `during this window, so the sync server may have reaped us. at ` +
-        `${new Date(now).toISOString()}`
+      `[lifecycle] ${new Date(now).toISOString()} watchdog timer gap ` +
+        `~${Math.round(gap / 1000)}s (expected every ` +
+        `${WATCHDOG_TICK_MS / 1000}s)`
     );
   }
 }, WATCHDOG_TICK_MS);

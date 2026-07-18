@@ -229,8 +229,8 @@ function installWorkerDeathDetection(worker: SharedWorker): void {
       info(`automerge SharedWorker instance ${data.instanceId} (via ${data.type})`);
     } else if (data.instanceId && data.instanceId !== instanceId) {
       warn(
-        `automerge SharedWorker RESTARTED (instance ${data.instanceId}, ` +
-          `was ${instanceId}) — fresh peerId + cold state; docs need re-subscribe`
+        `automerge SharedWorker instance changed (instance ${data.instanceId}, ` +
+          `was ${instanceId})`
       );
       instanceId = data.instanceId;
     }
@@ -238,7 +238,7 @@ function installWorkerDeathDetection(worker: SharedWorker): void {
 
   // Fires when the SharedWorker is destroyed (where supported).
   worker.port.addEventListener("close", () => {
-    warn("automerge SharedWorker control port CLOSED — worker terminated");
+    warn("automerge SharedWorker control port closed");
   });
 
   worker.addEventListener("error", event => {
@@ -262,8 +262,8 @@ function installWorkerDeathDetection(worker: SharedWorker): void {
     if (silentMs > HEARTBEAT_TIMEOUT_MS && visible && !warnedUnresponsive) {
       warnedUnresponsive = true;
       warn(
-        `automerge SharedWorker UNRESPONSIVE ~${Math.round(silentMs / 1000)}s ` +
-          `while tab visible — likely died/crashed`
+        `automerge SharedWorker no pong for ~${Math.round(silentMs / 1000)}s ` +
+          `(tab visible)`
       );
     }
   }, HEARTBEAT_MS);
