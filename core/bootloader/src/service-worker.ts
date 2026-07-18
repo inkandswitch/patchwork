@@ -184,6 +184,9 @@ handoffChannel.addEventListener("message", (event) => {
   }
 });
 
+/** Signals that respondWith should reject; see {@link HandoffAbortMessage}. */
+class HandoffAborted extends Error {}
+
 function handoff(
   request: Request,
   handoffURL: URL
@@ -329,6 +332,14 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           fetchEvent.waitUntil(replyPromise.catch(() => {}));
           const reply = await replyPromise;
 
+          if (reply.type === "abort") {
+            // Rejecting respondWith gives the caller a network error rather
+            // than a response it can memoize. Rethrown past the catch below,
+            // which would otherwise turn this into a 556.
+            log(`aborting ${handoffURL}: ${reply.reason}`);
+            throw new HandoffAborted(reply.reason);
+          }
+
           if (reply.type === "response") {
             // errors, redirects and other things that shouldn't be cached
             log(`serving handed-off response for ${handoffURL}`, reply);
@@ -384,6 +395,8 @@ self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
           );
         }
       } catch (error) {
+        // Deliberate: fail the request as a network error, no response.
+        if (error instanceof HandoffAborted) throw error;
         const message =
           error instanceof Error
             ? `${error.message}\n\n${error.stack}`

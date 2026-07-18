@@ -161,7 +161,26 @@ export interface HandoffResponseMessage {
   response: HandoffResponse;
 }
 
-export type HandoffReplyMessage = HandoffCachedMessage | HandoffResponseMessage;
+/**
+ * Automerge worker → service worker: fail the request as a network error
+ * rather than serving any response at all.
+ *
+ * A resolved response — even a 404 — is a result the caller can cache. A
+ * failed `import()` is memoized in the module map against its URL, so a doc
+ * whose heads simply hadn't arrived yet would keep serving that failure from
+ * memory after the heads synced. A rejected `respondWith` produces a network
+ * error instead, which is not memoized, so the same URL can be retried.
+ */
+export interface HandoffAbortMessage {
+  id: string;
+  type: "abort";
+  reason: string;
+}
+
+export type HandoffReplyMessage =
+  | HandoffCachedMessage
+  | HandoffResponseMessage
+  | HandoffAbortMessage;
 
 /**
  * Automerge worker → world: broadcast once on startup so the service worker

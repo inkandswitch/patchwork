@@ -49,6 +49,7 @@ import {
   type HandoffCachedMessage,
   type HandoffOnlineMessage,
   type HandoffRequest,
+  type HandoffAbortMessage,
   type HandoffRequestMessage,
   type HandoffResponseMessage,
   type SyncStateBroadcast,
@@ -1020,6 +1021,13 @@ function waitForHeads(
   });
 }
 
+/**
+ * Thrown instead of returning a Response when the request should fail as a
+ * network error rather than resolve to something the caller can memoize.
+ * See {@link HandoffAbortMessage}.
+ */
+class AbortHandoff extends Error {}
+
 async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   const { repo } = await getRepoHive();
   const href = automergeURL.href;
@@ -1053,7 +1061,12 @@ async function resolveAutomergeUrl(automergeURL: URL): Promise<Response> {
   // The heads may not have synced to us yet — give them the rest of the
   // resolve window to arrive before giving up.
   if (!(await waitForHeads(baseHandle, hexHeads ?? [], signal))) {
-    return new Response("heads not found", { status: 404 });
+    // Not a 404: the heads may still be on their way, and this exact URL will
+    // be requested again once they land. Fail it as a network error so the
+    // caller doesn't memoize the miss.
+    throw new AbortHandoff(
+      `heads not found for ${maybeAutomergeUrl} within ${RESOLVE_TIMEOUT_MS}ms`
+    );
   }
   const rootHandle = baseHandle.view(heads);
 
@@ -1147,6 +1160,14 @@ async function handleHandoffRequest(message: HandoffRequestMessage) {
       ),
     ]);
   } catch (error) {
+    if (error instanceof AbortHandoff) {
+      handoffChannel.postMessage({
+        id,
+        type: "abort",
+        reason: error.message,
+      } satisfies HandoffAbortMessage);
+      return;
+    }
     const body =
       error instanceof Error
         ? `${error.message}\n\n${error.stack}`
