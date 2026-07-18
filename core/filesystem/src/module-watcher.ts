@@ -29,6 +29,11 @@ const DEFAULT_BRANCH = "default";
 // snapshot instead of an intermediate one.
 const RELOAD_DEBOUNCE_MS = 250;
 
+// A package can fail to import just because the automerge worker serving its
+// files is still coming up. Nothing else brings it back — setDocWatcher only
+// fires when the folder doc's own heads move — so back off and try again.
+const RETRY_DELAYS_MS = [1_000, 2_000, 5_000, 10_000, 20_000];
+
 function getDocumentBaseUrl(): string {
   // `document.baseURI` is the document's proper base URL — for a srcdoc/sandboxed
   // frame that's the embedder's URL (a valid base), where `location.href` would
@@ -294,9 +299,13 @@ export class ModuleWatcher {
     await this.load();
   }
 
-  private async announce(importName: string) {
+  private async announce(importName: string, attempt = 0): Promise<void> {
     const mod = await this.importPackageSafe(importName);
-    mod && this.onLoad(importName, mod);
+    if (mod) return this.onLoad(importName, mod);
+    const delay = RETRY_DELAYS_MS[attempt];
+    if (delay === undefined) return;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return this.announce(importName, attempt + 1);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.
