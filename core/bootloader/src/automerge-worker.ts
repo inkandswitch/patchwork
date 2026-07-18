@@ -728,12 +728,11 @@ function setupSyncStateBroadcast(
       byStorage.set(storageId, { heads: headsCopy, timestamp });
       postHeads(documentId, storageId, headsCopy, timestamp);
       // A doc the server reported is one we hold — make sure we're advertising
-      // our own heads for it too. Track just this doc: a full scanOwnHandles()
-      // per event is O(all handles) and goes quadratic during sync bursts,
-      // starving the thread that's doing the syncing. The 3s tick still covers
-      // general discovery.
-      const handle = repo.handles[documentId as DocumentId];
-      if (handle) trackOwnHandle(handle as never);
+      // our own heads for it too. This rescans every handle rather than just
+      // the reported one: it's O(all handles) per event, but tracking is
+      // idempotent via ownTracked, and narrowing it to the reported doc leaves
+      // docs the server never advertises waiting on the 3s tick.
+      scanOwnHandles();
       reviewResync(documentId);
     }
   );
