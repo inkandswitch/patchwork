@@ -212,6 +212,16 @@ export function getAutomergeWorker(): SharedWorker {
       name: "patchwork-automerge",
       type: "module",
     });
+    // Fired when a message arrives that can't be structured-deserialized —
+    // e.g. a transfer list that named something unclonable. Silent otherwise:
+    // the message is simply dropped, which looks identical to a worker that
+    // never replied. Always loud, not gated on the lifecycle toggle.
+    automergeWorker.port.addEventListener("messageerror", (event) => {
+      console.error(
+        "[automerge-worker] undeserializable message from worker:",
+        event
+      );
+    });
     // Control replies (port-ready &c) come back on this port, so it needs
     // start() — we listen with addEventListener, not onmessage.
     automergeWorker.port.start();
@@ -267,6 +277,19 @@ export function getAutomergeWorker(): SharedWorker {
         type: "module",
         name: "subduction-websocket",
       });
+      // This worker carries the websocket to the sync server, so if it fails
+      // to load, sync silently stops with no other symptom.
+      io.addEventListener("error", (event) => {
+        const error = event as ErrorEvent;
+        console.error(
+          `[subduction-io] failed to load/run ${SUBDUCTION_IO_WORKER_URL}:`,
+          error.message || event,
+          error.filename ? `(${error.filename}:${error.lineno})` : ""
+        );
+      });
+      io.port.addEventListener("messageerror", (event) => {
+        console.error("[subduction-io] undeserializable message:", event);
+      });
       return io.port;
     });
 
@@ -316,6 +339,8 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
     }
     probe = undefined;
   };
+  let warnedSendFailed = false;
+  let pingsSent = 0;
 
   worker.port.addEventListener("message", (event: MessageEvent) => {
     const data = event.data;
@@ -343,8 +368,15 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
     void recoverAutomergeWorker("control port closed", worker);
   });
 
+  // Not gated on the lifecycle toggle: a worker that fails to load never
+  // replies to anything, and this is the only signal that says so.
   worker.addEventListener("error", event => {
-    warn(`automerge SharedWorker error: ${(event as ErrorEvent).message || event}`);
+    const error = event as ErrorEvent;
+    console.error(
+      `[lifecycle] ${stamp()} automerge SharedWorker error:`,
+      error.message || event,
+      error.filename ? `(${error.filename}:${error.lineno})` : ""
+    );
   });
 
   // On probe hello, give the suspect port this long to also speak before
@@ -391,8 +423,18 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
   const heartbeat = setInterval(() => {
     try {
       worker.port.postMessage({ type: "ping", id: ++seq });
-    } catch {
-      // Port already torn down — the "close" handler covers that case.
+      pingsSent++;
+    } catch (error) {
+      // Swallowing this makes a failed send indistinguishable from a dead
+      // worker in the "no pong" warning below. Once, not every heartbeat.
+      if (!warnedSendFailed) {
+        warnedSendFailed = true;
+        console.error(
+          `[lifecycle] ${stamp()} automerge SharedWorker ping send threw ` +
+            `after ${pingsSent} sent:`,
+          error
+        );
+      }
     }
     const neverHeard = instanceId === undefined;
     const silentMs = Date.now() - lastHeardAt;
@@ -414,7 +456,6 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
         warn(`automerge SharedWorker ${reason} (tab visible)`);
       }
       startProbe(reason);
-    }
   }, HEARTBEAT_MS);
 
   return () => {

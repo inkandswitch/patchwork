@@ -1,7 +1,7 @@
 import {
   isValidAutomergeUrl,
   type AutomergeUrl,
-} from "@automerge/automerge-repo";
+} from "@automerge/automerge-repo/slim";
 import { resolve } from "resolve.exports";
 import debug from "debug";
 import {
@@ -11,6 +11,25 @@ import {
 const log = debug("patchwork:filesystem");
 
 export const defaultImportConditions = ["patchwork", "browser", "import"];
+
+// A failed import is memoized in the ES module map against its URL, so the
+// same URL can never be retried in this realm. Retrying under a distinct URL
+// gets a fresh entry; the heads-pinned URLs make it safe, since the content at
+// a given set of heads can't change.
+async function importModule(entryPointUrl: string) {
+  try {
+    return await import(/* @vite-ignore */ entryPointUrl);
+  } catch (cause) {
+    const retry = new URL(entryPointUrl);
+    retry.searchParams.set("retry", "1");
+    log(`retrying ${entryPointUrl.slice(-60)}`);
+    try {
+      return await import(/* @vite-ignore */ retry.href);
+    } catch {
+      throw cause;
+    }
+  }
+}
 
 export async function importPackageFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
@@ -31,7 +50,7 @@ export async function importPackageFromFolderDocUrl(
 
   log(`importing ${entryPointUrl.slice(-60)}`);
 
-  return await import(/* @vite-ignore */ entryPointUrl);
+  return await importModule(entryPointUrl);
 }
 
 /**
@@ -50,7 +69,7 @@ export async function importPackageFromHttpUrl(
 ) {
   const entryPointUrl = await httpEntryPointUrl(url, subpath, conditions);
   log(`importing ${entryPointUrl.slice(-60)}`);
-  return await import(/* @vite-ignore */ entryPointUrl);
+  return await importModule(entryPointUrl);
 }
 
 /**
