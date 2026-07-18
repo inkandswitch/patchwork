@@ -3,7 +3,7 @@ import {
   type AutomergeUrl,
   type DocHandle,
   type Repo,
-} from "@automerge/automerge-repo";
+} from "@automerge/automerge-repo/slim";
 import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 import { getRegistry } from "./registry/index.js";
