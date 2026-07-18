@@ -281,9 +281,7 @@ function getSubductionEndpoints(): (WorkerWebSocketEndpoint | string)[] {
         : [
             new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
               worker: subductionPortProvider.source,
-              ...(WS_WINDOW_FRAMES
-                ? { windowFrames: WS_WINDOW_FRAMES }
-                : {}),
+              ...(WS_WINDOW_FRAMES ? { windowFrames: WS_WINDOW_FRAMES } : {}),
             }),
           ];
   }
@@ -363,10 +361,9 @@ function getRepoHive() {
   if (!repoHivePromise) {
     repoHivePromise = (async () => {
       log("getRepo: starting");
-
       log("fetching wasm modules");
       const [amWasmBuf, sdnWasmBuf] = await Promise.all([
-        fetch("/automerge.wasm?worker").then((r) => r.arrayBuffer()),
+        fetch("/automerge.wasm").then((r) => r.arrayBuffer()),
         fetch("/subduction.wasm").then((r) => r.arrayBuffer()),
       ]);
       initSubductionSync(new Uint8Array(sdnWasmBuf));
@@ -644,8 +641,9 @@ function setupSyncStateBroadcast(
   >();
   // Inspectable from the SharedWorker console as `self.patchworkResync` to see
   // whether/how often a doc is being re-synced and against which server heads.
-  const resyncDiag: { fires: number; byDoc: Record<string, unknown> } =
-    ((self as any).patchworkResync ??= { fires: 0, byDoc: {} });
+  const resyncDiag: { fires: number; byDoc: Record<string, unknown> } = ((
+    self as any
+  ).patchworkResync ??= { fires: 0, byDoc: {} });
   const reviewResync = (documentId: string) => {
     if (!identity || !connected) {
       resyncState.delete(documentId);
@@ -730,8 +728,12 @@ function setupSyncStateBroadcast(
       byStorage.set(storageId, { heads: headsCopy, timestamp });
       postHeads(documentId, storageId, headsCopy, timestamp);
       // A doc the server reported is one we hold — make sure we're advertising
-      // our own heads for it too.
-      scanOwnHandles();
+      // our own heads for it too. Track just this doc: a full scanOwnHandles()
+      // per event is O(all handles) and goes quadratic during sync bursts,
+      // starving the thread that's doing the syncing. The 3s tick still covers
+      // general discovery.
+      const handle = repo.handles[documentId as DocumentId];
+      if (handle) trackOwnHandle(handle as never);
       reviewResync(documentId);
     }
   );
