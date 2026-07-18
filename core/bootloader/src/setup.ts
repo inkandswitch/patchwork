@@ -1,7 +1,9 @@
 import type {
+  ServiceWorkerDiagnostics,
   ServiceWorkerRepoChannelListener,
   SetupServiceWorkerOptions,
   SetupServiceWorkerResult,
+  WorkerDiagnostics,
   SyncStateDocMessage,
 } from "./types.js";
 import {
@@ -14,8 +16,24 @@ import {
   isWorkerErrorMessage,
 } from "@automerge/automerge-repo/worker-port";
 
-const serviceWorkerDebugging = debug.enabled("patchwork:serviceworker");
-const workerDebugging = debug.enabled("patchwork:automergeworker");
+// Worker/SW console logging defaults ON. If the user has configured the `debug`
+// package at all (via `localStorage.debug`), honour it so they can quiet or
+// scope things; otherwise default to enabled. Either way the persistent ring
+// loggers capture everything for the diagnostics bundle — this only controls
+// live console *display*.
+function consoleDisplayEnabled(namespace: string): boolean {
+  try {
+    if (globalThis.localStorage?.getItem("debug")) {
+      return debug.enabled(namespace);
+    }
+  } catch {
+    // localStorage unavailable — fall through to default-on
+  }
+  return true;
+}
+
+const serviceWorkerDebugging = consoleDisplayEnabled("patchwork:serviceworker");
+const workerDebugging = consoleDisplayEnabled("patchwork:automergeworker");
 
 // Diagnostic [lifecycle] logging, on by default. Disable via
 // localStorage["patchwork:lifecycle-logs"] = "off". Read live at log time.
@@ -348,6 +366,68 @@ export function connectClassicSync(
   });
 }
 
+/**
+ * Ask the automerge SharedWorker for its diagnostics snapshot. Resolves `null`
+ * on timeout so a wedged worker (often the thing being diagnosed) can't hang
+ * the export.
+ */
+export function requestWorkerDiagnostics(
+  timeoutMs = 5_000
+): Promise<WorkerDiagnostics | null> {
+  const worker = getAutomergeWorker();
+  const { port1, port2 } = new MessageChannel();
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      port1.close();
+      resolve(null);
+    }, timeoutMs);
+    port1.onmessage = (event) => {
+      clearTimeout(timeout);
+      port1.close();
+      resolve(
+        event.data?.type === "diagnostics-result" ? event.data.data : null
+      );
+    };
+    try {
+      worker.port.postMessage({ type: "diagnostics" }, [port2]);
+    } catch {
+      clearTimeout(timeout);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Ask the service worker for its diagnostics snapshot. Resolves `null` if there
+ * is no controlling service worker or it doesn't reply within `timeoutMs`.
+ */
+export function requestServiceWorkerDiagnostics(
+  timeoutMs = 5_000
+): Promise<ServiceWorkerDiagnostics | null> {
+  const controller = navigator.serviceWorker?.controller;
+  if (!controller) return Promise.resolve(null);
+  const { port1, port2 } = new MessageChannel();
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      port1.close();
+      resolve(null);
+    }, timeoutMs);
+    port1.onmessage = (event) => {
+      clearTimeout(timeout);
+      port1.close();
+      resolve(
+        event.data?.type === "diagnostics-result" ? event.data.data : null
+      );
+    };
+    try {
+      controller.postMessage({ type: "diagnostics" }, [port2]);
+    } catch {
+      clearTimeout(timeout);
+      resolve(null);
+    }
+  });
+}
+
 /** Wait for a registration to have an active worker */
 function waitForActive(reg: ServiceWorkerRegistration): Promise<ServiceWorker> {
   if (reg.active) return Promise.resolve(reg.active);
@@ -479,6 +559,8 @@ export default async function setupServiceWorker(
     shared,
     connectClassicSync,
     getRepoChannel,
+    requestWorkerDiagnostics,
+    requestServiceWorkerDiagnostics,
     subscribeSyncState,
     async subscribeToRepoChannel(listener: ServiceWorkerRepoChannelListener) {
       // The automerge worker outlives the page, so unlike the old in-service-

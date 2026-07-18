@@ -58,6 +58,7 @@
     "@keyhive/keyhive": "catalog:",
     "@types/debug": "^4.1.13",
     "debug": "^4.4.3",
+    "fflate": "^0.8.2",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
     "tinyargs": "^0.1.4"
