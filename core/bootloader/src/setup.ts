@@ -456,6 +456,7 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
         warn(`automerge SharedWorker ${reason} (tab visible)`);
       }
       startProbe(reason);
+     }
   }, HEARTBEAT_MS);
 
   return () => {
