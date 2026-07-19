@@ -1,6 +1,6 @@
 {
   "name": "@inkandswitch/patchwork-bootloader",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "author": "chee",
   "type": "module",
   "license": "MIT",
@@ -74,10 +74,18 @@
     "@automerge/vanillajs": "catalog:"
   },
   "peerDependenciesMeta": {
-    "@automerge/automerge": { "optional": true },
-    "@automerge/automerge-repo": { "optional": true },
-    "@automerge/automerge-repo-keyhive": { "optional": true },
-    "@automerge/vanillajs": { "optional": true }
+    "@automerge/automerge": {
+      "optional": true
+    },
+    "@automerge/automerge-repo": {
+      "optional": true
+    },
+    "@automerge/automerge-repo-keyhive": {
+      "optional": true
+    },
+    "@automerge/vanillajs": {
+      "optional": true
+    }
   },
   "scripts": {
     "build": "tsc",
