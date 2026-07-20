@@ -6,8 +6,9 @@
  * user's account document, and hand control to the configured root tool.
  *
  * Pulls in DOM- and plugin-layer dependencies, so it is for a browser site's
- * `main.ts` only. Non-UI consumers should import the package default, which
- * does SW registration and the automerge-worker handoff and nothing else.
+ * `main.ts` only. Non-UI consumers should import
+ * `@inkandswitch/patchwork-bootloader` directly, which does SW registration
+ * and the automerge-worker handoff and nothing else.
  */
 import {
   type DocHandle,
@@ -34,7 +35,7 @@ import { initSync as initSubductionSync } from "@automerge/automerge-subduction/
 import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
-import { importAutomergePackageViaWorker } from "./module-loader.js";
+import { importAutomergePackageViaWorker } from "@inkandswitch/patchwork-bootloader/module-loader";
 import {
   openDocument,
   registerPatchworkViewElement,
@@ -51,20 +52,18 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-import setupServiceWorker, { lifecycleLog } from "./setup.js";
+import setupServiceWorker, {
+  lifecycleLog,
+} from "@inkandswitch/patchwork-bootloader";
 import type {
   ServiceWorkerRepoChannelListener,
   SyncStateDocMessage,
-} from "./types.js";
+} from "@inkandswitch/patchwork-bootloader/types";
 import debug from "debug";
 
 const log = debug("patchwork:bootloader:site");
 
 declare const __SITE_NAME__: string;
-const siteName =
-  typeof __SITE_NAME__ !== "undefined"
-    ? __SITE_NAME__
-    : "patchwork.inkandswitch.com";
 
 // Must match the automerge-worker's selection, or the tab and the SW grant
 // relay access to different servers.
@@ -123,10 +122,10 @@ export interface SiteConfig {
    *
    * Overridable at runtime with `localStorage.systemPackageListURL`.
    */
-  defaultModules?: string | string[];
+  packageListURL?: string | string[];
 
   /**
-   * @deprecated Use {@link SiteConfig.defaultModules}. Retained for backwards
+   * @deprecated Use {@link SiteConfig.packageListURL}. Retained for backwards
    * compatibility with existing sites.
    */
   defaultModulesUrl?: AutomergeUrl;
@@ -136,13 +135,16 @@ export interface SiteConfig {
    * belongs to the current user. Sites sharing an origin MUST use distinct
    * keys so they do not clobber each other's accounts.
    */
-  accountStorageKey: string;
+  accountKey: string;
 
   /**
-   * Brand word appended to the document title as `"<doc> | <titleSuffix>"`
-   * when a document is open. The separator is provided for you.
+   * Brand word for this site: appended to the document title as
+   * `"<doc> | <name>"` when a document is open (the separator is provided
+   * for you), and used to namespace this site's storage and peer ids.
+   *
+   * Defaults to the build-time `__SITE_NAME__` define, then `"patchwork"`.
    */
-  titleSuffix: string;
+  name?: string;
 
   /** DOM id of the `<patchwork-view>` hosting the root tool. Defaults to "root". */
   rootElementId?: string;
@@ -169,9 +171,12 @@ const wasmFetches = Promise.all([
 ]);
 wasmFetches.catch(() => {});
 
-export async function bootPatchworkSite(
+export async function start(
   config: SiteConfig
 ): Promise<BootResult> {
+  const siteName =
+    config.name ??
+    (typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "patchwork");
   const moduleSources = resolveDefaultModules(config);
   showLoadingAnimation();
   log("booting", config);
@@ -209,7 +214,11 @@ export async function bootPatchworkSite(
     });
 
     let workerAdapter = new MessageChannelNetworkAdapter(workerPort);
-    ({ repo, hive, signerIdentity } = await createRepo(config, workerAdapter));
+    ({ repo, hive, signerIdentity } = await createRepo(
+      config,
+      siteName,
+      workerAdapter
+    ));
 
     // The worker was recreated with cold state: wire the repo onto the fresh
     // port and drop the adapter stranded on the dead one.
@@ -243,7 +252,7 @@ export async function bootPatchworkSite(
   const rootElementId = config.rootElementId ?? "root";
   const rootElement = document.getElementById(rootElementId);
   if (!rootElement) {
-    throw new Error(`bootPatchworkSite: no element with id="${rootElementId}"`);
+    throw new Error(`start: no element with id="${rootElementId}"`);
   }
 
   // `<repo-provider>` sits above the root and answers `repo:handle-descriptor`
@@ -268,7 +277,7 @@ export async function bootPatchworkSite(
   );
 
   const accountDocHandle = (await resolveAccountHandle(repo, {
-    storageKey: config.accountStorageKey,
+    storageKey: config.accountKey,
     hive,
   })) as DocHandle<AccountDoc>;
 
@@ -305,7 +314,7 @@ export async function bootPatchworkSite(
     rootElement,
     repo,
     accountDocHandle,
-    titleSuffix: config.titleSuffix,
+    siteName,
   });
 
   return { repo, moduleWatcher, accountDocHandle };
@@ -337,6 +346,7 @@ function firstRepoPort(
 
 async function createRepo(
   config: SiteConfig,
+  siteName: string,
   workerAdapter: MessageChannelNetworkAdapter
 ): Promise<{
   repo: Repo;
@@ -377,8 +387,7 @@ async function createRepo(
       return peerId.includes("automerge-worker");
     },
     enableRemoteHeadsGossiping: true,
-    peerId:
-      `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+    peerId: `${siteName}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
   });
   const signerIdentity = {
     peerId: signer.peerId().toString(),
@@ -421,7 +430,7 @@ function isValidModuleSource(source: string): boolean {
  * built-in bundle. `defaultToolsUrl` is the pre-rename key.
  */
 function resolveDefaultModules(config: SiteConfig): string[] {
-  const configured = config.defaultModules ?? config.defaultModulesUrl ?? [];
+  const configured = config.packageListURL ?? config.defaultModulesUrl ?? [];
   const builtin = (
     Array.isArray(configured) ? configured : [configured]
   ).filter(Boolean);
@@ -443,7 +452,7 @@ function resolveDefaultModules(config: SiteConfig): string[] {
 
   if (builtin.length === 0) {
     throw new Error(
-      "bootPatchworkSite: no default module sources configured (set `defaultModules`)"
+      "start: no default module sources configured (set `packageListURL`)"
     );
   }
   return builtin;
@@ -668,14 +677,14 @@ interface HashRoutingParams {
   rootElement: HTMLElement;
   repo: Repo;
   accountDocHandle: DocHandle<AccountDoc>;
-  titleSuffix: string;
+  siteName: string;
 }
 
 function installHashRouting({
   rootElement,
   repo,
   accountDocHandle,
-  titleSuffix,
+  siteName,
 }: HashRoutingParams): void {
   const handleHashChange = async () => {
     const hash = window.location.hash.slice(1);
@@ -766,7 +775,7 @@ function installHashRouting({
       const docTitle = (datatype.module as DatatypeImplementation).getTitle(
         doc
       );
-      if (docTitle) document.title = `${docTitle} | ${titleSuffix}`;
+      if (docTitle) document.title = `${docTitle} | ${siteName}`;
     } catch (e) {
       console.error("Failed to update document title", e);
     }
@@ -795,3 +804,5 @@ function installHashRouting({
 
   window.addEventListener("hashchange", handleHashChange);
 }
+
+export default start;

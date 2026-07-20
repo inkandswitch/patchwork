@@ -1,13 +1,21 @@
-import type { Plugin } from "vite";
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import type { PatchworkVitePluginOptions } from "./patchwork-plugin.js";
-import { resolveSyncServers, PRELOAD_WASM_ASSETS, escapeHtml } from "./shared.js";
+import type { PatchworkSiteOptions } from "./options.js";
+import { resolveSyncServers, PRELOAD_WASM_ASSETS } from "./sync-servers.js";
 import { ICON_SPECS } from "./icons.js";
 
-const GENERATED_PATH = "index.html";
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
 
-function buildHtml(options: PatchworkVitePluginOptions): string {
+export function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
+}
+
+/** Builds the generated index.html as a plain string — no bundler involved. */
+export function buildHtml(options: PatchworkSiteOptions): string {
   const title = options.title ?? options.siteName ?? "Patchwork";
   const lang = (options.html && options.html.lang) || "en";
   const entry = options.entry ?? "/src/main.ts";
@@ -17,6 +25,7 @@ function buildHtml(options: PatchworkVitePluginOptions): string {
     `<meta charset="UTF-8" />`,
     `<meta name="viewport" content="width=device-width, initial-scale=1.0" />`,
     `<title>${escapeHtml(title)}</title>`,
+    `<link rel="stylesheet" href="@inkandswitch/patchwork/global.css" />`,
   ];
 
   if (options.description) {
@@ -46,7 +55,9 @@ function buildHtml(options: PatchworkVitePluginOptions): string {
     }
   }
 
-  if (options.themeColor) {
+  if (typeof options.themeColor === "string") {
+    head.push(`<meta name="theme-color" content="${options.themeColor}" />`);
+  } else if (options.themeColor) {
     head.push(
       `<meta name="theme-color" content="${options.themeColor.light}" media="(prefers-color-scheme: light)" />`,
       `<meta name="theme-color" content="${options.themeColor.dark}" media="(prefers-color-scheme: dark)" />`
@@ -86,53 +97,4 @@ ${head.join("\n")}
 <script type="module" src="${entry}"></script>
 </html>
 `;
-}
-
-/**
- * Vite's own html-asset pipeline reads the entry html straight off disk (not
- * through the plugin's virtual module graph) and mirrors the input's
- * location relative to root into the build output, so a fully generated
- * index.html has to be written to the project root as a real index.html —
- * gitignore it in sites using `html !== false`.
- */
-export function htmlPlugin(
-  options: PatchworkVitePluginOptions = {}
-): Plugin | null {
-  if (options.html === false) return null;
-
-  const html = buildHtml(options);
-  let generatedPath: string;
-
-  return {
-    name: "@patchwork/html",
-    enforce: "pre",
-    async config(config) {
-      const root = resolve(config.root ?? process.cwd());
-      generatedPath = resolve(root, GENERATED_PATH);
-      await mkdir(dirname(generatedPath), { recursive: true });
-      await writeFile(generatedPath, html, "utf-8");
-      return {
-        build: { rollupOptions: { input: generatedPath } },
-      };
-    },
-    configureServer: {
-      order: "pre",
-      handler(server) {
-        server.middlewares.use(async (req, res, next) => {
-          if (req.url !== "/" && req.url !== "/index.html") {
-            next();
-            return;
-          }
-          const transformed = await server.transformIndexHtml(
-            req.url,
-            html,
-            req.originalUrl
-          );
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "text/html");
-          res.end(transformed);
-        });
-      },
-    },
-  };
 }

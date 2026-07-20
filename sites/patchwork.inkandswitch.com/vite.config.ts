@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import patchwork from "@inkandswitch/patchwork-bootloader/vite";
+import patchwork from "@inkandswitch/patchwork/vite";
 
 export default defineConfig({
   plugins: [

@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork": "workspace:^",
     "vite": "^7.3.5"
   },
   "scripts": {

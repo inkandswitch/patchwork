@@ -6,8 +6,7 @@
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.23.1",
-    "rollup": "^4.61.1",
-    "vite": "^7.3.5"
+    "rollup": "^4.61.1"
   },
   "exports": {
     ".": {
@@ -18,10 +17,6 @@
       "import": "./dist/externals.js",
       "types": "./dist/externals.d.ts"
     },
-    "./vite": {
-      "import": "./dist/vite/patchwork-plugin.js",
-      "types": "./dist/vite/patchwork-plugin.d.ts"
-    },
     "./service-worker": {
       "import": "./dist/service-worker.js",
       "types": "./dist/service-worker.d.ts"
@@ -30,13 +25,13 @@
       "import": "./dist/automerge-worker.js",
       "types": "./dist/automerge-worker.d.ts"
     },
+    "./module-loader": {
+      "import": "./dist/module-loader.js",
+      "types": "./dist/module-loader.d.ts"
+    },
     "./module-loader-worker": {
       "import": "./dist/module-loader-worker.js",
       "types": "./dist/module-loader-worker.d.ts"
-    },
-    "./site": {
-      "import": "./dist/site.js",
-      "types": "./dist/site.d.ts"
     },
     "./types": {
       "import": "./dist/types.js",
@@ -66,10 +61,8 @@
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
-    "sharp": "^0.35.3",
     "solid-js": "catalog:",
-    "tinyargs": "^0.1.4",
-    "vite-plugin-wasm": "^3.6.0"
+    "tinyargs": "^0.1.4"
   },
   "peerDependencies": {
     "@automerge/automerge": "catalog:",
