@@ -12,3 +12,6 @@ dummy-non-existing-folder/
 .pushwork/
 dist/
 scripts/module-settings/automerge-repo-data/
+sites/gaios/
+sites/tiny-patchwork/
+e2e/test-results/
