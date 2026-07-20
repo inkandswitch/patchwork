@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -13,9 +14,10 @@ import { defineConfig, devices } from "@playwright/test";
  * IndexedDB (no external Subduction server). Cross-device/server tests
  * arrive in B3 once a local sync server is wired in.
  *
- * Resource note: single worker, no test-level parallelism. CI runs one
- * browser project per job; locally `playwright test` runs all three.
- * This intentionally avoids spawning many browser/Node processes.
+ * Resource note: every test gets its own browser context (own IndexedDB,
+ * own service worker), so tests are independent and run in parallel.
+ * CI runs one browser project per job; locally `playwright test` runs all
+ * three, so we keep the local worker count lower to bound memory.
  */
 
 const PORT = Number(process.env.PORT ?? 5173);
@@ -28,9 +30,10 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 15_000 },
 
-  // Keep it light: one worker, no parallelism across files.
-  fullyParallel: false,
-  workers: 1,
+  fullyParallel: true,
+  workers: process.env.CI
+    ? availableParallelism()
+    : Math.ceil(availableParallelism() / 2),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
 
