@@ -352,14 +352,10 @@ async function servePassthrough(
   }
 
   if (cached) return cached;
-  const names = await caches.keys();
-  const globalHit = await caches.match(request);
-  const urlHit = await caches.match(request.url);
   return new Response(
-    `couldnt fetch ${request.url} and no stale copy in ${cachename}\n\n` +
-      `debug: caches=${JSON.stringify(names)} globalHit=${!!globalHit} urlHit=${!!urlHit} mode=${request.mode} dest=${request.destination}\n\n${
-        result.stack ?? result.message
-      }`,
+    `couldnt fetch ${request.url} and no stale copy in ${cachename}\n\n${
+      result.stack ?? result.message
+    }`,
     { status: 503, headers: { "content-type": "text/plain" } }
   );
 }
@@ -369,7 +365,12 @@ async function respond(
   handoffURL: URL | undefined
 ): Promise<Response> {
   const cache = await caches.open(cachename);
-  const cached = await cache.match(fetchEvent.request);
+  // A cors request (e.g. the wasm `<link rel=preload crossorigin>`) can miss
+  // an entry that a url-keyed lookup finds, so fall back to the bare url —
+  // offline boot depends on this hitting.
+  const cached =
+    (await cache.match(fetchEvent.request)) ??
+    (await cache.match(fetchEvent.request.url));
 
   try {
     return handoffURL

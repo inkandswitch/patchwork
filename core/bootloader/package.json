@@ -6,7 +6,8 @@
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.23.1",
-    "rollup": "^4.61.1"
+    "rollup": "^4.61.1",
+    "vite": "^7.3.5"
   },
   "exports": {
     ".": {
@@ -40,7 +41,8 @@
     "./types": {
       "import": "./dist/types.js",
       "types": "./dist/types.d.ts"
-    }
+    },
+    "./global.css": "./dist/global.css"
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
@@ -64,8 +66,10 @@
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
+    "sharp": "^0.35.3",
     "solid-js": "catalog:",
-    "tinyargs": "^0.1.4"
+    "tinyargs": "^0.1.4",
+    "vite-plugin-wasm": "^3.6.0"
   },
   "peerDependencies": {
     "@automerge/automerge": "catalog:",
@@ -88,7 +92,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/global.css dist/global.css",
     "dev": "tsc -w --preserveWatchOutput"
   }
 }
