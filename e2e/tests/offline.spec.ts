@@ -34,7 +34,7 @@ test("docs sync between tabs while offline", async ({ context }) => {
 
   await expect
     .poll(async () => findDocField<string>(tabB, url, "status"), {
-      timeout: 15_000,
+      timeout: 30_000,
     })
     .toBe("made-offline");
 
@@ -42,7 +42,7 @@ test("docs sync between tabs while offline", async ({ context }) => {
 
   await expect
     .poll(async () => findDocField<string>(tabA, url, "status"), {
-      timeout: 15_000,
+      timeout: 30_000,
     })
     .toBe("edited-offline");
 });

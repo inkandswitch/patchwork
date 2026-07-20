@@ -45,6 +45,21 @@ Subduction server**:
 - `boot.spec.ts` — SW activates and the tab Repo comes up within budget.
 - `multi-tab-sync.spec.ts` — a doc created in tab A is found/edited in tab B.
 - `reload-persistence.spec.ts` — a doc survives a reload via IndexedDB.
+- `closed-tab-persistence.spec.ts` — a doc outlives the tab that created it.
+- `offline.spec.ts` — tabs sync with the network cut; the app boots from the
+  SW cache offline (skipped on webkit: its offline emulation breaks reload).
+- `concurrent-edits.spec.ts` — racing edits from two tabs merge losslessly.
+- `base-datatypes.spec.ts` — folder-with-references and collaborative-text
+  shapes from patchwork/base round-trip through the relay.
+
+One suite goes beyond B1 and needs the network:
+
+- `cross-profile-sync.spec.ts` — full UI boot (threepane), a markdown doc
+  created via the create-new menu and edited in CodeMirror, synced between
+  two browser profiles through the real Subduction server; once against the
+  local build, once against the live patchwork.inkandswitch.com. Skipped on
+  firefox: Playwright's Firefox build fails cors fetches made from inside a
+  service worker, so the module bundle (and with it the frame) never loads.
 
 They assert on `window.repo` (set right after the SW relay connects), not on
 full UI render: rendering the default frame needs the production Subduction
