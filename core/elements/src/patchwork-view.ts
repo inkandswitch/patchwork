@@ -95,6 +95,12 @@ export type PatchworkViewElement = PatchworkViewElementBase & {
   url?: AutomergeUrl | null;
 };
 
+declare global {
+  interface HTMLElementTagNameMap {
+    "patchwork-view": PatchworkViewElement;
+  }
+}
+
 export type LegacyPatchworkViewElement = PatchworkViewElementBase & {
   hive?: AutomergeRepoKeyhive;
 };
