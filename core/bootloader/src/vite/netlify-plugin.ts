@@ -1,6 +1,6 @@
 import type { Plugin } from "vite";
 import type { PatchworkVitePluginOptions } from "./patchwork-plugin.js";
-import { DEFAULT_SYNC_SERVERS, PRELOAD_WASM_ASSETS } from "./shared.js";
+import { resolveSyncServers, PRELOAD_WASM_ASSETS } from "./shared.js";
 
 function buildLinkHeader(syncServers: string[]): string {
   const parts = PRELOAD_WASM_ASSETS.map(
@@ -16,7 +16,7 @@ function buildLinkHeader(syncServers: string[]): string {
 }
 
 function buildHeaders(options: PatchworkVitePluginOptions): string {
-  const syncServers = options.syncServers ?? DEFAULT_SYNC_SERVERS;
+  const syncServers = resolveSyncServers(options);
   const immutableAssets = options.netlify === false || options.netlify?.immutableAssets === false
     ? null
     : "/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n";
