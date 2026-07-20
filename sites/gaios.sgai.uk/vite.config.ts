@@ -10,10 +10,6 @@ export default defineConfig({
         "local-first collaborative & malleable software environment",
       keyhive: process.env.KEYHIVE === "true",
       themeColor: { light: "#ffffff", dark: "#ffffff" },
-      syncServers: [
-        "https://subduction.sync.inkandswitch.com",
-        "https://sync3.automerge.org",
-      ],
       icons: { source: "public/gaios.png" },
     }),
   ],
