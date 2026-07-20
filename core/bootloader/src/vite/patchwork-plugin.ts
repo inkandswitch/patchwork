@@ -62,6 +62,15 @@ export interface PatchworkNetlifyOptions {
   immutableAssets?: boolean;
 }
 
+export interface PatchworkSyncServersOptions {
+  /** wss:// URL for the legacy automerge-repo sync-server channel (connected on demand via connectClassicSync). Default: wss://sync3.automerge.org. Pass false to skip its preconnect hint. */
+  classic?: string | false;
+  /** wss:// URL for subduction sync — live when keyhiveSyncServer is false. Default: wss://subduction.sync.inkandswitch.com */
+  subduction?: string;
+  /** wss:// URL for keyhive sync — live when keyhiveSyncServer is true. Default: wss://keyhive.sync.automerge.org */
+  keyhive?: string;
+}
+
 export interface PatchworkVitePluginOptions {
   importmap?: ImportMap;
 
@@ -85,8 +94,15 @@ export interface PatchworkVitePluginOptions {
   /** manifest background_color */
   backgroundColor?: string;
 
-  /** Hosts to preconnect/dns-prefetch from the html, and to list in the Netlify Link header. Default: [subduction.sync.inkandswitch.com] */
-  syncServers?: string[];
+  /**
+   * Which sync-server hosts to preconnect/dns-prefetch from the html and
+   * list in the Netlify Link header. Only the channel actually live for
+   * this build is included — subduction xor keyhive, picked by
+   * `keyhiveSyncServer`, matching automerge-worker.ts's own selection —
+   * plus `classic` (on-demand, but cheap to hint) unless set to `false`.
+   * Pass `false` to skip all sync-server hints.
+   */
+  syncServers?: false | PatchworkSyncServersOptions;
 
   icons?: false | PatchworkIconsOptions;
   html?: false | PatchworkHtmlOptions;

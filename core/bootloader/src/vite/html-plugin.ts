@@ -2,7 +2,7 @@ import type { Plugin } from "vite";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { PatchworkVitePluginOptions } from "./patchwork-plugin.js";
-import { DEFAULT_SYNC_SERVERS, PRELOAD_WASM_ASSETS, escapeHtml } from "./shared.js";
+import { resolveSyncServers, PRELOAD_WASM_ASSETS, escapeHtml } from "./shared.js";
 import { ICON_SPECS } from "./icons.js";
 
 const GENERATED_PATH = "index.html";
@@ -11,7 +11,7 @@ function buildHtml(options: PatchworkVitePluginOptions): string {
   const title = options.title ?? options.siteName ?? "Patchwork";
   const lang = (options.html && options.html.lang) || "en";
   const entry = options.entry ?? "/src/main.ts";
-  const syncServers = options.syncServers ?? DEFAULT_SYNC_SERVERS;
+  const syncServers = resolveSyncServers(options);
 
   const head: string[] = [
     `<meta charset="UTF-8" />`,
