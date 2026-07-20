@@ -73,16 +73,23 @@ async function crossProfileMarkdownSync(browser: Browser, origin: string) {
   }
 }
 
+// Playwright's Firefox build fails any cors fetch made from inside a service
+// worker (plain pages are fine), so the module bundle never loads and the
+// frame can't render. Real Firefox is unaffected as far as we can tell.
 test("a markdown doc round-trips between two profiles via the sync server", async ({
   browser,
+  browserName,
 }) => {
+  test.skip(browserName === "firefox", "cors fetches fail in playwright-firefox service workers");
   test.setTimeout(300_000);
   await crossProfileMarkdownSync(browser, "");
 });
 
 test("the same round-trip works on the live patchwork.inkandswitch.com", async ({
   browser,
+  browserName,
 }) => {
+  test.skip(browserName === "firefox", "cors fetches fail in playwright-firefox service workers");
   test.setTimeout(300_000);
   await crossProfileMarkdownSync(browser, LIVE_ORIGIN);
 });
