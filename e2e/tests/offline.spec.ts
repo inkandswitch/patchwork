@@ -73,6 +73,26 @@ test("the app boots from the SW cache while offline and keeps its docs", async (
     })
     .toBe("offline-survivor");
 
+  // The SW caches in the background of each fetch; under load that can lag
+  // the page, so before cutting the network wait for the entries only the
+  // SW cache can serve offline (the page itself and the wasm; the hashed
+  // /assets chunks survive via the browser's own HTTP cache).
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const urls = [
+            location.href,
+            new URL("/automerge.wasm", location.origin).href,
+            new URL("/subduction.wasm", location.origin).href,
+          ];
+          const matches = await Promise.all(urls.map((u) => caches.match(u)));
+          return matches.filter((m) => !m).length;
+        }),
+      { timeout: 30_000 },
+    )
+    .toBe(0);
+
   await context.setOffline(true);
   await page.reload();
   await waitForRepoReady(page);

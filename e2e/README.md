@@ -52,14 +52,25 @@ Subduction server**:
 - `base-datatypes.spec.ts` — folder-with-references and collaborative-text
   shapes from patchwork/base round-trip through the relay.
 
-One suite goes beyond B1 and needs the network:
+Two suites go beyond B1 and need the network (the base module bundle comes
+from netlify), so they're skipped on firefox: Playwright's Firefox build
+fails cors fetches made from inside a service worker, and the module bundle
+(and with it the frame) never loads.
 
 - `cross-profile-sync.spec.ts` — full UI boot (threepane), a markdown doc
   created via the create-new menu and edited in CodeMirror, synced between
   two browser profiles through the real Subduction server; once against the
-  local build, once against the live patchwork.inkandswitch.com. Skipped on
-  firefox: Playwright's Firefox build fails cors fetches made from inside a
-  service worker, so the module bundle (and with it the frame) never loads.
+  local build, once against the live patchwork.inkandswitch.com.
+- `install-tool.spec.ts` — the extensibility loop: a one-file counter module
+  (`fixtures/counter.js`) is written into a directory doc, installed from
+  its `automerge:` URL through the Packages UI, created via the create-new
+  menu, incremented by clicking, and survives a reload.
+
+Known product gap, marked `fixme` on chromium in `offline.spec.ts`: the
+shared automerge-worker's module chunks bypass the page's service worker,
+and assets are served `max-age=0` (in production too), so offline boot
+depends on the browser volunteering stale HTTP-cache entries. Immutable
+caching for hashed `/assets/*` would close it.
 
 They assert on `window.repo` (set right after the SW relay connects), not on
 full UI render: rendering the default frame needs the production Subduction

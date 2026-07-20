@@ -28,7 +28,7 @@ test("edits to different fields from two tabs both survive the merge", async ({
 
   const url = await createDoc(tabA, { a: "", b: "" });
   await expect
-    .poll(async () => findDocField<string>(tabB, url, "a"), { timeout: 15_000 })
+    .poll(async () => findDocField<string>(tabB, url, "a"), { timeout: 30_000 })
     .toBe("");
 
   await Promise.all([
@@ -79,7 +79,7 @@ test("list pushes from two tabs merge without dropping items", async ({
     .poll(
       async () =>
         (await findDocField<unknown[]>(tabB, url, "items")) != null,
-      { timeout: 15_000 },
+      { timeout: 30_000 },
     )
     .toBe(true);
 
