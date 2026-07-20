@@ -199,6 +199,7 @@ describe("repo.find() availability", () => {
 
       // Tab calls find() BEFORE the SW connects its MessageChannel
       const findPromise = tabRepo.find<TestDoc>(handle.url);
+      findPromise.catch(() => {});
 
       // Wait a moment, then connect the SW side
       await pause(500);
@@ -469,6 +470,7 @@ describe("repo.find() availability", () => {
 
       // Tab starts looking for the doc (neither tab nor SW have it)
       const findPromise = tabRepo.find<TestDoc>(targetUrl);
+      findPromise.catch(() => {});
 
       // After 1 second, SW "receives" the doc (simulating Subduction sync)
       // We do this by creating a connected pair: seed → SW
@@ -534,6 +536,7 @@ describe("repo.find() availability", () => {
 
     // Tab calls find() — neither tab nor SW have it
     const findPromise = tabRepo.find<TestDoc>(targetUrl);
+    findPromise.catch(() => {});
 
     // Wait for the SW to respond "doc-unavailable" to the tab.
     // The sync protocol exchange is fast (~50ms).
