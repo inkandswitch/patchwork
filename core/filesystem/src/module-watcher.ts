@@ -9,16 +9,13 @@ import {
   importPackageFromHttpUrl,
 } from "./packages.js";
 import { getType, type HasPatchworkMetadata } from "./metadata.js";
-import { BranchesDoc, FolderDoc } from "./types.js";
+import { FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
-  branches?: Record<AutomergeUrl, string>;
 } & HasPatchworkMetadata & {
     "@patchwork": { type: "patchwork:module-settings" };
   };
-
-const DEFAULT_BRANCH = "default";
 
 // A single pushwork sync commits a burst of changes to a folder doc — the
 // file-list write, an optional pin refresh, and a trailing `lastSyncAt` stamp —
@@ -68,7 +65,6 @@ async function fetchModuleManifest(url: string): Promise<ModuleSettingsDoc> {
   return {
     "@patchwork": { type: "patchwork:module-settings" },
     modules,
-    branches: json.branches,
   } as ModuleSettingsDoc;
 }
 
@@ -78,10 +74,11 @@ type WatchedModule = {
   timer?: ReturnType<typeof setTimeout>;
 };
 
-type WatchedBranchesDoc = {
-  handle?: DocHandle<BranchesDoc>;
-  listener?: () => void;
-};
+function warnBranchesUnsupported(branchesDocUrl: AutomergeUrl) {
+  console.warn(
+    `module ${branchesDocUrl} is a branches doc. Branches docs are no longer supported as modules and will be skipped. Please let us know you hit this: post in #patchwork-testers or email chee@inkandswitch.com`
+  );
+}
 
 // todo this can be a function that takes a plugin system and returns a change
 // handler
@@ -96,9 +93,6 @@ type WatchedBranchesDoc = {
  * (fetched once at construction). The two kinds can be freely mixed, and the
  * module URLs *within* either kind can themselves point at Automerge folder
  * docs or plain HTTP(S) bundles.
- *
- * When resolving the active branch for a branches doc, the entry named "user"
- * is consulted first, so a user-local override beats the system default.
  */
 export class ModuleWatcher {
   repo: Repo;
@@ -107,7 +101,6 @@ export class ModuleWatcher {
   staticManifests: Record<string, ModuleSettingsDoc> = {};
   doneLoading: Promise<void>;
   #watchedModules = new Map<string, WatchedModule>();
-  #watchedBranchesDocs = new Map<AutomergeUrl, WatchedBranchesDoc>();
   // Per-module announce generation. Bumped whenever a newer announce starts
   // for the same module, so a stale retry chain (still backing off from a
   // failed import of an older pinned version) abandons itself instead of
@@ -116,10 +109,6 @@ export class ModuleWatcher {
   #retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   #lastAnnounced = new Map<string, string>();
   #activeModules = new Set<string>();
-  #branchTargetByBranchesUrl = new Map<
-    AutomergeUrl,
-    AutomergeUrl | undefined
-  >();
   #disposed = false;
 
   onLoad: (name: string, mod: any) => void;
@@ -226,7 +215,7 @@ export class ModuleWatcher {
       const handle =
         await this.repo.find<Partial<HasPatchworkMetadata>>(importName);
       if (getType(handle.doc()) === "branches") {
-        await this.processBranchesEntry(importName);
+        warnBranchesUnsupported(importName);
         return;
       }
       await this.watchAndAnnounce(
@@ -252,81 +241,6 @@ export class ModuleWatcher {
     this.setDocWatcher(importName, handle, headsKey);
     if (this.#lastAnnounced.get(importName) === headsKey) return;
     await this.announce(handle.view(heads).url, importName, headsKey);
-  }
-
-  private async processBranchesEntry(branchesDocUrl: AutomergeUrl) {
-    this.setBranchesWatcher(branchesDocUrl);
-    const folderUrl = await this.resolveBranchToFolderUrl(branchesDocUrl);
-    const previous = this.#branchTargetByBranchesUrl.get(branchesDocUrl);
-    if (folderUrl === previous) return;
-    this.#branchTargetByBranchesUrl.set(branchesDocUrl, folderUrl);
-    if (previous && !this.#activeModules.has(previous)) {
-      this.unloadModule(previous);
-    }
-    if (!folderUrl) return;
-    const handle = await this.repo.find<FolderDoc>(folderUrl);
-    await this.watchAndAnnounce(folderUrl, handle);
-  }
-
-  private async resolveBranchToFolderUrl(
-    branchesDocUrl: AutomergeUrl
-  ): Promise<AutomergeUrl | undefined> {
-    const handle = await this.repo.find<BranchesDoc>(branchesDocUrl);
-    const doc = handle.doc();
-    const branchName = this.chosenBranchFor(branchesDocUrl) ?? DEFAULT_BRANCH;
-    const url = doc?.branches?.[branchName];
-    if (!url) {
-      console.warn(
-        `branch "${branchName}" not found in branches doc ${branchesDocUrl}`
-      );
-      return undefined;
-    }
-    return url;
-  }
-
-  /**
-   * Pick the active branch for a branches doc. Checks each registered settings
-   * doc, with the user's own ("user") first so user-local overrides beat the
-   * system bundle.
-   */
-  private chosenBranchFor(branchesDocUrl: AutomergeUrl): string | undefined {
-    const docs = this.settingsDocs();
-    const byName = new Map(docs.map(({ name, doc }) => [name, doc]));
-    const names = ["user", ...byName.keys()].filter(
-      (n, i, arr) => arr.indexOf(n) === i
-    );
-    for (const name of names) {
-      const branch = byName.get(name)?.branches?.[branchesDocUrl];
-      if (branch) return branch;
-    }
-    return undefined;
-  }
-
-  private setBranchesWatcher(branchesDocUrl: AutomergeUrl) {
-    if (this.#disposed) return;
-    if (this.#watchedBranchesDocs.has(branchesDocUrl)) return;
-    const entry: WatchedBranchesDoc = {};
-    this.#watchedBranchesDocs.set(branchesDocUrl, entry);
-    this.repo
-      .find<BranchesDoc>(branchesDocUrl)
-      .then((handle) => {
-        if (this.#watchedBranchesDocs.get(branchesDocUrl) !== entry) return;
-        const listener = () => {
-          this.processBranchesEntry(branchesDocUrl).catch(console.error);
-        };
-        entry.handle = handle;
-        entry.listener = listener;
-        handle.on("change", listener);
-      })
-      .catch((error) => {
-        console.warn(
-          `could not watch branches doc ${branchesDocUrl}; will retry on next load`,
-          error
-        );
-        if (this.#watchedBranchesDocs.get(branchesDocUrl) === entry) {
-          this.#watchedBranchesDocs.delete(branchesDocUrl);
-        }
-      });
   }
 
   private async importPackageSafe(importName: string): Promise<any> {
@@ -365,8 +279,6 @@ export class ModuleWatcher {
       if (this.handles) delete this.handles[name];
       this.staticManifests[name] = await fetchModuleManifest(url);
     }
-    // Reload everything: this source may carry branch overrides for branches
-    // docs that live in a different settings doc's modules.
     await this.load();
   }
 
@@ -516,20 +428,6 @@ export class ModuleWatcher {
   }
 
   private unloadModule(entry: string) {
-    const branchesUrl = entry as AutomergeUrl;
-    const watchedBranches = this.#watchedBranchesDocs.get(branchesUrl);
-    if (watchedBranches || this.#branchTargetByBranchesUrl.has(branchesUrl)) {
-      if (watchedBranches?.handle && watchedBranches.listener) {
-        watchedBranches.handle.off("change", watchedBranches.listener);
-      }
-      this.#watchedBranchesDocs.delete(branchesUrl);
-      const target = this.#branchTargetByBranchesUrl.get(branchesUrl);
-      this.#branchTargetByBranchesUrl.delete(branchesUrl);
-      if (target && !this.#activeModules.has(target)) {
-        this.unloadModule(target);
-      }
-      return;
-    }
     this.detachDocWatcher(entry);
     this.cancelAnnounce(entry);
     this.#lastAnnounced.delete(entry);
@@ -544,12 +442,6 @@ export class ModuleWatcher {
     for (const importName of [...this.#watchedModules.keys()]) {
       this.detachDocWatcher(importName);
     }
-    for (const entry of this.#watchedBranchesDocs.values()) {
-      if (entry.handle && entry.listener) {
-        entry.handle.off("change", entry.listener);
-      }
-    }
-    this.#watchedBranchesDocs.clear();
     for (const [key, generation] of this.#announceGenerations) {
       this.#announceGenerations.set(key, generation + 1);
     }
@@ -560,9 +452,6 @@ export class ModuleWatcher {
 
   private async load() {
     if (!this.handles) throw new Error("No handles");
-    // Only `modules` drives loading. `branches` is an override map keyed by
-    // branches doc URL — it only takes effect for branches docs that are
-    // already listed in some settings doc's `modules`.
     const urls = new Set<string>();
     for (const { doc } of this.settingsDocs()) {
       for (const m of doc?.modules ?? []) urls.add(m);
