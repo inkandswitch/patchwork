@@ -134,7 +134,9 @@ async function httpEntryPointUrl(
 
   // Treat the URL as a directory: resolve `package.json` against it with a
   // trailing slash so its last path segment isn't dropped.
-  const base = resolved.href.endsWith("/") ? resolved.href : `${resolved.href}/`;
+  const base = resolved.href.endsWith("/")
+    ? resolved.href
+    : `${resolved.href}/`;
   const packageJsonUrl = new URL("package.json", base).href;
 
   log(`fetching ${packageJsonUrl.slice(-60)}`);
@@ -216,7 +218,11 @@ export async function importPluginFromFolderDocUrl(
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
-  const mod = await importPackageFromFolderDocUrl(folderDocUrl, subpath, conditions);
+  const mod = await importPackageFromFolderDocUrl(
+    folderDocUrl,
+    subpath,
+    conditions
+  );
   const plugins: any[] = Array.isArray(mod?.plugins) ? mod.plugins : [];
   const plugin = plugins.find(
     (p) => p?.type === pluginType && p?.id === pluginId
@@ -239,7 +245,7 @@ export async function importPluginFromFolderDocUrl(
 
 async function packageJsonContentsFromFolderDocUrl(
   folderDocUrl: AutomergeUrl
-): Promise<Record<string, any> | undefined> {
+): Promise<Record<string, any>> {
   const packageJSONPath = new URL(
     "package.json",
     new URL(
@@ -250,12 +256,22 @@ async function packageJsonContentsFromFolderDocUrl(
 
   log(`fetching ${packageJSONPath.slice(-60)}`);
 
-  // First attempt: use a stable URL so the SW's in-memory cache can hit.
-  const response = await fetch(packageJSONPath);
-  if (response.ok) {
-    log(`package.json OK for ${folderDocUrl.slice(0, 25)}...`);
-    return response.json();
+  let response: Response;
+  try {
+    response = await fetch(packageJSONPath);
+  } catch (cause) {
+    throw new Error(
+      `Couldn't fetch ${packageJSONPath} for ${folderDocUrl} — a network error, or the service worker isn't serving automerge module URLs`,
+      { cause }
+    );
   }
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch ${packageJSONPath} for ${folderDocUrl}: HTTP ${response.status}`
+    );
+  }
+  log(`package.json OK for ${folderDocUrl.slice(0, 25)}...`);
+  return response.json();
 }
 
 export function resolvePackageExport(
@@ -286,7 +302,6 @@ async function packageEntryPointUrl(
   conditions: string[] = defaultImportConditions
 ) {
   const pkgJson = await packageJsonContentsFromFolderDocUrl(folderDocUrl);
-  if (!pkgJson) return undefined;
 
   const entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
   if (!entryPoint) return undefined;

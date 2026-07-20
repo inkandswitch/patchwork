@@ -179,47 +179,52 @@ describe("repo.find() availability", () => {
   });
 
   // ─── Test 5: find() when MessageChannel added AFTER find() call ──
-  it("find() resolves when MessageChannel peer connects after find() is called", async () => {
-    const { port1, port2 } = new MessageChannel();
+  // Documents a live upstream automerge-repo gap — flips to a failure (and
+  // should be un-marked) when upstream fixes it.
+  it.fails(
+    "find() resolves when MessageChannel peer connects after find() is called",
+    async () => {
+      const { port1, port2 } = new MessageChannel();
 
-    // Create tab repo with its side of the MessageChannel
-    const tabRepo = createRepo({
-      peerId: "tab" as PeerId,
-      network: [new MessageChannelNetworkAdapter(port1)],
-      sharePolicy: shareAll,
-    });
+      // Create tab repo with its side of the MessageChannel
+      const tabRepo = createRepo({
+        peerId: "tab" as PeerId,
+        network: [new MessageChannelNetworkAdapter(port1)],
+        sharePolicy: shareAll,
+      });
 
-    // Create SW repo WITHOUT network initially — doc is local to SW
-    const swRepo = createRepo({
-      peerId: "sw" as PeerId,
-      sharePolicy: shareAll,
-    });
+      // Create SW repo WITHOUT network initially — doc is local to SW
+      const swRepo = createRepo({
+        peerId: "sw" as PeerId,
+        sharePolicy: shareAll,
+      });
 
-    const handle = swRepo.create<TestDoc>();
-    handle.change((d) => {
-      d.foo = "from-sw";
-    });
+      const handle = swRepo.create<TestDoc>();
+      handle.change((d) => {
+        d.foo = "from-sw";
+      });
 
-    // Tab calls find() BEFORE the SW connects its MessageChannel
-    const findPromise = tabRepo.find<TestDoc>(handle.url);
+      // Tab calls find() BEFORE the SW connects its MessageChannel
+      const findPromise = tabRepo.find<TestDoc>(handle.url);
 
-    // Wait a moment, then connect the SW side
-    await pause(500);
-    swRepo.networkSubsystem.addNetworkAdapter(
-      new MessageChannelNetworkAdapter(port2)
-    );
+      // Wait a moment, then connect the SW side
+      await pause(500);
+      swRepo.networkSubsystem.addNetworkAdapter(
+        new MessageChannelNetworkAdapter(port2)
+      );
 
-    // Give some time for sync
-    await pause(100);
+      // Give some time for sync
+      await pause(100);
 
-    // Does the previously-started find() now resolve?
-    const found = await withTimeout(
-      findPromise,
-      10000,
-      "find after late MessageChannel connect"
-    );
-    expect(found.doc().foo).toBe("from-sw");
-  });
+      // Does the previously-started find() now resolve?
+      const found = await withTimeout(
+        findPromise,
+        10000,
+        "find after late MessageChannel connect"
+      );
+      expect(found.doc().foo).toBe("from-sw");
+    }
+  );
 
   // ─── Test 6: find() with delayed document creation on remote ─────
   it("find() resolves when the remote creates the doc after find() is called", async () => {
@@ -440,54 +445,59 @@ describe("repo.find() availability", () => {
   // Tab repo calls find() for a URL. SW doesn't have it yet.
   // After a delay, SW receives the doc (simulating Subduction sync).
   // Does the tab's find() ever resolve?
-  it("critical: tab find() settles after SW receives doc via delayed creation", async () => {
-    const { port1, port2 } = new MessageChannel();
+  // Documents a live upstream automerge-repo gap — flips to a failure (and
+  // should be un-marked) when upstream fixes it.
+  it.fails(
+    "critical: tab find() settles after SW receives doc via delayed creation",
+    async () => {
+      const { port1, port2 } = new MessageChannel();
 
-    const swRepo = createRepo({
-      peerId: "service-worker" as PeerId,
-      network: [new MessageChannelNetworkAdapter(port2)],
-      sharePolicy: shareAll,
-    });
+      const swRepo = createRepo({
+        peerId: "service-worker" as PeerId,
+        network: [new MessageChannelNetworkAdapter(port2)],
+        sharePolicy: shareAll,
+      });
 
-    const tabRepo = createRepo({
-      peerId: "tab-main" as PeerId,
-      network: [new MessageChannelNetworkAdapter(port1)],
-      sharePolicy: shareAll,
-    });
+      const tabRepo = createRepo({
+        peerId: "tab-main" as PeerId,
+        network: [new MessageChannelNetworkAdapter(port1)],
+        sharePolicy: shareAll,
+      });
 
-    await pause(100); // let MessageChannel connect
+      await pause(100); // let MessageChannel connect
 
-    // Pre-generate a URL by creating on a third isolated repo
-    const seedRepo = createRepo({ peerId: "seed" as PeerId });
-    const seedHandle = seedRepo.create<TestDoc>();
-    seedHandle.change((d) => {
-      d.foo = "seed-data";
-    });
-    const targetUrl = seedHandle.url;
+      // Pre-generate a URL by creating on a third isolated repo
+      const seedRepo = createRepo({ peerId: "seed" as PeerId });
+      const seedHandle = seedRepo.create<TestDoc>();
+      seedHandle.change((d) => {
+        d.foo = "seed-data";
+      });
+      const targetUrl = seedHandle.url;
 
-    // Tab starts looking for the doc (neither tab nor SW have it)
-    const findPromise = tabRepo.find<TestDoc>(targetUrl);
+      // Tab starts looking for the doc (neither tab nor SW have it)
+      const findPromise = tabRepo.find<TestDoc>(targetUrl);
 
-    // After 1 second, SW "receives" the doc (simulating Subduction sync)
-    // We do this by creating a connected pair: seed → SW
-    await pause(1000);
-    const { port1: seedToSw, port2: swFromSeed } = new MessageChannel();
-    seedRepo.networkSubsystem.addNetworkAdapter(
-      new MessageChannelNetworkAdapter(seedToSw)
-    );
-    swRepo.networkSubsystem.addNetworkAdapter(
-      new MessageChannelNetworkAdapter(swFromSeed)
-    );
+      // After 1 second, SW "receives" the doc (simulating Subduction sync)
+      // We do this by creating a connected pair: seed → SW
+      await pause(1000);
+      const { port1: seedToSw, port2: swFromSeed } = new MessageChannel();
+      seedRepo.networkSubsystem.addNetworkAdapter(
+        new MessageChannelNetworkAdapter(seedToSw)
+      );
+      swRepo.networkSubsystem.addNetworkAdapter(
+        new MessageChannelNetworkAdapter(swFromSeed)
+      );
 
-    // Give time for seed → SW → tab sync chain
-    // The question: does the tab's find() resolve?
-    const found = await withTimeout(
-      findPromise,
-      10000,
-      "tab find() after SW receives doc from seed"
-    );
-    expect(found.doc().foo).toBe("seed-data");
-  });
+      // Give time for seed → SW → tab sync chain
+      // The question: does the tab's find() resolve?
+      const found = await withTimeout(
+        findPromise,
+        10000,
+        "tab find() after SW receives doc from seed"
+      );
+      expect(found.doc().foo).toBe("seed-data");
+    }
+  );
 
   // ─── Test 13: Exact patchwork scenario ───────────────────────────
   // Tab calls find(). SW peer says "unavailable". Tab's query stays
@@ -501,7 +511,9 @@ describe("repo.find() availability", () => {
   //   3. [time passes] SW gets X from Subduction (seed repo)
   //   4. SW → Tab: [sync message with data]  ← THIS is what we're testing
   //   5. Tab's find() resolves
-  it("SW pushes doc to tab after initial doc-unavailable", async () => {
+  // Documents a live upstream automerge-repo gap — flips to a failure (and
+  // should be un-marked) when upstream fixes it.
+  it.fails("SW pushes doc to tab after initial doc-unavailable", async () => {
     const { port1, port2 } = new MessageChannel();
 
     // Both repos connected from the start

@@ -1,7 +1,6 @@
 import {
   type AutomergeUrl,
   type DocHandle,
-  type DocumentId,
   isValidAutomergeUrl,
   type Repo,
 } from "@automerge/automerge-repo/slim";
@@ -73,6 +72,17 @@ async function fetchModuleManifest(url: string): Promise<ModuleSettingsDoc> {
   } as ModuleSettingsDoc;
 }
 
+type WatchedModule = {
+  handle?: DocHandle<FolderDoc>;
+  listener?: () => void;
+  timer?: ReturnType<typeof setTimeout>;
+};
+
+type WatchedBranchesDoc = {
+  handle?: DocHandle<BranchesDoc>;
+  listener?: () => void;
+};
+
 // todo this can be a function that takes a plugin system and returns a change
 // handler
 
@@ -96,17 +106,21 @@ export class ModuleWatcher {
   handles: Record<string, DocHandle<ModuleSettingsDoc>> | undefined;
   staticManifests: Record<string, ModuleSettingsDoc> = {};
   doneLoading: Promise<void>;
-  #watchedModules = new Set<string>();
-  #watchedBranchesDocs = new Set<AutomergeUrl>();
+  #watchedModules = new Map<string, WatchedModule>();
+  #watchedBranchesDocs = new Map<AutomergeUrl, WatchedBranchesDoc>();
   // Per-module announce generation. Bumped whenever a newer announce starts
   // for the same module, so a stale retry chain (still backing off from a
   // failed import of an older pinned version) abandons itself instead of
   // eventually succeeding and rolling the registry back to that old version.
   #announceGenerations = new Map<string, number>();
+  #retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  #lastAnnounced = new Map<string, string>();
+  #activeModules = new Set<string>();
   #branchTargetByBranchesUrl = new Map<
     AutomergeUrl,
     AutomergeUrl | undefined
   >();
+  #disposed = false;
 
   onLoad: (name: string, mod: any) => void;
   onUnload?: (name: string) => void;
@@ -151,16 +165,24 @@ export class ModuleWatcher {
     );
 
     this.handles = {};
-    for (const result of settled) {
-      if (result.status !== "fulfilled") continue;
+    for (const [index, result] of settled.entries()) {
+      if (result.status !== "fulfilled") {
+        const [name, url] = entries[index];
+        console.warn(
+          `module settings source "${name}" (${url}) failed to load; skipping`,
+          result.reason
+        );
+        continue;
+      }
       const value = result.value;
       if (value.kind === "automerge") {
         this.handles[value.name] = value.handle;
-        value.handle.addListener("change", this.onChange);
+        if (!this.#disposed) value.handle.addListener("change", this.onChange);
       } else {
         this.staticManifests[value.name] = value.manifest;
       }
     }
+    if (this.#disposed) return;
     await this.load();
   }
 
@@ -172,7 +194,8 @@ export class ModuleWatcher {
     name: string;
     doc: ModuleSettingsDoc | undefined;
   }> {
-    const docs: Array<{ name: string; doc: ModuleSettingsDoc | undefined }> = [];
+    const docs: Array<{ name: string; doc: ModuleSettingsDoc | undefined }> =
+      [];
     for (const [name, handle] of Object.entries(this.handles ?? {})) {
       docs.push({ name, doc: handle.doc() });
     }
@@ -206,11 +229,29 @@ export class ModuleWatcher {
         await this.processBranchesEntry(importName);
         return;
       }
-    } else {
-      await importPackageFromHttpUrl(importName);
+      await this.watchAndAnnounce(
+        importName,
+        handle as unknown as DocHandle<FolderDoc>
+      );
+      return;
     }
     this.setDocWatcher(importName);
+    if (this.#lastAnnounced.has(importName)) return;
     await this.announce(importName);
+  }
+
+  // Pin heads once so the watcher's change baseline and the announced import
+  // come from the same snapshot — a change landing between two separate finds
+  // would otherwise be lost until the next change.
+  private async watchAndAnnounce(
+    importName: AutomergeUrl,
+    handle: DocHandle<FolderDoc>
+  ) {
+    const heads = handle.heads();
+    const headsKey = heads.join(",");
+    this.setDocWatcher(importName, handle, headsKey);
+    if (this.#lastAnnounced.get(importName) === headsKey) return;
+    await this.announce(handle.view(heads).url, importName, headsKey);
   }
 
   private async processBranchesEntry(branchesDocUrl: AutomergeUrl) {
@@ -219,10 +260,12 @@ export class ModuleWatcher {
     const previous = this.#branchTargetByBranchesUrl.get(branchesDocUrl);
     if (folderUrl === previous) return;
     this.#branchTargetByBranchesUrl.set(branchesDocUrl, folderUrl);
-    if (previous) this.onUnload?.(previous);
+    if (previous && !this.#activeModules.has(previous)) {
+      this.unloadModule(previous);
+    }
     if (!folderUrl) return;
-    this.setDocWatcher(folderUrl);
-    await this.announce(folderUrl);
+    const handle = await this.repo.find<FolderDoc>(folderUrl);
+    await this.watchAndAnnounce(folderUrl, handle);
   }
 
   private async resolveBranchToFolderUrl(
@@ -260,16 +303,33 @@ export class ModuleWatcher {
   }
 
   private setBranchesWatcher(branchesDocUrl: AutomergeUrl) {
+    if (this.#disposed) return;
     if (this.#watchedBranchesDocs.has(branchesDocUrl)) return;
-    this.#watchedBranchesDocs.add(branchesDocUrl);
-    this.repo.find<BranchesDoc>(branchesDocUrl).then((handle) => {
-      handle.on("change", () => {
-        this.processBranchesEntry(branchesDocUrl).catch(console.error);
+    const entry: WatchedBranchesDoc = {};
+    this.#watchedBranchesDocs.set(branchesDocUrl, entry);
+    this.repo
+      .find<BranchesDoc>(branchesDocUrl)
+      .then((handle) => {
+        if (this.#watchedBranchesDocs.get(branchesDocUrl) !== entry) return;
+        const listener = () => {
+          this.processBranchesEntry(branchesDocUrl).catch(console.error);
+        };
+        entry.handle = handle;
+        entry.listener = listener;
+        handle.on("change", listener);
+      })
+      .catch((error) => {
+        console.warn(
+          `could not watch branches doc ${branchesDocUrl}; will retry on next load`,
+          error
+        );
+        if (this.#watchedBranchesDocs.get(branchesDocUrl) === entry) {
+          this.#watchedBranchesDocs.delete(branchesDocUrl);
+        }
       });
-    });
   }
 
-  private async importPackageSafe(importName: string): Promise<any | null> {
+  private async importPackageSafe(importName: string): Promise<any> {
     try {
       if (isValidAutomergeUrl(importName)) {
         // Pin to heads so descriptor discovery and any later main-thread load
@@ -285,6 +345,7 @@ export class ModuleWatcher {
         "color: #000, background: #ffbcef",
         error
       );
+      return undefined;
     }
   }
 
@@ -292,11 +353,16 @@ export class ModuleWatcher {
     if (this.urls[name] === url) return;
     this.urls[name] = url;
     await this.doneLoading;
+    if (this.#disposed) return;
+    const replaced = this.handles?.[name];
+    if (replaced) replaced.removeListener("change", this.onChange);
+    delete this.staticManifests[name];
     if (isValidAutomergeUrl(url)) {
       const handle = await this.repo.find<ModuleSettingsDoc>(url);
       if (this.handles) this.handles[name] = handle;
       handle.addListener("change", this.onChange);
     } else {
+      if (this.handles) delete this.handles[name];
       this.staticManifests[name] = await fetchModuleManifest(url);
     }
     // Reload everything: this source may carry branch overrides for branches
@@ -312,68 +378,184 @@ export class ModuleWatcher {
    */
   private async announce(
     importUrl: string,
-    moduleKey: string = importUrl
+    moduleKey: string = importUrl,
+    versionKey: string = importUrl
   ): Promise<void> {
     const generation = (this.#announceGenerations.get(moduleKey) ?? 0) + 1;
     this.#announceGenerations.set(moduleKey, generation);
     const current = () =>
       this.#announceGenerations.get(moduleKey) === generation;
 
-    for (let attempt = 0; ; attempt++) {
+    const attempt = async (attemptIndex: number): Promise<void> => {
       const mod = await this.importPackageSafe(importUrl);
       // A newer announce for this module started while we were importing or
       // backing off — its result wins; announcing ours now could regress the
       // registry to an older version.
       if (!current()) return;
-      if (mod) return this.onLoad(importUrl, mod);
-      const delay = RETRY_DELAYS_MS[attempt];
+      if (mod) {
+        this.#lastAnnounced.set(moduleKey, versionKey);
+        return this.onLoad(importUrl, mod);
+      }
+      const delay = RETRY_DELAYS_MS[attemptIndex];
       if (delay === undefined) return;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      if (!current()) return;
-    }
+      const timer = setTimeout(() => {
+        if (this.#retryTimers.get(moduleKey) === timer) {
+          this.#retryTimers.delete(moduleKey);
+        }
+        if (current()) attempt(attemptIndex + 1).catch(console.error);
+      }, delay);
+      this.#retryTimers.set(moduleKey, timer);
+    };
+    await attempt(0);
   }
 
   // TODO: This is a bit janky and relies on a bunch of heuristics.
   // It would be better to watch all the files in the folder recursively
   // and to have some relationship with those other than just parsing the URL.
-  private setDocWatcher(importName: string) {
+  private setDocWatcher(
+    importName: string,
+    handle?: DocHandle<FolderDoc>,
+    headsKey?: string
+  ) {
+    if (this.#disposed) return;
     if (this.#watchedModules.has(importName)) return;
-    this.#watchedModules.add(importName);
+    const entry: WatchedModule = {};
+    this.#watchedModules.set(importName, entry);
 
-    const docUrl = isValidAutomergeUrl(importName)
-      ? importName
-      : (importName.match(/\/automerge\/(\w+)\//)?.[1] as DocumentId);
+    if (handle) {
+      this.attachDocWatcher(
+        importName,
+        entry,
+        handle,
+        headsKey ?? handle.heads().join(",")
+      );
+      return;
+    }
 
-    if (!docUrl) return;
+    // Service-worker module URLs look like `origin/automerge%3A<id>/…` (the
+    // encoded automerge URL as the first path segment).
+    const encodedId = importName.match(/\/automerge%3A([^/]+)\//i)?.[1];
+    const docUrl = encodedId && `automerge:${decodeURIComponent(encodedId)}`;
+    if (!docUrl || !isValidAutomergeUrl(docUrl)) return;
 
-    this.repo.find<FolderDoc>(docUrl).then((handle) => {
-      // Reload when the folder doc's heads actually change, debounced to the
-      // trailing edge so a push's burst of changes collapses into one import at
-      // the settled heads. This reacts to real content changes (including
-      // offline `save`, which never stamps lastSyncAt) rather than a magic
-      // timestamp field.
-      let importedHeads = handle.heads().join(",");
-      let timer: ReturnType<typeof setTimeout> | undefined;
-
-      handle.on("change", () => {
-        if (handle.heads().join(",") === importedHeads) return;
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => {
-          timer = undefined;
-          const heads = handle.heads();
-          const key = heads.join(",");
-          if (key === importedHeads) return;
-          importedHeads = key;
-          const versionedImport = handle.view(heads).url;
-          console.log(
-            `change in ${importName}, reloading at ${versionedImport}`
-          );
-          // Keyed by the stable importName so this reload supersedes any
-          // still-retrying announce of an older version of the same module.
-          this.announce(versionedImport, importName);
-        }, RELOAD_DEBOUNCE_MS);
+    this.repo
+      .find<FolderDoc>(docUrl)
+      .then((found) => {
+        if (this.#watchedModules.get(importName) !== entry) return;
+        this.attachDocWatcher(
+          importName,
+          entry,
+          found,
+          found.heads().join(",")
+        );
+      })
+      .catch((error) => {
+        console.warn(
+          `could not watch ${docUrl} for ${importName}; will retry on next load`,
+          error
+        );
+        if (this.#watchedModules.get(importName) === entry) {
+          this.#watchedModules.delete(importName);
+        }
       });
-    });
+  }
+
+  private attachDocWatcher(
+    importName: string,
+    entry: WatchedModule,
+    handle: DocHandle<FolderDoc>,
+    initialHeadsKey: string
+  ) {
+    // Reload when the folder doc's heads actually change, debounced to the
+    // trailing edge so a push's burst of changes collapses into one import at
+    // the settled heads. This reacts to real content changes (including
+    // offline `save`, which never stamps lastSyncAt) rather than a magic
+    // timestamp field.
+    let importedHeads = initialHeadsKey;
+    const listener = () => {
+      if (handle.heads().join(",") === importedHeads) return;
+      if (entry.timer) clearTimeout(entry.timer);
+      entry.timer = setTimeout(() => {
+        entry.timer = undefined;
+        const heads = handle.heads();
+        const key = heads.join(",");
+        if (key === importedHeads) return;
+        importedHeads = key;
+        const versionedImport = handle.view(heads).url;
+        console.log(`change in ${importName}, reloading at ${versionedImport}`);
+        // Keyed by the stable importName so this reload supersedes any
+        // still-retrying announce of an older version of the same module.
+        this.announce(versionedImport, importName, key);
+      }, RELOAD_DEBOUNCE_MS);
+    };
+    entry.handle = handle;
+    entry.listener = listener;
+    handle.on("change", listener);
+  }
+
+  private detachDocWatcher(importName: string) {
+    const watched = this.#watchedModules.get(importName);
+    if (!watched) return;
+    if (watched.timer) clearTimeout(watched.timer);
+    if (watched.handle && watched.listener) {
+      watched.handle.off("change", watched.listener);
+    }
+    this.#watchedModules.delete(importName);
+  }
+
+  private cancelAnnounce(moduleKey: string) {
+    const generation = this.#announceGenerations.get(moduleKey);
+    if (generation !== undefined) {
+      this.#announceGenerations.set(moduleKey, generation + 1);
+    }
+    const timer = this.#retryTimers.get(moduleKey);
+    if (timer) {
+      clearTimeout(timer);
+      this.#retryTimers.delete(moduleKey);
+    }
+  }
+
+  private unloadModule(entry: string) {
+    const branchesUrl = entry as AutomergeUrl;
+    const watchedBranches = this.#watchedBranchesDocs.get(branchesUrl);
+    if (watchedBranches || this.#branchTargetByBranchesUrl.has(branchesUrl)) {
+      if (watchedBranches?.handle && watchedBranches.listener) {
+        watchedBranches.handle.off("change", watchedBranches.listener);
+      }
+      this.#watchedBranchesDocs.delete(branchesUrl);
+      const target = this.#branchTargetByBranchesUrl.get(branchesUrl);
+      this.#branchTargetByBranchesUrl.delete(branchesUrl);
+      if (target && !this.#activeModules.has(target)) {
+        this.unloadModule(target);
+      }
+      return;
+    }
+    this.detachDocWatcher(entry);
+    this.cancelAnnounce(entry);
+    this.#lastAnnounced.delete(entry);
+    this.onUnload?.(entry);
+  }
+
+  dispose() {
+    this.#disposed = true;
+    for (const handle of Object.values(this.handles ?? {})) {
+      handle.removeListener("change", this.onChange);
+    }
+    for (const importName of [...this.#watchedModules.keys()]) {
+      this.detachDocWatcher(importName);
+    }
+    for (const entry of this.#watchedBranchesDocs.values()) {
+      if (entry.handle && entry.listener) {
+        entry.handle.off("change", entry.listener);
+      }
+    }
+    this.#watchedBranchesDocs.clear();
+    for (const [key, generation] of this.#announceGenerations) {
+      this.#announceGenerations.set(key, generation + 1);
+    }
+    for (const timer of this.#retryTimers.values()) clearTimeout(timer);
+    this.#retryTimers.clear();
+    this.#activeModules.clear();
   }
 
   private async load() {
@@ -384,6 +566,11 @@ export class ModuleWatcher {
     const urls = new Set<string>();
     for (const { doc } of this.settingsDocs()) {
       for (const m of doc?.modules ?? []) urls.add(m);
+    }
+    const previousActive = this.#activeModules;
+    this.#activeModules = urls;
+    for (const previous of previousActive) {
+      if (!urls.has(previous)) this.unloadModule(previous);
     }
     await this.loadModules([...urls]);
   }
