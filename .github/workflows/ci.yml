@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v3
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install javascript
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: build everything
+        run: pnpm build
+
+      - name: run the tests
+        run: pnpm test
+
+      - name: check formatting
+        run: pnpm format:check
