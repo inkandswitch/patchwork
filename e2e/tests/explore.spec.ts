@@ -43,8 +43,15 @@ test("probe offline reload failure", async ({ page, context }) => {
     failures.push(`${r.url().slice(-70)} :: ${r.failure()?.errorText}`),
   );
   page.on("response", (r) => {
-    if (r.status() >= 400)
+    if (r.status() >= 400) {
       failures.push(`${r.url().slice(-70)} :: HTTP ${r.status()}`);
+      if (r.url().endsWith(".wasm")) {
+        r.text().then(
+          (t) => failures.push(`WASM-503-BODY: ${t.slice(0, 400)}`),
+          () => {},
+        );
+      }
+    }
   });
   page.on("console", (m) => {
     if (["error", "warning"].includes(m.type()))
