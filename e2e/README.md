@@ -66,11 +66,17 @@ fails cors fetches made from inside a service worker, and the module bundle
   its `automerge:` URL through the Packages UI, created via the create-new
   menu, incremented by clicking, and survives a reload.
 
-Known product gap, marked `fixme` on chromium in `offline.spec.ts`: the
-shared automerge-worker's module chunks bypass the page's service worker,
-and assets are served `max-age=0` (in production too), so offline boot
-depends on the browser volunteering stale HTTP-cache entries. Immutable
-caching for hashed `/assets/*` would close it.
+The offline-reload test flushed out two product fixes: the SW's cache
+lookup missed entries when the request was the wasm
+`<link rel=preload crossorigin>` (cors mode) rather than a plain fetch, so
+offline boot 503'd — it now falls back to a url-keyed match — and hashed
+`/assets/*` get `Cache-Control: immutable` (netlify `_headers` + a preview
+middleware) so the browser's HTTP cache can serve the shared
+automerge-worker's chunk imports offline, which bypass the page's SW.
+
+Heads-up: repeated full-suite runs can get the machine's IP temporarily
+rate-limited by netlify (the full-UI tests fetch the whole base module
+bundle per boot); the full-UI tests then time out until it lifts.
 
 They assert on `window.repo` (set right after the SW relay connects), not on
 full UI render: rendering the default frame needs the production Subduction
