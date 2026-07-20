@@ -123,14 +123,18 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", async (event) => {
-  if (event.data.type == "cachename") {
+  if (event.data?.type == "cachename") {
     const nextCachename = event.data.cachename;
     if (cachename == nextCachename) {
       return;
     }
     console.info(`moving from cache ${cachename} to ${nextCachename}`);
-    if (cachename === DEFAULT_CACHE_NAME) {
-      const defaultCache = await caches.open(cachename);
+    const previous = cachename;
+    // Switch before copying: fetches that land mid-copy must write into the
+    // new cache, or their entries get deleted along with the old one below.
+    cachename = nextCachename;
+    if (previous === DEFAULT_CACHE_NAME) {
+      const defaultCache = await caches.open(previous);
       const nextCache = await caches.open(nextCachename);
       await Promise.all(
         (await defaultCache.keys()).map(async (request) => {
@@ -139,9 +143,8 @@ self.addEventListener("message", async (event) => {
         })
       );
     }
-    cachename = nextCachename;
     await clearOtherCaches();
-  } else if (event.data.type == "debug") {
+  } else if (event.data?.type == "debug") {
     debugging = event.data.debug;
     log("serviceworker debugging enabled");
   }
