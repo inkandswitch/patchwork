@@ -31,7 +31,6 @@ test("a doc survives a page reload via IndexedDB", async ({ page }) => {
   await page.reload();
   await waitForRepoReady(page);
 
-  // After reload the doc must be retrievable again (from IndexedDB via SW).
   const value = await findDocField<string>(page, url, "note");
   expect(value).toBe("persist-me");
 });
