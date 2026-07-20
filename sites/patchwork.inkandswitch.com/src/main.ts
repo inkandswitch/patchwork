@@ -1,4 +1,4 @@
-import "./global.css";
+import "@inkandswitch/patchwork-bootloader/global.css";
 
 declare const __KEYHIVE__: boolean;
 
