@@ -50,7 +50,12 @@ test("docs sync between tabs while offline", async ({ context }) => {
 test("the app boots from the SW cache while offline and keeps its docs", async ({
   page,
   context,
+  browserName,
 }) => {
+  // WebKit's offline emulation makes reload throw an internal error before
+  // the SW gets a chance to serve from cache.
+  test.skip(browserName === "webkit", "flaky offline emulation in webkit");
+
   await page.goto("/");
   await waitForServiceWorkerActive(page);
   await waitForRepoReady(page);
