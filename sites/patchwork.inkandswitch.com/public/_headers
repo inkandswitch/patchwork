@@ -1,4 +1,6 @@
 /*
   Access-Control-Allow-Origin: *
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
 /
   Link: </automerge.wasm>; rel=preload; as=fetch; crossorigin, </subduction.wasm>; rel=preload; as=fetch; crossorigin, <https://subduction.sync.inkandswitch.com>; rel=preconnect, <https://subduction.sync.inkandswitch.com>; rel=dns-prefetch, <https://sync3.automerge.org>; rel=dns-prefetch

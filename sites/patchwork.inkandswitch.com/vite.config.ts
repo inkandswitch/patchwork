@@ -1,6 +1,22 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import wasm from "vite-plugin-wasm";
 import patchwork from "@inkandswitch/patchwork-bootloader/vite";
+
+// Hashed /assets get immutable caching (also in public/_headers): the shared
+// automerge-worker's chunk imports bypass the page's service worker, so
+// offline boot needs the browser's HTTP cache to serve them without
+// revalidating. Content hashes make that safe; a new build gets new URLs.
+const immutableAssets = (): Plugin => ({
+  name: "immutable-assets",
+  configurePreviewServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url?.startsWith("/assets/")) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      }
+      next();
+    });
+  },
+});
 
 export default defineConfig({
   // PATCHWORK_ joins Vite's default VITE_ prefix so
@@ -18,6 +34,7 @@ export default defineConfig({
   plugins: [
     wasm(),
     patchwork(),
+    immutableAssets(),
   ],
   worker: {
     format: "es",
