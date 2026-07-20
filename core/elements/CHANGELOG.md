@@ -1,5 +1,18 @@
 # @inkandswitch/patchwork-elements
 
+## 4.0.1
+
+### Patch Changes
+
+- c01e1f3: Give `<patchwork-view>` a proper exports map and test suite, and tear down its overlay repo on unmount.
+
+  Add `registerPatchworkViewTag` so views registered under a custom tag name are still treated as subscription boundaries, and `OverlayRepo.dispose()`/`OverlayHandle.dispose()` so unmounting a view detaches the event forwarders it installed on backing handles.
+
+- Updated dependencies [caca06f]
+- Updated dependencies [c01e1f3]
+  - @inkandswitch/patchwork-filesystem@0.2.2
+  - @inkandswitch/patchwork-providers@0.4.2
+
 ## 4.0.0
 
 ### Minor Changes
