@@ -52,6 +52,12 @@ declare global {
   var repo: Repo | undefined;
 }
 
+const viewTags = new Set(["patchwork-view"]);
+
+export function registerPatchworkViewTag(tagName: string) {
+  viewTags.add(tagName.toLowerCase());
+}
+
 /**
  * Open a streaming subscription. Dispatches a `patchwork:subscribe` for the
  * given `selector` carrying a fresh `MessageChannel` port; the answering
@@ -73,7 +79,7 @@ export function subscribe<T extends JSONValue = JSONValue>(
   selector: Selector,
   listener: Listener<T>
 ): Unsubscribe {
-  const view = element.closest<HTMLElement>("patchwork-view");
+  const view = element.closest<HTMLElement>([...viewTags].join(","));
   const dispatchEl = view ?? element;
 
   const channel = new MessageChannel();

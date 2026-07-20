@@ -49,6 +49,7 @@ const OVERLAY_REPO_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
   "findWithProgress",
   "create",
   "create2",
+  "dispose",
 ]);
 
 /**
@@ -64,7 +65,6 @@ const OVERLAY_REPO_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
  * unchanged — created docs need no remapping.
  */
 export class OverlayRepo implements RepoLike {
-  /** The realm-local repo all resolution ultimately bottoms out in. */
   readonly baseRepo: Repo;
   readonly #element: HTMLElement;
   // Keyed by the *presented* url (documentId + path + heads), not just the
@@ -76,11 +76,11 @@ export class OverlayRepo implements RepoLike {
     AutomergeUrl,
     Promise<OverlayHandle<unknown>>
   >();
+  #disposed = false;
 
   constructor(baseRepo: Repo, element: HTMLElement) {
     this.baseRepo = baseRepo;
     this.#element = element;
-    // Forward everything but resolution to the realm-local repo.
     return forwardingProxy<OverlayRepo>(this, baseRepo, OVERLAY_REPO_OWNED);
   }
 
@@ -213,6 +213,14 @@ export class OverlayRepo implements RepoLike {
     return this.baseRepo.create2<T>(initialValue);
   }
 
+  dispose(): void {
+    this.#disposed = true;
+    for (const wrapped of this.#wrapped.values()) wrapped.dispose();
+    this.#wrapped.clear();
+    this.#inner.clear();
+    this.#resolving.clear();
+  }
+
   // De-dupes concurrent resolutions of the same presented url: the first
   // caller dispatches the subscription, everyone else awaits the same promise.
   #resolve<T>(presented: AutomergeUrl): Promise<OverlayHandle<T>> {
@@ -242,6 +250,10 @@ export class OverlayRepo implements RepoLike {
         presentedUrl: presented,
         backing,
       });
+      if (this.#disposed) {
+        wrapped.dispose();
+        return wrapped;
+      }
       this.#wrapped.set(presented, wrapped as OverlayHandle<unknown>);
       return wrapped;
     })();
