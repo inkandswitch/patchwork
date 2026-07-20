@@ -4,9 +4,7 @@
   "type": "module",
   "description": "Browser + Service-Worker end-to-end sync tests (Playwright).",
   "scripts": {
-    "test:e2e": "playwright test --grep-invert bench",
-    "bench": "RUN_BENCH=1 playwright test bench-ws",
-    "bench:report": "node bench-report.mjs",
+    "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "report": "playwright show-report"

@@ -56,39 +56,3 @@ server is wired in.
 
 Config uses a single worker, no parallelism, Chromium only — intentionally
 avoiding a swarm of browser/Node processes.
-
-## WebSocket placement bench (`bench-ws.spec.ts`)
-
-A/B benchmark of the subduction socket living on the automerge SharedWorker
-thread ("inline", the old behaviour) vs proxied through a dedicated io
-SharedWorker via port donation ("worker"). Skipped unless `RUN_BENCH=1`:
-
-```sh
-pnpm bench:ws                        # from the repo root (builds site first)
-pnpm --filter @patchwork/e2e bench:report   # aggregate all runs into a table
-
-# knobs (env):
-#   BENCH_LOAD_SECONDS   load window per iteration (default 60)
-#   BENCH_ITERATIONS     load+measure cycles per arm  (default 3)
-#   BENCH_LOAD_DOCS      concurrent churn docs        (default 4)
-BENCH_LOAD_SECONDS=120 BENCH_ITERATIONS=5 pnpm bench   # from e2e/
-```
-
-Per arm it records, under heavy Automerge churn:
-
-- `driftMs` — lateness of a 1s timer on the worker thread (how late an
-  in-thread keepalive would fire). Expected to match across arms; it
-  quantifies the hazard the worker arm avoids.
-- `propagationMs` — two-tab edit-visibility latency during load.
-- `boot` — patchwork boot phases per arm: cold first tab (SW controlled →
-  repo ready → root rendered) and second tab against a warm SharedWorker.
-- `syncDocs` — the patchwork-level number: writer publishes
-  `BENCH_SYNC_DOCS` × `BENCH_SYNC_DOC_KB` docs, then a fresh browser context
-  (own IndexedDB, own SharedWorker) resolves all of them through the sync
-  server — wall-clock total plus per-doc percentiles.
-- `wsEvents` — worker console lines suggesting socket close/reconnect
-  (depends on the live sync server; noisy).
-
-Results land in `bench-results/<timestamp>-<mode>.json` (gitignored) and
-accumulate across invocations; `bench:report` pools every run per arm and
-prints comparison percentiles. Single runs are noise — collect several.
