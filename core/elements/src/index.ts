@@ -23,8 +23,7 @@ type PatchworkViewComponentAttrs = {
 };
 
 type PatchworkViewAttrs =
-  | LegacyPatchworkViewAttrs
-  | PatchworkViewComponentAttrs;
+  LegacyPatchworkViewAttrs | PatchworkViewComponentAttrs;
 
 declare module "react" {
   export namespace JSX {
