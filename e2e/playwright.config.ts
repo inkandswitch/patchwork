@@ -35,7 +35,10 @@ export default defineConfig({
     ? availableParallelism()
     : Math.ceil(availableParallelism() / 2),
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // One retry everywhere: cross-tab find() can wedge permanently (see
+  // README "known flake"), and a retried pass reports as "flaky" so the
+  // signal stays visible without failing the run.
+  retries: 1,
 
   reporter: process.env.CI
     ? [["list"], ["html", { open: "never" }]]

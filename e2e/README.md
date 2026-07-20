@@ -78,6 +78,12 @@ Heads-up: repeated full-suite runs can get the machine's IP temporarily
 rate-limited by netlify (the full-UI tests fetch the whole base module
 bundle per boot); the full-UI tests then time out until it lifts.
 
+Known flake, likely a real relay bug: roughly once per full run, a
+cross-tab `repo.find()` for a just-created doc wedges permanently — a
+stress probe showed one stall in ~60 create/find round-trips, and four
+fresh `find()` calls over 20s never recovered it. Retries are enabled so
+these surface as "flaky" rather than failing the run.
+
 They assert on `window.repo` (set right after the SW relay connects), not on
 full UI render: rendering the default frame needs the production Subduction
 server to fetch the default-modules doc. Cross-device/server scenarios and
