@@ -20,9 +20,11 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 
 const LIVE_ORIGIN = "https://patchwork.inkandswitch.com";
 
+// Full-UI boots fetch the module bundle over the network and compete with
+// every other parallel test for cpu, so they get generous budgets.
 async function bootToFrame(page: Page, origin: string, path = "/") {
-  await page.goto(origin + path);
-  await page.waitForSelector(".threepane-sidebar", { timeout: 90_000 });
+  await page.goto(origin + path, { timeout: 120_000 });
+  await page.waitForSelector(".threepane-sidebar", { timeout: 180_000 });
 }
 
 function editor(page: Page) {
