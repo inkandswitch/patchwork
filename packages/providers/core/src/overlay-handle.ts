@@ -33,12 +33,11 @@ const OVERLAY_HANDLE_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
   "removeListener",
   "removeAllListeners",
   "emit",
+  "dispose",
 ]);
 
 export type OverlayHandleOpts<T> = {
-  /** The url the handle reports to consumers (hides the backing/clone url). */
   presentedUrl: AutomergeUrl;
-  /** The live handle every operation is forwarded to. */
   backing: DocHandle<T>;
 };
 
@@ -57,7 +56,7 @@ export class OverlayHandle<T> {
   readonly #originalUrl: AutomergeUrl;
   readonly #handle: DocHandle<T>;
   readonly #listeners = new Map<string, Set<Listener>>();
-  readonly #forwarded = new Set<string>();
+  readonly #forwarded = new Map<string, Listener>();
   // Sub-handle wrappers keyed by their backing (canonicalised) url, so repeated
   // `sub(...)` of the same path return the same wrapper instance.
   readonly #subCache = new Map<AutomergeUrl, OverlayHandle<unknown>>();
@@ -186,21 +185,33 @@ export class OverlayHandle<T> {
   // rather than the backing handle as the event source.
   #forward(ev: string): void {
     if (this.#forwarded.has(ev)) return;
-    this.#forwarded.add(ev);
+    const forwarder: Listener = (payload: unknown) => {
+      if (
+        payload &&
+        typeof payload === "object" &&
+        "handle" in (payload as Record<string, unknown>)
+      ) {
+        this.emit(ev, { ...(payload as object), handle: this.#self });
+      } else {
+        this.emit(ev, payload);
+      }
+    };
+    this.#forwarded.set(ev, forwarder);
     (this.#handle as unknown as { on(ev: string, fn: Listener): void }).on(
       ev,
-      (payload: unknown) => {
-        if (
-          payload &&
-          typeof payload === "object" &&
-          "handle" in (payload as Record<string, unknown>)
-        ) {
-          this.emit(ev, { ...(payload as object), handle: this.#self });
-        } else {
-          this.emit(ev, payload);
-        }
-      }
+      forwarder
     );
+  }
+
+  dispose(): void {
+    const backing = this.#handle as unknown as {
+      off(ev: string, fn: Listener): void;
+    };
+    for (const [ev, forwarder] of this.#forwarded) backing.off(ev, forwarder);
+    this.#forwarded.clear();
+    this.#listeners.clear();
+    for (const sub of this.#subCache.values()) sub.dispose();
+    this.#subCache.clear();
   }
 }
 
