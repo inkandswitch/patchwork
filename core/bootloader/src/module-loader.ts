@@ -52,7 +52,6 @@ function getWorker(): Worker {
   return worker;
 }
 
-/** Ask the worker which plugins the package at `urlAtHeads` exports. */
 function discoverDescriptors(urlAtHeads: AutomergeUrl): Promise<Descriptor[]> {
   const id = nextRequestId++;
   return new Promise<Descriptor[]>((resolve, reject) => {
@@ -61,11 +60,6 @@ function discoverDescriptors(urlAtHeads: AutomergeUrl): Promise<Descriptor[]> {
   });
 }
 
-/**
- * ModuleWatcher `importAutomergePackage` hook: discover descriptors in the
- * worker, then return the `{ plugins }` shape with a main-thread `load()` per
- * plugin that imports the package at heads and calls its real loader.
- */
 export async function importAutomergePackageViaWorker(
   urlAtHeads: string
 ): Promise<{ plugins: Descriptor[] }> {

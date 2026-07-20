@@ -22,8 +22,6 @@ export interface FolderStrategy {
   ): Promise<Resolved | undefined>;
 }
 
-// ── folder strategy: FolderDoc with docs[] ──
-
 const folderStrategy: FolderStrategy = {
   matches(doc) {
     return (
@@ -45,8 +43,6 @@ const folderStrategy: FolderStrategy = {
     return resolvePathInternal(repo, next, parts.slice(1), visited);
   },
 };
-
-// ── directory strategy: @patchwork.type === "directory", key map walk ──
 
 const directoryStrategy: FolderStrategy = {
   matches(doc) {
@@ -92,8 +88,6 @@ async function walkDirectoryDoc(
   return undefined;
 }
 
-// ── materialize: turn a final value into Resolved ──
-//
 // rule of thumb: bytes pass through, anything else gets JSON.stringify'd unless
 // a .mimeType hint is in scope (FileDoc-shape provides one). default mime is
 // application/json so strings without a hint become valid JSON.
@@ -104,7 +98,6 @@ async function materialize(
   typeHint?: string,
   visited: Set<string> = new Set()
 ): Promise<Resolved | undefined> {
-  // Follow automerge urls
   if (typeof node === "string" && isValidAutomergeUrl(node)) {
     if (visited.has(node)) return undefined;
     visited.add(node);
@@ -112,7 +105,6 @@ async function materialize(
     return materialize(repo, next.doc(), typeHint, visited);
   }
 
-  // FileDoc-shape: object with .content (and optional .mimeType)
   if (
     node &&
     typeof node === "object" &&
@@ -142,7 +134,6 @@ async function materialize(
     return { content: JSON.stringify(s), type: "application/json" };
   }
 
-  // numbers, booleans, plain objects, arrays — JSON.stringify
   if (
     typeof node === "number" ||
     typeof node === "boolean" ||
@@ -161,8 +152,6 @@ async function materialize(
   return undefined;
 }
 
-// ── dispatch ──
-
 const STRATEGIES: FolderStrategy[] = [directoryStrategy, folderStrategy];
 
 async function resolvePathInternal(
@@ -171,7 +160,6 @@ async function resolvePathInternal(
   parts: string[],
   visited: Set<string>
 ): Promise<Resolved | undefined> {
-  // Path exhausted — materialize this doc
   if (parts.length === 0) {
     return materialize(repo, handle.doc(), undefined, visited);
   }

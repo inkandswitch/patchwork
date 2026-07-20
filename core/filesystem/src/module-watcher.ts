@@ -42,8 +42,7 @@ function getDocumentBaseUrl(): string {
 }
 
 /**
- * Fetch a static module manifest over HTTP and normalize it into the same shape
- * as an Automerge module-settings doc. Relative (non-Automerge) module URLs are
+ * Relative (non-Automerge) module URLs are
  * resolved against the manifest's own URL so they can be dynamically imported
  * regardless of where the watcher code itself lives.
  */
@@ -86,9 +85,6 @@ function warnBranchesUnsupported(branchesDocUrl: AutomergeUrl) {
 // handler
 
 /**
- * This class watches a moduleSettingsDoc and loads modules based on the contents therein.
- * It also watches the modules themselves for changes and reloads them when they change.
- *
  * Settings sources are passed in keyed by name (e.g. `{ system, user }`). Each
  * source URL may be either an Automerge module-settings doc (`automerge:...`,
  * live-reloaded) or an HTTP(S) URL to a static JSON manifest of the same shape
@@ -177,10 +173,6 @@ export class ModuleWatcher {
     await this.load();
   }
 
-  /**
-   * All settings docs currently driving this watcher, both live Automerge
-   * handles and static HTTP manifests, keyed by source name.
-   */
   private settingsDocs(): Array<{
     name: string;
     doc: ModuleSettingsDoc | undefined;

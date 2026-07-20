@@ -53,15 +53,6 @@ export async function importPackageFromFolderDocUrl(
   return await importModule(entryPointUrl);
 }
 
-/**
- * Import a package from a plain HTTP(S) URL — the non-Automerge counterpart to
- * {@link importPackageFromFolderDocUrl}.
- *
- * The URL may point straight at a module entry file (e.g. `.../index.js`), in
- * which case it's imported as-is, or at a package/site root that serves a
- * `package.json`, in which case the manifest is fetched and its entry point
- * (`exports`/`main`) resolved and imported.
- */
 export async function importPackageFromHttpUrl(
   url: string,
   subpath: string = ".",
@@ -73,11 +64,6 @@ export async function importPackageFromHttpUrl(
 }
 
 /**
- * Import a package from a URL that may name either an `automerge:` folder doc
- * (served through the service worker) or a plain HTTP(S) module bundle.
- * Dispatches to {@link importPackageFromFolderDocUrl} or
- * {@link importPackageFromHttpUrl} accordingly.
- *
  * Note: an `automerge:` URL is imported as-is, without pinning to heads —
  * callers that need a deterministic version (e.g. {@link ModuleWatcher}) should
  * resolve the handle and pin before importing.
@@ -96,20 +82,6 @@ export async function importPackage(
 // package/site root to look for a `package.json` in.
 const MODULE_FILE_EXTENSION = /\.(mjs|cjs|js|mts|cts|ts|jsx|tsx)$/;
 
-/**
- * Resolve the URL to actually import for a plain HTTP(S) module URL.
- *
- * A URL that already names a module file (`.../foo.js`, `.mjs`, `.ts`, …) is
- * returned unchanged. Otherwise the URL is treated as a package/site root:
- * `package.json` is fetched relative to it and its entry point resolved. If
- * there's no manifest (a 404 or other non-ok response), the URL is imported
- * directly, so a bare directory that happens to serve an `index.js` still works
- * as before.
- *
- * A fetch that *rejects* — a network error or, most often, a cross-origin
- * request blocked by missing CORS headers — is not treated as "no manifest":
- * it throws, because the same failure would block the eventual module import.
- */
 async function httpEntryPointUrl(
   url: string,
   subpath: string = ".",
@@ -158,9 +130,7 @@ async function httpEntryPointUrl(
     let origin: string | undefined;
     try {
       origin = documentBaseOrigin();
-    } catch {
-      // origin unknown — fall back to the generic hint below.
-    }
+    } catch {}
     const crossOrigin = origin !== undefined && resolved.origin !== origin;
     const hint = crossOrigin
       ? `This is a cross-origin request (${origin} → ${resolved.origin}), so it's most likely blocked by CORS: the host must send an \`Access-Control-Allow-Origin\` header, and a cross-origin module can't be imported without one.`
@@ -282,11 +252,8 @@ export function resolvePackageExport(
   try {
     const resolved = resolve(pkgJson, subpath, { conditions });
     if (resolved) return resolved[0];
-  } catch {
-    // ignore, fallback to main
-  }
+  } catch {}
 
-  // fallback to main only for the root export
   if (subpath === "." && typeof pkgJson.main === "string") {
     return pkgJson.main;
   }
@@ -306,7 +273,6 @@ async function packageEntryPointUrl(
   const entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
   if (!entryPoint) return undefined;
 
-  // Build the final URL via the URL constructor
   const base = new URL(
     getImportableUrlFromAutomergeUrl(folderDocUrl),
     documentBaseOrigin()

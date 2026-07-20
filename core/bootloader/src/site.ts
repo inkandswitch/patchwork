@@ -1,15 +1,13 @@
 /**
- * High-level browser-app boot sequence for a Patchwork site.
+ * Browser-app boot sequence for a Patchwork site.
  *
- * Layers on top of {@link setupServiceWorker} (the package default export) to
- * construct the Repo, wire up the automerge-worker port, load plugins via the
- * ModuleWatcher, resolve the user's account document, and hand control to the
- * configured root tool.
+ * Layers on top of {@link setupServiceWorker} to construct the Repo, wire up
+ * the automerge-worker port, load plugins via the ModuleWatcher, resolve the
+ * user's account document, and hand control to the configured root tool.
  *
- * This entry point pulls in DOM- and plugin-layer dependencies (patchwork
- * elements, plugins, filesystem) and is intended for use only from a browser
- * site's `main.ts`. Non-UI consumers should import the package default (which
- * only does SW registration and the automerge-worker handoff).
+ * Pulls in DOM- and plugin-layer dependencies, so it is for a browser site's
+ * `main.ts` only. Non-UI consumers should import the package default, which
+ * does SW registration and the automerge-worker handoff and nothing else.
  */
 import {
   type DocHandle,
@@ -35,18 +33,6 @@ import {
 import { initSync as initSubductionSync } from "@automerge/automerge-subduction/slim";
 import { MemorySigner } from "@automerge/automerge-subduction/slim";
 
-declare const __SITE_NAME__: string;
-const siteName =
-  typeof __SITE_NAME__ !== "undefined" ? __SITE_NAME__ : "patchwork.inkandswitch.com";
-
-// Sync-server selection for keyhive. Defaults to "subduction". Build with
-// KEYHIVE_SYNC_SERVER=true to target keyhive.sync.automerge.org. This must match
-// the automerge-worker (SharedWorker) selection so the tab and the SW grant relay
-// access to the same server.
-declare const __KEYHIVE_SYNC_SERVER__: boolean;
-const useKeyhiveSyncServer =
-  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
-
 import { ModuleWatcher } from "@inkandswitch/patchwork-filesystem";
 import { importAutomergePackageViaWorker } from "./module-loader.js";
 import {
@@ -65,13 +51,28 @@ import {
 } from "@inkandswitch/patchwork-plugins";
 import * as plugins from "@inkandswitch/patchwork-plugins";
 
-import setupServiceWorker, { lifecycleLoggingEnabled } from "./setup.js";
+import setupServiceWorker, { lifecycleLog } from "./setup.js";
 import type {
   ServiceWorkerRepoChannelListener,
   SyncStateDocMessage,
 } from "./types.js";
 import debug from "debug";
+
 const log = debug("patchwork:bootloader:site");
+
+declare const __SITE_NAME__: string;
+const siteName =
+  typeof __SITE_NAME__ !== "undefined"
+    ? __SITE_NAME__
+    : "patchwork.inkandswitch.com";
+
+// Must match the automerge-worker's selection, or the tab and the SW grant
+// relay access to different servers.
+declare const __KEYHIVE_SYNC_SERVER__: boolean;
+const useKeyhiveSyncServer =
+  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
+
+type SignerIdentity = { peerId: string; verifyingKey: string };
 
 declare global {
   interface Window {
@@ -86,10 +87,7 @@ declare global {
       packages: ModuleWatcher;
       plugins: typeof plugins;
       accountDocHandle: DocHandle<AccountDoc>;
-      signer?: {
-        peerId: string;
-        verifyingKey: string;
-      };
+      signer?: SignerIdentity;
       sw: {
         connectClassicSync: (server?: string) => Promise<void>;
         subscribeToRepoChannel: (
@@ -123,9 +121,7 @@ export interface SiteConfig {
    * folder docs or plain HTTP(S) bundles, so deployment targets can be freely
    * mixed.
    *
-   * Can be overridden at runtime by setting `localStorage.systemPackageListURL` to
-   * another `automerge:` URL or manifest URL — useful for local development
-   * against an unpublished tool set.
+   * Overridable at runtime with `localStorage.systemPackageListURL`.
    */
   defaultModules?: string | string[];
 
@@ -148,16 +144,12 @@ export interface SiteConfig {
    */
   titleSuffix: string;
 
-  /**
-   * DOM id of the `<patchwork-view>` element that will host the root tool.
-   * Defaults to `"root"`.
-   */
+  /** DOM id of the `<patchwork-view>` hosting the root tool. Defaults to "root". */
   rootElementId?: string;
 
   /**
-   * When true, initialize keyhive for access control.
-   * The Repo will use keyhive's network adapter, peerId, and idFactory
-   * instead of a sharePolicy.
+   * Initialize keyhive for access control. The Repo then uses keyhive's network
+   * adapter, peerId and idFactory instead of a sharePolicy.
    */
   keyhive?: boolean;
 }
@@ -168,13 +160,6 @@ export interface BootResult {
   accountDocHandle: DocHandle<AccountDoc>;
 }
 
-// Legacy big-patchwork hash shape: `<slug>--<documentId>[?…]`. The slug can
-// contain characters we don't otherwise permit (e.g. `drawing-(branch-1)`), so
-// we anchor on the `--` before the base58 document id and allow any non-query
-// characters ahead of it rather than a strict slug charset.
-const BIG_PATCHWORK_HASH_REGEX =
-  /^(?<title>[^=&?/#]*)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
-
 // Started at module evaluation but not top-level awaited: awaiting here would
 // hold up everything importing this module, so the loading animation couldn't
 // appear until the biggest download of the boot had already finished.
@@ -184,197 +169,97 @@ const wasmFetches = Promise.all([
 ]);
 wasmFetches.catch(() => {});
 
-/**
- * Boot a Patchwork browser site.
- *
- * Performs the full application-shell setup: service worker + port, Repo,
- * plugin/module loading, account resolution, URL-hash routing, and dev-console
- * globals (`window.repo`, `window.patchwork`, `window.uncache`). Returns the
- * constructed Repo, ModuleWatcher and account handle for sites that want to
- * do additional wiring after boot.
- */
 export async function bootPatchworkSite(
   config: SiteConfig
 ): Promise<BootResult> {
-  const defaultModuleSources = resolveDefaultModules(config);
+  const moduleSources = resolveDefaultModules(config);
   showLoadingAnimation();
-  log(`booting`, config);
+  log("booting", config);
   installLifecycleLogging();
+
   const [automergeWasm, subductionWasm] = await wasmFetches;
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 
-  log("enabling workers");
   const sw = await setupServiceWorker();
   if (!sw) throw new Error("Failed to set up service worker");
   log("workers ready");
 
   let hive: AutomergeRepoKeyhive | undefined;
   let repo: Repo;
-  let tabSignerIdentity: { peerId: string; verifyingKey: string } | undefined;
-
-  // Called with a fresh port when the automerge worker dies and is recreated
-  // (see recoverAutomergeWorker in setup.ts); assigned once the repo exists.
+  let signerIdentity: SignerIdentity | undefined;
+  // Called with a fresh port when the automerge worker dies and is recreated.
+  // Assigned once the repo exists.
   let onWorkerPortRenewed: ((port: MessagePort) => void) | undefined;
 
-  // If a Repo is already on `window` — an embedding context provided one before
-  // this entry ran — reuse it and its keyhive instead of standing up a fresh
-  // realm-local Repo, so we share the same documents and sync/keyhive context.
-  // Otherwise create our own below.
+  // An embedding context may have provided a Repo before this entry ran. Reuse
+  // it and its keyhive so we share the same documents and sync context.
   if (window.repo) {
     log("using existing Repo from window");
     repo = window.repo;
     hive = window.hive;
   } else {
-    // Get the initial automerge-worker port via subscribeToRepoChannel,
-    // then pass it to keyhive init which wraps it in its own network adapter.
-    // The listener is called again with a fresh port if the worker is ever
-    // recreated after dying.
-    let resolveFirstPort!: (port: MessagePort) => void;
-    const firstPortPromise = new Promise<MessagePort>((r) => {
-      resolveFirstPort = r;
-    });
-    let seenFirstPort = false;
-    log("subscribing to repo channel");
-    // Deliberately not awaited: subscribeToRepoChannel resolves only after
-    // the boot channel's port-ready handshake, which can take its full 30s
-    // timeout against a stranded worker connection. Boot should block on the
-    // first *delivered* port instead — if the boot channel stalls, worker
-    // recovery hands the listener a good port long before that timeout.
-    void sw.subscribeToRepoChannel((port) => {
-      if (!seenFirstPort) {
-        seenFirstPort = true;
-        resolveFirstPort(port);
-      } else if (onWorkerPortRenewed) {
-        onWorkerPortRenewed(port);
-      } else {
+    const workerPort = await firstRepoPort(sw, (port) => {
+      if (onWorkerPortRenewed) onWorkerPortRenewed(port);
+      else {
         console.warn(
           "automerge worker port renewed before the repo existed; dropping it"
         );
       }
     });
-    const workerPort = await firstPortPromise;
-    log("repo channel subscribed");
+
     let workerAdapter = new MessageChannelNetworkAdapter(workerPort);
-
-    if (config.keyhive) {
-      log("setting up keyhive");
-      initKeyhiveWasm();
-
-      ({ hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
-        createRepo: (config) => new Repo(config),
-        storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
-        peerIdSuffix: siteName + Math.random().toString(36).slice(2),
-        networkAdapter: workerAdapter,
-        automaticArchiveIngestion: true,
-        cachingMode: "periodic",
-        onlyShareWithHardcodedServerPeerId: false,
-        // ARK selects the relay via `syncServer` ("keyhive" | "subduction").
-        // Defaults to "subduction".
-        ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
-        repo: {
-          storage: new IndexedDBWorkerStorageAdapter(),
-          enableRemoteHeadsGossiping: true,
-        },
-      }));
-      log("keyhive setup complete");
-    } else {
-      log("creating repo");
-      // Pass an explicit signer (instead of the Repo's internal default) so we
-      // can expose tab signer identity on window.patchwork for dev inspection.
-      // The tab never connects via Subduction (no endpoints/adapters), so this
-      // id never goes on the wire.
-      const tabSigner = new MemorySigner();
-      repo = new Repo({
-        network: [workerAdapter],
-        storage: new IndexedDBWorkerStorageAdapter(),
-        signer: tabSigner,
-        async sharePolicy(peerId) {
-          return peerId.includes("automerge-worker");
-        },
-        enableRemoteHeadsGossiping: true,
-        peerId:
-          `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
-      });
-      tabSignerIdentity = {
-        peerId: tabSigner.peerId().toString(),
-        verifyingKey: (
-          tabSigner.verifyingKey() as Uint8Array<ArrayBufferLike> & {
-            toHex(): string;
-          }
-        ).toHex(),
-      };
-      console.log("[patchwork] tab subduction identity:", tabSignerIdentity);
-      log("repo created");
-    }
+    ({ repo, hive, signerIdentity } = await createRepo(config, workerAdapter));
 
     // The worker was recreated with cold state: wire the repo onto the fresh
-    // port and drop the adapter stranded on the dead one. `repo`/`hive` are
-    // settled by the time this can fire (recovery needs a missed heartbeat).
+    // port and drop the adapter stranded on the dead one.
     const bootHive = hive;
     onWorkerPortRenewed = (port) => {
       const fresh = new MessageChannelNetworkAdapter(port);
       // Mirror the boot wiring: a keyhive repo talks to the worker through a
-      // keyhive adapter wrapped around the message channel (same parameters
-      // the worker uses for its side of the pair).
+      // keyhive adapter wrapped around the message channel.
       const registered = bootHive
         ? bootHive.createKeyhiveNetworkAdapter(fresh, false, false, 2000)
         : fresh;
       repo.networkSubsystem.addNetworkAdapter(registered as any);
-      for (const adapter of [...repo.networkSubsystem.adapters]) {
-        if (adapter === (registered as any)) continue;
-        // The keyhive wrapper keeps the wrapped adapter on `.networkAdapter`.
-        const base = (adapter as any).networkAdapter ?? adapter;
-        if (base !== workerAdapter) continue;
-        try {
-          repo.networkSubsystem.removeNetworkAdapter(adapter as any);
-        } catch (err) {
-          console.error("failed to remove stale worker network adapter", err);
-        }
-      }
+      removeAdapterFor(repo, workerAdapter, registered);
       workerAdapter = fresh;
-      console.warn(
-        `[lifecycle] ${new Date().toISOString()} repo re-wired to the ` +
-          `recreated automerge worker`
-      );
+      lifecycleLog("repo re-wired to the recreated automerge worker");
     };
   }
-  log("popping repo on window");
+
   window.repo = repo;
-  log("await repo.networkSubsystem.whenReady()");
+  window.Automerge = Automerge;
+  window.AutomergeRepo = AutomergeRepo;
+  window.getRepoChannel = sw.getRepoChannel;
+  if (hive) window.hive = hive;
 
   await repo.networkSubsystem.whenReady();
   log("networkSubsystem ready");
-
-  if (hive) {
-    (hive.networkAdapter as any).syncKeyhive?.();
-  }
-
-  installDevConsoleGlobals(repo, hive, sw.getRepoChannel);
+  (hive?.networkAdapter as any)?.syncKeyhive?.();
 
   registerRepoProviderElement(repo as any);
 
-  const rootElement = document.getElementById(config.rootElementId ?? "root");
+  const rootElementId = config.rootElementId ?? "root";
+  const rootElement = document.getElementById(rootElementId);
   if (!rootElement) {
-    throw new Error(
-      `bootPatchworkSite: no element with id="${config.rootElementId ?? "root"}"`
-    );
+    throw new Error(`bootPatchworkSite: no element with id="${rootElementId}"`);
   }
+
   // `<repo-provider>` sits above the root and answers `repo:handle-descriptor`
-  // for any view outside a remapper (resolving to the requested url unchanged).
+  // for any view outside a remapper, resolving to the requested url unchanged.
   const repoProvider = document.createElement("repo-provider");
   rootElement.parentElement!.insertBefore(repoProvider, rootElement);
   repoProvider.appendChild(rootElement);
 
   registerPatchworkViewElement({ hive, repo });
 
-  // The watcher is started with the site's default-tools bundle alone so that
-  // `resolveAccountHandle` below has something to await on (the `account`
-  // datatype lives in that bundle today). The user's own module-settings URL
-  // is added lazily once it appears on the account doc — see below.
+  // Started with the site bundle alone so resolveAccountHandle has something to
+  // await on — the `account` datatype lives there. The user's own
+  // module-settings URL is added lazily once it appears on the account doc.
   const moduleWatcher = new ModuleWatcher(
     repo,
-    buildSystemSources(defaultModuleSources),
+    nameSources(moduleSources),
     onModuleLoaded,
     unregisterPlugins,
     // Discover an Automerge package's plugin descriptors off the main thread;
@@ -386,29 +271,35 @@ export async function bootPatchworkSite(
     storageKey: config.accountStorageKey,
     hive,
   })) as DocHandle<AccountDoc>;
-  // TODO: something we (Orion & pvh) changed in the types made this necessary
-  //       fix this before merging to main!
 
   window.accountDocHandle = accountDocHandle;
-
-  wireModuleSettingsWhenReady(accountDocHandle, moduleWatcher);
-
-  primeRootElement(rootElement, accountDocHandle);
-  logToolRegistryWhenLoaded(moduleWatcher);
-
+  window.uncache = uncache;
   window.patchwork = {
     repo,
     packages: moduleWatcher,
     plugins,
     accountDocHandle,
-    ...(tabSignerIdentity ? { signer: tabSignerIdentity } : {}),
+    ...(signerIdentity ? { signer: signerIdentity } : {}),
     sw: {
       connectClassicSync: sw.connectClassicSync,
       subscribeToRepoChannel: sw.subscribeToRepoChannel,
       subscribeSyncState: sw.subscribeSyncState,
     },
   };
-  window.uncache = uncache;
+
+  wireModuleSettings(accountDocHandle, moduleWatcher);
+  primeRootElement(rootElement, accountDocHandle);
+
+  moduleWatcher.doneLoading.then(
+    () =>
+      log(
+        "doneLoading, tools registered:",
+        getRegistry("patchwork:tool")
+          .all()
+          .map((t: any) => t.id)
+      ),
+    (err: unknown) => console.error("doneLoading rejected:", err)
+  );
 
   installHashRouting({
     rootElement,
@@ -420,160 +311,214 @@ export async function bootPatchworkSite(
   return { repo, moduleWatcher, accountDocHandle };
 }
 
-// ─── Internals ──────────────────────────────────────────────────────────
-
 /**
- * A module-list source is valid if it is an Automerge URL or looks like an
- * HTTP(S)/site-relative manifest URL.
+ * Resolve with the first repo port the worker delivers, calling `onRenewed` for
+ * every later one.
+ *
+ * subscribeToRepoChannel is deliberately not awaited: it resolves only after
+ * the boot channel's port-ready handshake, which can take its full 30s timeout
+ * against a stranded worker connection. Boot blocks on the first *delivered*
+ * port instead — if the boot channel stalls, worker recovery hands the listener
+ * a good port long before that timeout.
  */
+function firstRepoPort(
+  sw: Awaited<ReturnType<typeof setupServiceWorker>>,
+  onRenewed: (port: MessagePort) => void
+): Promise<MessagePort> {
+  return new Promise<MessagePort>((resolve) => {
+    let seen = false;
+    void sw.subscribeToRepoChannel((port) => {
+      if (seen) return onRenewed(port);
+      seen = true;
+      resolve(port);
+    });
+  });
+}
+
+async function createRepo(
+  config: SiteConfig,
+  workerAdapter: MessageChannelNetworkAdapter
+): Promise<{
+  repo: Repo;
+  hive?: AutomergeRepoKeyhive;
+  signerIdentity?: SignerIdentity;
+}> {
+  if (config.keyhive) {
+    log("setting up keyhive");
+    initKeyhiveWasm();
+    const { hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
+      createRepo: (repoConfig) => new Repo(repoConfig),
+      storage: new IndexedDBWorkerStorageAdapter(`${siteName}-keyhive`),
+      peerIdSuffix: siteName + Math.random().toString(36).slice(2),
+      networkAdapter: workerAdapter,
+      automaticArchiveIngestion: true,
+      cachingMode: "periodic",
+      onlyShareWithHardcodedServerPeerId: false,
+      // ARK selects the relay via `syncServer`, defaulting to "subduction".
+      ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+      repo: {
+        storage: new IndexedDBWorkerStorageAdapter(),
+        enableRemoteHeadsGossiping: true,
+      },
+    });
+    log("keyhive setup complete");
+    return { repo, hive };
+  }
+
+  // An explicit signer, rather than the Repo's internal default, so the tab's
+  // identity can be exposed on window.patchwork. The tab never connects via
+  // Subduction, so this id never goes on the wire.
+  const signer = new MemorySigner();
+  const repo = new Repo({
+    network: [workerAdapter],
+    storage: new IndexedDBWorkerStorageAdapter(),
+    signer,
+    async sharePolicy(peerId) {
+      return peerId.includes("automerge-worker");
+    },
+    enableRemoteHeadsGossiping: true,
+    peerId:
+      `${config.titleSuffix}-tab-${crypto.randomUUID()}` as AutomergeRepo.PeerId,
+  });
+  const signerIdentity = {
+    peerId: signer.peerId().toString(),
+    verifyingKey: (
+      signer.verifyingKey() as Uint8Array<ArrayBufferLike> & {
+        toHex(): string;
+      }
+    ).toHex(),
+  };
+  log("repo created, tab subduction identity:", signerIdentity);
+  return { repo, signerIdentity };
+}
+
+/** Drop the adapter sitting on the dead worker port, leaving `keep` in place. */
+function removeAdapterFor(
+  repo: Repo,
+  stale: MessageChannelNetworkAdapter,
+  keep: unknown
+): void {
+  for (const adapter of [...repo.networkSubsystem.adapters]) {
+    if (adapter === keep) continue;
+    // The keyhive wrapper keeps the wrapped adapter on `.networkAdapter`.
+    const base = (adapter as any).networkAdapter ?? adapter;
+    if (base !== stale) continue;
+    try {
+      repo.networkSubsystem.removeNetworkAdapter(adapter as any);
+    } catch (err) {
+      console.error("failed to remove stale worker network adapter", err);
+    }
+  }
+}
+
 function isValidModuleSource(source: string): boolean {
-  if (isValidAutomergeUrl(source)) return true;
-  return (
-    source.startsWith("/") ||
-    source.startsWith("http://") ||
-    source.startsWith("https://") ||
-    source.startsWith("./")
-  );
+  return isValidAutomergeUrl(source) || /^(https?:\/\/|\.?\/)/.test(source);
 }
 
 /**
- * Resolve the site's default module-list sources, honouring the
- * `localStorage.systemPackageListURL` dev override (which replaces the entire
- * built-in default bundle).
+ * The site's default module-list sources, honouring the
+ * `localStorage.systemPackageListURL` dev override, which replaces the entire
+ * built-in bundle. `defaultToolsUrl` is the pre-rename key.
  */
 function resolveDefaultModules(config: SiteConfig): string[] {
-  const builtin = config.defaultModules ?? config.defaultModulesUrl ?? [];
-  const builtinList = (Array.isArray(builtin) ? builtin : [builtin]).filter(
-    Boolean
-  );
+  const configured = config.defaultModules ?? config.defaultModulesUrl ?? [];
+  const builtin = (
+    Array.isArray(configured) ? configured : [configured]
+  ).filter(Boolean);
 
   const storage = globalThis.localStorage;
-  // `defaultToolsUrl` is the pre-rename key, still honoured for existing browsers.
   const override =
     storage?.getItem("systemPackageListURL") ??
     storage?.getItem("defaultToolsUrl");
+
+  if (override && isValidModuleSource(override)) {
+    console.info(`using systemPackageListURL from localStorage: ${override}`);
+    return [override];
+  }
   if (override) {
-    if (isValidModuleSource(override)) {
-      if (!builtinList.includes(override)) {
-        console.info(
-          `using systemPackageListURL override from localStorage: ${override}`
-        );
-      }
-      return [override];
-    }
     console.warn(
-      `ignoring invalid systemPackageListURL in localStorage: ${override}; using built-in default`
+      `ignoring invalid systemPackageListURL in localStorage: ${override}`
     );
   }
 
-  if (builtinList.length === 0) {
+  if (builtin.length === 0) {
     throw new Error(
       "bootPatchworkSite: no default module sources configured (set `defaultModules`)"
     );
   }
-  return builtinList;
+  return builtin;
 }
 
 /**
- * Turn an ordered list of module-list sources into the name-keyed map the
- * ModuleWatcher expects. The first source keeps the canonical `system` name;
- * additional sources get suffixed names. None may be `user` (reserved for the
- * per-account settings doc, which has branch-override precedence).
+ * Name the sources for the ModuleWatcher. The first keeps the canonical
+ * `system` name; the rest get suffixed. None may be `user`, which is reserved
+ * for the per-account settings doc and has branch-override precedence.
  */
-function buildSystemSources(sources: string[]): Record<string, string> {
-  const map: Record<string, string> = {};
-  sources.forEach((source, index) => {
-    const name = index === 0 ? "system" : `system-${index}`;
-    map[name] = source;
-  });
-  return map;
+function nameSources(sources: string[]): Record<string, string> {
+  return Object.fromEntries(
+    sources.map((source, i) => [i === 0 ? "system" : `system-${i}`, source])
+  );
 }
 
-function installDevConsoleGlobals(
-  repo: Repo,
-  hive: AutomergeRepoKeyhive | undefined,
-  getRepoChannel: () => MessagePort
-): void {
-  window.repo = repo;
-  window.Automerge = Automerge;
-  window.AutomergeRepo = AutomergeRepo;
-  if (hive) {
-    window.hive = hive;
-  }
-  window.getRepoChannel = getRepoChannel;
-}
-
-/**
- * Log this tab's Page Lifecycle + connectivity transitions (visibility,
- * freeze, bfcache, online/offline) so they line up against the SharedWorker's
- * sync-socket reaps. [lifecycle]-tagged, on by default.
- */
+/** Page Lifecycle and connectivity transitions, to line up against the
+ * SharedWorker's sync-socket reaps. */
 function installLifecycleLogging(): void {
   if (typeof document === "undefined") return;
   const opts = { capture: true } as const;
-  const note = (label: string, extra?: unknown) => {
-    if (!lifecycleLoggingEnabled()) return;
-    const msg = `[lifecycle] ${new Date().toISOString()} ${label}`;
-    if (extra === undefined) console.info(msg);
-    else console.info(msg, extra);
-  };
+  const persisted = (e: Event) => (e as PageTransitionEvent).persisted;
 
   document.addEventListener(
     "visibilitychange",
-    () => note(`visibilitychange → ${document.visibilityState}`),
+    () => lifecycleLog("visibilitychange → %s", document.visibilityState),
     opts
   );
   document.addEventListener(
     "freeze",
-    () => note("freeze (tab suspended)"),
+    () => lifecycleLog("freeze (tab suspended)"),
     opts
   );
   document.addEventListener(
     "resume",
-    () => note("resume (tab unsuspended)"),
+    () => lifecycleLog("resume (tab unsuspended)"),
     opts
   );
   window.addEventListener(
     "pageshow",
-    (e) =>
-      note("pageshow", { persisted: (e as PageTransitionEvent).persisted }),
+    (e) => lifecycleLog("pageshow persisted=%s", persisted(e)),
     opts
   );
   window.addEventListener(
     "pagehide",
-    (e) =>
-      note("pagehide", { persisted: (e as PageTransitionEvent).persisted }),
+    (e) => lifecycleLog("pagehide persisted=%s", persisted(e)),
     opts
   );
-  window.addEventListener("online", () => note("online"), opts);
-  window.addEventListener("offline", () => note("offline"), opts);
+  window.addEventListener("online", () => lifecycleLog("online"), opts);
+  window.addEventListener("offline", () => lifecycleLog("offline"), opts);
 
-  note(
-    `lifecycle logging installed (visibilityState=${document.visibilityState}, hasFocus=${document.hasFocus()})`
+  lifecycleLog(
+    "logging installed (visibilityState=%s, hasFocus=%s)",
+    document.visibilityState,
+    document.hasFocus()
   );
 }
 
 function onModuleLoaded(name: string, mod: any): void {
-  if (Array.isArray(mod.plugins)) {
-    log(
-      `registering ${mod.plugins.length} plugin(s) from ${name.slice(0, 30)}...`,
-      mod.plugins.map((p: any) => `${p.type}:${p.id}`)
-    );
-    registerPlugins(mod.plugins, name);
-  } else {
-    console.warn(
-      `module ${name.slice(0, 30)}... has no plugins array`,
-      Object.keys(mod)
-    );
+  if (!Array.isArray(mod.plugins)) {
+    console.warn(`module ${name} has no plugins array`, Object.keys(mod));
+    return;
   }
+  log(
+    `registering ${mod.plugins.length} plugin(s) from ${name}`,
+    mod.plugins.map((p: any) => `${p.type}:${p.id}`)
+  );
+  registerPlugins(mod.plugins, name);
 }
 
 /**
- * The frame lazy-creates `moduleSettingsUrl` on first mount. Watch for it to
- * appear on the account doc and feed it into the ModuleWatcher so the user's
- * own tool bundle loads alongside the site default. Idempotent.
+ * The frame lazy-creates `moduleSettingsUrl` on first mount, so watch for it to
+ * appear and feed it to the ModuleWatcher.
  */
-function wireModuleSettingsWhenReady(
+function wireModuleSettings(
   accountDocHandle: DocHandle<AccountDoc>,
   moduleWatcher: ModuleWatcher
 ): void {
@@ -589,88 +534,66 @@ function wireModuleSettingsWhenReady(
   }
 }
 
-/**
- * Set initial `tool-id` / `doc-url` attributes on the root
- * `<patchwork-view>` based on the URL hash (if it specifies a frame
- * override) or the account doc's configured frame tool + the account doc
- * itself.
- */
 function primeRootElement(
   rootElement: HTMLElement,
   accountDocHandle: DocHandle<AccountDoc>
 ): void {
   rootElement.style.visibility = "hidden";
-
-  const initialParams = new URLSearchParams(location.hash.slice(1));
-  if (initialParams.has("frame")) {
-    rootElement.setAttribute("tool-id", initialParams.get("frame")!);
-    const docUrl =
-      docParamToUrl(initialParams.get("doc")) ?? accountDocHandle.url;
-    rootElement.setAttribute("doc-url", docUrl);
-  } else {
-    rootElement.setAttribute("tool-id", accountDocHandle.doc().frameToolId);
-    rootElement.setAttribute("doc-url", accountDocHandle.url);
-  }
+  const params = new URLSearchParams(location.hash.slice(1));
+  const frame = params.get("frame");
+  rootElement.setAttribute(
+    "tool-id",
+    frame ?? accountDocHandle.doc().frameToolId
+  );
+  rootElement.setAttribute(
+    "doc-url",
+    (frame && docParamToUrl(params.get("doc"))) || accountDocHandle.url
+  );
 }
 
-function logToolRegistryWhenLoaded(moduleWatcher: ModuleWatcher): void {
-  moduleWatcher.doneLoading
-    .then(() => {
-      const toolReg = getRegistry("patchwork:tool");
-      const tools = toolReg.all();
-      log(
-        `doneLoading: ${tools.length} tools registered:`,
-        tools.map((t: any) => t.id)
-      );
-    })
-    .catch((err: unknown) => {
-      console.error("doneLoading rejected:", err);
-    });
-}
+// ── Loading animation ───────────────────────────────────────────────────
 
 const LOADING_STYLE_ID = "pw-bootloader-loading-styles";
 const LOADING_ELEMENT_ID = "pw-bootloader-loading";
+
+const LOADING_CSS = `
+  @keyframes pw-bootloader-pulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.95; }
+  }
+  #${LOADING_ELEMENT_ID} {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-color: #fff;
+    background-image:
+      radial-gradient(ellipse 55% 45% at 28% 35%, #fde4ec, transparent 70%),
+      radial-gradient(ellipse 50% 55% at 72% 65%, #e0f0fb, transparent 70%),
+      radial-gradient(ellipse 65% 55% at 50% 50%, #f1e6f6, transparent 80%);
+    animation: pw-bootloader-pulse 3.5s ease-in-out infinite;
+    transition: opacity 0.6s ease-out;
+  }
+  @media (prefers-color-scheme: dark) {
+    #${LOADING_ELEMENT_ID} {
+      background-color: #000;
+      background-image:
+        radial-gradient(ellipse 55% 45% at 28% 35%, #2a1d33, transparent 70%),
+        radial-gradient(ellipse 50% 55% at 72% 65%, #1a2738, transparent 70%),
+        radial-gradient(ellipse 65% 55% at 50% 50%, #221a2e, transparent 80%);
+    }
+  }
+  #${LOADING_ELEMENT_ID}.pw-bootloader-fading {
+    opacity: 0;
+    animation: none;
+  }
+`;
 
 function showLoadingAnimation(): void {
   if (!document.getElementById(LOADING_STYLE_ID)) {
     const style = document.createElement("style");
     style.id = LOADING_STYLE_ID;
-    style.textContent = `
-      @keyframes pw-bootloader-pulse {
-        0%, 100% { opacity: 0.25; }
-        50% { opacity: 0.95; }
-      }
-      #${LOADING_ELEMENT_ID} {
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        background-color: #fff;
-        background-image:
-          radial-gradient(ellipse 55% 45% at 28% 35%, #fde4ec, transparent 70%),
-          radial-gradient(ellipse 50% 55% at 72% 65%, #e0f0fb, transparent 70%),
-          radial-gradient(ellipse 65% 55% at 50% 50%, #f1e6f6, transparent 80%);
-        animation: pw-bootloader-pulse 3.5s ease-in-out infinite;
-        transition: opacity 0.6s ease-out;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-      }
-      @media (prefers-color-scheme: dark) {
-        #${LOADING_ELEMENT_ID} {
-          background-color: #000;
-          background-image:
-            radial-gradient(ellipse 55% 45% at 28% 35%, #2a1d33, transparent 70%),
-            radial-gradient(ellipse 50% 55% at 72% 65%, #1a2738, transparent 70%),
-            radial-gradient(ellipse 65% 55% at 50% 50%, #221a2e, transparent 80%);
-        }
-      }
-      #${LOADING_ELEMENT_ID}.pw-bootloader-fading {
-        opacity: 0;
-        animation: none;
-      }
-    `;
+    style.textContent = LOADING_CSS;
     document.head.appendChild(style);
   }
   if (document.getElementById(LOADING_ELEMENT_ID)) return;
@@ -690,41 +613,46 @@ async function uncache(match: string): Promise<void> {
   for (const name of await caches.keys()) {
     const cache = await caches.open(name);
     for (const request of await cache.keys()) {
-      if (request.url.includes(match)) {
-        cache.delete(request);
-      }
+      if (request.url.includes(match)) cache.delete(request);
     }
   }
 }
 
-// The `doc=` value is an automerge URL — we keep its `:` (and any `#`/`|`
-// heads) literal rather than percent-encoding it so links stay readable.
+// ── Hash routing ────────────────────────────────────────────────────────
+
+// Legacy big-patchwork hash shape: `<slug>--<documentId>[?…]`. The slug can
+// contain characters we don't otherwise permit (e.g. `drawing-(branch-1)`), so
+// anchor on the `--` before the base58 document id rather than a strict slug
+// charset.
+const BIG_PATCHWORK_HASH_REGEX =
+  /^(?<title>[^=&?/#]*)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
+
+// The `doc=` value is an automerge URL, kept literal rather than
+// percent-encoded so links stay readable.
 const RAW_HASH_KEYS = new Set(["doc"]);
-// Emit hash params in a stable order so re-serializing the same logical params
-// yields a byte-identical string (avoids spurious `hashchange` round-trips).
+// A stable order means re-serializing the same logical params is
+// byte-identical, avoiding spurious `hashchange` round-trips.
 const HASH_KEY_ORDER = ["doc", "tool", "type", "title", "frame"];
 
 function serializeHashParams(params: URLSearchParams): string {
-  const emitted = new Set<string>();
+  const keys = [...HASH_KEY_ORDER, ...params.keys()];
   const parts: string[] = [];
-  const emit = (key: string) => {
-    if (emitted.has(key)) return;
+  const emitted = new Set<string>();
+  for (const key of keys) {
+    if (emitted.has(key)) continue;
     const value = params.get(key);
-    if (!value) return;
+    if (!value) continue;
     emitted.add(key);
     parts.push(
       `${key}=${RAW_HASH_KEYS.has(key) ? value : encodeURIComponent(value)}`
     );
-  };
-  for (const key of HASH_KEY_ORDER) emit(key);
-  for (const key of params.keys()) emit(key);
+  }
   return parts.join("&");
 }
 
 /**
  * Coerce a `doc=` hash param to a full automerge URL. Accepts a full URL
- * (`automerge:<id>[#heads]`) or a bare document id for backwards compatibility
- * with older links.
+ * (`automerge:<id>[#heads]`) or a bare document id, for older links.
  */
 function docParamToUrl(docParam: string | null): AutomergeUrl | undefined {
   if (!docParam) return undefined;
@@ -732,10 +660,8 @@ function docParamToUrl(docParam: string | null): AutomergeUrl | undefined {
     return docParam as AutomergeUrl;
   }
   const documentId = docParam.replace(/^automerge:/, "");
-  if (isValidDocumentId(documentId)) {
-    return stringifyAutomergeUrl({ documentId: documentId as DocumentId });
-  }
-  return undefined;
+  if (!isValidDocumentId(documentId)) return undefined;
+  return stringifyAutomergeUrl({ documentId: documentId as DocumentId });
 }
 
 interface HashRoutingParams {
@@ -745,78 +671,17 @@ interface HashRoutingParams {
   titleSuffix: string;
 }
 
-function installHashRouting(params: HashRoutingParams): void {
-  const { rootElement, repo, accountDocHandle, titleSuffix } = params;
-
-  rootElement.addEventListener("patchwork:open-document", async (event) => {
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    const { url, toolId, type, title } = event.detail as {
-      url: AutomergeUrl;
-      toolId?: string;
-      type?: string;
-      title?: string;
-    };
-    // `doc` is now the full automerge URL — heads, if any, live inside it, so
-    // the separate `heads=` param is gone.
-    params.delete("heads");
-    params.set("doc", url);
-    if (toolId) params.set("tool", toolId);
-    else params.delete("tool");
-    if (title) params.set("title", title);
-    else params.delete("title");
-    if (type) params.set("type", type);
-    else params.delete("type");
-    window.location.hash = serializeHashParams(params);
-
-    try {
-      const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
-        url
-      );
-      const doc = docHandle.doc();
-      const docType = type || doc?.["@patchwork"]?.type;
-      if (!docType) return;
-      const registry = getRegistry<DatatypeDescription>("patchwork:datatype");
-      const datatype = await registry.load(docType);
-      if (!datatype) return;
-      const docTitle = (datatype.module as DatatypeImplementation).getTitle(
-        doc
-      );
-      if (docTitle) {
-        document.title = `${docTitle} | ${titleSuffix}`;
-      }
-    } catch (e) {
-      console.error("Failed to update document title", e);
-    }
-  });
-
-  let firstMount = true;
-  const reveal = () => {
-    if (!firstMount) return;
-    firstMount = false;
-    rootElement.style.visibility = "visible";
-    hideLoadingAnimation();
-  };
-
-  rootElement.addEventListener("patchwork:mounted", (event) => {
-    handleHashChange();
-    if (event.target !== rootElement) return;
-    console.info("root element mounted");
-    reveal();
-    // Re-resolve routing after a beat so deep-links from freshly-loaded tools
-    // get a second chance to render.
-    setTimeout(handleHashChange, 1000);
-  });
-
-  // Failsafe: if nothing ever mounts, reveal the element anyway after 12s so
-  // the user sees *something* rather than a blank page.
-  setTimeout(reveal, 12_000);
-
+function installHashRouting({
+  rootElement,
+  repo,
+  accountDocHandle,
+  titleSuffix,
+}: HashRoutingParams): void {
   const handleHashChange = async () => {
     const hash = window.location.hash.slice(1);
 
-    // Legacy big-patchwork link (`<slug>--<docId>?…`): if the hash carries a
-    // `--` followed by a valid document id, normalize it to the canonical
-    // `#doc=automerge:<docId>` form and let routing re-run on the hashchange.
+    // Legacy big-patchwork link: normalize to `#doc=automerge:<docId>` and let
+    // routing re-run on the resulting hashchange.
     const legacyDocId = BIG_PATCHWORK_HASH_REGEX.exec(hash)?.groups?.docId;
     if (legacyDocId && isValidDocumentId(legacyDocId)) {
       window.location.hash = serializeHashParams(
@@ -827,20 +692,17 @@ function installHashRouting(params: HashRoutingParams): void {
       return;
     }
 
-    // Bare automerge URL in hash: /#automerge:<documentId>
+    // Bare automerge URL: /#automerge:<documentId>
     if (isValidAutomergeUrl(hash as AutomergeUrl)) {
-      const url = hash as AutomergeUrl;
       window.location.hash = "";
-      openDocument(rootElement, url);
+      openDocument(rootElement, hash as AutomergeUrl);
       return;
     }
 
     const params = new URLSearchParams(hash);
     const docUrl = docParamToUrl(params.get("doc"));
-    const toolId = params.get("tool");
-    const title = params.get("title");
-    const type = params.get("type");
     const frame = params.get("frame");
+
     if (frame) {
       const frameDocUrl = docUrl ?? accountDocHandle.url;
       if (
@@ -851,14 +713,85 @@ function installHashRouting(params: HashRoutingParams): void {
         rootElement.setAttribute("doc-url", frameDocUrl);
       }
     }
+
     if (docUrl) {
       rootElement.dispatchEvent(
         new CustomEvent("patchwork:open-document", {
-          detail: { url: docUrl, toolId, title, type },
+          detail: {
+            url: docUrl,
+            toolId: params.get("tool"),
+            title: params.get("title"),
+            type: params.get("type"),
+          },
         })
       );
     }
   };
+
+  rootElement.addEventListener("patchwork:open-document", async (event) => {
+    const { url, toolId, type, title } = event.detail as {
+      url: AutomergeUrl;
+      toolId?: string;
+      type?: string;
+      title?: string;
+    };
+
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    // `doc` is the full automerge URL, so heads live inside it and the separate
+    // `heads=` param is gone.
+    params.delete("heads");
+    params.set("doc", url);
+    for (const [key, value] of [
+      ["tool", toolId],
+      ["title", title],
+      ["type", type],
+    ] as const) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    window.location.hash = serializeHashParams(params);
+
+    try {
+      const docHandle = await repo.find<{ "@patchwork"?: { type?: string } }>(
+        url
+      );
+      const doc = docHandle.doc();
+      const docType = type || doc?.["@patchwork"]?.type;
+      if (!docType) return;
+      const datatype =
+        await getRegistry<DatatypeDescription>("patchwork:datatype").load(
+          docType
+        );
+      if (!datatype) return;
+      const docTitle = (datatype.module as DatatypeImplementation).getTitle(
+        doc
+      );
+      if (docTitle) document.title = `${docTitle} | ${titleSuffix}`;
+    } catch (e) {
+      console.error("Failed to update document title", e);
+    }
+  });
+
+  let revealed = false;
+  const reveal = () => {
+    if (revealed) return;
+    revealed = true;
+    rootElement.style.visibility = "visible";
+    hideLoadingAnimation();
+  };
+
+  rootElement.addEventListener("patchwork:mounted", (event) => {
+    if (event.target !== rootElement) return;
+    log("root element mounted");
+    void handleHashChange();
+    reveal();
+    // Deep-links from freshly-loaded tools get a second chance to render.
+    setTimeout(handleHashChange, 1000);
+  });
+
+  // If nothing ever mounts, reveal anyway so the user sees something rather
+  // than a blank page.
+  setTimeout(reveal, 12_000);
 
   window.addEventListener("hashchange", handleHashChange);
 }
