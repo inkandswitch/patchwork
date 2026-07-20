@@ -40,3 +40,45 @@ jobs:
 
       - name: check formatting
         run: pnpm format:check
+
+  e2e:
+    name: e2e (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: check out the repository
+        uses: actions/checkout@v3
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: install javascript
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: install browser
+        run: pnpm --filter @patchwork/e2e exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: build the site
+        run: pnpm --filter "patchwork.inkandswitch.com..." build
+
+      - name: run the e2e tests
+        run: pnpm --filter @patchwork/e2e test:e2e --project=${{ matrix.browser }}
+
+      - name: upload the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: e2e/playwright-report
+          retention-days: 7
