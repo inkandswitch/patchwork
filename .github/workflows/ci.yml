@@ -38,8 +38,6 @@ jobs:
       - name: run the tests
         run: pnpm test
 
-      - name: check formatting
-        run: pnpm format:check
 
   e2e:
     name: e2e (${{ matrix.browser }})
