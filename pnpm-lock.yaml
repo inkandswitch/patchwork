@@ -24,13 +24,7 @@ catalogs:
     '@types/react':
       specifier: 18.3.1
       version: 18.3.1
-    '@types/react-dom':
-      specifier: 18.3.1
-      version: 18.3.1
     react:
-      specifier: 18.3.1
-      version: 18.3.1
-    react-dom:
       specifier: 18.3.1
       version: 18.3.1
     solid-js:
@@ -148,12 +142,18 @@ importers:
       debug:
         specifier: ^4.4.3
         version: 4.4.3
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
       service-worker-types:
         specifier: npm:@types/serviceworker@^0.0.153
         version: '@types/serviceworker@0.0.153'
       solid-js:
         specifier: 'catalog:'
         version: 1.9.14
+      tinyargs:
+        specifier: ^0.1.4
+        version: 0.1.4
     devDependencies:
       esbuild:
         specifier: ^0.23.1
@@ -238,12 +238,21 @@ importers:
 
   core/plugins:
     dependencies:
+      '@types/debug':
+        specifier: ^4.1.13
+        version: 4.1.13
+      '@types/node':
+        specifier: ^20.19.41
+        version: 20.19.43
       debug:
         specifier: ^4.4.3
         version: 4.4.3
       eventemitter3:
         specifier: ^5.0.4
         version: 5.0.4
+      resolve.exports:
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@automerge/automerge':
         specifier: 3.3.2
@@ -257,12 +266,9 @@ importers:
       '@inkandswitch/patchwork-filesystem':
         specifier: workspace:^
         version: link:../filesystem
-      '@types/debug':
-        specifier: ^4.1.13
-        version: 4.1.13
-      '@types/node':
+      '@types/react':
         specifier: 'catalog:'
-        version: 24.13.3
+        version: 18.3.1
 
   e2e:
     devDependencies:
@@ -285,7 +291,7 @@ importers:
         specifier: 0.16.0
         version: 0.16.0
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.9.3
         version: 5.9.3
       vitest:
         specifier: ^3.2.6
@@ -341,57 +347,11 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/react:
-    devDependencies:
-      '@automerge/automerge-repo-react-hooks':
-        specifier: 2.6.0-subduction.46
-        version: 2.6.0-subduction.46(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@automerge/vanillajs':
-        specifier: 2.6.0-subduction.46
-        version: 2.6.0-subduction.46
-      '@inkandswitch/patchwork-plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-      '@types/react':
-        specifier: 'catalog:'
-        version: 18.3.1
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 18.3.1
-      react:
-        specifier: 'catalog:'
-        version: 18.3.1
-      react-dom:
-        specifier: 'catalog:'
-        version: 18.3.1(react@18.3.1)
-
-  packages/solid:
-    dependencies:
-      '@inkandswitch/patchwork-plugins':
-        specifier: workspace:^
-        version: link:../../core/plugins
-    devDependencies:
-      '@automerge/automerge-repo':
-        specifier: 2.6.0-subduction.46
-        version: 2.6.0-subduction.46
-      '@automerge/automerge-repo-solid-primitives':
-        specifier: 2.6.0-subduction.46
-        version: 2.6.0-subduction.46(@automerge/automerge@3.3.2)(solid-js@1.9.14)
-      solid-js:
-        specifier: ^1.9.13
-        version: 1.9.14
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
   sites/gaios.sgai.uk:
     devDependencies:
       '@inkandswitch/patchwork-bootloader':
         specifier: workspace:^
         version: link:../../core/bootloader
-      concurrently:
-        specifier: ^9.2.1
-        version: 9.2.4
       vite:
         specifier: ^7.3.5
         version: 7.3.6(@types/node@24.13.3)
@@ -405,9 +365,6 @@ importers:
         specifier: workspace:^
         version: link:../../core/bootloader
     devDependencies:
-      concurrently:
-        specifier: ^9.2.1
-        version: 9.2.4
       vite:
         specifier: ^7.3.5
         version: 7.3.6(@types/node@24.13.3)
@@ -1085,14 +1042,14 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
+  '@types/node@20.19.43':
+    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
+
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
-
-  '@types/react-dom@18.3.1':
-    resolution: {integrity: sha512-qW1Mfv8taImTthu4KoXgDfLuk4bydU6Q/TkADnDWWHwi4NX4BR+LWfTp2sVmTqRrsHvyDDTelgelxJ+SsejKKQ==}
 
   '@types/react@18.3.1':
     resolution: {integrity: sha512-V0kuGBX3+prX+DQ/7r2qsv1NsdfnCLnTgnRJ1pYnxykBhGMz+qj+box5lq7XsO5mtZsBqpjwwTu/7wszPfMBcw==}
@@ -1722,6 +1679,10 @@ packages:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
 
+  tinyargs@0.1.4:
+    resolution: {integrity: sha512-5OpdhMRRE70j0zT7mrBpx12FJI+y0EGx8zMe8Vl2/aiwGgpW3X70OVHlsHmHeeG0ncnnWdq1o+k/S5d9ONgzGA==}
+    engines: {node: '>=14'}
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -1763,6 +1724,9 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
@@ -2502,15 +2466,15 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
+  '@types/node@20.19.43':
+    dependencies:
+      undici-types: 6.21.0
+
   '@types/node@24.13.3':
     dependencies:
       undici-types: 7.18.2
 
   '@types/prop-types@15.7.15': {}
-
-  '@types/react-dom@18.3.1':
-    dependencies:
-      '@types/react': 18.3.1
 
   '@types/react@18.3.1':
     dependencies:
@@ -3157,6 +3121,8 @@ snapshots:
 
   term-size@2.2.1: {}
 
+  tinyargs@0.1.4: {}
+
   tinybench@2.9.0: {}
 
   tinyexec@0.3.2: {}
@@ -3183,6 +3149,8 @@ snapshots:
   tslib@2.8.1: {}
 
   typescript@5.9.3: {}
+
+  undici-types@6.21.0: {}
 
   undici-types@7.18.2: {}
 
