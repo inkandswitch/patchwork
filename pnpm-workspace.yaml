@@ -2,13 +2,11 @@ packages:
   - core/*
   - e2e
   - packages/*
-  - packages/annotations/**/*
   - packages/providers/**/*
-  - packages/subscribables/**/*
-  - meta/*
   - sites/*
 
 overrides:
+  "@automerge/automerge": "catalog:"
   "@automerge/automerge-repo": "catalog:"
   "@automerge/automerge-repo-keyhive": "catalog:"
   "@automerge/automerge-repo-network-messagechannel": "catalog:"
@@ -45,10 +43,12 @@ catalog:
   "@codemirror/view": ^6.43.6
   "@keyhive/keyhive": 0.1.0-alpha.5
   solid-js: ^1.9.13
+  "@types/node": ^24.0.0
   "@types/react": 18.3.1
   "@types/react-dom": 18.3.1
   react: 18.3.1
   react-dom: 18.3.1
+  typescript: ^5.9.3
 
 allowBuilds:
   cbor-extract: true
