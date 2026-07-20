@@ -54,7 +54,14 @@ test("probe offline reload failure", async ({ page, context }) => {
 
   await context.setOffline(true);
   await page.reload();
-  await page.waitForTimeout(35_000);
+  await page.waitForTimeout(20_000);
+  const body = await page.evaluate(() =>
+    fetch("/automerge.wasm")
+      .then((r) => r.text())
+      .then((t) => t.slice(0, 400))
+      .catch((e) => `threw ${e}`),
+  );
+  console.log("WASM-BODY:", JSON.stringify(body));
   const state = await page.evaluate(() => ({
     repo: typeof (window as any).repo,
     controlled: !!navigator.serviceWorker.controller,
