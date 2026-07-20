@@ -1,0 +1,77 @@
+import { expect, test } from "@playwright/test";
+import {
+  createDoc,
+  findDocField,
+  setDocField,
+  waitForRepoReady,
+  waitForServiceWorkerActive,
+} from "./helpers";
+
+/**
+ * Local-first behaviour with the network cut.
+ *
+ * Everything in B1 scope routes through the SW relay + IndexedDB, so none
+ * of it should need the network once the page has booted. These tests boot
+ * online, then flip the context offline and assert that doc creation,
+ * multi-tab sync, and (via the SW page/asset cache) even a full reload
+ * keep working.
+ */
+
+test("docs sync between tabs while offline", async ({ context }) => {
+  const tabA = await context.newPage();
+  await tabA.goto("/");
+  await waitForServiceWorkerActive(tabA);
+  await waitForRepoReady(tabA);
+
+  const tabB = await context.newPage();
+  await tabB.goto("/");
+  await waitForRepoReady(tabB);
+
+  await context.setOffline(true);
+
+  const url = await createDoc(tabA, { status: "made-offline" });
+  expect(url).toMatch(/^automerge:/);
+
+  await expect
+    .poll(async () => findDocField<string>(tabB, url, "status"), {
+      timeout: 15_000,
+    })
+    .toBe("made-offline");
+
+  await setDocField(tabB, url, "status", "edited-offline");
+
+  await expect
+    .poll(async () => findDocField<string>(tabA, url, "status"), {
+      timeout: 15_000,
+    })
+    .toBe("edited-offline");
+});
+
+test("the app boots from the SW cache while offline and keeps its docs", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/");
+  await waitForServiceWorkerActive(page);
+  await waitForRepoReady(page);
+
+  // First load may have fetched some assets before the SW controlled the
+  // page. A second online load routes everything through the SW so its
+  // background cache holds the full app shell.
+  await page.reload();
+  await waitForRepoReady(page);
+
+  const url = await createDoc(page, { note: "offline-survivor" });
+  await expect
+    .poll(async () => findDocField<string>(page, url, "note"), {
+      timeout: 15_000,
+    })
+    .toBe("offline-survivor");
+
+  await context.setOffline(true);
+  await page.reload();
+  await waitForRepoReady(page);
+
+  const value = await findDocField<string>(page, url, "note");
+  expect(value).toBe("offline-survivor");
+});
