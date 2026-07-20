@@ -7,7 +7,10 @@ import {
   type LoadedPlugin,
   type PluginDescription,
 } from "@inkandswitch/patchwork-plugins";
-import { OverlayRepo } from "@inkandswitch/patchwork-providers";
+import {
+  OverlayRepo,
+  registerPatchworkViewTag,
+} from "@inkandswitch/patchwork-providers";
 import { MountedEvent, UnmountedEvent } from "./events.js";
 import { LegacyImpl } from "./legacy-impl.js";
 import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
@@ -101,6 +104,8 @@ export function registerPatchworkViewElement(
 ) {
   const name = params.name ?? "patchwork-view";
 
+  registerPatchworkViewTag(name);
+
   if (customElements.get(name)) return;
 
   customElements.define(
@@ -114,6 +119,7 @@ export function registerPatchworkViewElement(
       #state: State = State.none;
       #initEpoch = 0;
       #teardowns = new Set<() => unknown | Promise<void>>();
+      #teardownPromise: Promise<void> | null = null;
       #keyhiveRetrySetup = false;
       #handlingKeyhiveSync = false;
       #pendingKeyhiveSync = false;
@@ -187,7 +193,17 @@ export function registerPatchworkViewElement(
         (this as { hive?: AutomergeRepoKeyhive }).hive = params.hive;
         this.#component = this.getAttribute(ATTRS.component);
         this.#url = this.getAttribute(ATTRS.url) as AutomergeUrl | null;
-        this.#sync();
+        // A same-task remove-and-reinsert (keyed reorder, `insertBefore`)
+        // reconnects while the disconnect's teardown is still in flight;
+        // syncing now would no-op against the not-yet-reset state and the
+        // view would stay blank forever. Wait the teardown out.
+        if (this.#teardownPromise) {
+          void this.#teardownPromise.then(() => {
+            if (this.isConnected) this.#sync();
+          });
+        } else {
+          this.#sync();
+        }
       }
 
       disconnectedCallback() {
@@ -262,7 +278,6 @@ export function registerPatchworkViewElement(
         this.#legacyImpl = new LegacyImpl(this, {
           repo: this.#ensureOverlayRepo(),
           hive: params.hive,
-          hostName: name,
         });
         this.#legacyImpl.connectedCallback();
       }
@@ -302,6 +317,7 @@ export function registerPatchworkViewElement(
               params.hive.active.individual.id,
               this.url
             );
+            if (epoch !== this.#initEpoch) return;
             const accessLevel = bestAccess ? bestAccess.toString() : "None";
 
             if (accessLevel === "None") {
@@ -347,14 +363,27 @@ export function registerPatchworkViewElement(
             const progress = params.repo.findWithProgress(
               this.url as AutomergeUrl
             );
-            if (progress.peek().state !== "ready") {
+            const initial = progress.peek();
+            if (initial.state === "failed") {
+              console.error(
+                `patchwork-view: failed to load ${this.url}`,
+                initial.error
+              );
+              this.#state = State.error;
+              return;
+            }
+            if (initial.state !== "ready") {
               this.#state = State.unable;
               const unsubscribe = progress.subscribe((queryState) => {
-                if (
-                  queryState.state === "ready" &&
-                  epoch === this.#initEpoch
-                ) {
+                if (epoch !== this.#initEpoch) return;
+                if (queryState.state === "ready") {
                   void this.#teardown().then(() => this.#sync());
+                } else if (queryState.state === "failed") {
+                  console.error(
+                    `patchwork-view: failed to load ${this.url}`,
+                    queryState.error
+                  );
+                  this.#state = State.error;
                 }
               });
               this.#teardowns.add(unsubscribe);
@@ -399,35 +428,52 @@ export function registerPatchworkViewElement(
         this.#queueRender();
       };
 
-      async #teardown() {
+      // Serialized: overlapping calls (both observed attributes changing in
+      // one tick, disconnect racing an attribute change) share the one
+      // in-flight run instead of double-running the same cleanups.
+      #teardown(): Promise<void> {
+        if (!this.#teardownPromise) {
+          this.#teardownPromise = this.#runTeardown().finally(() => {
+            this.#teardownPromise = null;
+          });
+        }
+        return this.#teardownPromise;
+      }
+
+      async #runTeardown() {
         if (this.#legacyImpl) {
-          await this.#legacyImpl.disconnectedCallback();
+          const impl = this.#legacyImpl;
           this.#legacyImpl = null;
+          await impl.disconnectedCallback();
         }
 
-        if (this.#state == State.none) return;
+        if (this.#state != State.none) {
+          // Only `rendered` reached the `MountedEvent` dispatch.
+          const wasMounted = this.#state == State.rendered;
+          const mountedComponentId = this.#loaded?.id;
 
-        // Only `rendered` reached the `MountedEvent` dispatch.
-        const wasMounted = this.#state == State.rendered;
-        const mountedComponentId = this.#loaded?.id;
+          this.#initEpoch++;
 
-        this.#initEpoch++;
+          const teardowns = [...this.#teardowns];
+          this.#teardowns.clear();
+          for (const fn of teardowns) {
+            await fn?.();
+          }
 
-        for (const fn of this.#teardowns) {
-          await fn?.();
+          this.#loaded = null;
+          this.#keyhiveRetrySetup = false;
+          this.#unableNoAccess = false;
+          this.#state = State.none;
+
+          if (wasMounted && mountedComponentId) {
+            this.#dispatchUnmount(
+              new UnmountedEvent({ componentId: mountedComponentId })
+            );
+          }
         }
 
-        this.#teardowns.clear();
-        this.#loaded = null;
-        this.#keyhiveRetrySetup = false;
-        this.#unableNoAccess = false;
-        this.#state = State.none;
-
-        if (wasMounted && mountedComponentId) {
-          this.#dispatchUnmount(
-            new UnmountedEvent({ componentId: mountedComponentId })
-          );
-        }
+        this.#overlayRepo?.dispose();
+        this.#overlayRepo = null;
       }
 
       // Bubbling is a no-op when detached; fall back to the closest
