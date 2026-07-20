@@ -507,9 +507,7 @@ export class LegacyImpl {
       if (handle && handle.state === "unavailable") {
         this.#element.repo.delete(this.#docUrl);
       }
-    } catch {
-      // Ignore delete errors
-    }
+    } catch {}
 
     await new Promise((resolve) => setTimeout(resolve, 300));
     retryingDocs.delete(this.#docUrl);

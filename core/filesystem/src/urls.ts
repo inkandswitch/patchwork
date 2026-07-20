@@ -21,7 +21,6 @@ export function getImportableUrlFromAutomergeUrl(
 ): string {
   const base = `${documentBaseOrigin()}/${encodeURIComponent(automergeUrl)}/`;
   if (!subpath || subpath === ".") return base;
-  // Strip leading "./" if present
   const clean = subpath.replace(/^\.\//, "");
   return `${base}${clean}`;
 }

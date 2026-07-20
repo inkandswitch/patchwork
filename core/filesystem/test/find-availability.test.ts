@@ -16,15 +16,12 @@ import {
 } from "@automerge/automerge-repo";
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel";
 
-// ── Helpers ────────────────────────────────────────────────────────────
-
 const shareAll: SharePolicy = async () => true;
 
 function pause(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/** Race a promise against a timeout — returns the result or throws. */
 function withTimeout<T>(p: Promise<T>, ms: number, label = ""): Promise<T> {
   return Promise.race([
     p,
@@ -50,7 +47,6 @@ interface FolderTestDoc {
   docs: Array<{ name: string; url: string; type: string }>;
 }
 
-// Track repos for cleanup
 const repos: Repo[] = [];
 
 function createRepo(opts: ConstructorParameters<typeof Repo>[0] = {}): Repo {
@@ -64,10 +60,7 @@ afterEach(async () => {
   repos.length = 0;
 });
 
-// ── Tests ──────────────────────────────────────────────────────────────
-
 describe("repo.find() availability", () => {
-  // ─── Test 1: Baseline — find() on same repo ──────────────────────
   it("find() resolves for a doc created on the same repo", async () => {
     const repo = createRepo({
       peerId: "solo" as PeerId,
