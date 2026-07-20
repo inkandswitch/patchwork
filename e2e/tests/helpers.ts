@@ -17,7 +17,9 @@ declare global {
     // Minimal shape we touch from tests; the app types it more fully.
     repo: {
       create: <T>(initial?: T) => { url: string; change: (fn: (d: any) => void) => void };
-      find: <T>(url: string) => Promise<{ doc: () => T }>;
+      find: <T>(
+        url: string,
+      ) => Promise<{ doc: () => T; change: (fn: (d: any) => void) => void }>;
     };
   }
 }
@@ -52,6 +54,23 @@ export async function createDoc(
     });
     return handle.url;
   }, value);
+}
+
+export async function setDocField(
+  page: Page,
+  url: string,
+  field: string,
+  value: unknown,
+): Promise<void> {
+  await page.evaluate(
+    async ([u, f, v]) => {
+      const handle = await window.repo.find<Record<string, unknown>>(u as string);
+      handle.change((d) => {
+        d[f as string] = v;
+      });
+    },
+    [url, field, value] as const,
+  );
 }
 
 export async function findDocField<T = unknown>(
