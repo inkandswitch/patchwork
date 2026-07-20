@@ -177,38 +177,10 @@ async function recoverAutomergeWorker(
 const SUBDUCTION_IO_WORKER_URL =
   "/packages/@automerge/automerge-repo/subduction-websocket-worker-shared.js";
 
-// Bench toggles for the subduction socket (see getSubductionEndpoints in
-// automerge-worker.ts), passed as query params because SharedWorker scope
-// has no localStorage — which also gives each configuration its own worker
-// instance, so bench arms can't share state.
-//   localStorage["patchwork:ws-mode"] = "inline"  → socket on worker thread
-//   localStorage["patchwork:ws-window"] = "16"    → WorkerWebSocketEndpoint
-//                                                    windowFrames override
-function workerBenchParams(): string {
-  const params = new URLSearchParams();
-  try {
-    for (const [key, param] of [
-      ["patchwork:ws-mode", "ws-mode"],
-      ["patchwork:ws-window", "ws-window"],
-    ] as const) {
-      const value = globalThis.localStorage?.getItem(key);
-      if (value) params.set(param, value);
-    }
-  } catch {
-    // No localStorage (shouldn't happen in a tab) — use defaults.
-  }
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
-
-function automergeWorkerUrl(): string {
-  return `${automergeWorkerPath}${workerBenchParams()}`;
-}
-
 export function getAutomergeWorker(): SharedWorker {
   if (!automergeWorker) {
     workerGeneration++;
-    automergeWorker = new SharedWorker(automergeWorkerUrl(), {
+    automergeWorker = new SharedWorker(automergeWorkerPath, {
       name: "patchwork-automerge",
       type: "module",
     });
@@ -237,14 +209,6 @@ export function getAutomergeWorker(): SharedWorker {
         // protocol-mismatch from a stale SW-cached worker chunk). Surface
         // loudly — these otherwise only exist in chrome://inspect.
         console.error("[subduction-io]", event.data);
-        return;
-      }
-      if (event.data?.type === "drift-samples") {
-        // Keepalive-drift samples from the worker's bench probe. Kept on a
-        // bounded window global for the Playwright bench to harvest.
-        const sink = ((window as any).__driftSamples ??= []) as number[];
-        sink.push(...event.data.samples);
-        if (sink.length > 10_000) sink.splice(0, sink.length - 10_000);
         return;
       }
       if (event.data?.type !== "console") return;
@@ -387,7 +351,7 @@ function installWorkerDeathDetection(worker: SharedWorker): () => void {
     if (probe || disposed) return;
     warn(`automerge SharedWorker ${reason}; probing with a second connection`);
     const startedAt = Date.now();
-    const p = new SharedWorker(automergeWorkerUrl(), {
+    const p = new SharedWorker(automergeWorkerPath, {
       name: "patchwork-automerge",
       type: "module",
     });
