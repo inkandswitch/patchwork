@@ -270,6 +270,123 @@ describe("ModuleWatcher stale announce retries", () => {
   });
 });
 
+describe("ModuleWatcher module lifecycle", () => {
+  const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  function makeFixture(repo: InstanceType<typeof AutomergeRepo>) {
+    const folder = repo.create<any>();
+    folder.change((d: any) => {
+      d["@patchwork"] = { type: "folder" };
+      d.rev = 0;
+    });
+    const settings = repo.create<any>();
+    settings.change((d: any) => {
+      d["@patchwork"] = { type: "patchwork:module-settings" };
+      d.modules = [folder.url];
+    });
+    const importCalls: string[] = [];
+    const importAutomergePackage = async (urlAtHeads: string) => {
+      importCalls.push(urlAtHeads);
+      return { plugins: [] };
+    };
+    return { folder, settings, importCalls, importAutomergePackage };
+  }
+
+  it("unloads a module removed from settings and ignores later folder-doc changes", async () => {
+    const repo = new AutomergeRepo({ peerId: "watcher-unload" as PeerId });
+    try {
+      const { folder, settings, importCalls, importAutomergePackage } =
+        makeFixture(repo);
+
+      const unloaded: string[] = [];
+      const watcher = new ModuleWatcher(
+        repo,
+        { system: settings.url },
+        () => {},
+        (name) => unloaded.push(name),
+        importAutomergePackage
+      );
+      await watcher.doneLoading;
+      expect(importCalls).toHaveLength(1);
+
+      settings.change((d: any) => {
+        d.modules = [];
+      });
+      await pause(100);
+      expect(unloaded).toEqual([folder.url]);
+
+      folder.change((d: any) => {
+        d.rev = 1;
+      });
+      await pause(500);
+      expect(importCalls).toHaveLength(1);
+    } finally {
+      await repo.shutdown().catch(() => {});
+    }
+  });
+
+  it("does not re-import a module when the settings doc changes but its heads have not", async () => {
+    const repo = new AutomergeRepo({ peerId: "watcher-memo" as PeerId });
+    try {
+      const { settings, importCalls, importAutomergePackage } =
+        makeFixture(repo);
+
+      const watcher = new ModuleWatcher(
+        repo,
+        { system: settings.url },
+        () => {},
+        undefined,
+        importAutomergePackage
+      );
+      await watcher.doneLoading;
+      expect(importCalls).toHaveLength(1);
+
+      settings.change((d: any) => {
+        d.touched = 1;
+      });
+      await pause(300);
+      expect(importCalls).toHaveLength(1);
+    } finally {
+      await repo.shutdown().catch(() => {});
+    }
+  });
+
+  it("dispose() detaches settings and folder-doc listeners", async () => {
+    const repo = new AutomergeRepo({ peerId: "watcher-dispose" as PeerId });
+    try {
+      const { folder, settings, importCalls, importAutomergePackage } =
+        makeFixture(repo);
+      const other = repo.create<any>();
+      other.change((d: any) => {
+        d["@patchwork"] = { type: "folder" };
+      });
+
+      const watcher = new ModuleWatcher(
+        repo,
+        { system: settings.url },
+        () => {},
+        undefined,
+        importAutomergePackage
+      );
+      await watcher.doneLoading;
+      expect(importCalls).toHaveLength(1);
+
+      watcher.dispose();
+
+      folder.change((d: any) => {
+        d.rev = 1;
+      });
+      settings.change((d: any) => {
+        d.modules = [folder.url, other.url];
+      });
+      await pause(500);
+      expect(importCalls).toHaveLength(1);
+    } finally {
+      await repo.shutdown().catch(() => {});
+    }
+  });
+});
+
 describe("importPackageFromHttpUrl error handling", () => {
   it("rethrows a rejected package.json fetch (network/CORS) with the original error as cause", async () => {
     // A CORS-blocked or offline fetch rejects with a TypeError rather than

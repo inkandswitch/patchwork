@@ -18,14 +18,14 @@
     "@automerge/automerge-repo": "*"
   },
   "dependencies": {
-    "@types/debug": "^4.1.13",
-    "@types/node": "^20.19.41",
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3"
   },
   "devDependencies": {
     "@automerge/automerge-repo-network-messagechannel": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
+    "@types/debug": "^4.1.13",
+    "@types/node": "catalog:",
     "vitest": "^3.2.6"
   }
 }

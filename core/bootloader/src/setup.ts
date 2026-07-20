@@ -673,14 +673,6 @@ export default async function setupServiceWorker(
     "background: #fcf2f0; color: #333; border: 2px solid; border-radius: 4px"
   );
 
-  // todon't
-  (window as any).killsw = () => {
-    if (automergeWorker) {
-      automergeWorker.port.close();
-      automergeWorker = undefined;
-    }
-  };
-
   return {
     shared,
     connectClassicSync,

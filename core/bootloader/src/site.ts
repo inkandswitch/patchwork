@@ -175,10 +175,14 @@ export interface BootResult {
 const BIG_PATCHWORK_HASH_REGEX =
   /^(?<title>[^=&?/#]*)--(?<docId>[1-9A-HJ-NP-Za-km-z]+)/;
 
-const [automergeWasm, subductionWasm] = await Promise.all([
+// Started at module evaluation but not top-level awaited: awaiting here would
+// hold up everything importing this module, so the loading animation couldn't
+// appear until the biggest download of the boot had already finished.
+const wasmFetches = Promise.all([
   fetch("/automerge.wasm").then((r) => r.bytes()),
   fetch("/subduction.wasm").then((r) => r.bytes()),
 ]);
+wasmFetches.catch(() => {});
 
 /**
  * Boot a Patchwork browser site.
@@ -196,6 +200,7 @@ export async function bootPatchworkSite(
   showLoadingAnimation();
   log(`booting`, config);
   installLifecycleLogging();
+  const [automergeWasm, subductionWasm] = await wasmFetches;
   await initializeWasm(automergeWasm);
   initSubductionSync(subductionWasm);
 

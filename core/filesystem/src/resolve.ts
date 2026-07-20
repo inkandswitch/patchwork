@@ -17,7 +17,8 @@ export interface FolderStrategy {
   resolve(
     repo: Repo,
     handle: DocHandle<unknown>,
-    parts: string[]
+    parts: string[],
+    visited: Set<string>
   ): Promise<Resolved | undefined>;
 }
 
@@ -32,7 +33,7 @@ const folderStrategy: FolderStrategy = {
       Array.isArray((doc as { docs: unknown }).docs)
     );
   },
-  async resolve(repo, handle, parts) {
+  async resolve(repo, handle, parts, visited) {
     const folder = handle.doc() as FolderDoc | undefined;
     if (!folder?.docs) return undefined;
 
@@ -41,7 +42,7 @@ const folderStrategy: FolderStrategy = {
     if (!docLink) return undefined;
 
     const next = await repo.find(docLink.url);
-    return resolvePathInternal(repo, next, parts.slice(1));
+    return resolvePathInternal(repo, next, parts.slice(1), visited);
   },
 };
 
@@ -51,23 +52,29 @@ const directoryStrategy: FolderStrategy = {
   matches(doc) {
     return getType(doc as Parameters<typeof getType>[0]) === "directory";
   },
-  async resolve(repo, handle, parts) {
-    return walkDirectoryDoc(repo, handle.doc(), parts);
+  async resolve(repo, handle, parts, visited) {
+    return walkDirectoryDoc(repo, handle.doc(), parts, visited);
   },
 };
 
 async function walkDirectoryDoc(
   repo: Repo,
   node: unknown,
-  parts: string[]
+  parts: string[],
+  visited: Set<string>
 ): Promise<Resolved | undefined> {
   if (typeof node === "string" && isValidAutomergeUrl(node)) {
+    // Following a url consumes no parts, so revisiting the same url with the
+    // same remaining parts is a cycle.
+    const key = `${node}|${parts.join("/")}`;
+    if (visited.has(key)) return undefined;
+    visited.add(key);
     const next = await repo.find(node);
-    return resolvePathInternal(repo, next, parts);
+    return resolvePathInternal(repo, next, parts, visited);
   }
 
   if (parts.length === 0) {
-    return materialize(repo, node);
+    return materialize(repo, node, undefined, visited);
   }
 
   if (!node || typeof node !== "object" || node instanceof Uint8Array) {
@@ -79,7 +86,7 @@ async function walkDirectoryDoc(
   for (let i = parts.length; i >= 1; i--) {
     const key = parts.slice(0, i).join("/");
     if (key in obj) {
-      return walkDirectoryDoc(repo, obj[key], parts.slice(i));
+      return walkDirectoryDoc(repo, obj[key], parts.slice(i), visited);
     }
   }
   return undefined;
@@ -94,12 +101,15 @@ async function walkDirectoryDoc(
 async function materialize(
   repo: Repo,
   node: unknown,
-  typeHint?: string
+  typeHint?: string,
+  visited: Set<string> = new Set()
 ): Promise<Resolved | undefined> {
   // Follow automerge urls
   if (typeof node === "string" && isValidAutomergeUrl(node)) {
+    if (visited.has(node)) return undefined;
+    visited.add(node);
     const next = await repo.find(node);
-    return materialize(repo, next.doc(), typeHint);
+    return materialize(repo, next.doc(), typeHint, visited);
   }
 
   // FileDoc-shape: object with .content (and optional .mimeType)
@@ -112,7 +122,7 @@ async function materialize(
     "content" in node
   ) {
     const obj = node as { content?: unknown; mimeType?: string };
-    return materialize(repo, obj.content, obj.mimeType ?? typeHint);
+    return materialize(repo, obj.content, obj.mimeType ?? typeHint, visited);
   }
 
   if (node instanceof Uint8Array) {
@@ -158,17 +168,18 @@ const STRATEGIES: FolderStrategy[] = [directoryStrategy, folderStrategy];
 async function resolvePathInternal(
   repo: Repo,
   handle: DocHandle<unknown>,
-  parts: string[]
+  parts: string[],
+  visited: Set<string>
 ): Promise<Resolved | undefined> {
   // Path exhausted — materialize this doc
   if (parts.length === 0) {
-    return materialize(repo, handle.doc());
+    return materialize(repo, handle.doc(), undefined, visited);
   }
 
   const doc = handle.doc();
   for (const strategy of STRATEGIES) {
     if (strategy.matches(doc)) {
-      return strategy.resolve(repo, handle, parts);
+      return strategy.resolve(repo, handle, parts, visited);
     }
   }
   return undefined;
@@ -179,5 +190,5 @@ export async function resolvePath(
   rootHandle: DocHandle<unknown>,
   parts: string[]
 ): Promise<Resolved | undefined> {
-  return resolvePathInternal(repo, rootHandle, parts);
+  return resolvePathInternal(repo, rootHandle, parts, new Set());
 }
