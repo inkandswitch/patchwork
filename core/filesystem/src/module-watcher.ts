@@ -9,7 +9,7 @@ import {
   importPackageFromHttpUrl,
 } from "./packages.js";
 import { getType, type HasPatchworkMetadata } from "./metadata.js";
-import { FolderDoc } from "./types.js";
+import { BranchesDoc, FolderDoc } from "./types.js";
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
@@ -74,9 +74,11 @@ type WatchedModule = {
   timer?: ReturnType<typeof setTimeout>;
 };
 
+const DEFAULT_BRANCH = "default";
+
 function warnBranchesUnsupported(branchesDocUrl: AutomergeUrl) {
   console.warn(
-    `module ${branchesDocUrl} is a branches doc. Branches docs are no longer supported as modules and will be skipped. Please let us know you hit this: post in #patchwork-testers or email chee@inkandswitch.com`
+    `module ${branchesDocUrl} is a branches doc. Branches docs are no longer supported as modules; falling back to the "${DEFAULT_BRANCH}" branch. Please let us know you hit this: post in #patchwork-testers or email chee@inkandswitch.com`
   );
 }
 
@@ -216,6 +218,20 @@ export class ModuleWatcher {
         await this.repo.find<Partial<HasPatchworkMetadata>>(importName);
       if (getType(handle.doc()) === "branches") {
         warnBranchesUnsupported(importName);
+        const branchesDoc = (handle as unknown as DocHandle<BranchesDoc>).doc();
+        const folderUrl = branchesDoc?.branches?.[DEFAULT_BRANCH];
+        if (!folderUrl) {
+          console.warn(
+            `branch "${DEFAULT_BRANCH}" not found in branches doc ${importName}`
+          );
+          return;
+        }
+        // Keyed by the branches doc URL — that's the settings entry, so
+        // removing it from settings unloads this module.
+        await this.watchAndAnnounce(
+          importName,
+          await this.repo.find<FolderDoc>(folderUrl)
+        );
         return;
       }
       await this.watchAndAnnounce(
