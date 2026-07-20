@@ -13,7 +13,8 @@ import { defineConfig, devices } from "@playwright/test";
  * IndexedDB (no external Subduction server). Cross-device/server tests
  * arrive in B3 once a local sync server is wired in.
  *
- * Resource note: single worker, no test-level parallelism, Chromium only.
+ * Resource note: single worker, no test-level parallelism. CI runs one
+ * browser project per job; locally `playwright test` runs all three.
  * This intentionally avoids spawning many browser/Node processes.
  */
 
@@ -51,6 +52,14 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
     },
   ],
 
