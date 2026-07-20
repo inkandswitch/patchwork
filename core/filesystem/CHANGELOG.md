@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-filesystem
 
+## 0.2.2
+
+### Patch Changes
+
+- caca06f: Remove branch support from modules, falling back to the default branch. Handle module-watcher instability. Drop the react and solid packages.
+
 ## 0.2.1
 
 ### Patch Changes

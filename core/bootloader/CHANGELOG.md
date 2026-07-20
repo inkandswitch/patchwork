@@ -1,5 +1,16 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.4.4
+
+### Patch Changes
+
+- c01e1f3: Switch the service worker's active cache name before copying the default cache into it, so fetches landing mid-copy aren't deleted with the old cache. Guard the message handler against payload-less messages, and drop the `window.killsw` debug hook.
+- Updated dependencies [caca06f]
+- Updated dependencies [c01e1f3]
+  - @inkandswitch/patchwork-filesystem@0.2.2
+  - @inkandswitch/patchwork-providers@0.4.2
+  - @inkandswitch/patchwork-elements@4.0.1
+
 ## 0.4.3
 
 ### Patch Changes
