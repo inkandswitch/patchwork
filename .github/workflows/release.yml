@@ -33,6 +33,9 @@ jobs:
       - name: build everything
         run: pnpm build
 
+      - name: test evything
+        run: pnpm test
+
       - name: process changesets
         id: changesets
         uses: changesets/action@v1
