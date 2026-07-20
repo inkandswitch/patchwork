@@ -1,5 +1,13 @@
 import type { Plugin } from "vite";
+import { fileURLToPath } from "node:url";
 import { builtins } from "./importmap-plugin.js";
+
+// Anchor resolution at this file (inside @inkandswitch/patchwork's own
+// installed directory) rather than the site root — these worker specifiers
+// are @inkandswitch/patchwork-bootloader's own exports, a transitive
+// dependency of the site under strict pnpm, not resolvable from the site's
+// own node_modules by bare specifier.
+const self = fileURLToPath(import.meta.url);
 
 // The service worker and the automerge shared worker are emitted as their
 // own chunks. Their heavy imports are marked external and resolved to
@@ -28,7 +36,7 @@ export function serviceworker(): Plugin {
     enforce: "pre",
     async buildStart() {
       for (const { specifier, fileName } of workers) {
-        const resolved = await this.resolve(specifier);
+        const resolved = await this.resolve(specifier, self);
         entryIds.add(resolved!.id);
         this.emitFile({
           type: "chunk",

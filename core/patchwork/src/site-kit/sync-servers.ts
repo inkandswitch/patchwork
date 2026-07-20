@@ -1,10 +1,4 @@
-/**
- * Small bits shared between the html, manifest, and netlify plugins so the
- * three generated artifacts (index.html, manifest.webmanifest, _headers)
- * never drift out of sync with each other.
- */
-
-import type { PatchworkVitePluginOptions } from "./patchwork-plugin.js";
+import type { PatchworkSiteOptions } from "./options.js";
 
 // Mirrors core/bootloader/src/sync-config.ts's DEFAULT_CLASSIC_SYNC_SERVER
 // and automerge-worker.ts's SUBDUCTION_SYNC_URL selection — kept here as
@@ -28,9 +22,7 @@ function wsToHttpOrigin(wsUrl: string): string {
  * A flat list would drift from `keyhiveSyncServer` — e.g. always hinting
  * subduction even on a build that actually connects to keyhive.
  */
-export function resolveSyncServers(
-  options: PatchworkVitePluginOptions
-): string[] {
+export function resolveSyncServers(options: PatchworkSiteOptions): string[] {
   if (options.syncServers === false) return [];
   const servers = { ...DEFAULT_SYNC_SERVERS, ...options.syncServers };
   const origins: string[] = [];
@@ -45,15 +37,3 @@ export function resolveSyncServers(
 // Emitted by importmap-plugin.ts. keyhive_wasm.wasm is loaded lazily (only
 // when keyhive is actually enabled), so it isn't worth an eager preload.
 export const PRELOAD_WASM_ASSETS = ["automerge.wasm", "subduction.wasm"];
-
-const HTML_ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
-
-export function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
-}

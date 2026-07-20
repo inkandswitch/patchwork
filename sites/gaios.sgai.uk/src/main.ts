@@ -1,9 +1,5 @@
-import "@inkandswitch/patchwork-bootloader/global.css";
-
-declare const __KEYHIVE__: boolean;
-
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
+import activate from "@inkandswitch/patchwork";
 
 // Published tools are registered in this module-settings doc via
 // `pnpm register` from each tool's own repo (see patchwork-tools and
@@ -12,9 +8,9 @@ import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
 const DEFAULT_MODULES_URL =
   "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeUrl;
 
-await bootPatchworkSite({
-  defaultModules: DEFAULT_MODULES_URL,
-  accountStorageKey: "gaiosAccountUrl",
-  titleSuffix: "GAIOS",
+await activate({
+  packageListURL: DEFAULT_MODULES_URL,
+  accountKey: "gaiosAccountUrl",
+  name: "GAIOS",
   keyhive: __KEYHIVE__,
 });

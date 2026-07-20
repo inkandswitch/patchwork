@@ -1,50 +1,14 @@
-import type { Plugin, ServerOptions, PreviewOptions, BuildOptions } from "vite";
-
-import { importmap } from "./importmap-plugin.js";
-import { serviceworker } from "./service-worker-plugin.js";
-import { configPlugin, wasm } from "./config-plugin.js";
-import { iconsPlugin } from "./icons.js";
-import { htmlPlugin } from "./html-plugin.js";
-import { manifestPlugin } from "./manifest-plugin.js";
-import { netlifyPlugin } from "./netlify-plugin.js";
-
 /**
- * The patchwork vite plugin. A site's vite.config.ts can shrink down to
- * `plugins: [patchwork({...})]` plus a single source icon file — this plugin
- * owns the wasm plugin, the importmap/service-worker emission, the generated
- * index.html/manifest.webmanifest/Netlify _headers+_redirects, the site's
- * icon set, and vite's server/preview/worker/build/define config.
- *
- * Each generated piece is switched off individually by passing `false` for
- * its option (`html: false`, `manifest: false`, `netlify: false`,
- * `icons: false`, `server: false`, `preview: false`, `worker: false`).
- *
- * `server`/`preview`/`worker`/`build`/`define` are owned by this plugin's
- * `config()` hook and driven entirely by these options — don't also set them
- * in the site's own `defineConfig({...})` alongside `patchwork()`, since
- * Vite's plugin-config merge order doesn't guarantee which one wins.
+ * The bundler-agnostic option shape for a Patchwork site's generated
+ * static assets (icons, index.html, manifest.webmanifest, Netlify config).
+ * `../vite/patchwork-plugin.ts` extends this with vite-only config
+ * (importmap, server/preview/worker/build) — a different bundler adapter
+ * can reuse this same shape and the pure builders in this directory without
+ * pulling in anything vite-specific.
  */
-export default function patchwork(options?: PatchworkVitePluginOptions) {
-  return [
-    wasm(),
-    configPlugin(options),
-    iconsPlugin(options),
-    htmlPlugin(options),
-    manifestPlugin(options),
-    netlifyPlugin(options),
-    importmap(options),
-    serviceworker(),
-  ].filter((plugin): plugin is Plugin => plugin != null);
-}
-
-type Imports = { [name: string]: string };
-export type ImportMap = {
-  imports: Imports;
-  scopes?: { [scope: string]: Imports };
-};
 
 export interface PatchworkIconsOptions {
-  /** Path (relative to the vite root) to a source svg or raster image. Every icon size is rendered from it via sharp. */
+  /** Path (relative to the site root) to a source svg or raster image. Every icon size is rendered from it via sharp. */
   source: string;
   /** Path to a monochrome svg for Safari's pinned-tab mask icon. Omitted entirely if not set. */
   maskIcon?: string;
@@ -71,9 +35,7 @@ export interface PatchworkSyncServersOptions {
   keyhive?: string;
 }
 
-export interface PatchworkVitePluginOptions {
-  importmap?: ImportMap;
-
+export interface PatchworkSiteOptions {
   /** -> __SITE_NAME__ define */
   siteName?: string;
   /** <title>, apple-mobile-web-app-title, manifest name */
@@ -90,7 +52,7 @@ export interface PatchworkVitePluginOptions {
   /** -> __KEYHIVE_SYNC_SERVER__ define */
   keyhiveSyncServer?: boolean;
 
-  themeColor?: { light: string; dark: string };
+  themeColor?: string | { light: string; dark: string };
   /** manifest background_color */
   backgroundColor?: string;
 
@@ -108,9 +70,4 @@ export interface PatchworkVitePluginOptions {
   html?: false | PatchworkHtmlOptions;
   manifest?: false | Record<string, unknown>;
   netlify?: false | PatchworkNetlifyOptions;
-
-  server?: false | ServerOptions;
-  preview?: false | PreviewOptions;
-  worker?: false | { format?: "es" | "iife" };
-  build?: BuildOptions;
 }

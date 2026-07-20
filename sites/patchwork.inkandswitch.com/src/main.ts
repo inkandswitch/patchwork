@@ -1,11 +1,9 @@
-import "@inkandswitch/patchwork-bootloader/global.css";
-
-import { bootPatchworkSite } from "@inkandswitch/patchwork-bootloader/site";
+import patchwork from "@inkandswitch/patchwork";
 
 const DEFAULT_PACKAGE_LIST =
   "https://base.pkg.patchwork.inkandswitch.com/modules.json";
 
-const defaultModules = (
+const packageListURL = (
   import.meta.env.PATCHWORK_SYSTEM_PACKAGE_LIST_URL ||
   import.meta.env.VITE_DEFAULT_MODULES ||
   DEFAULT_PACKAGE_LIST
@@ -14,10 +12,9 @@ const defaultModules = (
   .map((source) => source.trim())
   .filter(Boolean);
 
-declare const __KEYHIVE__: boolean;
-await bootPatchworkSite({
-  defaultModules,
-  accountStorageKey: "tinyPatchworkAccountUrl",
-  titleSuffix: "patchwork",
+await patchwork({
+  packageListURL,
+  accountKey: "tinyPatchworkAccountUrl",
+  name: "patchwork",
   keyhive: __KEYHIVE__,
 });

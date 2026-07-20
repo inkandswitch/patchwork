@@ -1,2 +1,2 @@
 /// <reference types="vite/client" />
-/// <reference types="@inkandswitch/patchwork-bootloader" />
+/// <reference types="@inkandswitch/patchwork/client" />

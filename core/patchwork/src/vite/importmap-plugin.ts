@@ -3,50 +3,56 @@ import type {
   ImportMap,
   PatchworkVitePluginOptions,
 } from "./patchwork-plugin.js";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-const require = createRequire(import.meta.url);
 
 /**
- * these dependencies will be built into the outdir,
- * and injected into the importmap
+ * bootloader owns resolving/emitting its own dependencies (it's the one that
+ * actually has automerge/keyhive/codemirror/solid/the other patchwork-*
+ * packages as real dependencies) — reused here rather than duplicated.
  */
-import externals from "../externals.js";
+import externals, {
+  resolveExternal,
+  emitWasmAssets,
+} from "@inkandswitch/patchwork-bootloader/externals";
 
 export const builtins = externals.reduce(
   (builtins, name) => ((builtins[name] = `/packages/${name}.js`), builtins),
   {} as Record<string, string>
 );
 
-/**
- * pretend the import came from inside this package, so node_modules resolution
- * walks up from *our* directory and finds our copy of each external. that's why
- * a consuming site never has to install them or agree with us about versions.
- */
-const self = fileURLToPath(import.meta.url);
+// This package importmaps itself too, so tool code loaded at runtime can
+// bare-import it just like the other @inkandswitch/patchwork-* packages.
+builtins["@inkandswitch/patchwork"] = "/packages/@inkandswitch/patchwork.js";
 
 /**
- * resolve an external from our node_modules rather than the site's.
- *
- * this goes through rollup's resolver rather than import.meta.resolve or
- * require.resolve because those apply node's conditions: subduction (and
- * others) would hand us `dist/esm/node.js`, which imports node:path and blows
- * up at bundle time. rollup applies the browser conditions vite configured.
+ * Node resolves a package's own name from within its own source when its
+ * package.json has "exports" (self-reference) — the same mechanism
+ * @inkandswitch/patchwork-bootloader already relies on to list itself among
+ * its own externals. Anchoring at *this* file (which lives inside
+ * @inkandswitch/patchwork's own installed directory) makes that
+ * self-reference resolve to this package instead of bootloader's.
  */
-async function resolveExternal(
+const self = fileURLToPath(import.meta.url);
+async function resolveSelf(
   this: import("rollup").PluginContext,
   name: string
-) {
+): Promise<string> {
   const resolved = await this.resolve(name, self, { skipSelf: true });
   if (!resolved) {
     throw new Error(
-      `@patchwork/vite: couldn't resolve the external "${name}" from ` +
-        `@inkandswitch/patchwork-bootloader. it should be one of the ` +
-        `bootloader's own dependencies.`
+      `@inkandswitch/patchwork: couldn't resolve "${name}" from its own package.`
     );
   }
   return resolved.id;
+}
+
+function resolveBuiltin(
+  context: import("rollup").PluginContext,
+  id: string
+): Promise<string> {
+  return id === "@inkandswitch/patchwork"
+    ? resolveSelf.call(context, id)
+    : resolveExternal.call(context, id);
 }
 
 function createImportMap(options?: PatchworkVitePluginOptions) {
@@ -68,43 +74,20 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         this.emitFile({
           type: "chunk",
           fileName: fileName.slice(1),
-          id: await resolveExternal.call(this, id),
+          id: await resolveBuiltin(this, id),
           preserveSignature: "strict",
         });
       }
 
       // Emitted so the service worker can fetch them
-      const automergeWasmPath = require.resolve(
-        "@automerge/automerge/automerge.wasm"
-      );
-      this.emitFile({
-        type: "asset",
-        fileName: "automerge.wasm",
-        source: readFileSync(automergeWasmPath),
-      });
-      const keyhiveWasmPath = require.resolve(
-        "@keyhive/keyhive/keyhive_wasm.wasm"
-      );
-      this.emitFile({
-        type: "asset",
-        fileName: "keyhive_wasm.wasm",
-        source: readFileSync(keyhiveWasmPath),
-      });
-
-      const subdWasmPath =
-        require.resolve("@automerge/automerge-subduction/wasm");
-      this.emitFile({
-        type: "asset",
-        fileName: "subduction.wasm",
-        source: readFileSync(subdWasmPath),
-      });
+      emitWasmAssets.call(this);
     },
     async resolveId(id) {
       if (id in builtins) {
         // point the site's own imports at the same copy we emit as a chunk,
         // otherwise rollup bundles a second one out of the site's node_modules
         // and you end up with two automerges racing to init the same wasm
-        return resolveExternal.call(this, id);
+        return resolveBuiltin(this, id);
       }
       if (id in importmap.imports) {
         return { id: importmap.imports[id], external: true };

@@ -14,6 +14,9 @@ import {
 import { MountedEvent, UnmountedEvent } from "./events.js";
 import { LegacyImpl } from "./legacy-impl.js";
 import { docIdFromAutomergeUrl } from "@automerge/automerge-repo-keyhive";
+import debug from "debug";
+
+const log = debug("patchwork:elements:patchwork-view");
 
 type AutomergeRepoKeyhive = Awaited<
   ReturnType<typeof initializeAutomergeRepoKeyhive>
@@ -568,7 +571,7 @@ export function registerPatchworkViewElement(
           registry.load(this.#loaded.id);
           if (registry.isLoading(this.#loaded.id)) {
             this.#state = "unable";
-            console.info(`patchwork-view: loading component "${componentId}"`);
+            log(`loading component "${componentId}"`);
           } else {
             this.#state = "unable";
             console.warn(
