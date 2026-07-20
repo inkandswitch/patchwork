@@ -49,9 +49,6 @@ async function resolveExternal(
   return resolved.id;
 }
 
-/**
- * merge the importmap option with our builtins
- */
 function createImportMap(options?: PatchworkVitePluginOptions) {
   const importmap: ImportMap = structuredClone(
     options?.importmap ?? { imports: {}, scopes: {} }
@@ -76,7 +73,7 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         });
       }
 
-      // Emit automerge, keyhive, and subduction wasm so the service worker can fetch them
+      // Emitted so the service worker can fetch them
       const automergeWasmPath = require.resolve(
         "@automerge/automerge/automerge.wasm"
       );
@@ -94,7 +91,6 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
         source: readFileSync(keyhiveWasmPath),
       });
 
-      // Emit subduction wasm so the service worker can fetch it
       const subdWasmPath =
         require.resolve("@automerge/automerge-subduction/wasm");
       this.emitFile({
