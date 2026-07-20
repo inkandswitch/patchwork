@@ -13,7 +13,6 @@ import { waitForRepoReady, waitForServiceWorkerActive } from "./helpers";
 test("cold boot brings up the service worker and tab repo", async ({ page }) => {
   await page.goto("/");
 
-  // The SW must take control of the page.
   await waitForServiceWorkerActive(page);
 
   // The tab Repo must be constructed and its SW relay connected. This is
@@ -29,7 +28,6 @@ test("cold boot brings up the service worker and tab repo", async ({ page }) => 
 test("a second load reuses the already-active service worker quickly", async ({
   page,
 }) => {
-  // First load installs/activates the SW.
   await page.goto("/");
   await waitForServiceWorkerActive(page);
   await waitForRepoReady(page);

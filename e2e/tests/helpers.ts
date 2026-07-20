@@ -22,14 +22,12 @@ declare global {
   }
 }
 
-/** Wait until the tab's Repo exists and its SW relay is connected. */
 export async function waitForRepoReady(page: Page, timeoutMs = 30_000): Promise<void> {
   await page.waitForFunction(() => typeof window.repo?.create === "function", null, {
     timeout: timeoutMs,
   });
 }
 
-/** Wait until the service worker controlling the page is activated. */
 export async function waitForServiceWorkerActive(
   page: Page,
   timeoutMs = 30_000,
@@ -43,7 +41,6 @@ export async function waitForServiceWorkerActive(
   );
 }
 
-/** Create a doc in this tab's Repo and return its automerge: URL. */
 export async function createDoc(
   page: Page,
   value: Record<string, unknown>,
@@ -57,10 +54,6 @@ export async function createDoc(
   }, value);
 }
 
-/**
- * Find a doc by URL in this tab's Repo and return a single field's value.
- * Resolves once the doc is available (the find() promise settles).
- */
 export async function findDocField<T = unknown>(
   page: Page,
   url: string,
