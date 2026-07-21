@@ -81,11 +81,11 @@ jobs:
             const sha = context.payload.pull_request.head.sha.slice(0, 7)
             const body = [
               marker,
-              `### 🪡 Patchwork preview`,
+              `## ✅ Patchwork glance ready`,
               ``,
               `## ${process.env.SHELL_URL}`,
               ``,
-              `Shell from \`${process.env.SHELL_REPO}\`, built against every package in this PR at \`${sha}\`.`,
+              `A peek at \`${process.env.SHELL_REPO}\`, built with the @inkandswitch/patchwork- packages as of this PR at \`${sha}\`.`,
             ].join("\n")
             const {owner, repo} = context.repo
             const issue_number = context.issue.number
@@ -119,6 +119,6 @@ jobs:
             if (existing) {
               await github.rest.issues.updateComment({
                 owner, repo, comment_id: existing.id,
-                body: `${marker}\n### 🪡 Patchwork preview\n\nTorn down.`,
+                body: `${marker}\n### 🪡 Patchwork \n\nTorn down.`,
               })
             }
