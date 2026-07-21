@@ -1,5 +1,10 @@
 {
   "name": "@inkandswitch/patchwork-elements",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "directory": "core/elements"
+  },
   "version": "4.0.2",
   "author": "Ink & Switch",
   "type": "module",
