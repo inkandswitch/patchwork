@@ -19,7 +19,6 @@
     "preview": "pnpm --filter patchwork.inkandswitch.com preview",
     "publish-packages": "pnpm -r publish --access=public",
     "test": "vitest run",
-    "test:e2e": "pnpm --filter patchwork.inkandswitch.com build && pnpm --filter @inkandswitch/patchwork-e2e test:e2e",
     "tsc": "pnpm -r exec tsc"
   },
   "keywords": [],

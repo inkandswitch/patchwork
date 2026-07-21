@@ -27,7 +27,11 @@ const PORT = Number(process.env.PORT ?? 5173);
 const EXTERNAL_BASE_URL = process.env.PATCHWORK_E2E_BASE_URL;
 const BASE_URL = EXTERNAL_BASE_URL ?? `http://localhost:${PORT}`;
 const SITE_DIR = process.env.PATCHWORK_E2E_SITE_DIR ?? process.cwd();
-const PREVIEW_COMMAND = process.env.PATCHWORK_E2E_PREVIEW_COMMAND ?? "pnpm preview";
+// --strictPort so a busy port fails loudly instead of vite quietly serving
+// somewhere else while playwright waits out its timeout on this one.
+const PREVIEW_COMMAND =
+  process.env.PATCHWORK_E2E_PREVIEW_COMMAND ??
+  `pnpm preview --port ${PORT} --strictPort`;
 // Reports and traces belong next to whoever invoked us, not inside the
 // installed package. Relative paths would resolve against this file.
 const OUTPUT_DIR = process.env.PATCHWORK_E2E_OUTPUT_DIR;

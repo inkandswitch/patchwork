@@ -56,7 +56,7 @@ root) and points the suite at it.
 | --- | --- |
 | `--live-site=<url>` | also run the cross-profile sync test against a deployed site. Omitted, that test is skipped. |
 | `--base-url=<url>` | test a server that is already running; nothing is started. |
-| `--port=<n>` | port for the preview server (default 5173; it must be free). |
+| `--port=<n>` | port for the preview server. Default: the first free one from 5173 up. Given one that's busy, it errors rather than starting. |
 | `--preview-command=<cmd>` | how to serve the built site (default `pnpm preview`). |
 | `--site-dir=<path>` | where to run it (default the current directory). |
 | `--extra-tests-dir=<path>` | also run your own specs (see below). |
