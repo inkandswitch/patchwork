@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-filesystem
 
+## 0.2.3
+
+### Patch Changes
+
+- bd63259: Move module reload chatter to a `patchwork:modules` debug logger, and report module load failures with `console.error` instead of `console.log`.
+
 ## 0.2.2
 
 ### Patch Changes

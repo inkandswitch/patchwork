@@ -1,5 +1,23 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.5.0
+
+### Minor Changes
+
+- bd63259: Move the site boot sequence and the vite plugin out to `@inkandswitch/patchwork`. The `./site` and `./vite` exports are gone; import from `@inkandswitch/patchwork` and `@inkandswitch/patchwork/vite` instead.
+
+  Split the externals list into `./externals-list` so the list can be read without pulling in node builtins, and export `resolveExternal` and the wasm asset emitter so another package's vite plugin can resolve the bootloader's own dependencies from the bootloader's `node_modules`. Export `./global.css` and `./module-loader`.
+
+  Fall back to a url-keyed cache lookup in the service worker when the request-keyed one misses, so a cors request (the wasm `<link rel=preload crossorigin>`) still hits the cache offline.
+
+### Patch Changes
+
+- 0aa315d: Configure Subduction or Keyhive with exclusive `syncServers` configuration. `syncServers.keyhive` replaces the `keyhive` and `keyhiveSyncServer` site options and the runtime `setup({ keyhive })` option. Selecting a named ARK relay or providing a custom relay identity and URL enables Keyhive, and configured server URLs now control worker connections as well as connection hints.
+- Updated dependencies [bd63259]
+- Updated dependencies [bd63259]
+  - @inkandswitch/patchwork-elements@4.0.2
+  - @inkandswitch/patchwork-filesystem@0.2.3
+
 ## 0.4.4
 
 ### Patch Changes

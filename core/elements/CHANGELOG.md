@@ -1,5 +1,13 @@
 # @inkandswitch/patchwork-elements
 
+## 4.0.2
+
+### Patch Changes
+
+- bd63259: Declare `patchwork-view` in `HTMLElementTagNameMap`, so `document.querySelector("patchwork-view")` is typed. Move component-loading chatter to a `patchwork:elements:patchwork-view` debug logger.
+- Updated dependencies [bd63259]
+  - @inkandswitch/patchwork-filesystem@0.2.3
+
 ## 4.0.1
 
 ### Patch Changes
