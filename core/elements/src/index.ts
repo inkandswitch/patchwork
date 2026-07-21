@@ -1,3 +1,4 @@
+console.log("each side")
 export * from "./patchwork-view.js";
 export * from "./events.js";
 
