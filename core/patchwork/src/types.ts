@@ -53,8 +53,6 @@ export interface PatchworkOptions {
    * The module URLs *inside* either kind of source may themselves be Automerge
    * folder docs or plain HTTP(S) bundles, so deployment targets can be freely
    * mixed.
-   *
-   * Overridable at runtime with `localStorage.systemPackageListURL`.
    */
   packageListURL?: string | string[];
 
