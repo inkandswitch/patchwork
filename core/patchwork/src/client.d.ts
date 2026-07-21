@@ -13,8 +13,6 @@ import "@inkandswitch/patchwork-providers";
 
 declare global {
   const __SITE_NAME__: string;
-  const __KEYHIVE__: boolean;
-  const __KEYHIVE_SYNC_SERVER__: boolean;
 
   interface ImportMetaEnv {
     /**

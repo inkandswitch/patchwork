@@ -34,6 +34,7 @@ import {
   initializeAutomergeRepoKeyhiveRustWithRepo,
   initKeyhiveWasm,
   type AutomergeRepoKeyhiveRust,
+  type SyncServerSelection,
 } from "@automerge/automerge-repo-keyhive";
 
 import { DEFAULT_CLASSIC_SYNC_SERVER } from "./sync-config.js";
@@ -52,29 +53,19 @@ import {
 } from "./types.js";
 
 declare const __SITE_NAME__: string;
-declare const __KEYHIVE__: boolean;
-declare const __KEYHIVE_SYNC_SERVER__: boolean;
+declare const __SYNC_SERVER__: {
+  url: string;
+  keyhive?: SyncServerSelection;
+};
 
 const siteName =
   typeof __SITE_NAME__ !== "undefined"
     ? __SITE_NAME__
     : "patchwork.inkandswitch.com";
-const useKeyhive = typeof __KEYHIVE__ !== "undefined" && __KEYHIVE__;
-const useKeyhiveSyncServer =
-  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
-
-const SUBDUCTION_SYNC_URL = useKeyhiveSyncServer
-  ? "wss://keyhive.sync.automerge.org"
-  : "wss://subduction.sync.inkandswitch.com";
-
-if (useKeyhiveSyncServer) {
-  const g = globalThis as any;
-  g.process ??= {};
-  g.process.env = {
-    ...(g.process.env ?? {}),
-    KEYHIVE_SERVER_IDENTITY: "keyhive-sync",
-  };
-}
+const syncServer =
+  typeof __SYNC_SERVER__ !== "undefined"
+    ? __SYNC_SERVER__
+    : { url: "wss://subduction.sync.inkandswitch.com" };
 
 const RESOLVE_TIMEOUT_MS = 30_000;
 
@@ -213,7 +204,7 @@ const subductionPortProvider = makePortProvider();
 let subductionEndpoints: WorkerWebSocketEndpoint[] | null = null;
 function getSubductionEndpoints(): WorkerWebSocketEndpoint[] {
   return (subductionEndpoints ??= [
-    new WorkerWebSocketEndpoint(SUBDUCTION_SYNC_URL, {
+    new WorkerWebSocketEndpoint(syncServer.url, {
       worker: subductionPortProvider.source,
     }),
   ]);
@@ -246,8 +237,8 @@ async function setUpRepoHive(): Promise<RepoHive> {
   await initializeWasm(new Uint8Array(automergeWasm));
   log("wasm initialized");
 
-  const built: BuiltRepo = useKeyhive
-    ? await buildKeyhiveRepo()
+  const built: BuiltRepo = syncServer.keyhive
+    ? await buildKeyhiveRepo(syncServer.keyhive)
     : await buildPlainRepo();
 
   (self as any).repo = built.repo;
@@ -291,7 +282,9 @@ async function buildPlainRepo(): Promise<BuiltRepo> {
   return { repo, identity };
 }
 
-async function buildKeyhiveRepo(): Promise<BuiltRepo> {
+async function buildKeyhiveRepo(
+  keyhiveSyncServer: SyncServerSelection
+): Promise<BuiltRepo> {
   initKeyhiveWasm();
   const { hive, repo } = await initializeAutomergeRepoKeyhiveRustWithRepo({
     createRepo: (config) => new Repo(config),
@@ -301,7 +294,7 @@ async function buildKeyhiveRepo(): Promise<BuiltRepo> {
     cachingMode: "periodic",
     // ARK selects the relay via `syncServer`, which pairs the contact card with
     // the matching peer id. Omitting it defaults to "subduction".
-    ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+    syncServer: keyhiveSyncServer,
     repo: {
       storage: new IndexedDBWorkerStorageAdapter(),
       subductionWebsocketEndpoints: getSubductionEndpoints(),

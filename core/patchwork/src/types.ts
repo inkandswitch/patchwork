@@ -79,12 +79,6 @@ export interface PatchworkOptions {
   rootElementId?: string;
 
   /**
-   * Initialize keyhive for access control. The Repo then uses keyhive's network
-   * adapter, peerId and idFactory instead of a sharePolicy.
-   */
-  keyhive?: boolean;
-
-  /**
    * Bring your own Repo. When provided, setup skips wasm initialization and
    * repo creation entirely — you are responsible for having initialized
    * automerge/subduction and wired the automerge-worker port yourself.

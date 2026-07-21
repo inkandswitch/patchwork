@@ -8,7 +8,10 @@ export default defineConfig({
       title: "GAIOS",
       description:
         "local-first collaborative & malleable software environment",
-      keyhive: process.env.KEYHIVE === "true",
+      syncServers:
+        process.env.KEYHIVE === "true"
+          ? { keyhive: "keyhive" }
+          : undefined,
       themeColor: { light: "#ffffff", dark: "#ffffff" },
       icons: { source: "public/gaios.png" },
     }),

@@ -10,6 +10,7 @@ import {
   initKeyhiveWasm,
   initializeAutomergeRepoKeyhiveWithRepo,
   type AutomergeRepoKeyhive,
+  type SyncServerSelection,
 } from "@automerge/automerge-repo-keyhive";
 // eslint-disable-next-line
 // @ts-ignore — initSync is a wasm-bindgen runtime helper not in the .d.ts
@@ -21,11 +22,14 @@ import debug from "debug";
 
 const log = debug("patchwork:setup:repo");
 
-// Must match the automerge-worker's selection, or the tab and the SW grant
-// relay access to different servers.
-declare const __KEYHIVE_SYNC_SERVER__: boolean;
-const useKeyhiveSyncServer =
-  typeof __KEYHIVE_SYNC_SERVER__ !== "undefined" && __KEYHIVE_SYNC_SERVER__;
+declare const __SYNC_SERVER__: {
+  url: string;
+  keyhive?: SyncServerSelection;
+};
+const syncServer =
+  typeof __SYNC_SERVER__ !== "undefined"
+    ? __SYNC_SERVER__
+    : { url: "wss://subduction.sync.inkandswitch.com" };
 
 // Fetch and initialize automerge + subduction wasm. Memoized: the fetches start
 // on the first call and every later caller awaits the same init. Skipped
@@ -46,7 +50,6 @@ export function initWasm(): Promise<void> {
 }
 
 export async function createRepo(
-  config: { keyhive?: boolean },
   siteName: string,
   workerAdapter: MessageChannelNetworkAdapter
 ): Promise<{
@@ -54,7 +57,7 @@ export async function createRepo(
   hive?: AutomergeRepoKeyhive;
   signerIdentity?: SignerIdentity;
 }> {
-  if (config.keyhive) {
+  if (syncServer.keyhive) {
     log("setting up keyhive");
     initKeyhiveWasm();
     const { hive, repo } = await initializeAutomergeRepoKeyhiveWithRepo({
@@ -66,7 +69,7 @@ export async function createRepo(
       cachingMode: "periodic",
       onlyShareWithHardcodedServerPeerId: false,
       // ARK selects the relay via `syncServer`, defaulting to "subduction".
-      ...(useKeyhiveSyncServer ? { syncServer: "keyhive" as const } : {}),
+      syncServer: syncServer.keyhive,
       repo: {
         storage: new IndexedDBWorkerStorageAdapter(),
         enableRemoteHeadsGossiping: true,

@@ -12,6 +12,7 @@ export type {
   PatchworkIconsOptions,
   PatchworkHtmlOptions,
   PatchworkNetlifyOptions,
+  PatchworkKeyhiveSyncServer,
   PatchworkSyncServersOptions,
 } from "./options.js";
 

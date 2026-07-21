@@ -22,7 +22,6 @@ window.patchwork = await setup({
   packageListURL,
   accountKey: "tinyPatchworkAccountUrl",
   name: "patchwork",
-  keyhive: __KEYHIVE__,
 }).catch((error) => {
   showErrorScreen(error, { contact: "chee@inkandswitch.com" });
   throw error;
