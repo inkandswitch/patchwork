@@ -12,6 +12,10 @@ jobs:
     name: release the core
     runs-on: ubuntu-latest
     environment: Patchwork
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     steps:
       - name: check out the repository
         uses: actions/checkout@v3
@@ -43,7 +47,6 @@ jobs:
           publish: pnpm publish-packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: tell discord
         if: steps.changesets.outputs.published == 'true'
