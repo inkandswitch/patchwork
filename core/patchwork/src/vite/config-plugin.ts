@@ -1,11 +1,15 @@
 import type { Plugin } from "vite";
 import wasm from "vite-plugin-wasm";
 import type { PatchworkVitePluginOptions } from "./patchwork-plugin.js";
+import {
+  DEFAULT_SYNC_SERVERS,
+  resolvePrimarySyncServer,
+} from "../site-kit/sync-servers.js";
 
 const CORS_HEADERS = { "Access-Control-Allow-Origin": "*" };
 
 /**
- * Owns envPrefix, define (__SITE_NAME__/__KEYHIVE__/__KEYHIVE_SYNC_SERVER__),
+ * Owns envPrefix, define (__SITE_NAME__/sync-server configuration),
  * server/preview CORS defaults, worker format + the wasm plugin, and build
  * defaults (firefox150 target, unminified, sourcemapped) — everything a site
  * used to hand-write in its own vite.config.ts. Each is switched off
@@ -17,11 +21,14 @@ export function configPlugin(
   return {
     name: "@patchwork/config",
     config() {
+      const primarySyncServer = resolvePrimarySyncServer(options);
+      const classicSyncServer =
+        options.syncServers && typeof options.syncServers.classic === "string"
+          ? options.syncServers.classic
+          : DEFAULT_SYNC_SERVERS.classic;
       const define: Record<string, string> = {
-        __KEYHIVE__: JSON.stringify(options.keyhive ?? false),
-        __KEYHIVE_SYNC_SERVER__: JSON.stringify(
-          options.keyhiveSyncServer ?? false
-        ),
+        __SYNC_SERVER__: JSON.stringify(primarySyncServer),
+        __CLASSIC_SYNC_SERVER__: JSON.stringify(classicSyncServer),
       };
       if (options.siteName) {
         define.__SITE_NAME__ = JSON.stringify(options.siteName);

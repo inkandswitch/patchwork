@@ -152,7 +152,6 @@ async function doSetup(options: PatchworkOptions): Promise<Patchwork> {
 
     let workerAdapter = new MessageChannelNetworkAdapter(workerPort);
     ({ repo, hive, signerIdentity } = await createRepo(
-      options,
       siteName,
       workerAdapter
     ));

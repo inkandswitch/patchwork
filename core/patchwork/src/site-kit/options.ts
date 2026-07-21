@@ -1,3 +1,5 @@
+import type { SyncServerIdentity } from "@automerge/automerge-repo-keyhive";
+
 /**
  * The bundler-agnostic option shape for a Patchwork site's generated
  * static assets (icons, index.html, manifest.webmanifest, Netlify config).
@@ -26,14 +28,19 @@ export interface PatchworkNetlifyOptions {
   immutableAssets?: boolean;
 }
 
-export interface PatchworkSyncServersOptions {
+type PatchworkPrimarySyncServerOptions =
+  | { subduction?: string; keyhive?: never }
+  | { subduction?: never; keyhive: PatchworkKeyhiveSyncServer };
+
+export type PatchworkKeyhiveSyncServer =
+  | "keyhive"
+  | "subduction"
+  | ({ url: string } & SyncServerIdentity);
+
+export type PatchworkSyncServersOptions = {
   /** wss:// URL for the legacy automerge-repo sync-server channel (connected on demand via connectClassicSync). Default: wss://sync3.automerge.org. Pass false to skip its preconnect hint. */
   classic?: string | false;
-  /** wss:// URL for subduction sync — live when keyhiveSyncServer is false. Default: wss://subduction.sync.inkandswitch.com */
-  subduction?: string;
-  /** wss:// URL for keyhive sync — live when keyhiveSyncServer is true. Default: wss://keyhive.sync.automerge.org */
-  keyhive?: string;
-}
+} & PatchworkPrimarySyncServerOptions;
 
 export interface PatchworkSiteOptions {
   /** -> __SITE_NAME__ define */
@@ -47,22 +54,17 @@ export interface PatchworkSiteOptions {
   /** default "/src/main.ts" — must be root-absolute, since the generated index.html doesn't live at the project root */
   entry?: string;
 
-  /** -> __KEYHIVE__ define */
-  keyhive?: boolean;
-  /** -> __KEYHIVE_SYNC_SERVER__ define */
-  keyhiveSyncServer?: boolean;
-
   themeColor?: string | { light: string; dark: string };
   /** manifest background_color */
   backgroundColor?: string;
 
   /**
-   * Which sync-server hosts to preconnect/dns-prefetch from the html and
-   * list in the Netlify Link header. Only the channel actually live for
-   * this build is included — subduction xor keyhive, picked by
-   * `keyhiveSyncServer`, matching automerge-worker.ts's own selection —
-   * plus `classic` (on-demand, but cheap to hint) unless set to `false`.
-   * Pass `false` to skip all sync-server hints.
+   * Sync-server configuration for this build. Providing `keyhive` enables
+   * keyhive and selects the relay identity ARK grants access to. Custom
+   * identities also require their WebSocket URL. `subduction` and `keyhive`
+   * are mutually exclusive. The live server and `classic` are also emitted as
+   * connection hints. Pass `false` to keep the default servers but skip those
+   * hints.
    */
   syncServers?: false | PatchworkSyncServersOptions;
 

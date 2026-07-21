@@ -18,7 +18,6 @@ window.patchwork = await setup({
   packageListURL: DEFAULT_MODULES_URL,
   accountKey: "gaiosAccountUrl",
   name: "GAIOS",
-  keyhive: __KEYHIVE__,
 }).catch((error) => {
   showErrorScreen(error, { contact: "chee@inkandswitch.com" });
   throw error;

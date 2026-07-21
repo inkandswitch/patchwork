@@ -1,7 +1,12 @@
 /** localStorage key: optional override for the classic sync WebSocket URL. */
 export const CLASSIC_SYNC_SERVER_KEY = "patchworkClassicSyncServer";
 
-export const DEFAULT_CLASSIC_SYNC_SERVER = "wss://sync3.automerge.org";
+declare const __CLASSIC_SYNC_SERVER__: string;
+
+export const DEFAULT_CLASSIC_SYNC_SERVER =
+  typeof __CLASSIC_SYNC_SERVER__ !== "undefined"
+    ? __CLASSIC_SYNC_SERVER__
+    : "wss://sync3.automerge.org";
 
 export function readClassicSyncServer(
   storage: Pick<Storage, "getItem"> = globalThis.localStorage

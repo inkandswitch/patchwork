@@ -54,6 +54,7 @@ export type {
   PatchworkIconsOptions,
   PatchworkHtmlOptions,
   PatchworkNetlifyOptions,
+  PatchworkKeyhiveSyncServer,
   PatchworkSyncServersOptions,
 } from "../site-kit/options.js";
 
