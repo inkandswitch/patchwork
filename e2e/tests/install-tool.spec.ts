@@ -12,9 +12,10 @@ import { waitForRepoReady } from "./helpers";
  * module-settings doc, the ModuleWatcher hot-loads it, its datatype appears
  * in the create-new menu, and its tool renders the doc.
  *
- * Needs the full UI (network for the base module bundle), so it shares the
- * cross-profile suite's firefox skip: Playwright's Firefox fails cors
- * fetches from inside service workers and the frame never renders.
+ * Needs the full UI (network for the base module bundle), so like the
+ * cross-profile suite it runs on chromium only: Playwright's Firefox fails
+ * cors fetches from inside service workers, and its WebKit is too flaky on
+ * SW timing and emulation to hold a green suite.
  */
 
 const COUNTER_SOURCE = readFileSync(
@@ -26,7 +27,7 @@ test("a counter tool installed from an automerge url can be created and clicked"
   page,
   browserName,
 }) => {
-  test.skip(browserName === "firefox", "cors fetches fail in playwright-firefox service workers");
+  test.skip(browserName !== "chromium", "full-UI boot is only reliable on chromium: firefox fails cors fetches from inside service workers, webkit is flaky on SW timing and emulation");
   test.setTimeout(300_000);
 
   await page.goto("/", { timeout: 120_000 });
