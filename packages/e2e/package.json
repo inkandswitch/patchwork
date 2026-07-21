@@ -1,16 +1,33 @@
 {
   "name": "@inkandswitch/patchwork-e2e",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "directory": "packages/e2e"
+  },
+  "version": "0.1.0",
   "type": "module",
-  "description": "Browser + Service-Worker end-to-end sync tests (Playwright).",
+  "description": "Browser + Service-Worker end-to-end sync tests (Playwright) for a Patchwork site.",
+  "bin": {
+    "patchwork-e2e": "./bin/patchwork-e2e.js"
+  },
+  "files": [
+    "bin",
+    "tests",
+    "fixtures",
+    "playwright.config.ts",
+    "tsconfig.json"
+  ],
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "report": "playwright show-report"
   },
+  "dependencies": {
+    "@playwright/test": "1.59.1"
+  },
   "devDependencies": {
-    "@playwright/test": "1.59.1",
     "@types/node": "catalog:"
   }
 }

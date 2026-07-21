@@ -14,11 +14,11 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
  * opens the doc's URL cold, must receive A's edit, and replies; A must see
  * the reply.
  *
- * The second test runs the same loop against the deployed
- * https://patchwork.inkandswitch.com instead of the local build.
+ * The second test runs the same loop against a deployed site instead of the
+ * local build, when one is named by `--live-site` / PATCHWORK_E2E_LIVE_SITE.
  */
 
-const LIVE_ORIGIN = "https://patchwork.inkandswitch.com";
+const LIVE_ORIGIN = process.env.PATCHWORK_E2E_LIVE_SITE;
 
 // Full-UI boots fetch the module bundle over the network and compete with
 // every other parallel test for cpu, so they get generous budgets.
@@ -89,11 +89,12 @@ test("a markdown doc round-trips between two profiles via the sync server", asyn
   await crossProfileMarkdownSync(browser, "");
 });
 
-test("the same round-trip works on the live patchwork.inkandswitch.com", async ({
+test("the same round-trip works on the live site", async ({
   browser,
   browserName,
 }) => {
   test.skip(browserName !== "chromium", "full-UI boot is only reliable on chromium: firefox fails cors fetches from inside service workers, webkit is flaky on SW timing and emulation");
+  test.skip(!LIVE_ORIGIN, "no live site: pass --live-site=https://…");
   test.setTimeout(300_000);
-  await crossProfileMarkdownSync(browser, LIVE_ORIGIN);
+  await crossProfileMarkdownSync(browser, LIVE_ORIGIN!);
 });
