@@ -4,7 +4,7 @@ import {
   findDocField,
   waitForRepoReady,
   waitForServiceWorkerActive,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * CRDT merge semantics across the SW relay.

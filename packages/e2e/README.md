@@ -59,10 +59,28 @@ root) and points the suite at it.
 | `--port=<n>` | port for the preview server (default 5173; it must be free). |
 | `--preview-command=<cmd>` | how to serve the built site (default `pnpm preview`). |
 | `--site-dir=<path>` | where to run it (default the current directory). |
+| `--extra-tests-dir=<path>` | also run your own specs (see below). |
 
 Any other argument goes straight to `playwright test`, so `--headed`,
 `--ui`, `--project=chromium` and `-g "live site"` work. Reports and traces
 land in the directory you ran from.
+
+Specs under `--extra-tests-dir` run as a `<browser>:extra` project — same
+fixtures, baseURL and preview server as the built-in suite. They can be
+TypeScript (Playwright transpiles them; the shipped suite is compiled ahead
+of time because Playwright won't transform anything under `node_modules`),
+and they can use the shared helpers:
+
+```ts
+import { test } from "@playwright/test";
+import { createDoc, waitForRepoReady } from "@inkandswitch/patchwork-e2e/helpers";
+
+test("my site does its thing", async ({ page }) => {
+  await page.goto("/");
+  await waitForRepoReady(page);
+  const url = await createDoc(page, { hello: "world" });
+});
+```
 
 ## Scope (Stage B1)
 

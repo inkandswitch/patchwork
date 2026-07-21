@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { waitForRepoReady } from "./helpers";
+import { waitForRepoReady } from "./helpers.js";
 
 /**
  * The extensibility loop: install a package at runtime, then use the tool it

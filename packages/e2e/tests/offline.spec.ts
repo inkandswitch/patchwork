@@ -5,7 +5,7 @@ import {
   setDocField,
   waitForRepoReady,
   waitForServiceWorkerActive,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * Local-first behaviour with the network cut.

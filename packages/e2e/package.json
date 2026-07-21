@@ -13,12 +13,19 @@
   },
   "files": [
     "bin",
-    "tests",
-    "fixtures",
-    "playwright.config.ts",
-    "tsconfig.json"
+    "dist"
   ],
+  "exports": {
+    "./helpers": {
+      "import": "./dist/tests/helpers.js",
+      "types": "./dist/tests/helpers.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
+    "build": "rm -rf dist && tsc && cp -R fixtures dist/fixtures",
+    "dev": "tsc -w --preserveWatchOutput",
+    "prepare": "pnpm build",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
@@ -28,6 +35,7 @@
     "@playwright/test": "1.59.1"
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }
