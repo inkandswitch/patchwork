@@ -1,5 +1,5 @@
 {
-  "name": "@patchwork/e2e",
+  "name": "@inkandswitch/patchwork-e2e",
   "private": true,
   "type": "module",
   "description": "Browser + Service-Worker end-to-end sync tests (Playwright).",
