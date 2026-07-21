@@ -53,9 +53,10 @@ Subduction server**:
   shapes from patchwork/base round-trip through the relay.
 
 Two suites go beyond B1 and need the network (the base module bundle comes
-from netlify), so they're skipped on firefox: Playwright's Firefox build
-fails cors fetches made from inside a service worker, and the module bundle
-(and with it the frame) never loads.
+from netlify). They run on chromium only: Playwright's Firefox build fails
+cors fetches made from inside a service worker, so the module bundle (and
+with it the frame) never loads, and Playwright's WebKit is too flaky on SW
+timing and emulation to hold a green suite.
 
 - `cross-profile-sync.spec.ts` — full UI boot (threepane), a markdown doc
   created via the create-new menu and edited in CodeMirror, synced between
