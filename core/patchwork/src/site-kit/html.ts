@@ -93,7 +93,7 @@ export function buildHtml(options: PatchworkSiteOptions): string {
   return `<!doctype html>
 <html lang="${lang}">
 ${head.join("\n")}
-<patchwork-view id="root"></patchwork-view>
+<repo-provider><patchwork-view id="root"></patchwork-view></repo-provider>
 <script type="module" src="${entry}"></script>
 </html>
 `;
