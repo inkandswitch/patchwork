@@ -198,7 +198,6 @@ export function registerPatchworkViewElement(
       }
 
       connectedCallback() {
-        console.log("connected callback");
         this.#capturedParent = this.parentElement;
         (this as { hive?: AutomergeRepoKeyhive }).hive = params.hive;
         this.#component = this.getAttribute(ATTRS.component);
