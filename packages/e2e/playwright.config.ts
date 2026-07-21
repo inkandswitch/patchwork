@@ -74,7 +74,7 @@ export default defineConfig({
   // deterministically. `reuseExistingServer` lets you keep a `vite preview`
   // running locally during iteration.
   webServer: {
-    command: "pnpm --filter patchwork.inkandswitch.com preview",
+    command: "pnpm preview",
     url: BASE_URL,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
