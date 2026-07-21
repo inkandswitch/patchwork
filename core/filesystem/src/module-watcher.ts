@@ -10,6 +10,9 @@ import {
 } from "./packages.js";
 import { getType, type HasPatchworkMetadata } from "./metadata.js";
 import { BranchesDoc, FolderDoc } from "./types.js";
+import debug from "debug";
+
+const log = debug("patchwork:modules");
 
 export type ModuleSettingsDoc = {
   modules: AutomergeUrl[];
@@ -194,7 +197,7 @@ export class ModuleWatcher {
         try {
           await this.processModuleEntry(importName);
         } catch (error) {
-          console.log(
+          console.error(
             new Error(`Failed to load module ${importName}: ${error}`, {
               cause: error,
             })
@@ -402,7 +405,7 @@ export class ModuleWatcher {
         if (key === importedHeads) return;
         importedHeads = key;
         const versionedImport = handle.view(heads).url;
-        console.log(`change in ${importName}, reloading at ${versionedImport}`);
+        log(`change in ${importName}, reloading at ${versionedImport}`);
         // Keyed by the stable importName so this reload supersedes any
         // still-retrying announce of an older version of the same module.
         this.announce(versionedImport, importName, key);

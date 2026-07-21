@@ -1,5 +1,9 @@
 import type { AutomergeUrl } from "@automerge/automerge-repo";
-import activate from "@inkandswitch/patchwork";
+import setup, {
+  hideLoadingAnimation,
+  showErrorScreen,
+  showLoadingAnimation,
+} from "@inkandswitch/patchwork";
 
 // Published tools are registered in this module-settings doc via
 // `pnpm register` from each tool's own repo (see patchwork-tools and
@@ -8,9 +12,16 @@ import activate from "@inkandswitch/patchwork";
 const DEFAULT_MODULES_URL =
   "automerge:3XRXFS96oVXe5D4joMyQWAfNeFNN" as AutomergeUrl;
 
-await activate({
+showLoadingAnimation();
+
+window.patchwork = await setup({
   packageListURL: DEFAULT_MODULES_URL,
   accountKey: "gaiosAccountUrl",
   name: "GAIOS",
   keyhive: __KEYHIVE__,
+}).catch((error) => {
+  showErrorScreen(error, { contact: "chee@inkandswitch.com" });
+  throw error;
 });
+
+hideLoadingAnimation();

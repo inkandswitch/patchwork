@@ -1,4 +1,8 @@
-import patchwork from "@inkandswitch/patchwork";
+import setup, {
+  hideLoadingAnimation,
+  showErrorScreen,
+  showLoadingAnimation,
+} from "@inkandswitch/patchwork";
 
 const DEFAULT_PACKAGE_LIST =
   "https://base.pkg.patchwork.inkandswitch.com/modules.json";
@@ -12,9 +16,16 @@ const packageListURL = (
   .map((source) => source.trim())
   .filter(Boolean);
 
-await patchwork({
+showLoadingAnimation();
+
+window.patchwork = await setup({
   packageListURL,
   accountKey: "tinyPatchworkAccountUrl",
   name: "patchwork",
   keyhive: __KEYHIVE__,
+}).catch((error) => {
+  showErrorScreen(error, { contact: "chee@inkandswitch.com" });
+  throw error;
 });
+
+hideLoadingAnimation();
