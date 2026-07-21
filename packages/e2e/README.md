@@ -30,12 +30,39 @@ Wasm init, IndexedDB, and the MessageChannel relay.
 ## Run
 
 ```sh
-pnpm --filter @patchwork/e2e test:e2e          # headless
-pnpm --filter @patchwork/e2e test:e2e:headed   # headed
-pnpm --filter @patchwork/e2e test:e2e:ui       # Playwright UI
+pnpm --filter @inkandswitch/patchwork-e2e test:e2e          # headless
+pnpm --filter @inkandswitch/patchwork-e2e test:e2e:headed   # headed
+pnpm --filter @inkandswitch/patchwork-e2e test:e2e:ui       # Playwright UI
 ```
 
 Or from the repo root: `pnpm test:e2e` (runs the build first).
+
+## Run against another site repo
+
+The package ships a `patchwork-e2e` bin. Install it in a site repo and run it
+from the repo root, after a build:
+
+```sh
+pnpm add -D @inkandswitch/patchwork-e2e
+pnpm exec playwright install chromium firefox webkit   # once
+pnpm build
+pnpm exec patchwork-e2e --live-site=https://patchwork.inkandswitch.com
+```
+
+It starts the site's own preview server (`pnpm preview`, run in the repo
+root) and points the suite at it.
+
+| flag | |
+| --- | --- |
+| `--live-site=<url>` | also run the cross-profile sync test against a deployed site. Omitted, that test is skipped. |
+| `--base-url=<url>` | test a server that is already running; nothing is started. |
+| `--port=<n>` | port for the preview server (default 5173; it must be free). |
+| `--preview-command=<cmd>` | how to serve the built site (default `pnpm preview`). |
+| `--site-dir=<path>` | where to run it (default the current directory). |
+
+Any other argument goes straight to `playwright test`, so `--headed`,
+`--ui`, `--project=chromium` and `-g "live site"` work. Reports and traces
+land in the directory you ran from.
 
 ## Scope (Stage B1)
 
@@ -61,7 +88,7 @@ timing and emulation to hold a green suite.
 - `cross-profile-sync.spec.ts` — full UI boot (threepane), a markdown doc
   created via the create-new menu and edited in CodeMirror, synced between
   two browser profiles through the real Subduction server; once against the
-  local build, once against the live patchwork.inkandswitch.com.
+  local build, and once against a deployed site if `--live-site` names one.
 - `install-tool.spec.ts` — the extensibility loop: a one-file counter module
   (`fixtures/counter.js`) is written into a directory doc, installed from
   its `automerge:` URL through the Packages UI, created via the create-new

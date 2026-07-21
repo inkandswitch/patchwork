@@ -1,4 +1,5 @@
 import { availableParallelism } from "node:os";
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -20,8 +21,18 @@ import { defineConfig, devices } from "@playwright/test";
  * three, so we keep the local worker count lower to bound memory.
  */
 
+// The `patchwork-e2e` bin sets these so the suite can run from the root of a
+// site repo (see bin/patchwork-e2e.js). Run directly, the defaults apply.
 const PORT = Number(process.env.PORT ?? 5173);
-const BASE_URL = `http://localhost:${PORT}`;
+const EXTERNAL_BASE_URL = process.env.PATCHWORK_E2E_BASE_URL;
+const BASE_URL = EXTERNAL_BASE_URL ?? `http://localhost:${PORT}`;
+const SITE_DIR = process.env.PATCHWORK_E2E_SITE_DIR ?? process.cwd();
+const PREVIEW_COMMAND = process.env.PATCHWORK_E2E_PREVIEW_COMMAND ?? "pnpm preview";
+// Reports and traces belong next to whoever invoked us, not inside the
+// installed package. Relative paths would resolve against this file.
+const OUTPUT_DIR = process.env.PATCHWORK_E2E_OUTPUT_DIR;
+const output = (name: string) =>
+  OUTPUT_DIR ? path.join(OUTPUT_DIR, name) : name;
 
 export default defineConfig({
   testDir: "./tests",
@@ -40,8 +51,9 @@ export default defineConfig({
   // signal stays visible without failing the run.
   retries: 1,
 
+  outputDir: output("test-results"),
   reporter: process.env.CI
-    ? [["list"], ["html", { open: "never" }]]
+    ? [["list"], ["html", { open: "never", outputFolder: output("playwright-report") }]]
     : [["list"]],
 
   use: {
@@ -72,12 +84,16 @@ export default defineConfig({
   // Build is expected to have run already (see e2e README / CI). We only
   // start the preview server here so the harness boots quickly and
   // deterministically. `reuseExistingServer` lets you keep a `vite preview`
-  // running locally during iteration.
-  webServer: {
-    command: "pnpm preview",
-    url: BASE_URL,
-    timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
-    env: { PORT: String(PORT) },
-  },
+  // running locally during iteration. `--base-url` points the suite at a
+  // server someone else is running, so we start nothing.
+  webServer: EXTERNAL_BASE_URL
+    ? undefined
+    : {
+        command: PREVIEW_COMMAND,
+        cwd: SITE_DIR,
+        url: BASE_URL,
+        timeout: 120_000,
+        reuseExistingServer: !process.env.CI,
+        env: { PORT: String(PORT) },
+      },
 });
