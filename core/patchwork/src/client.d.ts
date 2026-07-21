@@ -18,7 +18,7 @@ declare global {
     /**
      * Comma-separated list of default tool-manifest sources the shell boots
      * with. Each entry is an `automerge:` URL or a static `modules.json`
-     * URL. Overridable at runtime via `localStorage.systemPackageListURL`.
+     * URL.
      */
     readonly PATCHWORK_SYSTEM_PACKAGE_LIST_URL?: string;
     /**

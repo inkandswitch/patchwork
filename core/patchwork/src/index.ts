@@ -22,7 +22,6 @@ import {
   type DocHandle,
   MessageChannelNetworkAdapter,
   Repo,
-  isValidAutomergeUrl,
 } from "@automerge/vanillajs/slim";
 import * as Automerge from "@automerge/automerge/slim";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim";
@@ -330,32 +329,15 @@ function installReveal(
 
 // ── Module sources ───────────────────────────────────────────────────────
 
-function isValidModuleSource(source: string): boolean {
-  return isValidAutomergeUrl(source) || /^(https?:\/\/|\.?\/)/.test(source);
-}
-
 /**
- * The site's default module-list sources, honouring the
- * `localStorage.systemPackageListURL` dev override, which replaces the entire
- * built-in bundle.
+ * The site's module-list sources. The site owns any dev overrides and passes
+ * the result in as `packageListURL`.
  */
 function resolveDefaultModules(options: PatchworkOptions): string[] {
   const configured = options.packageListURL ?? [];
   const builtin = (
     Array.isArray(configured) ? configured : [configured]
   ).filter(Boolean);
-
-  const override = globalThis.localStorage?.getItem("systemPackageListURL");
-
-  if (override && isValidModuleSource(override)) {
-    console.info(`using systemPackageListURL from localStorage: ${override}`);
-    return [override];
-  }
-  if (override) {
-    console.warn(
-      `ignoring invalid systemPackageListURL in localStorage: ${override}`
-    );
-  }
 
   if (builtin.length === 0) {
     throw new Error(
