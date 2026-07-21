@@ -4,7 +4,7 @@ import {
   findDocField,
   waitForRepoReady,
   waitForServiceWorkerActive,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * IndexedDB persistence across reloads.

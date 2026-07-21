@@ -33,6 +33,15 @@ const PREVIEW_COMMAND = process.env.PATCHWORK_E2E_PREVIEW_COMMAND ?? "pnpm previ
 const OUTPUT_DIR = process.env.PATCHWORK_E2E_OUTPUT_DIR;
 const output = (name: string) =>
   OUTPUT_DIR ? path.join(OUTPUT_DIR, name) : name;
+// A site repo can point us at its own specs; they get the same fixtures,
+// baseURL and preview server, as a project per browser named "<browser>:extra".
+const EXTRA_TESTS_DIR = process.env.PATCHWORK_E2E_EXTRA_TESTS_DIR;
+
+const browsers = [
+  { name: "chromium", use: devices["Desktop Chrome"] },
+  { name: "firefox", use: devices["Desktop Firefox"] },
+  { name: "webkit", use: devices["Desktop Safari"] },
+];
 
 export default defineConfig({
   testDir: "./tests",
@@ -66,20 +75,12 @@ export default defineConfig({
     serviceWorkers: "allow",
   },
 
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-    },
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
-  ],
+  projects: browsers.flatMap(({ name, use }) => [
+    { name, use: { ...use } },
+    ...(EXTRA_TESTS_DIR
+      ? [{ name: `${name}:extra`, testDir: EXTRA_TESTS_DIR, use: { ...use } }]
+      : []),
+  ]),
 
   // Build is expected to have run already (see e2e README / CI). We only
   // start the preview server here so the harness boots quickly and

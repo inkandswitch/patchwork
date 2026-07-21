@@ -6,7 +6,9 @@
     "types": ["node"],
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "declaration": true,
+    "rootDir": ".",
+    "outDir": "dist"
   },
   "include": ["tests", "playwright.config.ts"]
 }

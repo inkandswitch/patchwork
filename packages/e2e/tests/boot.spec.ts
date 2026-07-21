@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { waitForRepoReady, waitForServiceWorkerActive } from "./helpers";
+import { waitForRepoReady, waitForServiceWorkerActive } from "./helpers.js";
 
 /**
  * Cold-boot: a fresh visit registers the Service Worker, initialises Wasm,

@@ -4,7 +4,7 @@ import {
   findDocField,
   waitForRepoReady,
   waitForServiceWorkerActive,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * Same-browser multi-tab sync through the Service Worker relay.

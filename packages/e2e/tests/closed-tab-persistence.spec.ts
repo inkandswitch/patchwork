@@ -4,7 +4,7 @@ import {
   findDocField,
   waitForRepoReady,
   waitForServiceWorkerActive,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * The SW, not the tab, is the source of truth.

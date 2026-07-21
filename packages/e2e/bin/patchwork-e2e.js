@@ -6,7 +6,9 @@ import path from "node:path";
 
 const require = createRequire(import.meta.url);
 const packageDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const configPath = path.join(packageDir, "playwright.config.ts");
+// The compiled config, not the .ts source: playwright never transforms files
+// under node_modules, and node can't strip types there either.
+const configPath = path.join(packageDir, "dist", "playwright.config.js");
 
 const USAGE = `patchwork-e2e — run the Patchwork browser + service-worker e2e suite
 
@@ -24,6 +26,9 @@ Options:
                            (default "pnpm preview").
   --site-dir=<path>        directory to run the preview command in
                            (default the current directory).
+  --extra-tests-dir=<path> also run your own specs, as a "<browser>:extra"
+                           project. Import helpers from
+                           "@inkandswitch/patchwork-e2e/helpers".
   --help                   show this.
 
 Anything after -- (or any unrecognised flag) is passed to \`playwright test\`,
@@ -48,7 +53,8 @@ for (let i = 2; i < process.argv.length; i++) {
     process.stdout.write(USAGE);
     process.exit(0);
   }
-  const match = /^--(live-site|base-url|port|preview-command|site-dir)(?:=(.*))?$/.exec(arg);
+  const match =
+    /^--(live-site|base-url|port|preview-command|site-dir|extra-tests-dir)(?:=(.*))?$/.exec(arg);
   if (!match) {
     passthrough.push(arg);
     continue;
@@ -74,6 +80,9 @@ if (options["base-url"]) env.PATCHWORK_E2E_BASE_URL = options["base-url"];
 if (options.port) env.PORT = options.port;
 if (options["preview-command"]) {
   env.PATCHWORK_E2E_PREVIEW_COMMAND = options["preview-command"];
+}
+if (options["extra-tests-dir"]) {
+  env.PATCHWORK_E2E_EXTRA_TESTS_DIR = path.resolve(options["extra-tests-dir"]);
 }
 
 const child = spawn(
