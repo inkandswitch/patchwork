@@ -7,7 +7,7 @@ import {
 import {
   getSuggestedImportUrl,
   getType,
-  importModuleFromHttpUrl,
+  importPackage,
   type HasPatchworkMetadata,
 } from "@inkandswitch/patchwork-filesystem";
 import {
@@ -16,6 +16,7 @@ import {
   isLoadablePlugin,
   registerPlugins,
   type LoadedTool,
+  type ToolDescription,
   type ToolElement,
 } from "@inkandswitch/patchwork-plugins";
 import debug from "debug";
@@ -62,8 +63,6 @@ const ATTRS = {
   toolId: "tool-id",
 } as const;
 
-export const LEGACY_OBSERVED_ATTRIBUTES = [ATTRS.docUrl, ATTRS.toolId] as const;
-
 export type LegacyImplParams = {
   /**
    * Repo used to resolve the primary doc handle. This is the
@@ -73,8 +72,6 @@ export type LegacyImplParams = {
    */
   repo: Repo;
   hive?: AutomergeRepoKeyhive;
-  /** Element name used in error messages */
-  hostName?: string;
 };
 
 type HostElement = HTMLElement & {
@@ -210,12 +207,15 @@ export class LegacyImpl {
   #capturedParent: Element | null = null;
   #fallbackId: string | undefined;
   #teardowns = new Set<() => unknown | Promise<void>>();
+  #teardownPromise: Promise<void> | null = null;
   #keyhiveRetrySetup = false;
   #handlingKeyhiveSync = false;
   #pendingKeyhiveSync = false;
   #unableNoAccess = false;
   #toast: HTMLElement | null = null;
   #toastTimer: ReturnType<typeof setTimeout> | null = null;
+  #toastPositioned = false;
+  #errorReposition: (() => void) | null = null;
 
   constructor(element: HTMLElement, params: LegacyImplParams) {
     this.#element = element as HostElement;
@@ -230,32 +230,6 @@ export class LegacyImpl {
     this.#content.style.width = "100%";
     this.#content.style.height = "100%";
     this.#content.hive = params.hive;
-  }
-
-  get docUrl(): AutomergeUrl | null {
-    return this.#docUrl;
-  }
-
-  set docUrl(url: AutomergeUrl | null) {
-    if (this.#docUrl === url) return;
-    this.#docUrl = url;
-    const attr = this.#element.getAttribute(ATTRS.docUrl);
-    if (attr == url) return;
-    if (url) this.#element.setAttribute(ATTRS.docUrl, url);
-    else this.#element.removeAttribute(ATTRS.docUrl);
-  }
-
-  get toolId(): string | null {
-    return this.#toolId;
-  }
-
-  set toolId(id: string | null) {
-    if (this.#toolId === id) return;
-    this.#toolId = id;
-    const attr = this.#element.getAttribute(ATTRS.toolId);
-    if (attr == id) return;
-    if (id) this.#element.setAttribute(ATTRS.toolId, id);
-    else this.#element.removeAttribute(ATTRS.toolId);
   }
 
   connectedCallback(): void {
@@ -301,7 +275,7 @@ export class LegacyImpl {
   };
 
   #init = async () => {
-    const toolRegistry = getRegistry("patchwork:tool");
+    const toolRegistry = getRegistry<ToolDescription>("patchwork:tool");
     if (this.#state != State.none) return;
     if (!this.#docUrl) return;
 
@@ -322,6 +296,7 @@ export class LegacyImpl {
           this.#element.hive.active.individual.id,
           this.#docUrl
         );
+        if (epoch !== this.#initEpoch) return;
         const accessLevel = bestAccess ? bestAccess.toString() : "None";
 
         if (accessLevel === "None") {
@@ -369,7 +344,11 @@ export class LegacyImpl {
       async (addedTool) => {
         const toolId = addedTool.id;
         const isChosenTool = toolId == this.#toolId;
-        if (this.#handle) {
+        // `getFallbackTool` scans the whole registry, so recomputing it on
+        // every registration is O(N²) across a load burst. A registration can
+        // only change the outcome when no fallback is known yet or the new
+        // tool supports this doc's type.
+        if (this.#handle && this.#couldChangeFallback(addedTool)) {
           this.#fallbackId = getFallbackTool(this.#handle.doc())?.id;
         }
         const isFallbackTool = toolId == this.#fallbackId;
@@ -419,7 +398,16 @@ export class LegacyImpl {
       handle = await repo.find<HasPatchworkMetadata>(this.#docUrl!);
     } catch (err) {
       if (epoch !== this.#initEpoch) return;
-      throw err;
+      // Every caller voids `#init`'s promise, so rethrowing would only
+      // produce an unhandled rejection and wedge `#state` in `initializing`.
+      // Show the error and park in `unable` so a keyhive sync (the usual
+      // reason a find fails: the doc hasn't synced yet) can retry.
+      console.error(`failed to load ${this.#docUrl}`, err);
+      this.#state = State.unable;
+      this.#unableNoAccess = true;
+      const e = err as Error;
+      this.#displayError(e?.message ?? String(err), e?.stack, err);
+      return;
     }
 
     if (epoch !== this.#initEpoch) return;
@@ -431,7 +419,31 @@ export class LegacyImpl {
     this.#queueRender();
   };
 
-  async #teardown(): Promise<void> {
+  // A registration can shift the fallback only when we don't have one yet or
+  // the new tool supports the doc's type (a specific match sorts ahead of a
+  // wildcard, so a supporting tool can displace the current pick).
+  #couldChangeFallback(added: ToolDescription): boolean {
+    if (!this.#fallbackId) return true;
+    const supported = added.supportedDatatypes;
+    if (!supported) return false;
+    if (supported === "*" || supported.includes("*")) return true;
+    const type = this.#handle ? getType(this.#handle.doc()) : undefined;
+    return type != null && supported.includes(type);
+  }
+
+  // Serialized: overlapping calls (doc-url and tool-id both changing in one
+  // tick) share the one in-flight run instead of double-running the same
+  // cleanups.
+  #teardown(): Promise<void> {
+    if (!this.#teardownPromise) {
+      this.#teardownPromise = this.#runTeardown().finally(() => {
+        this.#teardownPromise = null;
+      });
+    }
+    return this.#teardownPromise;
+  }
+
+  async #runTeardown(): Promise<void> {
     if (this.#state == State.none) return;
 
     // Capture the mount-event payload (if any) before clearing state,
@@ -446,12 +458,14 @@ export class LegacyImpl {
 
     this.#initEpoch++;
 
-    for (const fn of this.#teardowns) {
+    const teardowns = [...this.#teardowns];
+    this.#teardowns.clear();
+    for (const fn of teardowns) {
       await fn?.();
     }
 
-    this.#teardowns.clear();
     this.#dismissToast(true);
+    this.#removeErrorListeners();
     this.#keyhiveRetrySetup = false;
     this.#unableNoAccess = false;
     this.#handle = null;
@@ -493,9 +507,7 @@ export class LegacyImpl {
       if (handle && handle.state === "unavailable") {
         this.#element.repo.delete(this.#docUrl);
       }
-    } catch {
-      // Ignore delete errors
-    }
+    } catch {}
 
     await new Promise((resolve) => setTimeout(resolve, 300));
     retryingDocs.delete(this.#docUrl);
@@ -662,11 +674,7 @@ export class LegacyImpl {
       );
     } catch (error) {
       const err = error as Error;
-      this.#displayError(
-        err?.message ?? String(error),
-        err?.stack,
-        error
-      );
+      this.#displayError(err?.message ?? String(error), err?.stack, error);
       console.error(error);
       this.#state = "error";
     }
@@ -767,7 +775,10 @@ export class LegacyImpl {
       const top = below ? r.bottom + GAP : r.top - GAP - fh;
 
       const centerX = r.left + r.width / 2;
-      const left = Math.max(MARGIN, Math.min(centerX - fw / 2, vw - MARGIN - fw));
+      const left = Math.max(
+        MARGIN,
+        Math.min(centerX - fw / 2, vw - MARGIN - fw)
+      );
 
       flyout.style.top = `${top}px`;
       flyout.style.left = `${left}px`;
@@ -794,12 +805,10 @@ export class LegacyImpl {
       }
     });
 
+    this.#removeErrorListeners();
     window.addEventListener("scroll", reposition, true);
     window.addEventListener("resize", reposition);
-    this.#teardowns.add(() => {
-      window.removeEventListener("scroll", reposition, true);
-      window.removeEventListener("resize", reposition);
-    });
+    this.#errorReposition = reposition;
 
     wrap.append(face, flyout);
     this.#content.append(wrap);
@@ -807,6 +816,14 @@ export class LegacyImpl {
       wrap.style.opacity = "1";
     });
   };
+
+  #removeErrorListeners(): void {
+    const reposition = this.#errorReposition;
+    if (!reposition) return;
+    this.#errorReposition = null;
+    window.removeEventListener("scroll", reposition, true);
+    window.removeEventListener("resize", reposition);
+  }
 
   /**
    * When no tool is available for the current doc, import the module the doc
@@ -847,7 +864,10 @@ export class LegacyImpl {
 
     // Give the absolutely-positioned toast a containing block without
     // clobbering an inline position the host author may have set.
-    if (!this.#element.style.position) this.#element.style.position = "relative";
+    if (getComputedStyle(this.#element).position === "static") {
+      this.#element.style.position = "relative";
+      this.#toastPositioned = true;
+    }
 
     const toast = document.createElement("div");
     toast.setAttribute("role", "status");
@@ -928,16 +948,28 @@ export class LegacyImpl {
     this.#toast = null;
     if (immediate) {
       toast.remove();
+      this.#restoreToastPosition();
       return;
     }
     toast.style.opacity = "0";
-    setTimeout(() => toast.remove(), 300);
+    setTimeout(() => {
+      toast.remove();
+      this.#restoreToastPosition();
+    }, 300);
+  }
+
+  #restoreToastPosition(): void {
+    if (!this.#toastPositioned || this.#toast) return;
+    this.#toastPositioned = false;
+    this.#element.style.position = "";
   }
 
   async #importSuggestedModule(url: string): Promise<void> {
     log("importing suggested module", url);
     try {
-      const mod = await importModuleFromHttpUrl(url);
+      // A `suggestedImportUrl` can be an `automerge:` folder doc served through
+      // the service worker as well as a plain HTTP(S) module bundle.
+      const mod = await importPackage(url);
       if (Array.isArray(mod?.plugins)) {
         registerPlugins(mod.plugins, url);
       } else {
@@ -949,6 +981,7 @@ export class LegacyImpl {
   }
 
   #resetDisplay = () => {
+    this.#removeErrorListeners();
     this.#content.replaceChildren();
   };
 }

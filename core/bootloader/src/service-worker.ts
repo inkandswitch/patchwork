@@ -1,12 +1,5 @@
 /// <reference types="service-worker-types" />
 
-// The service worker holds no automerge repo — that lives in the automerge
-// SharedWorker (automerge-worker.ts). This worker manages the cache. When a
-// special URL misses the cache it broadcasts a handoff request; the
-// automerge worker resolves it, puts the response in our cache, and replies
-// "cached" (or "response" for errors and other things that shouldn't be
-// cached).
-
 import {
   HANDOFF_CHANNEL,
   type HandoffReplyMessage,
@@ -18,30 +11,20 @@ const DEFAULT_CACHE_NAME = "patchwork";
 let cachename = DEFAULT_CACHE_NAME;
 let debugging = false;
 
-// 0 is an opaque response, that also needs cached
-const cacheableStatuses = [0, 200, 203, 204];
+// 0 is an opaque cross-origin response, which is cacheable and replays to the
+// same no-cors consumer. these are big, so unfortunate.
+const CACHEABLE_STATUSES = [0, 200, 203, 204];
 
-// The automerge worker times its own resolution out after 30s and replies
-// with an error, so this only fires when nobody is listening at all.
+// The automerge worker times its own resolution out after 30s and replies with
+// an error, so this only fires when nobody is listening at all.
 const HANDOFF_TIMEOUT_MS = 35_000;
 
 function log(...args: any[]) {
-  if (!debugging) return;
-  console.log.call(
-    console,
-    `%cpatchwork:serviceworker%c\n`,
-    `color: #00ffcc; font-weight: bold`,
-    "color: inherit",
-    ...args
-  );
+  if (debugging) console.log("[service-worker]", ...args);
 }
 
-// ── Lifecycle diagnostics ──────────────────────────────────────────────
-// [lifecycle] markers for SW (re)boots, install/activate, crashes, and stranded
-// handoffs. The SW can't read localStorage, so it always emits and forwards to
-// the tab, which gates rendering on the live toggle. The SW holds no sync
-// socket — observability only.
-
+// A service worker has no localStorage and so can't read the debug config: it
+// always emits these and forwards them to the tab, which does the filtering.
 async function postToClients(message: unknown) {
   const clients = await self.clients.matchAll({
     type: "window",
@@ -51,9 +34,9 @@ async function postToClients(message: unknown) {
 }
 
 function lifecycle(level: "info" | "warn", text: string) {
-  const msg = `[lifecycle] ${new Date().toISOString()} ${text}`;
+  const msg = `${new Date().toISOString()} ${text}`;
   console[level](msg);
-  void postToClients({ type: "sw-lifecycle", level, msg });
+  postToClients({ type: "sw-lifecycle", level, msg });
 }
 
 lifecycle("info", `booted (scope ${self.registration?.scope ?? "?"})`);
@@ -77,19 +60,22 @@ self.addEventListener("unhandledrejection", (event) => {
   );
 });
 
+// ── Lifecycle ──────────────────────────────────────────────────────────
+
 self.addEventListener("install", (event) => {
   lifecycle("info", "install (skipWaiting)");
   // waitUntil keeps the worker alive until skipWaiting resolves, so a freshly
-  // installed SW reliably jumps the "waiting" queue instead of stalling until
+  // installed worker reliably jumps the waiting queue instead of stalling until
   // every old tab closes.
   (event as ExtendableEvent).waitUntil(self.skipWaiting());
 });
 
 async function clearOtherCaches() {
+  const names = await caches.keys();
   await Promise.all(
-    (await caches.keys()).map((cacheName) => {
-      if (cacheName !== cachename) return caches.delete(cacheName);
-    })
+    names
+      .filter((name) => name !== cachename)
+      .map((name) => caches.delete(name))
   );
 }
 
@@ -99,22 +85,20 @@ self.addEventListener("activate", (event) => {
     (async () => {
       await clearOtherCaches();
       await self.clients.claim();
-      // Pre-cache pages of already-open clients so they survive going offline
-      // before the next navigation.
-      const allClients = await self.clients.matchAll({ type: "window" });
+      // Pre-cache the pages of already-open clients so they survive going
+      // offline before the next navigation.
+      const clients = await self.clients.matchAll({ type: "window" });
       const cache = await caches.open(cachename);
       await Promise.all(
-        allClients.map(async (client) => {
+        clients.map(async (client) => {
           try {
-            const existing = await cache.match(client.url);
-            if (!existing) {
-              const response = await fetch(client.url);
-              if (cacheableStatuses.includes(response.status)) {
-                await cachePage(cache, client.url, response);
-              }
+            if (await cache.match(client.url)) return;
+            const response = await fetch(client.url);
+            if (CACHEABLE_STATUSES.includes(response.status)) {
+              await cachePage(cache, client.url, response);
             }
           } catch {
-            // Network may be unavailable during activation
+            // Network may be unavailable during activation.
           }
         })
       );
@@ -123,31 +107,33 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", async (event) => {
-  if (event.data.type == "cachename") {
-    const nextCachename = event.data.cachename;
-    if (cachename == nextCachename) {
-      return;
-    }
-    console.info(`moving from cache ${cachename} to ${nextCachename}`);
-    if (cachename === DEFAULT_CACHE_NAME) {
-      const defaultCache = await caches.open(cachename);
-      const nextCache = await caches.open(nextCachename);
-      await Promise.all(
-        (await defaultCache.keys()).map(async (request) => {
-          const response = await defaultCache.match(request);
-          if (response) await nextCache.put(request, response);
-        })
-      );
-    }
-    cachename = nextCachename;
-    await clearOtherCaches();
-  } else if (event.data.type == "debug") {
-    debugging = event.data.debug;
-    log("serviceworker debugging enabled");
-  }
-});
+  const data = event.data;
 
-// ── Handoff to the automerge worker ────────────────────────────────────
+  if (data?.type === "debug") {
+    debugging = data.debug;
+    log("serviceworker debugging enabled");
+    return;
+  }
+
+  if (data?.type !== "cachename" || cachename === data.cachename) return;
+
+  console.info(`moving from cache ${cachename} to ${data.cachename}`);
+  const previous = cachename;
+  // Switch before copying: fetches landing mid-copy must write into the new
+  // cache, or their entries get deleted along with the old one below.
+  cachename = data.cachename;
+  if (previous === DEFAULT_CACHE_NAME) {
+    const from = await caches.open(previous);
+    const to = await caches.open(cachename);
+    await Promise.all(
+      (await from.keys()).map(async (request) => {
+        const response = await from.match(request);
+        if (response) await to.put(request, response);
+      })
+    );
+  }
+  await clearOtherCaches();
+});
 
 const handoffChannel = new BroadcastChannel(HANDOFF_CHANNEL);
 
@@ -160,31 +146,30 @@ const pendingHandoffs = new Map<string, PendingHandoff>();
 
 handoffChannel.addEventListener("message", (event) => {
   const data = event.data;
+
   if (data?.type === "cached" || data?.type === "response") {
     const pending = pendingHandoffs.get(data.id);
-    if (!pending) {
-      return log(`no pending handoff for id ${data.id}`);
-    }
+    if (!pending) return log(`no pending handoff for id ${data.id}`);
     pending.resolvers.resolve(data as HandoffReplyMessage);
-  } else if (data?.type === "online") {
-    // The automerge worker (re)started — re-broadcast anything still in
-    // flight so requests that raced its boot aren't stranded.
-    const stranded = [...pendingHandoffs.values()];
-    if (stranded.length > 0) {
-      lifecycle(
-        "info",
-        `automerge worker (re)started; re-broadcasting ${stranded.length} ` +
-          `in-flight asset handoff(s)`
-      );
-    }
-    for (const { message } of stranded) {
-      log(`re-broadcasting handoff ${message.id} to the fresh worker`);
-      handoffChannel.postMessage(message);
-    }
+    return;
   }
+
+  if (data?.type !== "online") return;
+  // The automerge worker (re)started — re-broadcast anything still in flight so
+  // requests that raced its boot aren't stranded.
+  const stranded = [...pendingHandoffs.values()];
+  if (stranded.length === 0) return;
+  lifecycle(
+    "info",
+    `automerge worker (re)started; re-broadcasting ${stranded.length} in-flight asset handoff(s)`
+  );
+  for (const { message } of stranded) handoffChannel.postMessage(message);
 });
 
-function handoff(
+/** Signals that respondWith should reject; see {@link HandoffAbortMessage}. */
+class HandoffAborted extends Error {}
+
+async function handoff(
   request: Request,
   handoffURL: URL
 ): Promise<HandoffReplyMessage> {
@@ -203,14 +188,15 @@ function handoff(
       referrer: request.referrer,
     },
   };
+
   pendingHandoffs.set(id, { message, resolvers });
   log(`broadcasting handoff request for cache ${cachename}`, message);
   handoffChannel.postMessage(message);
+
   const timeout = setTimeout(() => {
     lifecycle(
       "warn",
-      `asset handoff ${id} stranded: no reply from the automerge worker after ` +
-        `${HANDOFF_TIMEOUT_MS}ms (${handoffURL.href})`
+      `asset handoff ${id} stranded: no reply from the automerge worker after ${HANDOFF_TIMEOUT_MS}ms (${handoffURL.href})`
     );
     resolvers.reject(
       new Error(
@@ -218,39 +204,31 @@ function handoff(
       )
     );
   }, HANDOFF_TIMEOUT_MS);
+
   return resolvers.promise.finally(() => {
     clearTimeout(timeout);
     pendingHandoffs.delete(id);
   });
 }
 
-function makeResponse(response: {
-  body?: BodyInit | ReadableStream<Uint8Array> | null;
-  status?: number;
-  headers?: HeadersInit;
-}): Response {
-  return new Response(response.body ?? null, {
-    status: response.status ?? 200,
-    headers: response.headers,
-  });
-}
+// ── Caching ────────────────────────────────────────────────────────────
 
-function indexRequestFor(request: Request | string): Request | undefined {
-  const url = new URL(typeof request === "string" ? request : request.url);
-  if (url.origin !== self.location.origin) return undefined;
-  url.pathname = "/index.html";
-  url.search = "";
-  url.hash = "";
-  return new Request(url.href);
-}
+/** A page is cached under its own url plus /index.html and / on this origin. */
+function pageCacheKeys(request: Request | string): Request[] {
+  const original = typeof request === "string" ? new Request(request) : request;
+  const url = new URL(original.url);
+  if (url.origin !== self.location.origin) return [original];
 
-function rootRequestFor(request: Request | string): Request | undefined {
-  const url = new URL(typeof request === "string" ? request : request.url);
-  if (url.origin !== self.location.origin) return undefined;
-  url.pathname = "/";
-  url.search = "";
-  url.hash = "";
-  return new Request(url.href);
+  return [
+    original,
+    ...["/index.html", "/"].map((pathname) => {
+      const variant = new URL(url.href);
+      variant.pathname = pathname;
+      variant.search = "";
+      variant.hash = "";
+      return new Request(variant.href);
+    }),
+  ];
 }
 
 async function cachePage(
@@ -258,129 +236,168 @@ async function cachePage(
   request: Request | string,
   response: Response
 ) {
-  const indexRequest = indexRequestFor(request);
-  if (indexRequest) await cache.put(indexRequest, response.clone());
-  const rootRequest = rootRequestFor(request);
-  if (rootRequest) await cache.put(rootRequest, response.clone());
-  await cache.put(request, response);
+  const keys = pageCacheKeys(request);
+  await Promise.all(
+    keys.map((key, i) =>
+      cache.put(key, i === keys.length - 1 ? response : response.clone())
+    )
+  );
 }
 
-// ── Fetch handler ──────────────────────────────────────────────────────
+// cache.put only resolves once the whole body has been consumed and persisted,
+// so awaiting it before returning would turn time-to-first-byte into
+// time-to-last-byte-plus-disk for every proxied asset. waitUntil keeps the
+// worker alive for the write.
+function cacheInBackground(
+  fetchEvent: FetchEvent,
+  cache: Cache,
+  request: Request,
+  response: Response
+) {
+  const isPage =
+    request.mode === "navigate" || request.destination === "document";
+  fetchEvent.waitUntil(
+    (isPage
+      ? cachePage(cache, request, response)
+      : cache.put(request, response)
+    ).catch((error) => {
+      // Always loud: a QuotaExceededError here is the first sign the origin is
+      // under storage pressure.
+      console.warn(`error caching ${request.url} in ${cachename}`, error);
+    })
+  );
+}
 
-self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
-  log("fetch event", fetchEvent.request.url);
-  const request = fetchEvent.request;
-  if (request.method !== "GET") return fetchEvent.respondWith(fetch(request));
-  const url = new URL(fetchEvent.request.url);
-
-  let handoffURL: URL | undefined;
-
+/** A same-origin path that is itself an encoded URL, e.g. /automerge%3Aabc/x. */
+function specialURLFor(request: Request): URL | undefined {
+  const url = new URL(request.url);
   if (
-    url.hostname == self.location.hostname &&
-    url.port == self.location.port &&
-    url.protocol == self.location.protocol
+    url.hostname !== self.location.hostname ||
+    url.port !== self.location.port ||
+    url.protocol !== self.location.protocol
   ) {
-    try {
-      handoffURL = new URL(decodeURIComponent(url.pathname.slice(1)));
-      log(`received special request ${handoffURL}`);
-    } catch {}
+    return undefined;
+  }
+  try {
+    return new URL(decodeURIComponent(url.pathname.slice(1)));
+  } catch {
+    return undefined;
+  }
+}
+
+async function serveHandoff(
+  fetchEvent: FetchEvent,
+  cache: Cache,
+  handoffURL: URL,
+  cached: Response | undefined
+): Promise<Response> {
+  if (cached) {
+    log(`serving ${handoffURL} from cache ${cachename}`);
+    return cached;
   }
 
-  fetchEvent.respondWith(
-    (async () => {
-      const cache = await caches.open(cachename);
-      const match = await cache.match(request);
+  log(`handing ${handoffURL} off to the automerge worker`);
+  const replyPromise = handoff(fetchEvent.request, handoffURL);
+  fetchEvent.waitUntil(replyPromise.catch(() => {}));
+  const reply = await replyPromise;
 
-      try {
-        if (handoffURL) {
-          if (match) {
-            log(`serving ${handoffURL} from cache ${cachename}`);
-            return match;
-          }
+  if (reply.type === "abort") {
+    // Rejecting respondWith gives the caller a network error rather than a
+    // response it can memoize.
+    log(`aborting ${handoffURL}: ${reply.reason}`);
+    throw new HandoffAborted(reply.reason);
+  }
 
-          log(`handing ${handoffURL} off to the automerge worker`);
-          const replyPromise = handoff(request, handoffURL);
-          fetchEvent.waitUntil(replyPromise.catch(() => {}));
-          const reply = await replyPromise;
+  if (reply.type === "response") {
+    log(`serving handed-off response for ${handoffURL}`, reply);
+    return new Response(reply.response.body ?? null, {
+      status: reply.response.status ?? 200,
+      headers: reply.response.headers,
+    });
+  }
 
-          if (reply.type === "response") {
-            // errors, redirects and other things that shouldn't be cached
-            log(`serving handed-off response for ${handoffURL}`, reply);
-            return makeResponse(reply.response);
-          }
+  const stored = await cache.match(fetchEvent.request);
+  if (!stored) {
+    return new Response(
+      `the automerge worker reported ${handoffURL} cached, but it has no match in ${cachename}`,
+      { status: 555 }
+    );
+  }
+  log(`serving ${handoffURL} from cache ${cachename} after handoff`);
+  return stored;
+}
 
-          // reply.type === "cached": the automerge worker has put the
-          // response in our cache
-          const cached = await cache.match(request);
-          if (!cached) {
-            return new Response(
-              `the automerge worker reported ${handoffURL} cached, but it has no match in ${cachename}`,
-              { status: 555 }
-            );
-          }
-          log(`serving ${handoffURL} from cache ${cachename} after handoff`);
-          return cached;
-        } else {
-          // fetch() rejects on network error / abort rather than resolving;
-          // keep the error so we can surface it in the 503 body below.
-          const result = await fetch(request).catch((error: unknown) =>
-            error instanceof Error ? error : new Error(String(error))
-          );
-          if (result instanceof Response) {
-            const response = result;
-            // Tool subresources (<link>/<script>) are requested from srcdoc
-            // frames whose origin is "null", so they come back as opaque
-            // cross-origin `no-cors` responses: status 0 and an empty url. They
-            // render fine while online but were being excluded from the cache,
-            // so e.g. a theme stylesheet vanished on an offline refresh. Opaque
-            // responses are cacheable and replay to the same no-cors consumer,
-            // so treat status 0 as cacheable and gate the scheme on request.url
-            // (an opaque response's own url is "").
-            if (
-              (response.status === 0 ||
-                cacheableStatuses.includes(response.status)) &&
-              /^https?:/.test(request.url)
-            ) {
-              const cachedResponse = response.clone();
-              await (
-                request.mode === "navigate" ||
-                request.destination === "document"
-                  ? cachePage(cache, request, cachedResponse)
-                  : cache.put(request, cachedResponse)
-              ).catch((error) => {
-                log(`error caching ${request.url} in ${cachename}`, error);
-              });
-            } else {
-              log(
-                `skipping uncacheable response code from cache: ${response.status} for ${request.url}`
-              );
-            }
-            return response;
-          }
-          if (match) return match;
-          return new Response(
-            `couldnt fetch ${request.url} and no stale copy in ${cachename}\n\n${
-              result.stack ?? result.message
-            }`,
-            { status: 503, headers: { "content-type": "text/plain" } }
-          );
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? `${error.message}\n\n${error.stack}`
-            : String(error);
-        console.error(
-          `service worker error resolving ${request.url}${handoffURL ? ` (for: ${handoffURL})` : ""}`,
-          error
-        );
-        if (match) return match;
-
-        return new Response(message, {
-          status: 556,
-          headers: { "content-type": "text/plain" },
-        });
-      }
-    })()
+async function servePassthrough(
+  fetchEvent: FetchEvent,
+  cache: Cache,
+  cached: Response | undefined
+): Promise<Response> {
+  const request = fetchEvent.request;
+  // fetch() rejects on network error rather than resolving, so keep the error
+  // to surface in the 503 body below.
+  const result = await fetch(request).catch((error: unknown) =>
+    error instanceof Error ? error : new Error(String(error))
   );
+
+  if (result instanceof Response) {
+    if (
+      CACHEABLE_STATUSES.includes(result.status) &&
+      /^https?:/.test(request.url)
+    ) {
+      cacheInBackground(fetchEvent, cache, request, result.clone());
+    } else {
+      log(`not caching status ${result.status} for ${request.url}`);
+    }
+    return result;
+  }
+
+  if (cached) return cached;
+  return new Response(
+    `couldnt fetch ${request.url} and no stale copy in ${cachename}\n\n${
+      result.stack ?? result.message
+    }`,
+    { status: 503, headers: { "content-type": "text/plain" } }
+  );
+}
+
+async function respond(
+  fetchEvent: FetchEvent,
+  handoffURL: URL | undefined
+): Promise<Response> {
+  const cache = await caches.open(cachename);
+  // A cors request (e.g. the wasm `<link rel=preload crossorigin>`) can miss
+  // an entry that a url-keyed lookup finds, so fall back to the bare url —
+  // offline boot depends on this hitting.
+  const cached =
+    (await cache.match(fetchEvent.request)) ??
+    (await cache.match(fetchEvent.request.url));
+
+  try {
+    return handoffURL
+      ? await serveHandoff(fetchEvent, cache, handoffURL, cached)
+      : await servePassthrough(fetchEvent, cache, cached);
+  } catch (error) {
+    // Deliberate: fail the request as a network error, with no response.
+    if (error instanceof HandoffAborted) throw error;
+
+    console.error(
+      `service worker error resolving ${fetchEvent.request.url}` +
+        (handoffURL ? ` (for: ${handoffURL})` : ""),
+      error
+    );
+    if (cached) return cached;
+    return new Response(
+      error instanceof Error
+        ? `${error.message}\n\n${error.stack}`
+        : String(error),
+      { status: 556, headers: { "content-type": "text/plain" } }
+    );
+  }
+}
+
+self.addEventListener("fetch", (fetchEvent: FetchEvent) => {
+  const request = fetchEvent.request;
+  log("fetch event", request.url);
+  if (request.method !== "GET") return;
+  fetchEvent.respondWith(respond(fetchEvent, specialURLFor(request)));
 });

@@ -1,4 +1,4 @@
-import { AutomergeUrl } from "@automerge/automerge-repo";
+import type { AutomergeUrl } from "@automerge/automerge-repo";
 
 export interface OpenDocumentEventDetail {
   url: AutomergeUrl;
@@ -18,8 +18,7 @@ export class OpenDocumentEvent extends CustomEvent<OpenDocumentEventDetail> {
 }
 
 export type MountedEventDetail =
-  | { url: AutomergeUrl; toolId: string }
-  | { componentId: string };
+  { url: AutomergeUrl; toolId: string } | { componentId: string };
 
 export class MountedEvent extends CustomEvent<MountedEventDetail> {
   constructor(detail: MountedEventDetail) {

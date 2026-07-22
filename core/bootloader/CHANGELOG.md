@@ -1,5 +1,122 @@
 # @inkandswitch/patchwork-bootloader
 
+## 0.5.0
+
+### Minor Changes
+
+- bd63259: Move the site boot sequence and the vite plugin out to `@inkandswitch/patchwork`. The `./site` and `./vite` exports are gone; import from `@inkandswitch/patchwork` and `@inkandswitch/patchwork/vite` instead.
+
+  Split the externals list into `./externals-list` so the list can be read without pulling in node builtins, and export `resolveExternal` and the wasm asset emitter so another package's vite plugin can resolve the bootloader's own dependencies from the bootloader's `node_modules`. Export `./global.css` and `./module-loader`.
+
+  Fall back to a url-keyed cache lookup in the service worker when the request-keyed one misses, so a cors request (the wasm `<link rel=preload crossorigin>`) still hits the cache offline.
+
+### Patch Changes
+
+- 0aa315d: Configure Subduction or Keyhive with exclusive `syncServers` configuration. `syncServers.keyhive` replaces the `keyhive` and `keyhiveSyncServer` site options and the runtime `setup({ keyhive })` option. Selecting a named ARK relay or providing a custom relay identity and URL enables Keyhive, and configured server URLs now control worker connections as well as connection hints.
+- Updated dependencies [bd63259]
+- Updated dependencies [bd63259]
+  - @inkandswitch/patchwork-elements@4.0.2
+  - @inkandswitch/patchwork-filesystem@0.2.3
+
+## 0.4.4
+
+### Patch Changes
+
+- c01e1f3: Switch the service worker's active cache name before copying the default cache into it, so fetches landing mid-copy aren't deleted with the old cache. Guard the message handler against payload-less messages, and drop the `window.killsw` debug hook.
+- Updated dependencies [caca06f]
+- Updated dependencies [c01e1f3]
+  - @inkandswitch/patchwork-filesystem@0.2.2
+  - @inkandswitch/patchwork-providers@0.4.2
+  - @inkandswitch/patchwork-elements@4.0.1
+
+## 0.4.3
+
+### Patch Changes
+
+- bd9cd3d: Reliability and boot-speed fixes:
+
+  - The service worker no longer blocks responses on cache writes (they move to
+    `waitUntil`), page caching writes its three entries in parallel, non-GET
+    requests bypass the worker entirely, cache-write failures (e.g. quota) are
+    always logged, the cache is capped at 2000 entries with oldest-first
+    trimming, and boot requests persistent storage so cache growth can't trip
+    origin-wide eviction of user data.
+  - `automerge.wasm` is fetched under one URL from both the tab and the
+    automerge worker (the `?main`/`?worker` tracing query strings defeated the
+    HTTP cache, the SW cache, and the sites' preload — the ~3MB body downloaded
+    twice).
+  - Tabs now recover when the automerge SharedWorker dies or its connection is
+    stranded. Previously death was only logged and tabs silently stopped syncing
+    until reload. Silence alone never tears anything down (a slow-booting or
+    busy worker delivers everything queued once it catches up): a silent port
+    first starts a non-destructive probe — a second connection to the same
+    instance — and only when the probe gets a `hello` while the original port
+    stays silent (proving a live instance with a stranded port) is the worker
+    handle recreated, with sync-state subscriptions replayed and every
+    subscriber's repo re-wired onto a fresh port. This rescues boots whose
+    initial SharedWorker port comes up deaf (~6s), including in hidden
+    background tabs; a port `close` event still recovers immediately.
+  - The worker no longer rescans every doc handle on every
+    `subduction-remote-heads` event (quadratic during sync bursts); it tracks
+    just the reported doc.
+  - `ModuleWatcher` announces are generation-tracked, so a stale retry of an
+    older module version can no longer land after a newer version and roll the
+    registry back.
+  - `resolveAccountHandle` never overwrites a valid stored account pointer when
+    `repo.find` fails: it retries briefly and then throws, instead of silently
+    creating a fresh account and orphaning the user's workspace.
+  - `OverlayRepo` no longer memoizes rejected resolutions: a `find` that failed
+    because the doc (or its keyhive access) hadn't synced yet used to pin every
+    later `find` of that url to the same cached rejection, so the views' "retry
+    once access syncs" recovery could never reach the base repo. Rejections now
+    evict and the next `find` re-resolves. `findWithProgress().subscribe` also
+    no longer leaks its inner subscription (or fires the callback) when
+    unsubscribed before the resolution settles.
+
+- Updated dependencies [bd9cd3d]
+  - @inkandswitch/patchwork-filesystem@0.2.1
+  - @inkandswitch/patchwork-plugins@1.0.1
+  - @inkandswitch/patchwork-providers@0.4.1
+
+## 0.4.2
+
+### Patch Changes
+
+- 82bee46: A doc's `suggestedImportUrl` may now be an `automerge:` folder-doc URL as well
+  as an `http(s):` module bundle. When a view finds no built-in tool for a doc, it
+  loads the suggested module either way. Adds `importPackage` (which dispatches on
+  the URL scheme) and `isImportableSuggestedUrl` to `patchwork-filesystem`, and
+  `getSuggestedImportUrl` now honors automerge URLs.
+
+  The package-importing helpers are renamed from `module` to `package`, since they
+  resolve a `package.json` entry point: `importModuleFromFolderDocUrl` →
+  `importPackageFromFolderDocUrl`, `importModuleFromHttpUrl` →
+  `importPackageFromHttpUrl`, and the `ModuleWatcher` `importAutomergeModule` hook
+  (with bootloader's `importAutomergeModuleViaWorker`) → `importAutomergePackage`.
+
+- Updated dependencies [82bee46]
+  - @inkandswitch/patchwork-filesystem@0.2.0
+  - @inkandswitch/patchwork-elements@4.0.0
+  - @inkandswitch/patchwork-plugins@1.0.0
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [2d39c84]
+  - @inkandswitch/patchwork-providers@0.4.0
+  - @inkandswitch/patchwork-elements@3.0.0
+
+## 0.4.0
+
+### Minor Changes
+
+- b1bd763: Hash routing: `doc=` now holds the full (un-encoded) automerge URL — heads, if
+  any, live inside it — and the separate `heads=` param is gone. `doc=` values
+  that are a bare document id are still accepted for backwards compatibility, and
+  legacy big-patchwork links (`<slug>--<docId>?…`, including slugs with
+  characters like `drawing-(branch-1)`) are normalized to `#doc=automerge:<docId>`.
+
 ## 0.3.2
 
 ### Patch Changes

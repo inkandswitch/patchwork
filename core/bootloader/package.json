@@ -1,11 +1,15 @@
 {
   "name": "@inkandswitch/patchwork-bootloader",
-  "version": "0.3.2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "directory": "core/bootloader"
+  },
+  "version": "0.5.0",
   "author": "chee",
   "type": "module",
   "license": "MIT",
   "devDependencies": {
-    "@automerge/automerge-repo-keyhive": "catalog:",
     "esbuild": "^0.23.1",
     "rollup": "^4.61.1"
   },
@@ -18,9 +22,9 @@
       "import": "./dist/externals.js",
       "types": "./dist/externals.d.ts"
     },
-    "./vite": {
-      "import": "./dist/vite/patchwork-plugin.js",
-      "types": "./dist/vite/patchwork-plugin.d.ts"
+    "./externals-list": {
+      "import": "./dist/externals-list.js",
+      "types": "./dist/externals-list.d.ts"
     },
     "./service-worker": {
       "import": "./dist/service-worker.js",
@@ -30,27 +34,33 @@
       "import": "./dist/automerge-worker.js",
       "types": "./dist/automerge-worker.d.ts"
     },
+    "./module-loader": {
+      "import": "./dist/module-loader.js",
+      "types": "./dist/module-loader.d.ts"
+    },
     "./module-loader-worker": {
       "import": "./dist/module-loader-worker.js",
       "types": "./dist/module-loader-worker.d.ts"
     },
-    "./site": {
-      "import": "./dist/site.js",
-      "types": "./dist/site.d.ts"
-    },
     "./types": {
       "import": "./dist/types.js",
       "types": "./dist/types.d.ts"
-    }
+    },
+    "./global.css": "./dist/global.css"
   },
   "dependencies": {
     "@automerge/automerge": "catalog:",
     "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-keyhive": "catalog:",
     "@automerge/automerge-repo-network-messagechannel": "catalog:",
     "@automerge/automerge-repo-network-websocket": "catalog:",
     "@automerge/automerge-repo-storage-indexeddb": "catalog:",
     "@automerge/automerge-subduction": "catalog:",
     "@automerge/vanillajs": "catalog:",
+    "@codemirror/commands": "catalog:",
+    "@codemirror/language": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/view": "catalog:",
     "@inkandswitch/patchwork-elements": "workspace:^",
     "@inkandswitch/patchwork-filesystem": "workspace:^",
     "@inkandswitch/patchwork-plugins": "workspace:^",
@@ -60,6 +70,7 @@
     "debug": "^4.4.3",
     "resolve.exports": "^2.0.3",
     "service-worker-types": "npm:@types/serviceworker@^0.0.153",
+    "solid-js": "catalog:",
     "tinyargs": "^0.1.4"
   },
   "peerDependencies": {
@@ -68,8 +79,22 @@
     "@automerge/automerge-repo-keyhive": "catalog:",
     "@automerge/vanillajs": "catalog:"
   },
+  "peerDependenciesMeta": {
+    "@automerge/automerge": {
+      "optional": true
+    },
+    "@automerge/automerge-repo": {
+      "optional": true
+    },
+    "@automerge/automerge-repo-keyhive": {
+      "optional": true
+    },
+    "@automerge/vanillajs": {
+      "optional": true
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/global.css dist/global.css",
     "dev": "tsc -w --preserveWatchOutput"
   }
 }

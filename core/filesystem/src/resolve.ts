@@ -17,11 +17,10 @@ export interface FolderStrategy {
   resolve(
     repo: Repo,
     handle: DocHandle<unknown>,
-    parts: string[]
+    parts: string[],
+    visited: Set<string>
   ): Promise<Resolved | undefined>;
 }
-
-// ── folder strategy: FolderDoc with docs[] ──
 
 const folderStrategy: FolderStrategy = {
   matches(doc) {
@@ -32,7 +31,7 @@ const folderStrategy: FolderStrategy = {
       Array.isArray((doc as { docs: unknown }).docs)
     );
   },
-  async resolve(repo, handle, parts) {
+  async resolve(repo, handle, parts, visited) {
     const folder = handle.doc() as FolderDoc | undefined;
     if (!folder?.docs) return undefined;
 
@@ -41,33 +40,37 @@ const folderStrategy: FolderStrategy = {
     if (!docLink) return undefined;
 
     const next = await repo.find(docLink.url);
-    return resolvePathInternal(repo, next, parts.slice(1));
+    return resolvePathInternal(repo, next, parts.slice(1), visited);
   },
 };
-
-// ── directory strategy: @patchwork.type === "directory", key map walk ──
 
 const directoryStrategy: FolderStrategy = {
   matches(doc) {
     return getType(doc as Parameters<typeof getType>[0]) === "directory";
   },
-  async resolve(repo, handle, parts) {
-    return walkDirectoryDoc(repo, handle.doc(), parts);
+  async resolve(repo, handle, parts, visited) {
+    return walkDirectoryDoc(repo, handle.doc(), parts, visited);
   },
 };
 
 async function walkDirectoryDoc(
   repo: Repo,
   node: unknown,
-  parts: string[]
+  parts: string[],
+  visited: Set<string>
 ): Promise<Resolved | undefined> {
   if (typeof node === "string" && isValidAutomergeUrl(node)) {
+    // Following a url consumes no parts, so revisiting the same url with the
+    // same remaining parts is a cycle.
+    const key = `${node}|${parts.join("/")}`;
+    if (visited.has(key)) return undefined;
+    visited.add(key);
     const next = await repo.find(node);
-    return resolvePathInternal(repo, next, parts);
+    return resolvePathInternal(repo, next, parts, visited);
   }
 
   if (parts.length === 0) {
-    return materialize(repo, node);
+    return materialize(repo, node, undefined, visited);
   }
 
   if (!node || typeof node !== "object" || node instanceof Uint8Array) {
@@ -79,14 +82,12 @@ async function walkDirectoryDoc(
   for (let i = parts.length; i >= 1; i--) {
     const key = parts.slice(0, i).join("/");
     if (key in obj) {
-      return walkDirectoryDoc(repo, obj[key], parts.slice(i));
+      return walkDirectoryDoc(repo, obj[key], parts.slice(i), visited);
     }
   }
   return undefined;
 }
 
-// ── materialize: turn a final value into Resolved ──
-//
 // rule of thumb: bytes pass through, anything else gets JSON.stringify'd unless
 // a .mimeType hint is in scope (FileDoc-shape provides one). default mime is
 // application/json so strings without a hint become valid JSON.
@@ -94,15 +95,16 @@ async function walkDirectoryDoc(
 async function materialize(
   repo: Repo,
   node: unknown,
-  typeHint?: string
+  typeHint?: string,
+  visited: Set<string> = new Set()
 ): Promise<Resolved | undefined> {
-  // Follow automerge urls
   if (typeof node === "string" && isValidAutomergeUrl(node)) {
+    if (visited.has(node)) return undefined;
+    visited.add(node);
     const next = await repo.find(node);
-    return materialize(repo, next.doc(), typeHint);
+    return materialize(repo, next.doc(), typeHint, visited);
   }
 
-  // FileDoc-shape: object with .content (and optional .mimeType)
   if (
     node &&
     typeof node === "object" &&
@@ -112,7 +114,7 @@ async function materialize(
     "content" in node
   ) {
     const obj = node as { content?: unknown; mimeType?: string };
-    return materialize(repo, obj.content, obj.mimeType ?? typeHint);
+    return materialize(repo, obj.content, obj.mimeType ?? typeHint, visited);
   }
 
   if (node instanceof Uint8Array) {
@@ -132,7 +134,6 @@ async function materialize(
     return { content: JSON.stringify(s), type: "application/json" };
   }
 
-  // numbers, booleans, plain objects, arrays — JSON.stringify
   if (
     typeof node === "number" ||
     typeof node === "boolean" ||
@@ -151,24 +152,22 @@ async function materialize(
   return undefined;
 }
 
-// ── dispatch ──
-
 const STRATEGIES: FolderStrategy[] = [directoryStrategy, folderStrategy];
 
 async function resolvePathInternal(
   repo: Repo,
   handle: DocHandle<unknown>,
-  parts: string[]
+  parts: string[],
+  visited: Set<string>
 ): Promise<Resolved | undefined> {
-  // Path exhausted — materialize this doc
   if (parts.length === 0) {
-    return materialize(repo, handle.doc());
+    return materialize(repo, handle.doc(), undefined, visited);
   }
 
   const doc = handle.doc();
   for (const strategy of STRATEGIES) {
     if (strategy.matches(doc)) {
-      return strategy.resolve(repo, handle, parts);
+      return strategy.resolve(repo, handle, parts, visited);
     }
   }
   return undefined;
@@ -179,5 +178,5 @@ export async function resolvePath(
   rootHandle: DocHandle<unknown>,
   parts: string[]
 ): Promise<Resolved | undefined> {
-  return resolvePathInternal(repo, rootHandle, parts);
+  return resolvePathInternal(repo, rootHandle, parts, new Set());
 }

@@ -1,7 +1,12 @@
 {
   "name": "@inkandswitch/patchwork-plugins",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "directory": "core/plugins"
+  },
   "type": "module",
-  "version": "0.0.11",
+  "version": "1.0.1",
   "author": "Ink & Switch",
   "description": "",
   "main": "dist/index.js",

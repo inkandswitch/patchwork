@@ -76,7 +76,6 @@ const OVERLAY_REPO_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
  * so the descriptor subscriptions release their provider-side resources.
  */
 export class OverlayRepo implements RepoLike {
-  /** The realm-local repo all resolution ultimately bottoms out in. */
   readonly baseRepo: Repo;
   readonly #element: HTMLElement;
   // Keyed by the *presented* url (documentId + path + heads), not just the
@@ -104,7 +103,6 @@ export class OverlayRepo implements RepoLike {
   constructor(baseRepo: Repo, element: HTMLElement) {
     this.baseRepo = baseRepo;
     this.#element = element;
-    // Forward everything but resolution to the realm-local repo.
     return forwardingProxy<OverlayRepo>(this, baseRepo, OVERLAY_REPO_OWNED);
   }
 
@@ -163,9 +161,15 @@ export class OverlayRepo implements RepoLike {
       documentId,
       peek,
       subscribe: (callback) => {
+        // `closed` covers the unsubscribe-before-resolve race: without it the
+        // resolution settling later would still subscribe to the inner
+        // progress (leaking that subscription forever) and invoke the
+        // consumer's callback after it unsubscribed.
+        let closed = false;
         let last: string | null = null;
         let registered = false;
         const dispatch = () => {
+          if (closed) return;
           const state = peek();
           const sig =
             state.state === "failed"
@@ -179,11 +183,13 @@ export class OverlayRepo implements RepoLike {
         // subscribing to the inner directly) so a backing swap can re-wire
         // this subscriber onto the replacement inner progress.
         wrappedPromise.then(() => {
+          if (closed) return;
           self.#registerProgressDispatcher(presented, dispatch);
           registered = true;
           dispatch();
         }, dispatch);
         return () => {
+          closed = true;
           if (registered) {
             self.#unregisterProgressDispatcher(presented, dispatch);
           }
@@ -235,9 +241,8 @@ export class OverlayRepo implements RepoLike {
   }
 
   /**
-   * Tear down every live descriptor subscription and progress re-wiring.
-   * Called by the owning element when it disconnects; resolved handles keep
-   * working against their last backing but stop receiving remaps.
+   * Tear down every live descriptor subscription, progress re-wiring, and
+   * wrapped handle. Called by the owning element when it disconnects.
    */
   dispose(): void {
     if (this.#disposed) return;
@@ -248,6 +253,11 @@ export class OverlayRepo implements RepoLike {
       for (const unsubscribeInner of dispatchers.values()) unsubscribeInner();
     }
     this.#progressDispatchers.clear();
+    for (const wrapped of this.#wrapped.values()) wrapped.dispose();
+    this.#wrapped.clear();
+    this.#inner.clear();
+    this.#resolving.clear();
+    this.#backingUrls.clear();
   }
 
   // De-dupes concurrent resolutions of the same presented url: the first
@@ -331,6 +341,20 @@ export class OverlayRepo implements RepoLike {
         }
       );
       this.#subscriptions.set(presented, unsubscribe);
+    });
+
+    // Only successful resolutions stay memoized. A rejection — typically
+    // baseRepo.find reporting unavailable because the doc (or its keyhive
+    // access) hasn't synced yet — is retryable, so caching it would pin every
+    // future find() of this url to the same stale rejection and defeat the
+    // views' "retry once access syncs" recovery. Evict so the next find()
+    // re-runs the whole resolution. The identity check keeps a late-arriving
+    // cleanup from clobbering a newer in-flight attempt.
+    promise.catch(() => {
+      if (this.#resolving.get(presented) === promise) {
+        this.#resolving.delete(presented);
+        this.#inner.delete(presented);
+      }
     });
 
     this.#resolving.set(presented, promise as Promise<OverlayHandle<unknown>>);

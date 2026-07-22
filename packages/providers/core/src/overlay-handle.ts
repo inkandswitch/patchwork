@@ -35,12 +35,11 @@ const OVERLAY_HANDLE_OWNED: ReadonlySet<PropertyKey> = new Set<PropertyKey>([
   "removeListener",
   "removeAllListeners",
   "emit",
+  "dispose",
 ]);
 
 export type OverlayHandleOpts<T> = {
-  /** The url the handle reports to consumers (hides the backing/clone url). */
   presentedUrl: AutomergeUrl;
-  /** The live handle every operation is forwarded to. */
   backing: DocHandle<T>;
 };
 
@@ -289,6 +288,17 @@ export class OverlayHandle<T> {
       ev,
       forwarder
     );
+  }
+
+  dispose(): void {
+    const backing = this.#handle as unknown as {
+      off(ev: string, fn: Listener): void;
+    };
+    for (const [ev, forwarder] of this.#forwarders) backing.off(ev, forwarder);
+    this.#forwarders.clear();
+    this.#listeners.clear();
+    for (const entry of this.#subCache.values()) entry.wrapped.dispose();
+    this.#subCache.clear();
   }
 }
 

@@ -1,5 +1,55 @@
 # @inkandswitch/patchwork-elements
 
+## 4.0.2
+
+### Patch Changes
+
+- bd63259: Declare `patchwork-view` in `HTMLElementTagNameMap`, so `document.querySelector("patchwork-view")` is typed. Move component-loading chatter to a `patchwork:elements:patchwork-view` debug logger.
+- Updated dependencies [bd63259]
+  - @inkandswitch/patchwork-filesystem@0.2.3
+
+## 4.0.1
+
+### Patch Changes
+
+- c01e1f3: Give `<patchwork-view>` a proper exports map and test suite, and tear down its overlay repo on unmount.
+
+  Add `registerPatchworkViewTag` so views registered under a custom tag name are still treated as subscription boundaries, and `OverlayRepo.dispose()`/`OverlayHandle.dispose()` so unmounting a view detaches the event forwarders it installed on backing handles.
+
+- Updated dependencies [caca06f]
+- Updated dependencies [c01e1f3]
+  - @inkandswitch/patchwork-filesystem@0.2.2
+  - @inkandswitch/patchwork-providers@0.4.2
+
+## 4.0.0
+
+### Minor Changes
+
+- 82bee46: A doc's `suggestedImportUrl` may now be an `automerge:` folder-doc URL as well
+  as an `http(s):` module bundle. When a view finds no built-in tool for a doc, it
+  loads the suggested module either way. Adds `importPackage` (which dispatches on
+  the URL scheme) and `isImportableSuggestedUrl` to `patchwork-filesystem`, and
+  `getSuggestedImportUrl` now honors automerge URLs.
+
+  The package-importing helpers are renamed from `module` to `package`, since they
+  resolve a `package.json` entry point: `importModuleFromFolderDocUrl` →
+  `importPackageFromFolderDocUrl`, `importModuleFromHttpUrl` →
+  `importPackageFromHttpUrl`, and the `ModuleWatcher` `importAutomergeModule` hook
+  (with bootloader's `importAutomergeModuleViaWorker`) → `importAutomergePackage`.
+
+### Patch Changes
+
+- Updated dependencies [82bee46]
+  - @inkandswitch/patchwork-filesystem@0.2.0
+  - @inkandswitch/patchwork-plugins@1.0.0
+
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies [2d39c84]
+  - @inkandswitch/patchwork-providers@0.4.0
+
 ## 2.0.0
 
 ### Minor Changes

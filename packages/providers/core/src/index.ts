@@ -28,9 +28,18 @@ export type SubscribeEvent = CustomEvent<SubscribeEventDetail>;
 
 type Listener<T extends JSONValue> = (value: T) => void;
 type Unsubscribe = () => void;
-type Producer<T extends JSONValue> = (respond: Listener<T>) => Unsubscribe | void;
 
-type ChangeMessage<T extends JSONValue> = { type: "change"; value: T };
+/**
+ * What a producer calls to push a value. The optional `transfer` list is
+ * forwarded straight to the underlying `MessagePort.postMessage`, so every
+ * `Transferable` it names (an `ArrayBuffer`, `MessagePort`, `ImageBitmap`, …)
+ * is *moved* to the consumer rather than structured-cloned. Each transferable
+ * must be reachable from `value`, and is neutered on this side once sent.
+ */
+type Respond<T> = (value: T, transfer?: Transferable[]) => void;
+type Producer<T> = (respond: Respond<T>) => Unsubscribe | void;
+
+type ChangeMessage<T> = { type: "change"; value: T };
 type UnsubscribeMessage = { type: "unsubscribe" };
 
 declare global {
@@ -41,6 +50,12 @@ declare global {
   // recover live `DocHandle`s without serializing them across the channel.
   // eslint-disable-next-line no-var
   var repo: Repo | undefined;
+}
+
+const viewTags = new Set(["patchwork-view"]);
+
+export function registerPatchworkViewTag(tagName: string) {
+  viewTags.add(tagName.toLowerCase());
 }
 
 /**
@@ -64,7 +79,7 @@ export function subscribe<T extends JSONValue = JSONValue>(
   selector: Selector,
   listener: Listener<T>
 ): Unsubscribe {
-  const view = element.closest<HTMLElement>("patchwork-view");
+  const view = element.closest<HTMLElement>([...viewTags].join(","));
   const dispatchEl = view ?? element;
 
   const channel = new MessageChannel();
@@ -110,8 +125,15 @@ export function subscribe<T extends JSONValue = JSONValue>(
  * and may return a teardown that runs when the consumer unsubscribes. Stops
  * propagation so ancestor providers don't double-answer. Values emitted after
  * the consumer unsubscribes are dropped.
+ *
+ * `respond` takes an optional list of `Transferable`s as a second argument;
+ * they are handed to `MessagePort.postMessage` so the named objects are moved
+ * to the consumer instead of copied. Use this when the value carries something
+ * that can't be (or is expensive to) structured-clone, e.g. a `MessagePort`
+ * or a large `ArrayBuffer`. `T` is left unconstrained for this reason — once
+ * you transfer, the value is no longer plain JSON.
  */
-export function accept<T extends JSONValue>(
+export function accept<T = JSONValue>(
   event: SubscribeEvent,
   producer: Producer<T>
 ): void {
@@ -119,9 +141,9 @@ export function accept<T extends JSONValue>(
   const port = event.detail.port;
 
   let alive = true;
-  const respond: Listener<T> = (value) => {
+  const respond: Respond<T> = (value, transfer) => {
     if (!alive) return;
-    port.postMessage({ type: "change", value });
+    port.postMessage({ type: "change", value }, transfer ?? []);
   };
 
   let teardown: Unsubscribe | void;

@@ -1,0 +1,124 @@
+name: patchwork preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+env:
+  SHELL_REPO: inkandswitch/patchwork.inkandswitch.com
+  SITE_DIR: sites/patchwork.inkandswitch.com
+  NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+  NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+  ALIAS: patchwork-preview-${{ github.event.number }}
+  MARKER: "<!-- patchwork-preview -->"
+
+jobs:
+  preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SHELL_REPO }}
+          path: ${{ env.SITE_DIR }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: build the shell against this branch's packages
+        run: |
+          node .github/scripts/use-workspace-packages.mjs "$GITHUB_WORKSPACE/$SITE_DIR"
+          pnpm install --no-frozen-lockfile
+          pnpm build
+
+      - name: free the alias
+        run: .github/scripts/netlify-purge-alias.sh
+
+      - name: deploy
+        id: deploy
+        working-directory: ${{ env.SITE_DIR }}
+        run: |
+          set -o pipefail
+          out=$(pnpm --package=netlify-cli dlx netlify deploy \
+            --dir=dist \
+            --no-build \
+            --alias="$ALIAS" \
+            --message="patchwork-core#${{ github.event.number }} @ ${{ github.event.pull_request.head.sha }}" \
+            --json)
+          echo "$out" | jq .
+          echo "url=$(echo "$out" | jq -er .deploy_url)" >> "$GITHUB_OUTPUT"
+
+      - name: verify the deploy serves this build
+        env:
+          SHELL_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -o pipefail
+          html=$(curl -sfL "$SHELL_URL")
+          for asset in $(echo "$html" | grep -oE '/assets/[A-Za-z0-9_.-]+\.js' | sort -u); do
+            curl -sfL --output /dev/null "$SHELL_URL$asset" || {
+              echo "::error::$SHELL_URL$asset is missing"
+              exit 1
+            }
+          done
+
+      - uses: actions/github-script@v7
+        env:
+          SHELL_URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const marker = process.env.MARKER
+            const sha = context.payload.pull_request.head.sha.slice(0, 7)
+            const body = [
+              marker,
+              `## ✅ Patchwork glance ready`,
+              ``,
+              `## ${process.env.SHELL_URL}`,
+              ``,
+              `A peek at \`${process.env.SHELL_REPO}\`, built with the @inkandswitch/patchwork- packages as of this PR at \`${sha}\`.`,
+            ].join("\n")
+            const {owner, repo} = context.repo
+            const issue_number = context.issue.number
+            const comments = await github.rest.issues.listComments({owner, repo, issue_number})
+            const existing = comments.data.find(c => c.body.startsWith(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body})
+            } else {
+              await github.rest.issues.createComment({owner, repo, issue_number, body})
+            }
+
+  teardown:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: .github/scripts/netlify-purge-alias.sh
+
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = process.env.MARKER
+            const {owner, repo} = context.repo
+            const issue_number = context.issue.number
+            const comments = await github.rest.issues.listComments({owner, repo, issue_number})
+            const existing = comments.data.find(c => c.body.startsWith(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id,
+                body: `${marker}\n### 🪡 Patchwork \n\nTorn down.`,
+              })
+            }

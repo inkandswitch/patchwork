@@ -161,7 +161,28 @@ export interface HandoffResponseMessage {
   response: HandoffResponse;
 }
 
-export type HandoffReplyMessage = HandoffCachedMessage | HandoffResponseMessage;
+/**
+ * Automerge worker → service worker: fail the request as a network error
+ * rather than serving any response at all.
+ *
+ * "Heads haven't arrived yet" is not a 404 — the document may well exist, so
+ * a status implying it doesn't is a lie any HTTP cache is entitled to store.
+ * A network error is the honest answer and isn't storable as a response.
+ *
+ * This does *not* help with `import()`: the ES module map memoizes failed
+ * fetches, network errors included, so a retry needs a distinct URL either
+ * way (see `importModule` in patchwork-filesystem).
+ */
+export interface HandoffAbortMessage {
+  id: string;
+  type: "abort";
+  reason: string;
+}
+
+export type HandoffReplyMessage =
+  | HandoffCachedMessage
+  | HandoffResponseMessage
+  | HandoffAbortMessage;
 
 /**
  * Automerge worker → world: broadcast once on startup so the service worker

@@ -1,6 +1,6 @@
 // Main-thread client for the module-loader worker (see module-loader-worker.ts).
 //
-// `importAutomergeModuleViaWorker` is wired into the ModuleWatcher in place of
+// `importAutomergePackageViaWorker` is wired into the ModuleWatcher in place of
 // its default (direct, main-thread) package import. It asks the worker to
 // import the package entry point and report which plugins it exports, then
 // returns the same `{ plugins }` shape the watcher already feeds to
@@ -52,7 +52,6 @@ function getWorker(): Worker {
   return worker;
 }
 
-/** Ask the worker which plugins the package at `urlAtHeads` exports. */
 function discoverDescriptors(urlAtHeads: AutomergeUrl): Promise<Descriptor[]> {
   const id = nextRequestId++;
   return new Promise<Descriptor[]>((resolve, reject) => {
@@ -61,12 +60,7 @@ function discoverDescriptors(urlAtHeads: AutomergeUrl): Promise<Descriptor[]> {
   });
 }
 
-/**
- * ModuleWatcher `importAutomergeModule` hook: discover descriptors in the
- * worker, then return the `{ plugins }` shape with a main-thread `load()` per
- * plugin that imports the package at heads and calls its real loader.
- */
-export async function importAutomergeModuleViaWorker(
+export async function importAutomergePackageViaWorker(
   urlAtHeads: string
 ): Promise<{ plugins: Descriptor[] }> {
   const url = urlAtHeads as AutomergeUrl;

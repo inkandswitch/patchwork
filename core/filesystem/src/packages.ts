@@ -1,4 +1,7 @@
-import { type AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  isValidAutomergeUrl,
+  type AutomergeUrl,
+} from "@automerge/automerge-repo/slim";
 import { resolve } from "resolve.exports";
 import debug from "debug";
 import {
@@ -9,12 +12,31 @@ const log = debug("patchwork:filesystem");
 
 export const defaultImportConditions = ["patchwork", "browser", "import"];
 
-export async function importModuleFromFolderDocUrl(
+// A failed import is memoized in the ES module map against its URL, so the
+// same URL can never be retried in this realm. Retrying under a distinct URL
+// gets a fresh entry; the heads-pinned URLs make it safe, since the content at
+// a given set of heads can't change.
+async function importModule(entryPointUrl: string) {
+  try {
+    return await import(/* @vite-ignore */ entryPointUrl);
+  } catch (cause) {
+    const retry = new URL(entryPointUrl);
+    retry.searchParams.set("retry", "1");
+    log(`retrying ${entryPointUrl.slice(-60)}`);
+    try {
+      return await import(/* @vite-ignore */ retry.href);
+    } catch {
+      throw cause;
+    }
+  }
+}
+
+export async function importPackageFromFolderDocUrl(
   folderDocUrl: AutomergeUrl,
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
-  log(`importModule ${folderDocUrl}... (subpath: ${subpath})`);
+  log(`importPackage ${folderDocUrl}... (subpath: ${subpath})`);
   const entryPointUrl = await packageEntryPointUrl(
     folderDocUrl,
     subpath,
@@ -28,46 +50,38 @@ export async function importModuleFromFolderDocUrl(
 
   log(`importing ${entryPointUrl.slice(-60)}`);
 
-  return await import(/* @vite-ignore */ entryPointUrl);
+  return await importModule(entryPointUrl);
 }
 
-/**
- * Import a module from a plain HTTP(S) URL — the non-Automerge counterpart to
- * {@link importModuleFromFolderDocUrl}.
- *
- * The URL may point straight at a module entry file (e.g. `.../index.js`), in
- * which case it's imported as-is, or at a package/site root that serves a
- * `package.json`, in which case the manifest is fetched and its entry point
- * (`exports`/`main`) resolved and imported.
- */
-export async function importModuleFromHttpUrl(
+export async function importPackageFromHttpUrl(
   url: string,
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
   const entryPointUrl = await httpEntryPointUrl(url, subpath, conditions);
   log(`importing ${entryPointUrl.slice(-60)}`);
-  return await import(/* @vite-ignore */ entryPointUrl);
+  return await importModule(entryPointUrl);
+}
+
+/**
+ * Note: an `automerge:` URL is imported as-is, without pinning to heads —
+ * callers that need a deterministic version (e.g. {@link ModuleWatcher}) should
+ * resolve the handle and pin before importing.
+ */
+export async function importPackage(
+  url: string,
+  subpath: string = ".",
+  conditions: string[] = defaultImportConditions
+) {
+  return isValidAutomergeUrl(url)
+    ? importPackageFromFolderDocUrl(url, subpath, conditions)
+    : importPackageFromHttpUrl(url, subpath, conditions);
 }
 
 // Module file extensions that mark a URL as a direct entry point rather than a
 // package/site root to look for a `package.json` in.
 const MODULE_FILE_EXTENSION = /\.(mjs|cjs|js|mts|cts|ts|jsx|tsx)$/;
 
-/**
- * Resolve the URL to actually import for a plain HTTP(S) module URL.
- *
- * A URL that already names a module file (`.../foo.js`, `.mjs`, `.ts`, …) is
- * returned unchanged. Otherwise the URL is treated as a package/site root:
- * `package.json` is fetched relative to it and its entry point resolved. If
- * there's no manifest (a 404 or other non-ok response), the URL is imported
- * directly, so a bare directory that happens to serve an `index.js` still works
- * as before.
- *
- * A fetch that *rejects* — a network error or, most often, a cross-origin
- * request blocked by missing CORS headers — is not treated as "no manifest":
- * it throws, because the same failure would block the eventual module import.
- */
 async function httpEntryPointUrl(
   url: string,
   subpath: string = ".",
@@ -92,7 +106,9 @@ async function httpEntryPointUrl(
 
   // Treat the URL as a directory: resolve `package.json` against it with a
   // trailing slash so its last path segment isn't dropped.
-  const base = resolved.href.endsWith("/") ? resolved.href : `${resolved.href}/`;
+  const base = resolved.href.endsWith("/")
+    ? resolved.href
+    : `${resolved.href}/`;
   const packageJsonUrl = new URL("package.json", base).href;
 
   log(`fetching ${packageJsonUrl.slice(-60)}`);
@@ -114,9 +130,7 @@ async function httpEntryPointUrl(
     let origin: string | undefined;
     try {
       origin = documentBaseOrigin();
-    } catch {
-      // origin unknown — fall back to the generic hint below.
-    }
+    } catch {}
     const crossOrigin = origin !== undefined && resolved.origin !== origin;
     const hint = crossOrigin
       ? `This is a cross-origin request (${origin} → ${resolved.origin}), so it's most likely blocked by CORS: the host must send an \`Access-Control-Allow-Origin\` header, and a cross-origin module can't be imported without one.`
@@ -174,7 +188,11 @@ export async function importPluginFromFolderDocUrl(
   subpath: string = ".",
   conditions: string[] = defaultImportConditions
 ) {
-  const mod = await importModuleFromFolderDocUrl(folderDocUrl, subpath, conditions);
+  const mod = await importPackageFromFolderDocUrl(
+    folderDocUrl,
+    subpath,
+    conditions
+  );
   const plugins: any[] = Array.isArray(mod?.plugins) ? mod.plugins : [];
   const plugin = plugins.find(
     (p) => p?.type === pluginType && p?.id === pluginId
@@ -197,7 +215,7 @@ export async function importPluginFromFolderDocUrl(
 
 async function packageJsonContentsFromFolderDocUrl(
   folderDocUrl: AutomergeUrl
-): Promise<Record<string, any> | undefined> {
+): Promise<Record<string, any>> {
   const packageJSONPath = new URL(
     "package.json",
     new URL(
@@ -208,12 +226,22 @@ async function packageJsonContentsFromFolderDocUrl(
 
   log(`fetching ${packageJSONPath.slice(-60)}`);
 
-  // First attempt: use a stable URL so the SW's in-memory cache can hit.
-  const response = await fetch(packageJSONPath);
-  if (response.ok) {
-    log(`package.json OK for ${folderDocUrl.slice(0, 25)}...`);
-    return response.json();
+  let response: Response;
+  try {
+    response = await fetch(packageJSONPath);
+  } catch (cause) {
+    throw new Error(
+      `Couldn't fetch ${packageJSONPath} for ${folderDocUrl} — a network error, or the service worker isn't serving automerge module URLs`,
+      { cause }
+    );
   }
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch ${packageJSONPath} for ${folderDocUrl}: HTTP ${response.status}`
+    );
+  }
+  log(`package.json OK for ${folderDocUrl.slice(0, 25)}...`);
+  return response.json();
 }
 
 export function resolvePackageExport(
@@ -224,11 +252,8 @@ export function resolvePackageExport(
   try {
     const resolved = resolve(pkgJson, subpath, { conditions });
     if (resolved) return resolved[0];
-  } catch {
-    // ignore, fallback to main
-  }
+  } catch {}
 
-  // fallback to main only for the root export
   if (subpath === "." && typeof pkgJson.main === "string") {
     return pkgJson.main;
   }
@@ -244,12 +269,10 @@ async function packageEntryPointUrl(
   conditions: string[] = defaultImportConditions
 ) {
   const pkgJson = await packageJsonContentsFromFolderDocUrl(folderDocUrl);
-  if (!pkgJson) return undefined;
 
   const entryPoint = resolvePackageExport(pkgJson, subpath, conditions);
   if (!entryPoint) return undefined;
 
-  // Build the final URL via the URL constructor
   const base = new URL(
     getImportableUrlFromAutomergeUrl(folderDocUrl),
     documentBaseOrigin()

@@ -1,0 +1,60 @@
+{
+  "name": "@inkandswitch/patchwork",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "directory": "core/patchwork"
+  },
+  "version": "0.1.0",
+  "author": "Ink & Switch",
+  "type": "module",
+  "license": "MIT",
+  "description": "One import for a Patchwork site: boot sequence, vite plugin, and ambient types.",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./vite": {
+      "import": "./dist/vite/patchwork-plugin.js",
+      "types": "./dist/vite/patchwork-plugin.d.ts"
+    },
+    "./head": {
+      "import": "./dist/head.js"
+    },
+    "./site-kit": {
+      "import": "./dist/site-kit/index.js",
+      "types": "./dist/site-kit/index.d.ts"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts"
+    },
+    "./global.css": "./dist/global.css"
+  },
+  "dependencies": {
+    "@automerge/automerge": "catalog:",
+    "@automerge/automerge-repo": "catalog:",
+    "@automerge/automerge-repo-keyhive": "catalog:",
+    "@automerge/automerge-repo-storage-indexeddb": "catalog:",
+    "@automerge/automerge-subduction": "catalog:",
+    "@automerge/vanillajs": "catalog:",
+    "@inkandswitch/patchwork-bootloader": "workspace:^",
+    "@inkandswitch/patchwork-elements": "workspace:^",
+    "@inkandswitch/patchwork-filesystem": "workspace:^",
+    "@inkandswitch/patchwork-plugins": "workspace:^",
+    "@inkandswitch/patchwork-providers": "workspace:^",
+    "@types/debug": "^4.1.13",
+    "debug": "^4.4.3",
+    "sharp": "^0.35.3",
+    "vite-plugin-wasm": "^3.6.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.1",
+    "rollup": "^4.61.1",
+    "vite": "^7.3.5"
+  },
+  "scripts": {
+    "build": "tsc && node build-head.js && cp src/global.css dist/global.css && cp src/client.d.ts dist/client.d.ts",
+    "dev": "tsc -w --preserveWatchOutput"
+  }
+}

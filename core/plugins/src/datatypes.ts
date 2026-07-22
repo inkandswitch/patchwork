@@ -4,10 +4,7 @@ import type {
   LoadedPlugin,
   PluginDescription,
 } from "./registry/types.js";
-import {
-  isHttpUrl,
-  type HasPatchworkMetadata,
-} from "@inkandswitch/patchwork-filesystem";
+import type { HasPatchworkMetadata } from "@inkandswitch/patchwork-filesystem";
 import type { AutomergeRepoKeyhive } from "@automerge/automerge-repo-keyhive";
 
 // Datatype implementation interface
@@ -50,13 +47,13 @@ export const createDocOfDatatype2 = async <D>(
   }
   handle.change((doc: D & HasPatchworkMetadata) => {
     datatype.module.init(doc, repo);
-    // Only record an `http:`/`https:` import URL, so `suggestedImportUrl` is
-    // always a directly-importable module and never an automerge/other-scheme
-    // URL. See `isHttpUrl`.
+    // Record the datatype's import URL so a viewer with no built-in tool can
+    // load one. It may be an `http:`/`https:` module bundle or an `automerge:`
+    // folder-doc URL; both are honored on read via `getSuggestedImportUrl`.
     const importUrl = datatype.importUrl;
     (doc as any)["@patchwork"] = {
       type: datatype.id,
-      ...(isHttpUrl(importUrl) ? { suggestedImportUrl: importUrl } : {}),
+      suggestedImportUrl: importUrl
     };
     if (change) {
       change(doc);
