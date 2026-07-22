@@ -19,7 +19,8 @@
     "preview": "pnpm --filter patchwork.inkandswitch.com preview",
     "publish-packages": "pnpm -r publish --access=public",
     "test": "vitest run",
-    "tsc": "pnpm -r exec tsc"
+    "tsc": "pnpm -r exec tsc",
+    "watch": "pnpm --filter @inkandswitch/patchwork... --parallel --if-present dev"
   },
   "keywords": [],
   "author": "Ink & Switch",
