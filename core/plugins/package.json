@@ -2,7 +2,7 @@
   "name": "@inkandswitch/patchwork-plugins",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "url": "git+https://github.com/inkandswitch/patchwork-system.git",
     "directory": "core/plugins"
   },
   "type": "module",

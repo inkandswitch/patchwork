@@ -2,7 +2,7 @@
   "name": "@inkandswitch/edge-handles",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/inkandswitch/patchwork-next.git",
+    "url": "git+https://github.com/inkandswitch/patchwork-system.git",
     "directory": "packages/edge-handles"
   },
   "version": "0.1.1",
