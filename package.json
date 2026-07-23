@@ -17,7 +17,7 @@
     "link-cli": "pnpm --ignore-workspace --dir scripts/module-settings install && pnpm link --global",
     "preinstall": "npx only-allow pnpm",
     "preview": "pnpm --filter patchwork.inkandswitch.com preview",
-    "publish-packages": "pnpm -r publish --access=public",
+    "publish-packages": "changeset publish",
     "test": "vitest run",
     "tsc": "pnpm -r exec tsc",
     "watch": "pnpm --filter @inkandswitch/patchwork... --parallel --if-present dev"
