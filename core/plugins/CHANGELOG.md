@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-plugins
 
+## 1.1.0
+
+### Minor Changes
+
+- 9e6e0e0: Add a `createAccount` setup option, create required account subdocuments before exposing a fresh account, and stop exposing the account handle as `window.accountDocHandle`.
+
 ## 1.0.3
 
 ### Patch Changes
