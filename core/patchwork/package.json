@@ -5,7 +5,7 @@
     "url": "git+https://github.com/inkandswitch/patchwork-next.git",
     "directory": "core/patchwork"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Ink & Switch",
   "type": "module",
   "license": "MIT",

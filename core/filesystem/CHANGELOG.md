@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork-filesystem
 
+## 0.2.4
+
+### Patch Changes
+
+- 5f70c14: Add `repository` metadata pointing at inkandswitch/patchwork-next, so npm links each package to its source directory and can attest provenance when published from CI.
+
 ## 0.2.3
 
 ### Patch Changes

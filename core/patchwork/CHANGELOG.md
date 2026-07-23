@@ -1,5 +1,31 @@
 # @inkandswitch/patchwork
 
+## 0.2.0
+
+### Minor Changes
+
+- 2fffabe: `setup()` now uses `packageListURL` as given instead of letting `localStorage.systemPackageListURL` silently replace it. A site that wants a dev override resolves it itself and passes the result in:
+
+  ```ts
+  const packageListURL =
+    new URLSearchParams(location.search).get("system-package-list") ||
+    localStorage.getItem("systemPackageListURL") ||
+    DEFAULT_PACKAGE_LIST;
+  ```
+
+  This keeps the precedence in one place — the site — so a site can add its own override sources without fighting the library for priority.
+
+### Patch Changes
+
+- 6be3922: Wait for configured modules to load before routing the root view so registered frame tools are available for the initial route.
+- 77bd37c: Expose the account document handle as `window.accountDocHandle` alongside `window.patchwork.account`.
+- 5f70c14: Add `repository` metadata pointing at inkandswitch/patchwork-next, so npm links each package to its source directory and can attest provenance when published from CI.
+- Updated dependencies [5f70c14]
+  - @inkandswitch/patchwork-bootloader@0.5.1
+  - @inkandswitch/patchwork-filesystem@0.2.4
+  - @inkandswitch/patchwork-elements@4.0.3
+  - @inkandswitch/patchwork-plugins@1.0.2
+
 ## 0.1.0
 
 ### Minor Changes
