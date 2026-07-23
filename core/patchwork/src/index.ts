@@ -225,17 +225,6 @@ async function doSetup(options: PatchworkOptions): Promise<Patchwork> {
 
   wireModuleSettings(accountDocHandle, moduleWatcher);
 
-  let router: Router | undefined;
-  if (routing !== false) {
-    rootElement.style.visibility = "hidden";
-    router = createRouter({
-      rootElement,
-      repo,
-      accountDocHandle,
-      siteName,
-    });
-  }
-
   const toolsLoaded = moduleWatcher.doneLoading.then(
     () =>
       log(
@@ -246,6 +235,18 @@ async function doSetup(options: PatchworkOptions): Promise<Patchwork> {
       ),
     (err: unknown) => console.error("doneLoading rejected:", err)
   );
+
+  let router: Router | undefined;
+  if (routing !== false) {
+    rootElement.style.visibility = "hidden";
+    await toolsLoaded;
+    router = createRouter({
+      rootElement,
+      repo,
+      accountDocHandle,
+      siteName,
+    });
+  }
 
   installReveal(rootElement, router, toolsLoaded);
 
