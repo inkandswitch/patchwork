@@ -5,7 +5,7 @@
     "url": "git+https://github.com/inkandswitch/patchwork-system.git",
     "directory": "core/elements"
   },
-  "version": "4.0.3",
+  "version": "4.0.4",
   "author": "Ink & Switch",
   "type": "module",
   "description": "",

@@ -1,5 +1,14 @@
 # @inkandswitch/patchwork-elements
 
+## 4.0.4
+
+### Patch Changes
+
+- f00dcb8: Add `repository` metadata pointing at inkandswitch/patchwork-system, so npm links each package to its source directory and can attest provenance when published from CI.
+- Updated dependencies [f00dcb8]
+  - @inkandswitch/patchwork-filesystem@0.2.5
+  - @inkandswitch/patchwork-plugins@1.0.3
+
 ## 4.0.3
 
 ### Patch Changes
