@@ -46,7 +46,7 @@ jobs:
         with:
           publish: pnpm publish-packages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PATCHWORK_CROW_TOKEN }}
 
       - name: update patchwork.inkandswitch.com
         if: steps.changesets.outputs.published == 'true'
