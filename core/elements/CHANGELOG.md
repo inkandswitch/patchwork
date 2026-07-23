@@ -1,5 +1,12 @@
 # @inkandswitch/patchwork-elements
 
+## 5.0.0
+
+### Patch Changes
+
+- Updated dependencies [9e6e0e0]
+  - @inkandswitch/patchwork-plugins@1.1.0
+
 ## 4.0.4
 
 ### Patch Changes
