@@ -60,6 +60,7 @@ import {
   removeAdapterFor,
 } from "./repo.js";
 import { createRouter, type Router } from "./router.js";
+import { createDefaultAccount } from "./createAccount.js";
 
 const log = debug("patchwork:setup");
 
@@ -68,7 +69,6 @@ declare const __SITE_NAME__: string;
 declare global {
   interface Window {
     patchwork: Patchwork;
-    accountDocHandle: DocHandle<AccountDoc>;
     repo: Repo;
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
@@ -222,9 +222,9 @@ async function doSetup(options: PatchworkOptions): Promise<Patchwork> {
   const accountDocHandle = (await resolveAccountHandle(repo, {
     storageKey: options.accountKey ?? "patchworkAccountURL",
     hive,
+    createAccount: options.createAccount ?? createDefaultAccount,
   })) as DocHandle<AccountDoc>;
 
-  window.accountDocHandle = accountDocHandle;
   wireModuleSettings(accountDocHandle, moduleWatcher);
 
   const toolsLoaded = moduleWatcher.doneLoading.then(
@@ -374,8 +374,7 @@ function onModuleLoaded(name: string, mod: any): void {
 }
 
 /**
- * The frame lazy-creates `moduleSettingsUrl` on first mount, so watch for it to
- * appear and feed it to the ModuleWatcher.
+ * Feed the account's module settings document to the ModuleWatcher.
  */
 function wireModuleSettings(
   accountDocHandle: DocHandle<AccountDoc>,
