@@ -68,6 +68,7 @@ declare const __SITE_NAME__: string;
 declare global {
   interface Window {
     patchwork: Patchwork;
+    accountDocHandle: DocHandle<AccountDoc>;
     repo: Repo;
     Automerge: typeof import("@automerge/automerge");
     AutomergeRepo: typeof import("@automerge/automerge-repo");
@@ -223,6 +224,7 @@ async function doSetup(options: PatchworkOptions): Promise<Patchwork> {
     hive,
   })) as DocHandle<AccountDoc>;
 
+  window.accountDocHandle = accountDocHandle;
   wireModuleSettings(accountDocHandle, moduleWatcher);
 
   const toolsLoaded = moduleWatcher.doneLoading.then(
