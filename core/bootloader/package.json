@@ -5,7 +5,7 @@
     "url": "git+https://github.com/inkandswitch/patchwork-next.git",
     "directory": "core/bootloader"
   },
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": "chee",
   "type": "module",
   "license": "MIT",
