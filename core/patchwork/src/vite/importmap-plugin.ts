@@ -95,14 +95,20 @@ export function importmap(options?: PatchworkVitePluginOptions): Plugin {
     },
     transformIndexHtml: {
       order: "pre",
-      handler(html) {
+      handler(html, context) {
+        const activeImportmap = structuredClone(importmap);
+        if (context.server) {
+          for (const id of Object.keys(builtins)) {
+            activeImportmap.imports[id] = `/@id/${id}`;
+          }
+        }
         return {
           html,
           tags: [
             {
               tag: "script",
               attrs: { type: "importmap" },
-              children: JSON.stringify(importmap, null, 2),
+              children: JSON.stringify(activeImportmap, null, 2),
             },
           ],
         };
