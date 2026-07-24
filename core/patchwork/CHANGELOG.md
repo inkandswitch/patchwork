@@ -1,5 +1,11 @@
 # @inkandswitch/patchwork
 
+## 0.3.2
+
+### Patch Changes
+
+- 5fbc712: Prebundle development import-map dependencies so dynamically loaded packages share module singletons and receive Vite's CommonJS interop.
+
 ## 0.3.1
 
 ### Patch Changes
