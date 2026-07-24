@@ -3,26 +3,33 @@
  * `overrides` itself and transparently forwards every other access to
  * `backing`.
  *
+ * `backing` may be the object itself or a getter that returns it. Passing a
+ * getter lets the owner swap the backing out from under a stable proxy
+ * identity (see `OverlayHandle.swapBacking`): the getter is re-evaluated on
+ * every access, so forwarded members always land on the *current* backing.
+ *
  * Both sides are read with the matching receiver and functions are bound to
  * their owner: owned members run against `overrides` (so its private `#fields`
- * keep working) and forwarded members run against `backing` (so the borrowed
+ * keep working) and forwarded members run against the backing (so the borrowed
  * method gets the right `this`). This lets the overlay classes spell out only
  * the handful of members whose behavior differs and inherit the rest of the
  * large, evolving `Repo` / `DocHandle` surface for free.
  */
 export function forwardingProxy<T>(
   overrides: object,
-  backing: object,
+  backing: object | (() => object),
   owned: ReadonlySet<PropertyKey>
 ): T {
+  const currentBacking =
+    typeof backing === "function" ? (backing as () => object) : () => backing;
   return new Proxy(overrides, {
     get(target, prop) {
-      const source = owned.has(prop) ? target : backing;
+      const source = owned.has(prop) ? target : currentBacking();
       const value = Reflect.get(source, prop, source);
       return typeof value === "function" ? value.bind(source) : value;
     },
     has(target, prop) {
-      return owned.has(prop) || prop in backing || prop in target;
+      return owned.has(prop) || prop in currentBacking() || prop in target;
     },
   }) as T;
 }
